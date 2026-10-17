@@ -44,6 +44,8 @@
 </span>
 ```
 
+可使用 [v-pb 与 pbStyle 制作工具](../pbwork/prototypes/authoring-tools.md) 同时生成实际样式与上述标记；字阶/颜色等键族由生成类型限制，常量不进入 Token Facts。DS 实例绑定仍属于 Registry。
+
 要求：
 
 - `data-pb-id` 与 `data-pb-role` 必须成对出现；
@@ -146,6 +148,8 @@ Warning 可以被明确接受以继续一次 Producer 操作，但接受不会�
 - 装饰节点未标记；
 - 非关键内容由父 Fragment 聚合采集；
 - 可选 Token 槽或非交付 Variant 未声明。
+
+Workbench 当前 Screen 的实时检查复用 Runtime 的 required boundary、几何和遮挡判定，显示缺节点、缺 role、缺 Token Evidence 等问题；选中元素的启发式提示保留。实时结果不写 Evidence，也不能替代 Preflight。详见[制作工具](../pbwork/prototypes/authoring-tools.md)。
 
 ## 8. Agent 执行纪律
 

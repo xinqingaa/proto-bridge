@@ -103,3 +103,10 @@ pnpm docs:verify
 
 For interaction changes, run relevant Playwright specs and inspect scrolling,
 focus, empty/error states, keyboard use, and both themes.
+
+## Live authoring checks
+
+Current-Screen diagnostics travel through the validated Runtime bridge and reuse
+Capture required-fragment geometry and occlusion checks. Keep selected-element
+heuristics; do not infer a new boundary or write these transient results to Evidence.
+See `apps/pbwork/docs/prototypes/authoring-tools.md`.

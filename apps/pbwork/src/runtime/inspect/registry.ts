@@ -1,9 +1,11 @@
+import type { SemanticRole } from "@proto-bridge/core/v2";
 import type { ElementRef } from "@/runtime/bridge";
 
 export type InspectRegistration = {
   element: HTMLElement;
   pbId: string;
   componentId?: string;
+  semanticParts?: ReadonlyArray<{ suffix: string; role: SemanticRole }>;
   getProps?: () => Record<string, unknown>;
   getState?: () => Record<string, unknown>;
   getTokens?: () => string[];
@@ -76,4 +78,20 @@ export function findRegisteredAncestor(
     cur = cur.parentElement;
   }
   return undefined;
+}
+
+/** Only explicitly Registry-owned semantic parts may use their owner's bindings. */
+export function getSemanticInspectRegistration(
+  element: HTMLElement,
+): InspectRegistration | undefined {
+  const direct = getInspectRegistration(element);
+  if (direct) return direct;
+  const owner = findRegisteredAncestor(element);
+  return owner?.semanticParts?.some(
+    (part) =>
+      element.dataset.pbId === `${owner.pbId}.${part.suffix}` &&
+      element.dataset.pbRole === part.role,
+  )
+    ? owner
+    : undefined;
 }

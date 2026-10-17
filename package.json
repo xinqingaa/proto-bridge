@@ -33,7 +33,11 @@
     "docs:verify": "node scripts/verify-docs.mjs",
     "ds:target-sync:verify": "pnpm --filter @proto-bridge/core build && node scripts/verify-ds-target-sync.mjs",
     "consumer-contract:verify": "node scripts/verify-consumer-contract.mjs",
-    "verify": "node scripts/verify-product.mjs"
+    "verify": "node scripts/verify-product.mjs",
+    "ds:keys:generate": "pnpm exec tsx --tsconfig apps/pbwork/tsconfig.json apps/pbwork/scripts/generate-theme-keys.mjs",
+    "pb:screens:generate": "pnpm exec tsx --tsconfig apps/pbwork/tsconfig.json apps/pbwork/scripts/generate-screen-boundaries.ts",
+    "pb:new-prototype": "node apps/pbwork/scripts/new-prototype.mjs",
+    "test:e2e:scaffold": "node apps/pbwork/scripts/test-scaffold.mjs"
   },
   "engines": {
     "node": ">=20"

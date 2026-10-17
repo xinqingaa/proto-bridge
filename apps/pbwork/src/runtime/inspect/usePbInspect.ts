@@ -3,9 +3,7 @@ import type { InspectRegistration } from "@/runtime/inspect/registry";
 import { registerInspect } from "@/runtime/inspect/registry";
 
 /** Resolve a template ref that may point at a native node or a Vue/Vuetify instance. */
-export function resolveInspectElement(
-  value: unknown,
-): HTMLElement | null {
+export function resolveInspectElement(value: unknown): HTMLElement | null {
   if (!value) return null;
   if (value instanceof HTMLElement) return value;
   if (typeof value === "object" && value !== null && "$el" in value) {
@@ -16,7 +14,8 @@ export function resolveInspectElement(
 }
 
 function readMaybeString(
-  value: undefined | string | Ref<string | undefined> | (() => string | undefined),
+  value:
+    undefined | string | Ref<string | undefined> | (() => string | undefined),
 ): string | undefined {
   if (value == null) return undefined;
   if (typeof value === "string") return value || undefined;
@@ -44,6 +43,7 @@ export function usePbInspect(options: {
   /** Stable key for repeated template instances (data-pb-key). */
   pbKey?: string | Ref<string | undefined> | (() => string | undefined);
   componentId?: string;
+  semanticParts?: InspectRegistration["semanticParts"];
   /** Set false for decorative components that must not enter semantic Evidence. */
   semantic?: boolean;
   getProps?: () => Record<string, unknown>;
@@ -65,10 +65,12 @@ export function usePbInspect(options: {
       pbId: instancePbId,
     };
     if (options.componentId) reg.componentId = options.componentId;
+    if (options.semanticParts) reg.semanticParts = options.semanticParts;
     if (options.getProps) reg.getProps = options.getProps;
     if (options.getState) reg.getState = options.getState;
     if (options.getTokens) reg.getTokens = options.getTokens;
-    if (options.getTokenBindings) reg.getTokenBindings = options.getTokenBindings;
+    if (options.getTokenBindings)
+      reg.getTokenBindings = options.getTokenBindings;
     unregister = registerInspect(reg);
     el.setAttribute("data-pb-component", options.pbId);
     if (options.semantic !== false) el.setAttribute("data-pb-id", instancePbId);
@@ -78,10 +80,18 @@ export function usePbInspect(options: {
   }
 
   onMounted(sync);
-  if (typeof options.instanceId === "object" && options.instanceId && "value" in options.instanceId) {
+  if (
+    typeof options.instanceId === "object" &&
+    options.instanceId &&
+    "value" in options.instanceId
+  ) {
     watch(options.instanceId, sync);
   }
-  if (typeof options.pbKey === "object" && options.pbKey && "value" in options.pbKey) {
+  if (
+    typeof options.pbKey === "object" &&
+    options.pbKey &&
+    "value" in options.pbKey
+  ) {
     watch(options.pbKey, sync);
   }
   onBeforeUnmount(() => {

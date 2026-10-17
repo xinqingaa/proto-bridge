@@ -44,7 +44,7 @@ PBWork 现在能产出可采集的原型，但三处明显不足：
 | 第 1 步 采集可靠性收口 | 实现与验收已完成（未合入 main） | 2026-10-16 收尾：Issue 按内容摘要存储并固定 Fact 引用（不改公共 Schema 字段）、`pb:clean` 共用 Core 启动配置、三份提示模板与 pending claim 专项测试、[ADR 0013](../decisions/0013-capture-reliability.md)。修复 6 个过期断言，并修复 Runtime 返回退出工作台的缺陷、生命周期 E2E 共享 sidecar 与漏 mock Job 的问题、主题包定义被旧颜色门禁误报的问题。验证：build/typecheck、core 435、local-service 39、cli 20、pbwork 198 个单测通过（另 11 个主题迁移 todo 保留给第 2 步）；PBWork Playwright 41 个用例均已有通过记录（最后全量 40 通过，唯一失败的 lifecycle-persistence 修复后单独通过）；runtime/mcp/consumer/evidence-slice/finalization/lifecycle 均覆盖通过。冷链真实定稿与固定引用见下方验收记录。 |
 | 第 2 步 主题包 | 实现与退出标准已满足（未合入 main） | 2026-10-16：用户确认冷链三个 default 屏与迁移前没有视觉差别。验证：`pnpm docs:verify`；PBWork `vitest run` 223 项；Core `vitest run` 433 项；`pnpm typecheck`（Core、Local Service、CLI、MCP）；`pnpm ds:target-sync:verify` 通过，32/32 组件与 127/127 可绑定键已列入映射，159 项 Flutter 适配保持 pending。样例包与 Gallery/Playground 选择器已落地。取值表的采集固定见第 3 步。 |
 | 第 3 步 采集质量 | 实现与退出标准已满足（未合入 main） | 2026-10-17：协议 3。Case 身份只保留模式，Selection/Handoff 固定主题包，取值表进 theme-pack Catalog。冷链定稿 Handoff 经 MCP `read_theme_pack` 读到 `pbwork-base` 摘要和完整取值表，深色组合标注未采集。探针在预检中打开每个主题与模式；隐藏节点的夹具会阻断。声明时钟两次读取一致。验证：`pnpm docs:verify`；Core `vitest run` 437 项；`test:e2e:runtime` 8 项、`test:e2e:mcp`、`test:e2e:evidence-slice`、`test:e2e:finalization` 3 项、`test:e2e:lifecycle`；`pnpm ds:target-sync:verify` 通过，159 项 Flutter 适配保持 pending。 |
-| 第 4 步 制作效率 | 未开始 | 依赖第 2 步的键名。含 `v-pb` 与 `pbStyle()`、键类型生成、就近声明与自动汇总、共享原型运行套件、脚手架、实时门禁。 |
+| 第 4 步 制作效率 | 实现与退出标准已满足（未提交、未合入 main） | 2026-10-17：`v-pb` / `pbStyle()`、生成键类型与显式 default 边界、Screen 就近声明 / glob 汇总、共享运行套件、脚手架与当前 Screen 实时诊断均已落地。冷链三屏默认截图迁移前后字节一致；原样脚手架通过 Preflight、同 Case 双采集及 Workbench 定稿。PBWork 236 项单测、build、Runtime 9 项、`docs:verify`、`ds:target-sync:verify` 通过；159 项 Flutter pending 保持。见本步验收记录。 |
 | 第 5 步 DS 通用组件与收口 | 未开始 | 依赖第 4 步的写法与第 2 步的键名。组件清单见该步。 |
 
 ```mermaid
@@ -204,6 +204,36 @@ flowchart LR
 - 脚手架生成的空原型无需手改即可通过 Preflight 并完成一次定稿。
 - 声明时钟后，同一 Case 两次采集的时间相关文字与截图一致。
 - `pnpm docs:verify`、PBWork 单测与 build、`test:e2e:runtime` 通过。
+
+
+### 本步验收记录（2026-10-17）
+
+- `pnpm ds:keys:generate` 从键目录、常量表和 Contract 生成 `theme/generated/keys.ts`；新鲜度单测通过。`v-pb` 的 Vue 类型探针写入未知颜色键时，`vue-tsc` 明确拒绝。`pbStyle` 与 Inspector 共用槽字典，DS 实例与显式归属的 tab/panel 部件仍由 Registry 提供绑定，局部子节点不能借祖先绑定通过完整性检查。
+- 三个 Screen 的声明移至各自 `screens/{slug}/screen.ts`，用 `defineScreen`、`fragment` 和 `screenScope` 缩短身份声明。总登记表 glob 汇总，并沿原型已有 screenGroups 保持顺序；default 边界由作者的 `required: true` 生成到 `prototypes/generated/default-boundaries.json`（66 行），有新鲜度测试。两种生成文件都留在工作区，待用户授权后纳入 Git 提交。
+- 共享套件包含 schema 版本存储、显式迁移、父路径链、进入/返回/替换/Tab 导航、主题/模式偏好 API、Tab 组合壳和启动页插槽。时钟直接复用第 3 步的 `useClock()` 与既有 Capture 时钟，没有第二套时钟或新的时钟协议。
+- 现有覆盖先核对：Runtime 已做必需片段缺失/重复、role、可见性/零 bbox 和遮挡检查；Inspector 已有选中元素的启发式提示。本步抽取复用检查并接入当前 Screen 的实时展示，补空 Token Evidence 检查。浏览器测试覆盖编辑后缺 role、缺 Token Evidence、零 bbox、遮挡与缺节点的实时更新，不需要先选中元素。
+
+#### 冷链迁移行数
+
+Screen 代码按 SFC 的 script + template（不含 style）计，CSS 按 scoped style 内容计；保留空行，按当前格式化结果统计。就近声明单列，生成边界不计入手写登记代码。
+
+| Screen | Screen 代码：前 → 后 | CSS：前 → 后 | 就近声明：后 |
+| --- | --- | --- | --- |
+| exception-queue | 409 → 464 | 161 → 152 | 136 |
+| shipment-detail | 405 → 461 | 248 → 241 | 105 |
+| resolution-form | 446 → 544 | 86 → 67 | 129 |
+
+原单体登记表为 688 行；迁移后 glob 汇总为 40 行，三个就近声明合计 370 行，原型元信息另放 `prototype.ts`。Screen 局部行数因类型化声明对象展开而增加，没有把排版行数减少当成退出条件；省去重复身份、样式/绑定双写及手工总登记是本次工具的作用。结构/部件 Evidence 槽仍显式声明，不为改写法改变外观。
+
+- 默认 Screen 截图：390×844、基础包 default/light、声明时区；迁移前存于 `/tmp/pbwork-step4-before/`，迁移后存于 `/tmp/pbwork-step4-after/`。三屏 PNG 字节完全一致。SHA-256：queue `f8736faf3ed4edc344f9dc12dea30f7f766346998728c088da2547c581bdc414`；detail `8534d6af55bfd7264c03a6723b830995146d7d7bd5ef73c198774f8a04c868ea`；form `bccae03d7498613cb61d124bbfa11f38db67dcfafb7ac12e5f8951ab2e89fca5`。
+
+#### 脚手架定稿与时间一致性
+
+- `pnpm test:e2e:scaffold` 原样调用脚手架生成 `authoring-smoke-98122`，没有手改源码或登记表；设计文档保持 `status: draft`，只是技术骨架验收，不代表业务设计批准。Core Preflight 通过，Workbench 完整定稿为 `final`，Job `job-2026-10-17t001947134-e0235476` 为 `completed`。
+- 固定引用：Bundle `bundle-2026-10-17t001947133-6112f1fe`、Snapshot `snapshot-2026-10-17t001947911-720b5c8e`、Handoff `handoff-2026-10-17t001952616-b04df2d9`、Delivery `operation-7c5e78f079019ca518e02a38` 精确绑定。隔离 Store、receipt 与结果保存在 `/var/folders/gn/2n9tm8wn6_1gxcqmh3qlch2c0000gn/T/pbwork-scaffold-evidence-hRNSHq/`；临时原型源码已由测试清理，未改日常 Workspace。
+- 同一 Case `authoring-smoke-98122.home::default::light::iphone-14` 两次通过实际 Core Driver 采集：`useClock()` 输出均为 `2026/7/28 08:00:00`，截图字节一致。复用声明 `2026-07-28T00:00:00.000Z`、`Asia/Shanghai`，没有更改第 3 步实现。
+- 最终检查：`pnpm docs:verify`；PBWork 43 个单测文件、236 项测试；PBWork build（含 vue-tsc）；`pnpm test:e2e:runtime`（原有 8 项及新增实时诊断 1 项，共 9 项）；`pnpm test:e2e:scaffold`；`pnpm ds:target-sync:verify`。Target 仍为 32/32 组件、127/127 可绑定键映射，159 项 Flutter pending 全量如实列出，未修改 Flutter。
+- 已同步 Authoring Contract、语义门禁、PBWork 架构、制作/导航/Token/组件手册、命令说明、Skill references 与检查单。工作仍在 `dev-platform`，未提交、未合入 main；第 5 步保持未开始。
 
 ---
 

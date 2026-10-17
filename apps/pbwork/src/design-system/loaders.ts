@@ -54,9 +54,10 @@ export function loadPrototypeScreens(): ScreenRecord[] {
   return prototypeScreens;
 }
 
-export const screenViewModules = import.meta.glob(
+export const screenViewModules = import.meta.glob([
   "@/prototypes/*/screens/*.vue",
-);
+  "@/prototypes/*/screens/*/*.vue",
+]);
 
 export const componentViewModules = import.meta.glob(
   "@/design-system/components/{action,input,display,navigation,data,feedback}/*.vue",

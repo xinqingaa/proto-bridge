@@ -90,3 +90,10 @@ pnpm ds:target-sync:verify
 ```
 
 Add relevant Playwright specs for gestures, overlays, navigation, or Playground.
+
+## Typed local authoring
+
+Local `v-pb` / `pbStyle()` uses generated keys and the shared `theme/slots.ts`
+dictionary; it does not rebind DS instances. DS-owned semantic parts declare
+`semanticParts` in Inspect Registry, while business children keep explicit
+bindings. See `apps/pbwork/docs/prototypes/authoring-tools.md`.

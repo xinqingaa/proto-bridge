@@ -18,6 +18,9 @@
 - [ ] 未引入第二图标包；默认图标为 Lucide
 - [ ] 未用大 type 兼多语义角色（见 alignment-protocol / audit-large-types）
 
+- [ ] `ds:keys:generate` 的键类型和 `pb:screens:generate` 的显式边界已更新，新鲜度单测通过
+- [ ] 当前 Screen 实时诊断已核对；Token Evidence 未借用祖先或用 CSS 匹配伪装显式绑定
+
 ## 组合与手势
 
 - [ ] Tabbar 发目的地；根目的地关闭横滑，TabViewport 时长 `motion.duration-instant`

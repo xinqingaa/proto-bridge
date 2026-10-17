@@ -24,7 +24,7 @@
 - Coding Agent 自行决定目标文件、组件、路由、状态管理和 Token。
 - PBWork DS 是正式原型的基础而不是上限：形状与风格都匹配时使用 DS 组件或其公开变体；与已批准风格冲突时以风格为准，改用 DS 扩展或原型自有组件，并在 `docs/implementation.md` 记录 DS 缺口。手势、滚动、Overlay 和导航机制不得复制。
 - PBWork DS 与正式业务原型只使用 Flex/常规文档流，禁止 CSS Grid、`grid-*` 和 `place-*`；Workbench 与独立探索不在此样式门禁内。
-- 正式 DS/原型的可见设计量不得出现固定 CSS 值，具体值只存在于 Foundation/Theme。
+- 正式 DS/原型的可见设计量不得出现固定 CSS 值，具体值只存在于主题包或 PBWork 常量表。
 - DS 业务实例使用稳定 `inspectId`；业务局部证据节点显式提供 `data-pb-id`、`data-pb-role`、按需 `data-pb-key` 和所需 Token Evidence。
 - strict Screen 的 default Variant 必须具有 authored completeness boundary；缺失、重复、不可见、零 bbox、非法 role 或缺 Token Evidence 必须阻断完整性声明。
 

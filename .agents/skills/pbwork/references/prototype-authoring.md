@@ -29,7 +29,8 @@ rewriting the baseline.
 4. `apps/pbwork/docs/components/composition.md`.
 5. `apps/pbwork/docs/prototypes/design-workflow.md` and `overview.md`.
 6. Relevant shell/navigation, Screen/Variant, recipe, component, and gesture docs.
-7. For a new or materially reshaped user-visible Screen,
+7. `apps/pbwork/docs/prototypes/authoring-tools.md` for typed styling, local Screen declarations, shared Runtime and scaffolding.
+8. For a new or materially reshaped user-visible Screen,
    `.agents/skills/frontend-design/SKILL.md` for the post-authoring Experience
    Gate as well as initial direction.
 
@@ -57,12 +58,17 @@ rewriting the baseline.
 - Product `onBeforeRouteLeave` guards return true when
   `isForcedRuntimeNavigation()` is set. Workbench and Capture open the target
   page through Runtime forced navigation.
-- Register Screens, Variants, Actions, and Scenarios only in
-  `prototypes/registry.ts`.
+- Declare Screens, Variants, Actions and Scenarios beside their Screen in
+  `screens/{slug}/screen.ts` with `defineScreen()` and `screenScope()`. Registry
+  glob aggregation remains the single consumer list. Mark default required nodes
+  explicitly; regenerate and review the committed default boundary.
 - Give strict default Screens a non-empty authored `requiredFragments`
   boundary and keep coverage risk for other Variants visible.
 - Use stable `screenId + pbId + optional pbKey` Fragment identity. Business DS
   instances receive stable `inspectId`; required Fragments never depend on `ds.*`.
+- Prefer typed `v-pb` / `pbStyle()` for local styles and bindings; regenerate
+  committed keys with `pnpm ds:keys:generate`, and boundaries with
+  `pnpm pb:screens:generate`. Do not rebind DS instances through this helper.
 - Give prototype-local Evidence nodes explicit `data-pb-id`, `data-pb-role`,
   optional `data-pb-key`, and required `data-pb-token-*`. CSS Token usage does
   not substitute for a binding Fact.

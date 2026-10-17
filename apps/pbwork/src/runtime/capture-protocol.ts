@@ -1,4 +1,8 @@
 import {
+  datasetTokenBindings,
+  TokenEvidenceError,
+} from "@/authoring/token-bindings";
+import {
   computeKeyCatalogDigest,
   listPackChain,
   resolveAllThemeTables,
@@ -35,6 +39,7 @@ import { validateRegistries } from "@/design-system/validateRegistries";
 import {
   findRegisteredAncestor,
   getInspectRegistration,
+  getSemanticInspectRegistration,
 } from "@/runtime/inspect/registry";
 import { requiresStrictEvidence } from "@/prototypes/evidence-policy";
 
@@ -66,36 +71,16 @@ const CAPTURE_PROP_KEYS = [
 function readDatasetTokenBindings(
   element: HTMLElement,
 ): Record<string, string> | undefined {
-  const knownTokenIds = new Set(
-    runtimeThemeSources.keyCatalog.keys
-      .filter((key) => key.bindable)
-      .map((key) => key.id),
-  );
-  const allowedLiterals = new Set<string>(TOKEN_BINDING_LITERALS);
-  const bindings: Record<string, string> = {};
-  for (const [key, value] of Object.entries(element.dataset)) {
-    if (!key.startsWith("pbToken") || !value) continue;
-    const slot = key
-      .slice("pbToken".length)
-      .replace(/^[A-Z]/, (char) => char.toLowerCase())
-      .replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`);
-    if (!/^[a-z][A-Za-z0-9]*(?:[._-][A-Za-z0-9]+)*$/.test(slot)) {
-      throw new ProtocolFailure(
-        "invalid-semantic-marker",
-        `Invalid Token Evidence slot ${slot}.`,
-        { slot, tokenId: value },
-      );
-    }
-    if (!knownTokenIds.has(value) && !allowedLiterals.has(value)) {
-      throw new ProtocolFailure(
-        "invalid-semantic-marker",
-        `Unknown Foundation Token ${value} in data-pb-token-${slot}.`,
-        { slot, tokenId: value },
-      );
-    }
-    bindings[slot] = value;
+  try {
+    return datasetTokenBindings(element);
+  } catch (error) {
+    if (error instanceof TokenEvidenceError)
+      throw new ProtocolFailure("invalid-semantic-marker", error.message, {
+        slot: error.slot,
+        tokenId: error.tokenId,
+      });
+    throw error;
   }
-  return Object.keys(bindings).length > 0 ? bindings : undefined;
 }
 
 function readComponentContext(element: HTMLElement): {
@@ -394,13 +379,20 @@ export function buildRuntimeCaptureManifest(
       resolvedPack.tables
         .flatMap((table) => Object.values(table.values))
         .find(
-          (value): value is { file: string; mediaType: string; alt: string; packId: string } =>
+          (
+            value,
+          ): value is {
+            file: string;
+            mediaType: string;
+            alt: string;
+            packId: string;
+          } =>
             Boolean(
               value &&
-                typeof value === "object" &&
-                "file" in value &&
-                "mediaType" in value &&
-                value.file === file,
+              typeof value === "object" &&
+              "file" in value &&
+              "mediaType" in value &&
+              value.file === file,
             ),
         )?.mediaType ?? "image/svg+xml";
     return {
@@ -415,9 +407,13 @@ export function buildRuntimeCaptureManifest(
     packId: prototype.themePackId,
     packDigest: resolvedPack.digest,
     keyCatalogDigest,
-    themes: [...new Set(resolvedPack.tables.map((table) => table.identity.theme))].sort(),
+    themes: [
+      ...new Set(resolvedPack.tables.map((table) => table.identity.theme)),
+    ].sort(),
     defaultTheme: packSource?.manifest.defaultTheme ?? "default",
-    modes: [...new Set(resolvedPack.tables.map((table) => table.identity.mode))].sort(),
+    modes: [
+      ...new Set(resolvedPack.tables.map((table) => table.identity.mode)),
+    ].sort(),
     defaultMode: packSource?.manifest.defaultMode ?? "light",
   };
   const themePackEntries = [
@@ -764,6 +760,194 @@ async function waitForExpectedContext(
   );
 }
 
+/** Shared by Capture readiness and the live Workbench authoring checks. */
+function inspectRequiredFragment(
+  fragment: RuntimeFragmentIdentity,
+  context: RuntimeContext,
+  strict: boolean,
+): ProtocolFailure | null | undefined {
+  if (strict && fragment.pbId.startsWith("ds.")) {
+    return new ProtocolFailure(
+      "invalid-business-identity",
+      `Strict required Fragment ${fragment.pbId} must use a business identity, not ds.*.`,
+      fragment,
+    );
+  }
+  const matches = findFragments(fragment, context);
+  if (matches.length === 0) {
+    const idOnly = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-pb-id]"),
+    ).find(
+      (element) =>
+        element.dataset.pbId === fragment.pbId &&
+        (fragment.pbKey === undefined ||
+          element.dataset.pbKey === fragment.pbKey) &&
+        !element.hasAttribute("data-pb-role"),
+    );
+    if (idOnly) {
+      return new ProtocolFailure(
+        "invalid-semantic-marker",
+        `Required Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} has data-pb-id without data-pb-role.`,
+        fragment,
+      );
+    }
+    return undefined;
+  }
+  if (matches.length > 1) {
+    return new ProtocolFailure(
+      "duplicate-fragment-identity",
+      `Required Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} matched ${matches.length} semantic markers.`,
+      fragment,
+    );
+  }
+  const element = matches[0]!;
+  const role = element.dataset.pbRole;
+  if (
+    !RuntimeSemanticNode.shape.role.safeParse(role).success ||
+    role === "unknown"
+  ) {
+    return new ProtocolFailure(
+      "invalid-fragment-role",
+      `Required Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} has invalid role ${role ?? "missing"}.`,
+      { fragment, role },
+    );
+  }
+  if (!isVisible(element)) {
+    const rect = element.getBoundingClientRect();
+    return new ProtocolFailure(
+      "fragment-not-visible",
+      `Required Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} is hidden or has a zero-size box.`,
+      { fragment, bbox: { width: rect.width, height: rect.height } },
+    );
+  }
+  const bindings =
+    getSemanticInspectRegistration(element)?.getTokenBindings?.() ??
+    readDatasetTokenBindings(element);
+  if (strict && (!bindings || Object.keys(bindings).length === 0)) {
+    return new ProtocolFailure(
+      "invalid-semantic-marker",
+      `Required Fragment ${fragment.pbId} has no explicit Token Evidence.`,
+      fragment,
+    );
+  }
+  const occluder = findOccluder(element);
+  if (occluder) {
+    return new ProtocolFailure(
+      "fragment-occluded",
+      `Required Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} is occluded at its center point.`,
+      {
+        fragment,
+        occluder:
+          occluder instanceof HTMLElement
+            ? {
+                tag: occluder.tagName.toLowerCase(),
+                pbId: occluder.dataset.pbId,
+                className: occluder.className,
+              }
+            : { tag: occluder.nodeName.toLowerCase() },
+      },
+    );
+  }
+  return null;
+}
+
+export function inspectCurrentScreen(
+  screen: import("@/design-system/types").ScreenRecord,
+  variantId: string,
+): import("@proto-bridge/core/v2").AuthoringDiagnostic[] {
+  const diagnostics: import("@proto-bridge/core/v2").AuthoringDiagnostic[] = [];
+  const variant = screen.variants.find((item) => item.id === variantId);
+  const required = [
+    ...(variant?.shellPolicy === "replace"
+      ? []
+      : (screen.shellFragments ?? [])),
+    ...(variant?.requiredFragments ?? []),
+  ];
+  const context = { screenId: screen.screenId } as RuntimeContext;
+  const report = (
+    failure: ProtocolFailure,
+    pbId: string,
+    severity: "block" | "warning" = "block",
+  ) =>
+    diagnostics.push({
+      diagnosticId: `live:${failure.code}:${pbId}:${diagnostics.length}`,
+      code: `authoring.${failure.code}`,
+      severity,
+      message: failure.message,
+      caseIds: [],
+      source: { kind: "runtime", screenId: screen.screenId, fragmentId: pbId },
+      nextAction:
+        "Fix the authored node before Capture; the live check does not write Evidence.",
+    });
+  for (const fragment of required) {
+    try {
+      const failure = inspectRequiredFragment(
+        fragment,
+        context,
+        requiresStrictEvidence(screen.screenId),
+      );
+      if (failure) report(failure, fragment.pbId);
+      else if (failure === undefined)
+        report(
+          new ProtocolFailure(
+            "fragment-not-found",
+            `Required Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} is missing.`,
+          ),
+          fragment.pbId,
+        );
+    } catch (error) {
+      if (error instanceof ProtocolFailure) report(error, fragment.pbId);
+      else throw error;
+    }
+  }
+  const elements = Array.from(
+    document.querySelectorAll<HTMLElement>("[data-pb-id], [data-pb-role]"),
+  );
+  for (const element of elements) {
+    const id = element.dataset.pbId;
+    try {
+      if (
+        !id ||
+        !element.dataset.pbRole ||
+        !RuntimeSemanticNode.shape.role.safeParse(element.dataset.pbRole)
+          .success
+      ) {
+        report(
+          new ProtocolFailure(
+            "invalid-semantic-marker",
+            `Node ${id ?? element.tagName} needs a stable id and a legal role.`,
+          ),
+          id ?? element.tagName,
+        );
+      } else if (
+        isVisible(element) &&
+        !getSemanticInspectRegistration(element) &&
+        !Object.keys(readDatasetTokenBindings(element) ?? {}).length
+      ) {
+        report(
+          new ProtocolFailure(
+            "invalid-semantic-marker",
+            `Node ${id} has no explicit Token Evidence.`,
+          ),
+          id,
+          "warning",
+        );
+      }
+    } catch (error) {
+      if (error instanceof ProtocolFailure)
+        report(error, id ?? element.tagName);
+      else throw error;
+    }
+  }
+  try {
+    assertMarkerIdentities(markerElements(), screen.screenId);
+  } catch (error) {
+    if (error instanceof ProtocolFailure) report(error, screen.screenId);
+    else throw error;
+  }
+  return diagnostics;
+}
+
 async function waitForFragments(
   options: CaptureProtocolOptions,
   context: RuntimeContext,
@@ -776,79 +960,7 @@ async function waitForFragments(
     await options.waitForStable();
     const failure = fragments
       .map((fragment) => {
-        if (strict && fragment.pbId.startsWith("ds.")) {
-          return new ProtocolFailure(
-            "invalid-business-identity",
-            `Strict required Fragment ${fragment.pbId} must use a business identity, not ds.*.`,
-            fragment,
-          );
-        }
-        const matches = findFragments(fragment, context);
-        if (matches.length === 0) {
-          const idOnly = Array.from(
-            document.querySelectorAll<HTMLElement>("[data-pb-id]"),
-          ).find(
-            (element) =>
-              element.dataset.pbId === fragment.pbId &&
-              (fragment.pbKey === undefined ||
-                element.dataset.pbKey === fragment.pbKey) &&
-              !element.hasAttribute("data-pb-role"),
-          );
-          if (idOnly) {
-            return new ProtocolFailure(
-              "invalid-semantic-marker",
-              `Required Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} has data-pb-id without data-pb-role.`,
-              fragment,
-            );
-          }
-          return undefined;
-        }
-        if (matches.length > 1) {
-          return new ProtocolFailure(
-            "duplicate-fragment-identity",
-            `Required Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} matched ${matches.length} semantic markers.`,
-            fragment,
-          );
-        }
-        const element = matches[0]!;
-        const role = element.dataset.pbRole;
-        if (
-          !RuntimeSemanticNode.shape.role.safeParse(role).success ||
-          role === "unknown"
-        ) {
-          return new ProtocolFailure(
-            "invalid-fragment-role",
-            `Required Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} has invalid role ${role ?? "missing"}.`,
-            { fragment, role },
-          );
-        }
-        if (!isVisible(element)) {
-          const rect = element.getBoundingClientRect();
-          return new ProtocolFailure(
-            "fragment-not-visible",
-            `Required Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} is hidden or has a zero-size box.`,
-            { fragment, bbox: { width: rect.width, height: rect.height } },
-          );
-        }
-        const occluder = findOccluder(element);
-        if (occluder) {
-          return new ProtocolFailure(
-            "fragment-occluded",
-            `Required Fragment ${fragment.pbId}/${fragment.pbKey ?? ""} is occluded at its center point.`,
-            {
-              fragment,
-              occluder:
-                occluder instanceof HTMLElement
-                  ? {
-                      tag: occluder.tagName.toLowerCase(),
-                      pbId: occluder.dataset.pbId,
-                      className: occluder.className,
-                    }
-                  : { tag: occluder.nodeName.toLowerCase() },
-            },
-          );
-        }
-        return null;
+        return inspectRequiredFragment(fragment, context, strict);
       })
       .find((result) => result !== null && result !== undefined);
     if (

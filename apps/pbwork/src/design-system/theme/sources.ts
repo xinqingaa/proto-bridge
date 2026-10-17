@@ -3,7 +3,7 @@ import {
   ThemeKeyCatalog,
   ThemePackSource,
 } from "@proto-bridge/core/v2";
-import keyCatalogJson from "@/design-system/theme/key-catalog.json";
+import { assembleThemeKeyCatalog } from "./key-catalog";
 import constantsJson from "@/design-system/theme/constants.json";
 import basePackJson from "@/design-system/theme-packs/base/pack.json";
 import basePrimitivesJson from "@/design-system/theme-packs/base/primitives.json";
@@ -19,20 +19,7 @@ const componentContracts = import.meta.glob(
 export function loadThemeKeyCatalog(
   contracts = Object.values(componentContracts),
 ): ThemeKeyCatalog {
-  const componentKeys = contracts.flatMap((contract) =>
-    Object.entries(contract.componentTokens ?? {}).map(
-      ([name, definition]) => ({
-        ...(definition as Record<string, unknown>),
-        id: `${contract.id}.${name}`,
-        tier: "component",
-        source: contract.id,
-      }),
-    ),
-  );
-  return ThemeKeyCatalog.parse({
-    ...keyCatalogJson,
-    keys: [...keyCatalogJson.keys, ...componentKeys],
-  });
+  return assembleThemeKeyCatalog(contracts);
 }
 
 export type BaseThemeSources = {

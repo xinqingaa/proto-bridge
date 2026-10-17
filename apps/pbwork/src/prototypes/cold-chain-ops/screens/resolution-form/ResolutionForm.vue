@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { vPb } from "@/authoring/pb-style";
+import { scope } from "./screen";
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Button from "@/design-system/components/action/Button.vue";
@@ -10,9 +12,13 @@ import Textarea from "@/design-system/components/input/Textarea.vue";
 import Icon from "@/design-system/components/action/Icon.vue";
 import DialogPanel from "@/design-system/components/feedback/ConfirmDialog.vue";
 import SnackbarToast from "@/design-system/components/feedback/Toast.vue";
-import ColdChainShell from "../ColdChainShell.vue";
-import { dutySupervisors, resolutionActions, resolutionCauses } from "../mock";
-import { replaceColdChainVariant } from "../nav";
+import ColdChainShell from "../../ColdChainShell.vue";
+import {
+  dutySupervisors,
+  resolutionActions,
+  resolutionCauses,
+} from "../../mock";
+import { replaceColdChainVariant } from "../../nav";
 
 const route = useRoute();
 const router = useRouter();
@@ -130,36 +136,52 @@ function confirm() {
   >
     <div
       class="resolution-page"
-      data-pb-id="cold-chain-ops.resolution-form.root"
-      data-pb-role="page"
-      data-pb-token-background="color.background"
-      data-pb-token-color="color.on-background"
-      data-pb-token-spacing="spacing.md"
+      v-pb="
+        scope.node('root', 'page', {
+          tokens: {
+            background: 'color.background',
+            color: 'color.on-background',
+            spacing: 'spacing.md',
+          },
+        })
+      "
     >
       <form class="resolution-form" @submit.prevent="submit">
         <section
           class="case-summary"
-          data-pb-id="cold-chain-ops.resolution-form.case-summary"
-          data-pb-role="summary"
-          data-pb-token-background="color.error-soft"
-          data-pb-token-color="color.on-surface"
-          data-pb-token-radius="radius.surface"
-          data-pb-token-spacing="spacing.md"
+          v-pb="
+            scope.node('case-summary', 'summary', {
+              tokens: {
+                background: 'color.error-soft',
+                color: 'color.on-surface',
+                radius: 'radius.surface',
+                spacing: 'spacing.md',
+              },
+            })
+          "
         >
           <Icon name="shield-check" size="lg" />
           <div>
             <strong
-              data-pb-id="cold-chain-ops.resolution-form.case-summary.title"
-              data-pb-role="text"
-              data-pb-token-typography="typography.subtitle"
-              data-pb-token-color="color.on-surface"
+              v-pb="
+                scope.node('case-summary.title', 'text', {
+                  style: {
+                    color: 'color.on-surface',
+                    typography: 'typography.subtitle',
+                  },
+                })
+              "
               >{{ shipmentId }} · 严重超温</strong
             >
             <span
-              data-pb-id="cold-chain-ops.resolution-form.case-summary.detail"
-              data-pb-role="text"
-              data-pb-token-typography="typography.caption"
-              data-pb-token-color="color.on-surface-muted"
+              v-pb="
+                scope.node('case-summary.detail', 'text', {
+                  style: {
+                    color: 'color.on-surface-muted',
+                    typography: 'typography.caption',
+                  },
+                })
+              "
               >当前 10.8°C · 上限 8°C · 已持续 47 分钟</span
             >
           </div>
@@ -169,12 +191,16 @@ function confirm() {
           v-if="validationMessage"
           class="validation-error"
           role="alert"
-          data-pb-id="cold-chain-ops.resolution-form.validation-error"
-          data-pb-role="error-state"
-          data-pb-token-background="color.error-soft"
-          data-pb-token-color="color.error"
-          data-pb-token-radius="radius.control"
-          data-pb-token-spacing="spacing.sm-plus"
+          v-pb="
+            scope.node('validation-error', 'error-state', {
+              tokens: {
+                background: 'color.error-soft',
+                color: 'color.error',
+                radius: 'radius.control',
+                spacing: 'spacing.sm-plus',
+              },
+            })
+          "
         >
           <Icon name="alert-circle" size="md" />
           <span>{{ validationMessage }}</span>
@@ -182,38 +208,56 @@ function confirm() {
 
         <section
           class="resolution-section"
-          data-pb-id="cold-chain-ops.resolution-form.response-form"
-          data-pb-role="form"
-          data-pb-token-background="color.surface"
-          data-pb-token-border="color.border"
-          data-pb-token-radius="radius.surface"
-          data-pb-token-spacing="spacing.sm-plus"
+          v-pb="
+            scope.node('response-form', 'form', {
+              tokens: {
+                background: 'color.surface',
+                border: 'color.border',
+                radius: 'radius.surface',
+                spacing: 'spacing.sm-plus',
+              },
+            })
+          "
         >
           <header class="resolution-section-header">
             <div>
               <h2
-                data-pb-id="cold-chain-ops.resolution-form.section-title"
-                data-pb-key="response-form"
-                data-pb-role="text"
-                data-pb-token-color="color.on-surface"
-                data-pb-token-typography="typography.subtitle"
+                v-pb="
+                  scope.node('section-title', 'text', {
+                    key: 'response-form',
+                    style: {
+                      typography: 'typography.subtitle',
+                      margin: 'layout.zero',
+                    },
+                    tokens: { color: 'color.on-surface' },
+                  })
+                "
               >
                 处置判断
                 <em
-                  data-pb-id="cold-chain-ops.resolution-form.required-mark"
-                  data-pb-key="response-form"
-                  data-pb-role="text"
-                  data-pb-token-color="color.error"
-                  data-pb-token-typography="typography.caption"
+                  v-pb="
+                    scope.node('required-mark', 'text', {
+                      key: 'response-form',
+                      style: {
+                        color: 'color.error',
+                        typography: 'typography.caption',
+                        marginLeft: 'spacing.xs',
+                      },
+                    })
+                  "
                   >必填</em
                 >
               </h2>
               <p
-                data-pb-id="cold-chain-ops.resolution-form.section-description"
-                data-pb-key="response-form"
-                data-pb-role="text"
-                data-pb-token-color="color.on-surface-muted"
-                data-pb-token-typography="typography.caption"
+                v-pb="
+                  scope.node('section-description', 'text', {
+                    key: 'response-form',
+                    style: {
+                      color: 'color.on-surface-muted',
+                      typography: 'typography.caption',
+                    },
+                  })
+                "
               >
                 根据司机反馈与设备状态记录本次异常原因。
               </p>
@@ -226,7 +270,7 @@ function confirm() {
               placeholder="选择已确认的原因"
               :options="resolutionCauses"
               :error="validationMessage && !cause ? '请选择异常原因' : ''"
-              inspect-id="cold-chain-ops.resolution-form.cause"
+              :inspect-id="scope.id('cause')"
             />
             <SelectField
               v-model="action"
@@ -234,51 +278,69 @@ function confirm() {
               placeholder="选择已执行的动作"
               :options="resolutionActions"
               :error="validationMessage && !action ? '请选择处置动作' : ''"
-              inspect-id="cold-chain-ops.resolution-form.action"
+              :inspect-id="scope.id('action')"
             />
             <RadioGroup
               v-model="outcome"
               label="当前结果"
               :options="['温度开始回落', '温度仍在上升', '暂时无法确认']"
-              inspect-id="cold-chain-ops.resolution-form.outcome"
+              :inspect-id="scope.id('outcome')"
             />
           </div>
         </section>
 
         <section
           class="resolution-section"
-          data-pb-id="cold-chain-ops.resolution-form.checklist"
-          data-pb-role="section"
-          data-pb-token-background="color.surface"
-          data-pb-token-border="color.border"
-          data-pb-token-radius="radius.surface"
-          data-pb-token-spacing="spacing.sm-plus"
+          v-pb="
+            scope.node('checklist', 'section', {
+              tokens: {
+                background: 'color.surface',
+                border: 'color.border',
+                radius: 'radius.surface',
+                spacing: 'spacing.sm-plus',
+              },
+            })
+          "
         >
           <header class="resolution-section-header">
             <div>
               <h2
-                data-pb-id="cold-chain-ops.resolution-form.section-title"
-                data-pb-key="checklist"
-                data-pb-role="text"
-                data-pb-token-color="color.on-surface"
-                data-pb-token-typography="typography.subtitle"
+                v-pb="
+                  scope.node('section-title', 'text', {
+                    key: 'checklist',
+                    style: {
+                      typography: 'typography.subtitle',
+                      margin: 'layout.zero',
+                    },
+                    tokens: { color: 'color.on-surface' },
+                  })
+                "
               >
                 现场确认
                 <em
-                  data-pb-id="cold-chain-ops.resolution-form.required-mark"
-                  data-pb-key="checklist"
-                  data-pb-role="text"
-                  data-pb-token-color="color.error"
-                  data-pb-token-typography="typography.caption"
+                  v-pb="
+                    scope.node('required-mark', 'text', {
+                      key: 'checklist',
+                      style: {
+                        color: 'color.error',
+                        typography: 'typography.caption',
+                        marginLeft: 'spacing.xs',
+                      },
+                    })
+                  "
                   >必填</em
                 >
               </h2>
               <p
-                data-pb-id="cold-chain-ops.resolution-form.section-description"
-                data-pb-key="checklist"
-                data-pb-role="text"
-                data-pb-token-color="color.on-surface-muted"
-                data-pb-token-typography="typography.caption"
+                v-pb="
+                  scope.node('section-description', 'text', {
+                    key: 'checklist',
+                    style: {
+                      color: 'color.on-surface-muted',
+                      typography: 'typography.caption',
+                    },
+                  })
+                "
               >
                 以下检查项会进入交付记录。
               </p>
@@ -288,47 +350,60 @@ function confirm() {
             <Checkbox
               v-model="checkedDriver"
               label="已联系司机并确认车辆安全"
-              inspect-id="cold-chain-ops.resolution-form.check-driver"
+              :inspect-id="scope.id('check-driver')"
             />
             <Checkbox
               v-model="checkedCooling"
               label="已检查主制冷与备用制冷状态"
-              inspect-id="cold-chain-ops.resolution-form.check-cooling"
+              :inspect-id="scope.id('check-cooling')"
             />
             <Checkbox
               v-model="checkedCargo"
               label="货箱未开封且无可见损伤"
-              inspect-id="cold-chain-ops.resolution-form.check-cargo"
+              :inspect-id="scope.id('check-cargo')"
             />
           </div>
         </section>
 
         <section
           class="resolution-section"
-          data-pb-id="cold-chain-ops.resolution-form.follow-up"
-          data-pb-role="section"
-          data-pb-token-background="color.surface"
-          data-pb-token-border="color.border"
-          data-pb-token-radius="radius.surface"
-          data-pb-token-spacing="spacing.sm-plus"
+          v-pb="
+            scope.node('follow-up', 'section', {
+              tokens: {
+                background: 'color.surface',
+                border: 'color.border',
+                radius: 'radius.surface',
+                spacing: 'spacing.sm-plus',
+              },
+            })
+          "
         >
           <header class="resolution-section-header">
             <div>
               <h2
-                data-pb-id="cold-chain-ops.resolution-form.section-title"
-                data-pb-key="follow-up"
-                data-pb-role="text"
-                data-pb-token-color="color.on-surface"
-                data-pb-token-typography="typography.subtitle"
+                v-pb="
+                  scope.node('section-title', 'text', {
+                    key: 'follow-up',
+                    style: {
+                      typography: 'typography.subtitle',
+                      margin: 'layout.zero',
+                    },
+                    tokens: { color: 'color.on-surface' },
+                  })
+                "
               >
                 后续安排
               </h2>
               <p
-                data-pb-id="cold-chain-ops.resolution-form.section-description"
-                data-pb-key="follow-up"
-                data-pb-role="text"
-                data-pb-token-color="color.on-surface-muted"
-                data-pb-token-typography="typography.caption"
+                v-pb="
+                  scope.node('section-description', 'text', {
+                    key: 'follow-up',
+                    style: {
+                      color: 'color.on-surface-muted',
+                      typography: 'typography.caption',
+                    },
+                  })
+                "
               >
                 提交后调度中心将按此安排继续跟踪。
               </p>
@@ -338,50 +413,68 @@ function confirm() {
             <SwitchControl
               v-model="continueMonitoring"
               label="保持每 2 分钟温度监控"
-              inspect-id="cold-chain-ops.resolution-form.continue-monitoring"
+              :inspect-id="scope.id('continue-monitoring')"
             />
             <Textarea
               v-model="notes"
               label="处置说明"
-              inspect-id="cold-chain-ops.resolution-form.notes"
+              :inspect-id="scope.id('notes')"
             />
           </div>
         </section>
 
         <section
           class="resolution-section"
-          data-pb-id="cold-chain-ops.resolution-form.supervisor-approval"
-          data-pb-role="form"
-          data-pb-token-background="color.surface"
-          data-pb-token-border="color.border"
-          data-pb-token-radius="radius.surface"
-          data-pb-token-spacing="spacing.sm-plus"
+          v-pb="
+            scope.node('supervisor-approval', 'form', {
+              tokens: {
+                background: 'color.surface',
+                border: 'color.border',
+                radius: 'radius.surface',
+                spacing: 'spacing.sm-plus',
+              },
+            })
+          "
         >
           <header class="resolution-section-header">
             <div>
               <h2
-                data-pb-id="cold-chain-ops.resolution-form.section-title"
-                data-pb-key="supervisor-approval"
-                data-pb-role="text"
-                data-pb-token-color="color.on-surface"
-                data-pb-token-typography="typography.subtitle"
+                v-pb="
+                  scope.node('section-title', 'text', {
+                    key: 'supervisor-approval',
+                    style: {
+                      typography: 'typography.subtitle',
+                      margin: 'layout.zero',
+                    },
+                    tokens: { color: 'color.on-surface' },
+                  })
+                "
               >
                 主管审批
                 <em
-                  data-pb-id="cold-chain-ops.resolution-form.required-mark"
-                  data-pb-key="supervisor-approval"
-                  data-pb-role="text"
-                  data-pb-token-color="color.error"
-                  data-pb-token-typography="typography.caption"
+                  v-pb="
+                    scope.node('required-mark', 'text', {
+                      key: 'supervisor-approval',
+                      style: {
+                        color: 'color.error',
+                        typography: 'typography.caption',
+                        marginLeft: 'spacing.xs',
+                      },
+                    })
+                  "
                   >必填</em
                 >
               </h2>
               <p
-                data-pb-id="cold-chain-ops.resolution-form.section-description"
-                data-pb-key="supervisor-approval"
-                data-pb-role="text"
-                data-pb-token-color="color.on-surface-muted"
-                data-pb-token-typography="typography.caption"
+                v-pb="
+                  scope.node('section-description', 'text', {
+                    key: 'supervisor-approval',
+                    style: {
+                      color: 'color.on-surface-muted',
+                      typography: 'typography.caption',
+                    },
+                  })
+                "
               >
                 持续超温超过 45 分钟时，提交前必须由值班主管复核。
               </p>
@@ -398,14 +491,19 @@ function confirm() {
                   ? '请选择值班主管'
                   : ''
               "
-              inspect-id="cold-chain-ops.resolution-form.supervisor"
+              :inspect-id="scope.id('supervisor')"
             />
             <p
               class="approval-policy"
-              data-pb-id="cold-chain-ops.resolution-form.approval-policy"
-              data-pb-role="text"
-              data-pb-token-typography="typography.caption"
-              data-pb-token-color="color.on-surface-muted"
+              v-pb="
+                scope.node('approval-policy', 'text', {
+                  style: {
+                    color: 'color.on-surface-muted',
+                    typography: 'typography.caption',
+                    margin: 'layout.zero',
+                  },
+                })
+              "
             >
               当前异常持续 47 分钟，已触发主管审批阈值。
             </p>
@@ -421,7 +519,7 @@ function confirm() {
             label="审核并提交"
             type="submit"
             block
-            inspect-id="cold-chain-ops.resolution-form.submit"
+            :inspect-id="scope.id('submit')"
             data-pb-action="submit-resolution"
           />
         </div>
@@ -432,14 +530,14 @@ function confirm() {
         title="确认提交处置记录？"
         message="提交后异常将转为持续监控，当前记录不可直接覆盖。"
         confirm-label="确认提交"
-        inspect-id="cold-chain-ops.resolution-form.confirm-dialog"
+        :inspect-id="scope.id('confirm-dialog')"
         @confirm="confirm"
       />
 
       <SnackbarToast
         v-model="toastOpen"
         message="处置记录已提交，异常转为持续监控"
-        inspect-id="cold-chain-ops.resolution-form.success-toast"
+        :inspect-id="scope.id('success-toast')"
       />
     </div>
   </ColdChainShell>
@@ -474,14 +572,7 @@ function confirm() {
   gap: var(--pb-spacing-xs);
   min-width: var(--pb-layout-zero);
 }
-.case-summary strong {
-  color: var(--pb-color-on-surface);
-  font: var(--pb-typography-subtitle);
-}
-.case-summary span {
-  color: var(--pb-color-on-surface-muted);
-  font: var(--pb-typography-caption);
-}
+
 .validation-error {
   border-radius: var(--pb-radius-control);
   font: var(--pb-typography-content);
@@ -499,11 +590,7 @@ function confirm() {
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
 }
-.approval-policy {
-  margin: var(--pb-layout-zero);
-  color: var(--pb-color-on-surface-muted);
-  font: var(--pb-typography-caption);
-}
+
 .resolution-section {
   padding: var(--pb-spacing-md);
   border: var(--pb-border-hairline);
@@ -511,19 +598,11 @@ function confirm() {
   background: var(--pb-color-surface);
   color: var(--pb-color-on-surface);
 }
-.resolution-section-header h2 {
-  margin: var(--pb-layout-zero);
-  font: var(--pb-typography-subtitle);
-}
+
 .resolution-section-header p {
   margin: var(--pb-spacing-xxs) var(--pb-layout-zero) var(--pb-layout-zero);
-  color: var(--pb-color-on-surface-muted);
-  font: var(--pb-typography-caption);
 }
 .resolution-section-header em {
-  margin-left: var(--pb-spacing-xs);
-  color: var(--pb-color-error);
-  font: var(--pb-typography-caption);
   font-style: normal;
 }
 .resolution-section-content {

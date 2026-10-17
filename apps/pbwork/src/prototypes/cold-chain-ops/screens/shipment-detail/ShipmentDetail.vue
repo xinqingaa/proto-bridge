@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { vPb } from "@/authoring/pb-style";
+import { scope } from "./screen";
 import { useTokenNumber } from "@/design-system/theme/runtime-theme";
 import {
   themeConstantCss,
@@ -14,9 +16,9 @@ import Icon from "@/design-system/components/action/Icon.vue";
 import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
 import DialogPanel from "@/design-system/components/feedback/ConfirmDialog.vue";
 import ScrollableDataList from "@/design-system/components/data/ScrollableDataList.vue";
-import ColdChainShell from "../ColdChainShell.vue";
-import { shipmentEvents, temperatureReadings } from "../mock";
-import { openColdChainScreen, replaceColdChainVariant } from "../nav";
+import ColdChainShell from "../../ColdChainShell.vue";
+import { shipmentEvents, temperatureReadings } from "../../mock";
+import { openColdChainScreen, replaceColdChainVariant } from "../../nav";
 const CHART_MIN = 4;
 const CHART_MAX = 12;
 const CHART_LIMIT = 8;
@@ -107,52 +109,68 @@ function closeOverlay() {
   >
     <div
       class="detail-page"
-      data-pb-id="cold-chain-ops.shipment-detail.root"
-      data-pb-role="page"
-      data-pb-token-background="color.background"
-      data-pb-token-color="color.on-background"
-      data-pb-token-spacing="spacing.md"
+      v-pb="
+        scope.node('root', 'page', {
+          tokens: {
+            background: 'color.background',
+            color: 'color.on-background',
+            spacing: 'spacing.md',
+          },
+        })
+      "
     >
       <ScrollableDataList
         class="detail-scroll"
         :pull-refresh="false"
         :load-more="false"
         :drag-scroll="{ enabled: true, mouse: true, momentum: true }"
-        inspect-id="cold-chain-ops.shipment-detail.scroll-list"
+        :inspect-id="scope.id('scroll-list')"
       >
         <div class="detail-content">
           <section
             v-if="hasExcursion"
             class="excursion-alert"
             role="alert"
-            data-pb-id="cold-chain-ops.shipment-detail.alert"
-            data-pb-role="status"
-            data-pb-token-background="color.error-soft"
-            data-pb-token-color="color.error"
-            data-pb-token-radius="radius.surface"
-            data-pb-token-spacing="spacing.md"
+            v-pb="
+              scope.node('alert', 'status', {
+                tokens: {
+                  background: 'color.error-soft',
+                  color: 'color.error',
+                  radius: 'radius.surface',
+                  spacing: 'spacing.md',
+                },
+              })
+            "
           >
             <Icon name="alert-triangle" size="lg" tone="error" />
             <div>
               <strong
-                data-pb-id="cold-chain-ops.shipment-detail.alert.title"
-                data-pb-role="text"
-                data-pb-token-typography="typography.subtitle"
-                data-pb-token-color="color.error"
+                v-pb="
+                  scope.node('alert.title', 'text', {
+                    tokens: {
+                      typography: 'typography.subtitle',
+                      color: 'color.error',
+                    },
+                  })
+                "
                 >持续超温 47 分钟</strong
               >
               <span
-                data-pb-id="cold-chain-ops.shipment-detail.alert.description"
-                data-pb-role="text"
-                data-pb-token-typography="typography.caption"
-                data-pb-token-color="color.on-surface-muted"
+                v-pb="
+                  scope.node('alert.description', 'text', {
+                    tokens: {
+                      typography: 'typography.caption',
+                      color: 'color.on-surface-muted',
+                    },
+                  })
+                "
                 >当前 10.8°C，已高于运输上限 2.8°C</span
               >
             </div>
             <Badge
               label="严重"
               tone="error"
-              inspect-id="cold-chain-ops.shipment-detail.alert.badge"
+              :inspect-id="scope.id('alert.badge')"
             />
           </section>
 
@@ -160,12 +178,16 @@ function closeOverlay() {
             v-if="variant === 'sensor-offline'"
             class="sensor-error"
             role="alert"
-            data-pb-id="cold-chain-ops.shipment-detail.sensor-error"
-            data-pb-role="error-state"
-            data-pb-token-background="color.warning-soft"
-            data-pb-token-color="color.warning"
-            data-pb-token-radius="radius.surface"
-            data-pb-token-spacing="spacing.md"
+            v-pb="
+              scope.node('sensor-error', 'error-state', {
+                tokens: {
+                  background: 'color.warning-soft',
+                  color: 'color.warning',
+                  radius: 'radius.surface',
+                  spacing: 'spacing.md',
+                },
+              })
+            "
           >
             <Icon name="radio" size="lg" tone="warning" />
             <div>
@@ -174,15 +196,14 @@ function closeOverlay() {
             </div>
           </section>
 
-          <Card
-            semantic-role="summary"
-            inspect-id="cold-chain-ops.shipment-detail.summary"
-          >
+          <Card semantic-role="summary" :inspect-id="scope.id('summary')">
             <div
               class="card-body"
-              data-pb-id="cold-chain-ops.shipment-detail.summary.body"
-              data-pb-role="section"
-              data-pb-token-spacing="spacing.md"
+              v-pb="
+                scope.node('summary.body', 'section', {
+                  style: { padding: 'spacing.md', gap: 'spacing.sm-plus' },
+                })
+              "
             >
               <header class="card-heading">
                 <div>
@@ -222,13 +243,15 @@ function closeOverlay() {
 
           <Card
             semantic-role="section"
-            inspect-id="cold-chain-ops.shipment-detail.temperature-section"
+            :inspect-id="scope.id('temperature-section')"
           >
             <div
               class="card-body"
-              data-pb-id="cold-chain-ops.shipment-detail.temperature-body"
-              data-pb-role="section"
-              data-pb-token-spacing="spacing.md"
+              v-pb="
+                scope.node('temperature-body', 'section', {
+                  style: { padding: 'spacing.md', gap: 'spacing.sm-plus' },
+                })
+              "
             >
               <header class="card-heading">
                 <div>
@@ -239,12 +262,18 @@ function closeOverlay() {
               <div
                 class="temperature-chart"
                 :style="chartStyle"
-                data-pb-id="cold-chain-ops.shipment-detail.temperature-chart"
-                data-pb-role="chart"
-                data-pb-token-background="color.surface-variant"
-                data-pb-token-color="color.on-surface"
-                data-pb-token-radius="radius.control"
-                data-pb-token-spacing="spacing.sm"
+                v-pb="
+                  scope.node('temperature-chart', 'chart', {
+                    style: {
+                      background: 'color.surface-variant',
+                      radius: 'radius.control',
+                    },
+                    tokens: {
+                      color: 'color.on-surface',
+                      spacing: 'spacing.sm',
+                    },
+                  })
+                "
               >
                 <div class="chart-scale">
                   <span>12°</span><span>8°</span><span>4°</span>
@@ -264,30 +293,42 @@ function closeOverlay() {
               </div>
               <div class="temperature-summary">
                 <div
-                  data-pb-id="cold-chain-ops.shipment-detail.temperature.metric"
-                  data-pb-key="current"
-                  data-pb-role="status"
-                  data-pb-token-typography="typography.title"
-                  data-pb-token-color="color.error"
+                  v-pb="
+                    scope.node('temperature.metric', 'status', {
+                      key: 'current',
+                      tokens: {
+                        typography: 'typography.title',
+                        color: 'color.error',
+                      },
+                    })
+                  "
                 >
                   <span>当前</span
                   ><strong>{{ hasExcursion ? "10.8°C" : "6.1°C" }}</strong>
                 </div>
                 <div
-                  data-pb-id="cold-chain-ops.shipment-detail.temperature.metric"
-                  data-pb-key="maximum"
-                  data-pb-role="status"
-                  data-pb-token-typography="typography.title"
-                  data-pb-token-color="color.on-surface"
+                  v-pb="
+                    scope.node('temperature.metric', 'status', {
+                      key: 'maximum',
+                      tokens: {
+                        typography: 'typography.title',
+                        color: 'color.on-surface',
+                      },
+                    })
+                  "
                 >
                   <span>最高</span><strong>10.8°C</strong>
                 </div>
                 <div
-                  data-pb-id="cold-chain-ops.shipment-detail.temperature.metric"
-                  data-pb-key="duration"
-                  data-pb-role="status"
-                  data-pb-token-typography="typography.title"
-                  data-pb-token-color="color.on-surface"
+                  v-pb="
+                    scope.node('temperature.metric', 'status', {
+                      key: 'duration',
+                      tokens: {
+                        typography: 'typography.title',
+                        color: 'color.on-surface',
+                      },
+                    })
+                  "
                 >
                   <span>超温</span><strong>47m</strong>
                 </div>
@@ -295,15 +336,14 @@ function closeOverlay() {
             </div>
           </Card>
 
-          <Card
-            semantic-role="section"
-            inspect-id="cold-chain-ops.shipment-detail.timeline-card"
-          >
+          <Card semantic-role="section" :inspect-id="scope.id('timeline-card')">
             <div
               class="card-body"
-              data-pb-id="cold-chain-ops.shipment-detail.timeline-body"
-              data-pb-role="section"
-              data-pb-token-spacing="spacing.md"
+              v-pb="
+                scope.node('timeline-body', 'section', {
+                  style: { padding: 'spacing.md', gap: 'spacing.sm-plus' },
+                })
+              "
             >
               <header class="card-heading">
                 <div>
@@ -313,38 +353,54 @@ function closeOverlay() {
               </header>
               <div
                 class="event-list"
-                data-pb-id="cold-chain-ops.shipment-detail.timeline"
-                data-pb-role="list"
-                data-pb-token-spacing="spacing.md"
-                data-pb-token-color="color.on-surface"
+                v-pb="
+                  scope.node('timeline', 'list', {
+                    tokens: {
+                      spacing: 'spacing.md',
+                      color: 'color.on-surface',
+                    },
+                  })
+                "
               >
                 <div
                   v-for="event in shipmentEvents"
                   :key="event.id"
                   class="event-row"
-                  data-pb-id="cold-chain-ops.shipment-detail.timeline.event"
-                  :data-pb-key="event.id"
-                  data-pb-role="list-item"
-                  data-pb-token-spacing="spacing.sm-plus"
-                  data-pb-token-color="color.on-surface"
+                  v-pb="
+                    scope.node('timeline.event', 'list-item', {
+                      key: event.id,
+                      tokens: {
+                        spacing: 'spacing.sm-plus',
+                        color: 'color.on-surface',
+                      },
+                    })
+                  "
                 >
                   <i :class="`tone-${event.tone}`" />
                   <time>{{ event.time }}</time>
                   <div>
                     <strong
-                      data-pb-id="cold-chain-ops.shipment-detail.timeline.event.title"
-                      :data-pb-key="event.id"
-                      data-pb-role="text"
-                      data-pb-token-typography="typography.content"
-                      data-pb-token-color="color.on-surface"
+                      v-pb="
+                        scope.node('timeline.event.title', 'text', {
+                          key: event.id,
+                          tokens: {
+                            typography: 'typography.content',
+                            color: 'color.on-surface',
+                          },
+                        })
+                      "
                       >{{ event.title }}</strong
                     >
                     <span
-                      data-pb-id="cold-chain-ops.shipment-detail.timeline.event.detail"
-                      :data-pb-key="event.id"
-                      data-pb-role="text"
-                      data-pb-token-typography="typography.caption"
-                      data-pb-token-color="color.on-surface-muted"
+                      v-pb="
+                        scope.node('timeline.event.detail', 'text', {
+                          key: event.id,
+                          style: {
+                            color: 'color.on-surface-muted',
+                            typography: 'typography.caption',
+                          },
+                        })
+                      "
                       >{{ event.detail }}</span
                     >
                   </div>
@@ -357,7 +413,7 @@ function closeOverlay() {
             <Button
               label="开始处置"
               block
-              inspect-id="cold-chain-ops.shipment-detail.open-actions"
+              :inspect-id="scope.id('open-actions')"
               data-pb-action="open-actions"
               @click="openActions"
             >
@@ -370,14 +426,14 @@ function closeOverlay() {
       <BottomSheet
         v-model="sheetOpen"
         title="选择处置方式"
-        inspect-id="cold-chain-ops.shipment-detail.action-sheet"
+        :inspect-id="scope.id('action-sheet')"
         @update:model-value="(value) => !value && closeOverlay()"
       >
         <div class="sheet-actions">
           <Button
             label="填写处置记录"
             block
-            inspect-id="cold-chain-ops.shipment-detail.open-resolution"
+            :inspect-id="scope.id('open-resolution')"
             data-pb-action="open-resolution"
             @click="openResolution"
           />
@@ -385,7 +441,7 @@ function closeOverlay() {
             label="仅确认接手"
             kind="outlined"
             block
-            inspect-id="cold-chain-ops.shipment-detail.acknowledge"
+            :inspect-id="scope.id('acknowledge')"
             @click="openAcknowledge"
           />
           <p>确认接手不会关闭异常，提交处置记录后才会进入持续监控。</p>
@@ -397,7 +453,7 @@ function closeOverlay() {
         title="确认接手异常？"
         message="接手后调度中心会将你标记为当前负责人。"
         confirm-label="确认接手"
-        inspect-id="cold-chain-ops.shipment-detail.ack-dialog"
+        :inspect-id="scope.id('ack-dialog')"
         @confirm="closeOverlay"
       />
     </div>
@@ -420,8 +476,6 @@ function closeOverlay() {
 .card-body {
   display: flex;
   flex-direction: column;
-  gap: var(--pb-spacing-sm-plus);
-  padding: var(--pb-spacing-md);
 }
 .card-heading {
   display: flex;
@@ -520,8 +574,6 @@ function closeOverlay() {
   display: flex;
   min-height: var(--pb-layout-chart-min-height);
   padding: var(--pb-spacing-sm);
-  border-radius: var(--pb-radius-control);
-  background: var(--pb-color-surface-variant);
 }
 .chart-scale {
   display: flex;
@@ -639,10 +691,7 @@ function closeOverlay() {
   flex-direction: column;
   gap: var(--pb-spacing-xs);
 }
-.event-row span {
-  color: var(--pb-color-on-surface-muted);
-  font: var(--pb-typography-caption);
-}
+
 .sheet-actions {
   display: flex;
   flex-direction: column;

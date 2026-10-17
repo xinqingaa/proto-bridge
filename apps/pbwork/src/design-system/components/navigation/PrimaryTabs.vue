@@ -152,6 +152,10 @@ const pillStyle = computed(() => ({
 }));
 
 usePbInspect({
+  semanticParts: [
+    { suffix: "tab", role: "tab" },
+    { suffix: "panel", role: "tab-panel" },
+  ],
   element: rootRef,
   pbId: "ds.primary-tabs",
   instanceId: inspectId,

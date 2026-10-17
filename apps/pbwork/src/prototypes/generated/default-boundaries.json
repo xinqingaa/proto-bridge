@@ -1,0 +1,66 @@
+{
+  "cold-chain-ops.exception-queue": [
+    {
+      "screenId": "cold-chain-ops.exception-queue",
+      "pbId": "cold-chain-ops.exception-queue.root"
+    },
+    {
+      "screenId": "cold-chain-ops.exception-queue",
+      "pbId": "cold-chain-ops.exception-queue.summary"
+    },
+    {
+      "screenId": "cold-chain-ops.exception-queue",
+      "pbId": "cold-chain-ops.exception-queue.search"
+    },
+    {
+      "screenId": "cold-chain-ops.exception-queue",
+      "pbId": "cold-chain-ops.exception-queue.severity-tabs"
+    },
+    {
+      "screenId": "cold-chain-ops.exception-queue",
+      "pbId": "cold-chain-ops.exception-queue.severity-tabs.tab",
+      "pbKey": "all"
+    },
+    {
+      "screenId": "cold-chain-ops.exception-queue",
+      "pbId": "cold-chain-ops.exception-queue.list"
+    },
+    {
+      "screenId": "cold-chain-ops.exception-queue",
+      "pbId": "cold-chain-ops.exception-queue.list.row",
+      "pbKey": "all-ex-017"
+    }
+  ],
+  "cold-chain-ops.resolution-form": [
+    {
+      "screenId": "cold-chain-ops.resolution-form",
+      "pbId": "cold-chain-ops.resolution-form.root"
+    },
+    {
+      "screenId": "cold-chain-ops.resolution-form",
+      "pbId": "cold-chain-ops.resolution-form.response-form"
+    },
+    {
+      "screenId": "cold-chain-ops.resolution-form",
+      "pbId": "cold-chain-ops.resolution-form.submit"
+    }
+  ],
+  "cold-chain-ops.shipment-detail": [
+    {
+      "screenId": "cold-chain-ops.shipment-detail",
+      "pbId": "cold-chain-ops.shipment-detail.root"
+    },
+    {
+      "screenId": "cold-chain-ops.shipment-detail",
+      "pbId": "cold-chain-ops.shipment-detail.summary"
+    },
+    {
+      "screenId": "cold-chain-ops.shipment-detail",
+      "pbId": "cold-chain-ops.shipment-detail.temperature-chart"
+    },
+    {
+      "screenId": "cold-chain-ops.shipment-detail",
+      "pbId": "cold-chain-ops.shipment-detail.timeline"
+    }
+  ]
+}

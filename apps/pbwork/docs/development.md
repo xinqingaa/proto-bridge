@@ -143,3 +143,7 @@ pnpm test:e2e:runtime
 
 修改 Workbench/Capture 交互时补跑相应 Playwright spec；修改 Evidence 全链路时运行 `pnpm test:e2e:evidence-slice`。
 新原型交付验证以上述第 9 节边界为准，禁止为「每个新 App」再铺一套 Core fixture 与全量 e2e。
+
+## 制作工具命令
+
+`pnpm pb:new-prototype <id>` 生成 draft 骨架，`pnpm ds:keys:generate` 生成键类型，`pnpm pb:screens:generate` 生成显式 default 完整性边界。两种生成结果都纳入版本管理；单测验证新鲜度，开发启动与构建前自动生成。`pnpm test:e2e:scaffold` 在隔离 Workspace 验证原样骨架的 Preflight、时钟截图一致性和完整定稿，随后移除临时原型。API、目录及模板边界见[制作工具](./prototypes/authoring-tools.md)。

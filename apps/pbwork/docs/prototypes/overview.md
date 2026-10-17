@@ -2,7 +2,7 @@
 
 ## 注册权威
 
-`apps/pbwork/src/prototypes/registry.ts`：
+`apps/pbwork/src/prototypes/registry.ts` glob 汇总 `*/prototype.ts` 和 `*/screens/*/screen.ts`，声明就近维护（见[制作工具](./authoring-tools.md)）：
 
 - `prototypes[]`：id、label、lifecycle、owners、roles、`themePackId`
 - `prototypeScreens[]`：screenId、screenSlug、path、view、variants、defaultVariantId
@@ -19,9 +19,10 @@ prototypes/{prototypeId}/
 ├── *Shell.vue           # （可选）AppBar + 内容 / TabViewport + Tabbar
 ├── nav.ts               # （可选）进栈、返回、Tab replace
 ├── mock.ts              # 静态可演示数据
-├── theme-session.ts     # （可选）主题会话
+├── prototype.ts         # 原型元信息、主题包、采集时钟
+├── theme/               # 可选；原型独立主题包
 ├── panels/              # 一级 Tab 面板
-└── screens/             # 可注册为 Screen 的页面
+└── screens/{slug}/      # screen.ts 声明与 Vue 页面
 ```
 
 设计、探索、确认和晋级规则见[原型设计工作流](./design-workflow.md)。禁止在原型根目录新增 `requirements.md` 或其它平铺设计文档。

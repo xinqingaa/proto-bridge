@@ -49,7 +49,10 @@ import { useRuntimeVuetifyTheme } from "@/design-system/theme/vuetify-theme";
 import { loadPrototypeThemePack } from "@/design-system/loaders";
 import { buildCanonicalRuntimeUrl, resolveRuntimeRoute } from "@/runtime/url";
 import InspectHost from "@/runtime/inspect/InspectHost.vue";
-import { installRuntimeCaptureProtocol } from "@/runtime/capture-protocol";
+import {
+  inspectCurrentScreen,
+  installRuntimeCaptureProtocol,
+} from "@/runtime/capture-protocol";
 import ScreenTransition from "@/design-system/components/navigation/ScreenTransition.vue";
 import type { ScreenTransitionNavigation } from "@/design-system/components/navigation/screenTransition";
 
@@ -244,6 +247,49 @@ function sendRouteIfChanged() {
   lastPostedRoute.value = canonicalRuntimeUrl.value;
   postToParent(message);
 }
+
+let lastDiagnostics = "";
+let diagnosticTimer: ReturnType<typeof setTimeout> | undefined;
+function scheduleAuthoringDiagnostics() {
+  if (diagnosticTimer) return;
+  diagnosticTimer = setTimeout(() => {
+    diagnosticTimer = undefined;
+    if (!isEmbedded.value || !runtimeId.value || !resolved.value.ok) return;
+    const all = inspectCurrentScreen(
+      resolved.value.screen,
+      resolved.value.variant.id,
+    );
+    // Respect the Bridge payload budget. The count is explicitly marked truncated.
+    const payload = {
+      diagnostics: all.slice(0, 40),
+      truncated: all.length > 40,
+    };
+    const signature = JSON.stringify([bridgeContext.value, payload]);
+    if (signature === lastDiagnostics) return;
+    lastDiagnostics = signature;
+    const message = buildEnvelope("authoring-diagnostics", payload);
+    if (message) postToParent(message);
+  }, 150);
+}
+const authoringObserver = new MutationObserver(scheduleAuthoringDiagnostics);
+onMounted(() => {
+  authoringObserver.observe(document.body, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    characterData: true,
+  });
+  window.addEventListener("resize", scheduleAuthoringDiagnostics);
+  window.addEventListener("scroll", scheduleAuthoringDiagnostics, true);
+  scheduleAuthoringDiagnostics();
+});
+watch(bridgeContext, scheduleAuthoringDiagnostics);
+onBeforeUnmount(() => {
+  authoringObserver.disconnect();
+  if (diagnosticTimer) clearTimeout(diagnosticTimer);
+  window.removeEventListener("resize", scheduleAuthoringDiagnostics);
+  window.removeEventListener("scroll", scheduleAuthoringDiagnostics, true);
+});
 
 function onMessage(event: MessageEvent) {
   if (event.origin !== window.location.origin) return;

@@ -93,3 +93,7 @@ CLI 配置文件和显式参数的优先级以对应入口实现为准。MCP 支
 - Workbench Bridge 校验 origin、source window、runtimeId、requestId 和 payload。
 - Capture Protocol 只暴露浏览器安全 Contract。
 - URL 只包含可复现的 Runtime 维度；token、Store path 和本地工作台偏好不得进入 URL。
+
+## 原型制作命令
+
+`pnpm pb:new-prototype <id>` 生成原型目录、继承基础包的主题模板、draft 设计文档、外壳、示例 Screen 和测试，并生成 default 边界；已有目录拒绝覆盖。`pnpm ds:keys:generate` 与 `pnpm pb:screens:generate` 的产物都应纳入版本管理。完整说明见[制作工具](../pbwork/prototypes/authoring-tools.md)。

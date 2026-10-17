@@ -67,6 +67,10 @@ const swipe = usePointerSwipe(
 );
 
 usePbInspect({
+  semanticParts: [
+    { suffix: "tab", role: "tab" },
+    { suffix: "panel", role: "tab-panel" },
+  ],
   element: rootRef,
   pbId: "ds.secondary-tabs",
   instanceId: inspectId,

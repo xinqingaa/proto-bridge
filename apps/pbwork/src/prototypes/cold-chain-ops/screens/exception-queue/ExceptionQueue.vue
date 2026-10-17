@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { vPb } from "@/authoring/pb-style";
+import { scope } from "./screen";
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Badge from "@/design-system/components/display/Badge.vue";
@@ -11,9 +13,9 @@ import EmptyState from "@/design-system/components/display/EmptyState.vue";
 import PrimaryTabs from "@/design-system/components/navigation/PrimaryTabs.vue";
 import ScrollableDataList from "@/design-system/components/data/ScrollableDataList.vue";
 import SearchBar from "@/design-system/components/input/SearchBar.vue";
-import ColdChainShell from "../ColdChainShell.vue";
-import { exceptions, type ColdChainException } from "../mock";
-import { openColdChainScreen, replaceColdChainVariant } from "../nav";
+import ColdChainShell from "../../ColdChainShell.vue";
+import { exceptions, type ColdChainException } from "../../mock";
+import { openColdChainScreen, replaceColdChainVariant } from "../../nav";
 
 const route = useRoute();
 const router = useRouter();
@@ -119,9 +121,7 @@ function retry() {
 }
 
 function inspectIdFor(slot: string, tab: string) {
-  return tab === filter.value
-    ? `cold-chain-ops.exception-queue.${slot}`
-    : `cold-chain-ops.exception-queue.${slot}.${tab}`;
+  return tab === filter.value ? scope.id(slot) : scope.id(`${slot}.${tab}`);
 }
 
 function refresh(tab: string) {
@@ -137,18 +137,22 @@ function refresh(tab: string) {
   <ColdChainShell title="冷链异常" screen-id="cold-chain-ops.exception-queue">
     <div
       class="queue-page"
-      data-pb-id="cold-chain-ops.exception-queue.root"
-      data-pb-role="page"
-      data-pb-token-background="color.background"
-      data-pb-token-color="color.on-background"
-      data-pb-token-spacing="spacing.md"
+      v-pb="
+        scope.node('root', 'page', {
+          tokens: {
+            background: 'color.background',
+            color: 'color.on-background',
+            spacing: 'spacing.md',
+          },
+        })
+      "
     >
       <template v-if="variant === 'loading'">
         <div class="center-state">
           <Spinner
             label="正在同步运输监控数据"
             size="lg"
-            inspect-id="cold-chain-ops.exception-queue.loading"
+            :inspect-id="scope.id('loading')"
           />
         </div>
       </template>
@@ -157,32 +161,44 @@ function refresh(tab: string) {
         <section
           class="error-state"
           role="alert"
-          data-pb-id="cold-chain-ops.exception-queue.error"
-          data-pb-role="error-state"
-          data-pb-token-background="color.error-soft"
-          data-pb-token-color="color.error"
-          data-pb-token-radius="radius.surface"
-          data-pb-token-spacing="spacing.md"
+          v-pb="
+            scope.node('error', 'error-state', {
+              tokens: {
+                background: 'color.error-soft',
+                color: 'color.error',
+                radius: 'radius.surface',
+                spacing: 'spacing.md',
+              },
+            })
+          "
         >
           <Icon name="alert-triangle" size="lg" tone="error" />
           <strong
-            data-pb-id="cold-chain-ops.exception-queue.error.title"
-            data-pb-role="text"
-            data-pb-token-typography="typography.subtitle"
-            data-pb-token-color="color.on-surface"
+            v-pb="
+              scope.node('error.title', 'text', {
+                tokens: {
+                  typography: 'typography.subtitle',
+                  color: 'color.on-surface',
+                },
+              })
+            "
             >监控数据暂时不可用</strong
           >
           <p
-            data-pb-id="cold-chain-ops.exception-queue.error.description"
-            data-pb-role="text"
-            data-pb-token-typography="typography.content"
-            data-pb-token-color="color.on-surface-muted"
+            v-pb="
+              scope.node('error.description', 'text', {
+                tokens: {
+                  typography: 'typography.content',
+                  color: 'color.on-surface-muted',
+                },
+              })
+            "
           >
             最后一次成功同步为 14:28，请检查连接后重试。
           </p>
           <Button
             label="重新加载"
-            inspect-id="cold-chain-ops.exception-queue.retry"
+            :inspect-id="scope.id('retry')"
             @click="retry"
           />
         </section>
@@ -190,31 +206,38 @@ function refresh(tab: string) {
 
       <div v-else class="queue-content">
         <div class="queue-header">
-          <Card
-            semantic-role="summary"
-            inspect-id="cold-chain-ops.exception-queue.summary"
-          >
+          <Card semantic-role="summary" :inspect-id="scope.id('summary')">
             <div
               class="card-body"
-              data-pb-id="cold-chain-ops.exception-queue.summary.body"
-              data-pb-role="section"
-              data-pb-token-spacing="spacing.md"
+              v-pb="
+                scope.node('summary.body', 'section', {
+                  tokens: { spacing: 'spacing.md' },
+                })
+              "
             >
               <header class="card-heading">
                 <div>
                   <h2
-                    data-pb-id="cold-chain-ops.exception-queue.summary.title"
-                    data-pb-role="text"
-                    data-pb-token-color="color.on-surface"
-                    data-pb-token-typography="typography.subtitle"
+                    v-pb="
+                      scope.node('summary.title', 'text', {
+                        style: {
+                          color: 'color.on-surface',
+                          typography: 'typography.subtitle',
+                        },
+                      })
+                    "
                   >
                     当前风险
                   </h2>
                   <p
-                    data-pb-id="cold-chain-ops.exception-queue.summary.subtitle"
-                    data-pb-role="text"
-                    data-pb-token-color="color.on-surface-muted"
-                    data-pb-token-typography="typography.caption"
+                    v-pb="
+                      scope.node('summary.subtitle', 'text', {
+                        style: {
+                          color: 'color.on-surface-muted',
+                          typography: 'typography.caption',
+                        },
+                      })
+                    "
                   >
                     华东区域 · 14:35 更新
                   </p>
@@ -223,13 +246,17 @@ function refresh(tab: string) {
               <div class="metric-grid">
                 <div
                   class="metric is-critical"
-                  data-pb-id="cold-chain-ops.exception-queue.summary.metric"
-                  data-pb-key="critical"
-                  data-pb-role="status"
-                  data-pb-token-background="color.error-soft"
-                  data-pb-token-color="color.error"
-                  data-pb-token-radius="radius.control"
-                  data-pb-token-spacing="spacing.sm"
+                  v-pb="
+                    scope.node('summary.metric', 'status', {
+                      key: 'critical',
+                      tokens: {
+                        background: 'color.error-soft',
+                        color: 'color.error',
+                        radius: 'radius.control',
+                        spacing: 'spacing.sm',
+                      },
+                    })
+                  "
                 >
                   <Icon name="alert-triangle" size="md" />
                   <strong>{{ severityCounts.严重 }}</strong>
@@ -237,13 +264,17 @@ function refresh(tab: string) {
                 </div>
                 <div
                   class="metric"
-                  data-pb-id="cold-chain-ops.exception-queue.summary.metric"
-                  data-pb-key="unassigned"
-                  data-pb-role="status"
-                  data-pb-token-background="color.warning-soft"
-                  data-pb-token-color="color.warning"
-                  data-pb-token-radius="radius.control"
-                  data-pb-token-spacing="spacing.sm"
+                  v-pb="
+                    scope.node('summary.metric', 'status', {
+                      key: 'unassigned',
+                      tokens: {
+                        background: 'color.warning-soft',
+                        color: 'color.warning',
+                        radius: 'radius.control',
+                        spacing: 'spacing.sm',
+                      },
+                    })
+                  "
                 >
                   <Icon name="snowflake" size="md" />
                   <strong>{{ severityCounts.待接手 }}</strong>
@@ -251,13 +282,17 @@ function refresh(tab: string) {
                 </div>
                 <div
                   class="metric"
-                  data-pb-id="cold-chain-ops.exception-queue.summary.metric"
-                  data-pb-key="longest"
-                  data-pb-role="status"
-                  data-pb-token-background="color.surface-variant"
-                  data-pb-token-color="color.on-surface"
-                  data-pb-token-radius="radius.control"
-                  data-pb-token-spacing="spacing.sm"
+                  v-pb="
+                    scope.node('summary.metric', 'status', {
+                      key: 'longest',
+                      tokens: {
+                        background: 'color.surface-variant',
+                        color: 'color.on-surface',
+                        radius: 'radius.control',
+                        spacing: 'spacing.sm',
+                      },
+                    })
+                  "
                 >
                   <Icon name="clock" size="md" />
                   <strong>{{ severityCounts.最长超温 }}m</strong>
@@ -268,7 +303,7 @@ function refresh(tab: string) {
                 label="仅看严重异常"
                 kind="secondary"
                 block
-                inspect-id="cold-chain-ops.exception-queue.show-critical"
+                :inspect-id="scope.id('show-critical')"
                 data-pb-action="show-critical"
                 @click="showCritical"
               />
@@ -278,7 +313,7 @@ function refresh(tab: string) {
           <SearchBar
             v-model="query"
             placeholder="搜索异常、运单或线路"
-            inspect-id="cold-chain-ops.exception-queue.search"
+            :inspect-id="scope.id('search')"
           />
         </div>
         <PrimaryTabs
@@ -287,7 +322,7 @@ function refresh(tab: string) {
           :items="severityTabs"
           grow
           fill
-          inspect-id="cold-chain-ops.exception-queue.severity-tabs"
+          :inspect-id="scope.id('severity-tabs')"
           @update:model-value="selectSeverity"
         >
           <template v-for="tab in severityTabs" :key="tab.value" #[tab.value]>
@@ -323,26 +358,35 @@ function refresh(tab: string) {
                     :key="item.id"
                     type="button"
                     class="exception-row"
-                    data-pb-id="cold-chain-ops.exception-queue.list.row"
-                    :data-pb-key="tab.value + '-' + item.id"
-                    data-pb-role="list-item"
-                    data-pb-token-background="color.surface"
-                    data-pb-token-radius="radius.surface"
-                    data-pb-token-spacing="spacing.md"
                     :data-pb-action="
                       tab.value === filter && item.id === 'ex-017'
                         ? 'open-primary-exception'
                         : undefined
                     "
                     @click="openException(item.shipmentId, item.severity)"
+                    v-pb="
+                      scope.node('list.row', 'list-item', {
+                        key: tab.value + '-' + item.id,
+                        style: {
+                          background: 'color.surface',
+                          radius: 'radius.surface',
+                          padding: 'spacing.md',
+                          gap: 'spacing.xs',
+                        },
+                      })
+                    "
                   >
                     <div class="row-heading">
                       <span
-                        data-pb-id="cold-chain-ops.exception-queue.list.row.identity"
-                        :data-pb-key="tab.value + '-' + item.id"
-                        data-pb-role="text"
-                        data-pb-token-typography="typography.caption-strong"
-                        data-pb-token-color="color.on-surface-muted"
+                        v-pb="
+                          scope.node('list.row.identity', 'text', {
+                            key: tab.value + '-' + item.id,
+                            tokens: {
+                              typography: 'typography.caption-strong',
+                              color: 'color.on-surface-muted',
+                            },
+                          })
+                        "
                         >{{ item.id.toUpperCase() }} ·
                         {{ item.shipmentId }}</span
                       >
@@ -362,32 +406,43 @@ function refresh(tab: string) {
                       />
                     </div>
                     <strong
-                      data-pb-id="cold-chain-ops.exception-queue.list.row.lane"
-                      :data-pb-key="tab.value + '-' + item.id"
-                      data-pb-role="text"
-                      data-pb-token-typography="typography.subtitle"
-                      data-pb-token-color="color.on-surface"
+                      v-pb="
+                        scope.node('list.row.lane', 'text', {
+                          key: tab.value + '-' + item.id,
+                          tokens: {
+                            typography: 'typography.subtitle',
+                            color: 'color.on-surface',
+                          },
+                        })
+                      "
                       >{{ item.lane }}</strong
                     >
                     <span
-                      data-pb-id="cold-chain-ops.exception-queue.list.row.cargo"
-                      :data-pb-key="tab.value + '-' + item.id"
-                      data-pb-role="text"
-                      data-pb-token-typography="typography.caption"
-                      data-pb-token-color="color.on-surface-muted"
+                      v-pb="
+                        scope.node('list.row.cargo', 'text', {
+                          key: tab.value + '-' + item.id,
+                          tokens: {
+                            typography: 'typography.caption',
+                            color: 'color.on-surface-muted',
+                          },
+                        })
+                      "
                       >{{ item.cargo }}</span
                     >
                     <div class="temperature-line">
                       <Icon name="thermometer" size="sm" />
                       <strong
-                        data-pb-id="cold-chain-ops.exception-queue.list.row.temperature"
-                        :data-pb-key="tab.value + '-' + item.id"
-                        data-pb-role="status"
-                        data-pb-token-typography="typography.title-sm"
-                        :data-pb-token-color="
-                          item.severity === '严重'
-                            ? 'color.error'
-                            : 'color.warning'
+                        v-pb="
+                          scope.node('list.row.temperature', 'status', {
+                            key: tab.value + '-' + item.id,
+                            tokens: {
+                              typography: 'typography.title-sm',
+                              color:
+                                item.severity === '严重'
+                                  ? 'color.error'
+                                  : 'color.warning',
+                            },
+                          })
                         "
                         >{{ item.currentTemperature.toFixed(1) }}°C</strong
                       >
@@ -464,14 +519,9 @@ function refresh(tab: string) {
 .card-heading p {
   margin: var(--pb-layout-zero);
 }
-.card-heading h2 {
-  color: var(--pb-color-on-surface);
-  font: var(--pb-typography-subtitle);
-}
+
 .card-heading p {
   margin-top: var(--pb-spacing-xxs);
-  color: var(--pb-color-on-surface-muted);
-  font: var(--pb-typography-caption);
 }
 .metric-grid {
   display: flex;
@@ -510,12 +560,8 @@ function refresh(tab: string) {
 .exception-row {
   display: flex;
   flex-direction: column;
-  gap: var(--pb-spacing-xs);
   width: var(--pb-layout-fill);
-  padding: var(--pb-spacing-md);
   border: var(--pb-border-default);
-  border-radius: var(--pb-radius-surface);
-  background: var(--pb-color-surface);
   color: var(--pb-color-on-surface);
   text-align: left;
 }

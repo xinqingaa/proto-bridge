@@ -1,3 +1,4 @@
+import { datasetTokenBindings } from "@/authoring/token-bindings";
 import type {
   ElementBox,
   ElementSummary,
@@ -29,7 +30,16 @@ const STYLE_KEYS = [
   "color",
   "background-color",
   "padding",
+  "padding-top",
+  "padding-right",
+  "padding-bottom",
+  "padding-left",
   "margin",
+  "margin-top",
+  "margin-right",
+  "margin-bottom",
+  "margin-left",
+  "border",
   "gap",
   "border-color",
   "border-radius",
@@ -54,6 +64,17 @@ const PROPERTY_CATEGORY: Partial<
   "font-weight": "typography",
   "line-height": "typography",
   padding: "spacing",
+  "padding-top": "spacing",
+  "padding-right": "spacing",
+  "padding-bottom": "spacing",
+  "padding-left": "spacing",
+  "margin-top": "spacing",
+  "margin-right": "spacing",
+  "margin-bottom": "spacing",
+  "margin-left": "spacing",
+  border: "border",
+  width: "sizing",
+  height: "sizing",
   margin: "spacing",
   gap: "spacing",
 };
@@ -66,6 +87,15 @@ const PROPERTY_GROUP: Record<(typeof STYLE_KEYS)[number], StyleInspectGroup> = {
   "font-weight": "typography",
   "line-height": "typography",
   padding: "spacing-size",
+  "padding-top": "spacing-size",
+  "padding-right": "spacing-size",
+  "padding-bottom": "spacing-size",
+  "padding-left": "spacing-size",
+  "margin-top": "spacing-size",
+  "margin-right": "spacing-size",
+  "margin-bottom": "spacing-size",
+  "margin-left": "spacing-size",
+  border: "border-radius",
   margin: "spacing-size",
   gap: "spacing-size",
   width: "spacing-size",
@@ -91,30 +121,7 @@ const COLOR_PROPERTIES = new Set<(typeof STYLE_KEYS)[number]>([
   "border-color",
 ]);
 
-/** Contract slot → CSS properties that slot is allowed to claim as "binding". */
-const BINDING_SLOT_PROPERTIES: Record<string, readonly string[]> = {
-  background: ["background-color"],
-  surface: ["background-color"],
-  tonalBackground: ["background-color"],
-  activeBackground: ["background-color"],
-  color: ["color"],
-  onBackground: ["color"],
-  inactiveColor: ["color"],
-  muted: ["color"],
-  indicator: ["color", "background-color"],
-  border: ["border-color"],
-  radius: ["border-radius"],
-  elevation: ["box-shadow"],
-  // Root-level typography only. Part slots (title/subtitle/label/input) must not
-  // claim the registered root's computed font as "显式绑定".
-  typography: [
-    "font",
-    "font-family",
-    "font-size",
-    "font-weight",
-    "line-height",
-  ],
-};
+import { BINDING_SLOT_PROPERTIES } from "@/design-system/theme/slots";
 
 /** Part-level slots: shown in component bindings, never bind root computed styles. */
 const PART_BINDING_SLOTS = new Set(["title", "subtitle", "label", "input"]);
@@ -796,9 +803,18 @@ export function buildSelectPayload(
   const ancestorReg = ownReg ? undefined : findRegisteredAncestor(el);
   const componentReg = ownReg ?? ancestorReg;
 
-  const ownBindings = ownReg?.getTokenBindings?.();
+  let dataset: Record<string, string> | undefined;
+  try {
+    dataset = datasetTokenBindings(el);
+  } catch {
+    /* Invalid bindings appear in live diagnostics, never as Inspector facts. */
+  }
+  const ownBindings = { ...dataset, ...ownReg?.getTokenBindings?.() };
   const styles = readWhitelistedStyles(el, {
-    rankTokenIds: collectRankTokenIds(ownReg, ancestorReg),
+    rankTokenIds: [
+      ...collectRankTokenIds(ownReg, ancestorReg),
+      ...Object.values(dataset ?? {}),
+    ],
     ...(ownBindings ? { ownBindings } : {}),
   });
 
@@ -829,6 +845,10 @@ export function buildSelectPayload(
     if (tokenBindings) payload.tokenBindings = tokenBindings;
   }
 
+  if (dataset) {
+    payload.tokenBindings = buildTokenBindings(ownBindings) ?? [];
+    payload.tokens = [...new Set(Object.values(ownBindings))];
+  }
   if (meta.truncated || meta.warnings?.length) {
     payload.meta = { ...element.meta, ...meta };
   }

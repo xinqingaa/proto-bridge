@@ -30,3 +30,5 @@
 - Playground 并置自适应/等宽真实视图区；页面负责嵌套横滑仲裁。
 - 不用二级 Tab 做应用根导航、局部筛选或无 viewport 的轻量分段。活动分类、时间周期等业务字段如果形成独立内容面板，仍可使用二级 Tab。
 - Props、Slots、Events、默认值与 Token 槽以 [Secondary Tabs Contract](../../../src/design-system/components/contracts/secondary-tabs.json) 为准。
+
+内部 tab / panel 的语义归属由 Inspect Registry 的 `semanticParts` 显式声明，Token Evidence 沿用所属组件绑定；slot 内的业务局部节点仍须自行声明所需绑定。见[制作工具](../../prototypes/authoring-tools.md)。

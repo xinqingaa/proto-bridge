@@ -88,3 +88,7 @@ Shell
 4. 切 Tab 时 `replace` 更新 home slug。Runtime 发现已加载 view 不变，保持 `screenKey`，只切换可见面板。
 5. 栈页（登录、会话、设置、二级任务）使用自己的 view。view 变化时 Runtime 播放 `ScreenTransition`。
 6. 保活面板只消费自己 home 的 `variant`（见 [screens-and-variants.md](./screens-and-variants.md)）。
+
+## 共享运行套件
+
+使用 `runtime/prototype` 的 `prototypeNavigation`、`PrototypeShell` 与 `PrototypeTabs` 落实上述组合和父级引用规则；状态存储、主题偏好与时钟复用方式见[制作工具](./authoring-tools.md#共享运行套件)。

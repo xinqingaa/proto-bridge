@@ -289,13 +289,13 @@ test("Runtime occlusion blocks painted overlays but not scrolled or hit-test-exe
     root.style.cssText = "position:fixed;inset:0;z-index:10000;background:white";
     root.innerHTML = `
       <div style="position:absolute;inset:0;overflow:auto">
-        <div data-pb-id="probe.exempt" data-pb-role="button"
+        <div data-pb-id="probe.exempt" data-pb-role="button" data-pb-token-background="color.surface"
           style="position:absolute;top:40px;left:20px;width:200px;height:48px;pointer-events:none;background:#ccc"></div>
-        <div data-pb-id="probe.covered" data-pb-role="section"
+        <div data-pb-id="probe.covered" data-pb-role="section" data-pb-token-background="color.surface"
           style="position:absolute;top:140px;left:20px;width:200px;height:48px;background:#ccc"></div>
-        <div data-pb-id="probe.covered-exempt" data-pb-role="button"
+        <div data-pb-id="probe.covered-exempt" data-pb-role="button" data-pb-token-background="color.surface"
           style="position:absolute;top:200px;left:20px;width:200px;height:48px;pointer-events:none;background:#ccc"></div>
-        <div data-pb-id="probe.tall" data-pb-role="section"
+        <div data-pb-id="probe.tall" data-pb-role="section" data-pb-token-background="color.surface"
           style="position:absolute;top:300px;left:20px;width:200px;height:900px;background:#ddd"></div>
       </div>
       <div style="position:absolute;top:120px;left:0;right:0;height:140px;background:rgba(0,0,0,.4)"></div>

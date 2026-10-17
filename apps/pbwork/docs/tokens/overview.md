@@ -72,3 +72,5 @@ DS 组件由 Contract/运行时 registration 提供 bindings，不在每个业�
 - **`*-soft`**：混合实色软底（非 alpha），用于 tonal / Chip。
 - **`on-*`**：落在对应底色上的前景。
 - **size.touch**：触控目标下限相关尺寸，优先保证可点区域。
+
+局部页面样式可用 `v-pb` / `pbStyle()` 同时生成 CSS 与 Token Evidence；生成键类型、新鲜度和共享槽字典见[制作工具](../prototypes/authoring-tools.md#一次声明样式和证据)。DS 组件实例仍按 Registry 绑定。

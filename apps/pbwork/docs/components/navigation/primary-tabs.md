@@ -31,3 +31,5 @@
 - Playground 直接并置“自适应/等宽”两个真实视图区，不使用场景下拉。
 - 不用一级 Tab 替代 Tabbar、Filter Bar 或无 viewport 的局部分段。时间周期、活动分类等业务字段不单独决定组件类型；只要形成主要具名内容面板即可使用一级 Tab。
 - Props、Slots、Events、默认值与 Token 槽以 [Primary Tabs Contract](../../../src/design-system/components/contracts/primary-tabs.json) 为准。
+
+内部 tab / panel 的语义归属由 Inspect Registry 的 `semanticParts` 显式声明，Token Evidence 沿用所属组件绑定；slot 内的业务局部节点仍须自行声明所需绑定。见[制作工具](../../prototypes/authoring-tools.md)。

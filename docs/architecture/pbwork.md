@@ -58,7 +58,7 @@ Component Contract 还应固定组件的 semantic role policy；业务局部证�
 
 ## Registry
 
-`prototypes/registry.ts` 是 Prototype、Screen、Variant、Action 和 Scenario 的唯一注册源。Router、Workbench navigation、Runtime manifest 和 Capture Preflight 都从该注册表读取。运行时生命周期不以 Registry 字段为事实源，而由 `prototypeLifecycle` Store 独立管理；新发现的 Prototype ID 一律初始化为“进行中”。
+`prototypes/registry.ts` glob 汇总原型的 `prototype.ts` 与每个 Screen 目录的 `screen.ts`，汇总结果是 Prototype、Screen、Variant、Action 和 Scenario 的唯一注册源；`defineScreen()` 和片段助手生成显式 default 边界，生成文件纳入版本管理并校验新鲜度。Router、Workbench navigation、Runtime manifest 和 Capture Preflight 都从该注册表读取。运行时生命周期不以 Registry 字段为事实源，而由 `prototypeLifecycle` Store 独立管理；新发现的 Prototype ID 一律初始化为“进行中”。
 
 启动校验至少拒绝：
 
@@ -82,6 +82,8 @@ Runtime 提供：
 - Inspector snapshot；
 - Capture Protocol；
 - 稳定等待、路由准备和 reset。
+
+Workbench Inspector 通过已验证的 Runtime bridge 接收当前 Screen 的实时制作诊断；几何与遮挡复用 Capture readiness 的检查，既有选中元素启发式提示保留。它不写 Evidence，不取代 Preflight，接口和目录见[制作工具](../pbwork/prototypes/authoring-tools.md)。
 
 Capture Protocol 的 manifest 由 Registry 构造。`inputVersion` 覆盖 Screen、Variant、Action、Scenario、主题包摘要、键目录摘要和原型声明的时钟。页面语义快照只读取同时具有合法 `data-pb-role` 与 `data-pb-id` 的节点。
 

@@ -57,7 +57,7 @@ PBWork Token / Theme
 
 ## 3. Screen Registry
 
-每个 Screen 在 `apps/pbwork/src/prototypes/registry.ts` 中声明：
+每个 Screen 在 `apps/pbwork/src/prototypes/{prototypeId}/screens/{screenSlug}/screen.ts` 中用 `defineScreen()` 就近声明，由 `prototypes/registry.ts` glob 汇总：
 
 - `prototypeId`；
 - 稳定 `screenId` 和 `screenSlug`；
@@ -67,7 +67,7 @@ PBWork Token / Theme
 - `variants`；
 - 按需声明 `actions` 和 `scenarios`。
 
-Registry 是 Router、Workbench、Runtime manifest 和 Capture 的共同权威，不维护第二份 Screen 清单。
+Registry 汇总结果是 Router、Workbench、Runtime manifest 和 Capture 的共同权威，不维护第二份 Screen 清单。`screenScope()` 补齐身份，作者标记 `required: true` 的片段在构建前生成 default Variant 边界，生成文件纳入版本管理并有新鲜度测试；这仍是显式 authored boundary。工具、命令与目录见[制作工具](../pbwork/prototypes/authoring-tools.md)。
 
 每个 Screen 必须能通过 URL 直接打开。关键状态不能只能经过手工点击到达。
 
@@ -130,6 +130,7 @@ Variant 依赖业务 query 才能确定性打开时，Registry 必须在该 Vari
 - CSS `var(--pb-*)` 与 Token binding 是两件事：前者控制实际样式，后者形成可消费 Fact；
 - 同一父节点下字阶、颜色或状态不同的文本若需要分别实现，必须分别成为证据节点；
 - binding value 必须能由固定 Catalog 解析，Capture 必须保留真实 provenance。
+- 局部节点可使用 `v-pb` + `pbStyle()` 或指令的 `style` 一次生成样式与标记，键类型由键目录/常量/Contract 生成；DS 实例绑定仍由 Registry 提供。
 
 ## 8. Required Fragment
 

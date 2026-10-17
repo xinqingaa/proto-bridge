@@ -551,6 +551,11 @@ function onWindowMessage(event: MessageEvent) {
     );
     return;
   }
+  if (msg.type === "authoring-diagnostics") {
+    selection.authoringDiagnostics = msg.payload.diagnostics;
+    selection.diagnosticsTruncated = msg.payload.truncated;
+    return;
+  }
   if (msg.type === "hover") {
     selection.setHover(msg.payload.element);
     return;
