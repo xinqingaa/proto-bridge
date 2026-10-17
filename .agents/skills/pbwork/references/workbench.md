@@ -6,9 +6,10 @@ Evidence Review, and Workbench-only UI primitives. It does not govern business
 Prototype Screens or their Design System.
 
 For design-foundation and component resource navigation or preview work, read
-[Workbench presentation](../../../../apps/pbwork/docs/workbench-presentation.md).
-Use its resource-directory/detail model and manual acceptance rules; distinguish
-target presentation requirements from currently implemented routes and registration.
+[Workbench preview workflow](../../../../apps/pbwork/docs/workbench-preview.md).
+Preserve existing categories and detail routes; use phone-contained samples and
+opt-in comparison, with ownership separate from preview theme. Distinguish
+manual acceptance rules from implemented multi-device/registration capabilities.
 
 ## Read first
 

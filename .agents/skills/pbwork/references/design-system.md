@@ -15,7 +15,7 @@ input for DS work: add a variant or component when the need is generic, and
 leave business-specific shapes in the prototype.
 
 For Theme, Registry or Playground changes, read
-[Workbench presentation](../../../../apps/pbwork/docs/workbench-presentation.md).
+[Workbench preview workflow](../../../../apps/pbwork/docs/workbench-preview.md).
 Synchronize resource ownership, base relationships and previews with the change;
 ordinary use of a DS public variant is not a prototype extension. Report missing
 registration/preview support rather than claiming it exists.

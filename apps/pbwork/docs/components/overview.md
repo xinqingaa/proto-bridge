@@ -20,7 +20,7 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`summary`�
 
 跨栈字段 `layout`、`visualAnatomy`、`icons` 按适用性声明（`pack` 仅 `lucide`）；拥有滚动/视口/复杂层级或 material 的组件必须写前两项。详见 [alignment-protocol.md](./alignment-protocol.md)。
 
-`playground.presentation`：**默认 `interactive`**；**`gallery` 仅 `icon` / `icon-button`**；overlay 用 `trigger`。互动状态必须在舞台内可观察，Token 绑定只读常驻表展示。
+`playground.presentation`：**默认 `interactive`**；**`gallery` 仅 `icon` / `icon-button`**；overlay 用 `trigger`。互动状态必须在舞台内可观察，Token 绑定为只读资料；设备边界与对比的人工验收按[Workbench 预览工作流](../workbench-preview.md)。
 
 `semantic.policy` 只能是 `fixed`、`contextual` 或 `decorative`。fixed 组件由 Contract 固定根 role；contextual 组件只允许通过公开 prop 从 `allowedRoles` 选择；decorative 组件默认不写 `data-pb-id` / `data-pb-role`，不会独立进入 Evidence。
 

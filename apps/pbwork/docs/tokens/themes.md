@@ -21,6 +21,10 @@ DS 与冷链已使用新键、响应式 JS 读取和不可变常量，Runtime �
 
 旧 Token/Theme JSON、resolveThemeTokens、bindTokens 与 tokenDefaults 已从生产代码移除；旧值仅留在 test/fixtures/legacy-theme 用于等价断言。Gallery 与 Playground 可以选择基础包或样例包、包内主题和浅色/深色，并对照解析值。样例包不绑定正式原型。
 
+## 预览制作与人工验收
+
+具体分类与组件的手机样板、原型上下文和按需对比遵守[Workbench 预览工作流](../workbench-preview.md)。当前 Gallery/Playground 的接入差异与迁移状态见该文的能力边界；不能据制作规则声称双机或原型扩展登记已交付。
+
 ## 检查
 
 - [ ] 浅/深色切换更新 Runtime 和画布，iframe 不重建，Workbench 外壳不被修改

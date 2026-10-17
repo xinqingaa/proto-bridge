@@ -54,7 +54,7 @@ then design-system work, then formal authoring.
 - Keep product logic and PBWork delivery constraints in this Skill. Do not
   modify the vendored `frontend-design` Skill with PBWork-specific rules.
 - New prototypes and Theme/component extensions must follow
-  [Workbench presentation](../../../apps/pbwork/docs/workbench-presentation.md)
+  [Workbench preview workflow](../../../apps/pbwork/docs/workbench-preview.md)
   for resource ownership, preview and formal Evidence checks. Record gaps in
   `docs/implementation.md`; documentation alone is not automatic validation.
 - Prototype Runtime components and Workbench UI are separate component
