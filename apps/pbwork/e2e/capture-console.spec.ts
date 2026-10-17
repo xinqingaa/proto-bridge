@@ -46,6 +46,8 @@ test("finalized capture page is read-only and hides all manual capture entry poi
   await page.goto("/workbench/capture");
 
   await expect(page.getByRole("heading", { name: "定稿采集" })).toBeVisible();
+  await expect(page.getByText("Bundle Snapshot does not exist")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "展开 定稿采集" })).toBeDisabled();
   await expect(page.getByText("还没有定稿产物")).toBeVisible();
   await expect(page.getByText("已定稿或已归档原型")).toBeVisible();
   await expect(page.getByRole("button", { name: /采集当前页面/ })).toHaveCount(0);

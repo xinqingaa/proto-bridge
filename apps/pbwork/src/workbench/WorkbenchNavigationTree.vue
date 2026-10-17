@@ -37,6 +37,10 @@ function hasChildren(node: WorkbenchNavigationTreeNode): boolean {
   return Boolean(node.children?.length);
 }
 
+function showsDisclosure(node: WorkbenchNavigationTreeNode): boolean {
+  return hasChildren(node) || Boolean(node.collapsible);
+}
+
 function isExpanded(node: WorkbenchNavigationTreeNode): boolean {
   return props.expandedIds.includes(node.id);
 }
@@ -80,19 +84,21 @@ function iconSize(node: WorkbenchNavigationTreeNode): number {
           },
         ]"
         role="treeitem"
-        :aria-expanded="hasChildren(node) ? isExpanded(node) : undefined"
+        :aria-expanded="showsDisclosure(node) ? hasChildren(node) && isExpanded(node) : undefined"
       >
         <button
-          v-if="hasChildren(node)"
+          v-if="showsDisclosure(node)"
           type="button"
           class="node-toggle"
-          :aria-label="`${isExpanded(node) ? '收起' : '展开'} ${node.label}`"
-          @click="emit('toggle', node.id)"
+          :disabled="!hasChildren(node)"
+          :aria-expanded="hasChildren(node) ? isExpanded(node) : false"
+          :aria-label="`${hasChildren(node) && isExpanded(node) ? '收起' : '展开'} ${node.label}`"
+          @click="hasChildren(node) && emit('toggle', node.id)"
         >
           <ChevronRight
             :size="14"
             class="node-chevron"
-            :class="{ 'is-open': isExpanded(node) }"
+            :class="{ 'is-open': hasChildren(node) && isExpanded(node) }"
             aria-hidden="true"
           />
         </button>
@@ -296,13 +302,17 @@ function iconSize(node: WorkbenchNavigationTreeNode): number {
   background: transparent;
   cursor: pointer;
 }
-.node-toggle:hover {
+.node-toggle:hover:not(:disabled) {
   color: rgb(var(--v-theme-on-surface));
   background: color-mix(
     in srgb,
     rgb(var(--v-theme-on-surface)) 7%,
     transparent
   );
+}
+.node-toggle:disabled {
+  color: color-mix(in srgb, var(--shell-muted) 45%, transparent);
+  cursor: default;
 }
 .node-chevron {
   transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);

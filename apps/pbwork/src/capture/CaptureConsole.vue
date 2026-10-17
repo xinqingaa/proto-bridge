@@ -135,7 +135,7 @@ onMounted(async () => {
       </header>
 
       <v-alert
-        v-if="capture.lastError"
+        v-if="capture.consolePollingPaused && capture.lastError"
         type="error"
         variant="tonal"
         density="compact"

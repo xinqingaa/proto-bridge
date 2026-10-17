@@ -48,6 +48,8 @@ export type WorkbenchNavigationTreeNode = {
     | "variant";
   to?: string;
   count?: number;
+  /** Keeps the disclosure control when there are no children yet. */
+  collapsible?: boolean;
   children?: WorkbenchNavigationTreeNode[];
 };
 
@@ -227,7 +229,8 @@ export function buildCaptureHistoryNavigationNodes(
       kind: "group",
       to: "/workbench/capture",
       count: children.length,
-      ...(children.length ? { children } : {}),
+      collapsible: true,
+      children,
     },
   ];
 }

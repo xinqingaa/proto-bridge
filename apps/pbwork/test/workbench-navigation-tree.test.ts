@@ -123,6 +123,7 @@ describe("workbench navigation tree", () => {
       kind: "group",
       to: "/workbench/capture",
       count: 3,
+      collapsible: true,
     });
     expect(nodes[0]?.children?.map((item) => item.id)).toEqual([
       "capture-job-job-running",
@@ -141,6 +142,20 @@ describe("workbench navigation tree", () => {
     expect(
       findCaptureJobIdForEvidenceRoute(presentations, "missing", "snap"),
     ).toBeNull();
+  });
+
+  it("keeps a disabled disclosure on 定稿采集 when nothing is finalized", () => {
+    expect(buildCaptureHistoryNavigationNodes([])).toEqual([
+      {
+        id: "capture-console",
+        label: "定稿采集",
+        kind: "group",
+        to: "/workbench/capture",
+        count: 0,
+        collapsible: true,
+        children: [],
+      },
+    ]);
   });
 
   it("keeps catalog filter on the list URL instead of a prototype stage", () => {
