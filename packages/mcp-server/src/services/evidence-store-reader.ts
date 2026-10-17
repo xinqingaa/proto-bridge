@@ -378,16 +378,30 @@ export class EvidenceStoreReader {
   ): Promise<ConsumerProjectionInput> {
     const handoff = await this.readHandoff(handoffIdInput);
     const store = await this.requireStore();
-    const [{ evidence }, acceptanceResult, blobs] = await Promise.all([
+    const [{ evidence }, acceptanceResult, blobs, snapshot] = await Promise.all([
       this.readSnapshot(handoff.bundleId, handoff.snapshotId),
       buildAcceptanceContractFromStore({ store, handoff }),
       store.listBlobRecords(handoff.bundleId),
+      store.getSnapshot(handoff.bundleId, handoff.snapshotId),
     ]);
+    const catalogs = snapshot
+      ? (
+          await Promise.all(
+            snapshot.catalogRefs.map((reference) =>
+              store.getCatalogRevision(
+                handoff.bundleId,
+                reference.catalogRevisionId,
+              ),
+            ),
+          )
+        ).flatMap((catalog) => (catalog ? [catalog] : []))
+      : [];
     return {
       handoff,
       evidence,
       acceptance: acceptanceResult.contract,
       blobs,
+      catalogs,
     };
   }
 

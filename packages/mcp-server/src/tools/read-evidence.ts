@@ -5,6 +5,7 @@ import {
   buildHandoffIndex,
   buildReconstructionObligationProjection,
   buildScreenPacket,
+  projectThemePack,
   buildImplementationPlan,
   buildImplementationTranche,
   EVIDENCE_DETAIL_PROJECTIONS,
@@ -57,6 +58,29 @@ export async function readScreenPacketTool(
     requiredString(args, "handoffId"),
   );
   return buildScreenPacket(input, requiredString(args, "screenId"));
+}
+
+export async function readThemePackTool(
+  context: ToolContext,
+  args: JsonObject,
+): Promise<unknown> {
+  const handoffId = requiredString(args, "handoffId");
+  const input = await context.evidence.readConsumerProjectionInput(handoffId);
+  const handoff = input.handoff;
+  const catalog = await context.evidence.readCatalog(
+    handoff.bundleId,
+    handoff.snapshotId,
+    handoff.themePack.catalogRevisionId,
+  );
+  return projectThemePack({
+    handoff,
+    catalog,
+    ...(readString(args, "theme") ? { theme: readString(args, "theme")! } : {}),
+    ...(readString(args, "mode") ? { mode: readString(args, "mode")! } : {}),
+    ...(readStringArray(args, "tokenIds")
+      ? { tokenIds: readStringArray(args, "tokenIds")! }
+      : {}),
+  });
 }
 
 export async function readImplementationPlanTool(

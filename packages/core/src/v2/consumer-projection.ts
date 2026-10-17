@@ -5,6 +5,8 @@ import {
   type ReconstructionAcceptanceContract,
 } from './acceptance-contract.js';
 import type { BlobRecord } from './contracts/blob.js';
+import type { CatalogRevision } from './contracts/catalog.js';
+import { readThemePackTable } from './theme-pack-read.js';
 import { V2ContractError, unknownReferenceError } from './contracts/errors.js';
 import { sha1Hex } from './contracts/hash-sha1.js';
 import type { AgentHandoff } from './contracts/handoff.js';
@@ -67,6 +69,8 @@ export type ConsumerProjectionInput = {
   evidence: EvidenceReadModel;
   acceptance: ReconstructionAcceptanceContract;
   blobs: BlobRecord[];
+  /** Fixed Catalog revisions. Token resolution uses the Handoff theme-pack table. */
+  catalogs?: CatalogRevision[];
 };
 
 export type ConsumerScreenshotGroup = {
@@ -293,6 +297,9 @@ export type TokenInventoryItem = {
   tokenId: string;
   occurrenceCount: number;
   occurrences: TokenInventoryOccurrence[];
+  resolvedValue?: unknown;
+  chain?: string[];
+  tier?: string;
 };
 
 export type ImplementationInventory = {
@@ -756,6 +763,45 @@ function buildStateSnapshot(
   };
 }
 
+function attachResolvedTokens(
+  inventory: ImplementationInventory,
+  input: ConsumerProjectionInput,
+): ImplementationInventory {
+  const catalog = input.catalogs?.find(
+    (candidate) =>
+      candidate.kind === 'theme-pack' &&
+      candidate.catalogRevisionId === input.handoff.themePack.catalogRevisionId,
+  );
+  if (!catalog) return inventory;
+  const table = readThemePackTable(
+    catalog,
+    input.handoff.themePack.packId,
+    input.handoff.themePack.defaultTheme,
+    input.handoff.themePack.defaultMode,
+  );
+  const tokenCatalog = input.catalogs?.find((candidate) => candidate.kind === 'token');
+  return {
+    ...inventory,
+    tokens: inventory.tokens.map((item) => {
+      const definition = tokenCatalog?.entries.find(
+        (entry) => entry.objectId === item.tokenId,
+      )?.value as { tier?: string } | undefined;
+      const provenance = table.provenance[item.tokenId];
+      if (table.values[item.tokenId] === undefined && !provenance && !definition?.tier) {
+        return item;
+      }
+      return {
+        ...item,
+        ...(table.values[item.tokenId] !== undefined
+          ? { resolvedValue: table.values[item.tokenId] }
+          : {}),
+        ...(provenance ? { chain: provenance.chain } : {}),
+        ...(definition?.tier ? { tier: definition.tier } : {}),
+      };
+    }),
+  };
+}
+
 export function buildScreenPacket(
   input: ConsumerProjectionInput,
   screenId: string,
@@ -766,9 +812,12 @@ export function buildScreenPacket(
   const baselineStructure = buildStructureIR(input, screenId, baseline.caseModel.caseId);
   const baselineState = buildStateSnapshot(input, baseline.caseModel);
   const screenObligations = compileReconstructionObligations(input.acceptance).filter((item) => item.screenId === screenId);
-  const implementationInventory = buildImplementationInventory(
-    screen.cases,
-    screenObligations,
+  const implementationInventory = attachResolvedTokens(
+    buildImplementationInventory(
+      screen.cases,
+      screenObligations,
+    ),
+    input,
   );
   const screenshotGroups = buildScreenshotGroups(prepared, screenId);
   const digestByBlob = new Map(

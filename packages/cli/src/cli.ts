@@ -461,7 +461,8 @@ function parseFragmentFlag(
 
 /**
  * Builds a SelectionDraft from --selection or short deliver flags.
- * Defaults: all authored Screens, Variants and Scenarios, theme=light,
+ * Defaults: all authored Screens, Variants and Scenarios. Mode is the
+ * manifest default; there is no theme selector.
  * device=iphone-14. Repeated --only-* flags narrow by authored ids.
  * When --bundle and --snapshot are both set, SelectionDraft is not required
  * (resume path: handoff + prompt only).
@@ -554,6 +555,12 @@ export async function resolveDeliverDraft(
 
   return SelectionDraft.parse({
     prototypeId,
+    themePack: {
+      packId: manifest.theme.packId,
+      packDigest: manifest.theme.packDigest,
+      theme: manifest.theme.defaultTheme,
+      mode: manifest.theme.defaultMode,
+    },
     screens: selectedScreens.map((selectedScreen) => {
       const variantIds = selectedScreen.variants
         .map((variant) => variant.variantId)
@@ -582,7 +589,6 @@ export async function resolveDeliverDraft(
       return {
         screenId: selectedScreen.screenId,
         variants: { mode: 'explicit' as const, variantIds },
-        themeIds: [flag(args, 'theme') ?? 'light'],
         deviceIds: [flag(args, 'device') ?? 'iphone-14'],
         scenarios: scenarioIds.length
           ? { mode: 'explicit' as const, scenarioIds }
@@ -1218,6 +1224,7 @@ async function jobRetry(
     draft = selectionDraftFromSelectedCases(
       job.selection.prototypeId,
       selected,
+      job.selection.themePack,
     );
     bundleId = job.bundleId;
   } finally {
@@ -1301,7 +1308,15 @@ async function snapshotInspect(
     requiredFlag(args, 'bundle'),
     requiredFlag(args, 'snapshot'),
   );
-  emit(io, booleanFlag(args, 'json'), details);
+  const theme = details.themePack;
+  emit(
+    io,
+    booleanFlag(args, 'json'),
+    details,
+    theme
+      ? `Snapshot ${details.snapshotId}\nTheme ${theme.packId}@${theme.packDigest}/${theme.theme}/${theme.mode}`
+      : undefined,
+  );
   return details.coverageStatus === 'partial' ? EXIT.partial : EXIT.ok;
 }
 
@@ -1459,11 +1474,19 @@ async function createCurrentStaleness(
   bundleId: BundleId,
   snapshotId: SnapshotId,
 ) {
-  const { cases } = await activeCasesForSnapshot(store, bundleId, snapshotId);
+  const { snapshot, cases } = await activeCasesForSnapshot(store, bundleId, snapshotId);
   const bundle = await store.getBundle(bundleId);
   if (!bundle)
     throw new V2ContractError('unknown-reference', 'Bundle does not exist.');
-  const draft = selectionDraftFromSelectedCases(bundle.prototypeId, cases);
+  const sourceRun = await store.getRun(bundleId, snapshot.sourceRunId);
+  if (!sourceRun) {
+    throw new V2ContractError('unknown-reference', 'Snapshot source Run does not exist.');
+  }
+  const draft = selectionDraftFromSelectedCases(
+    bundle.prototypeId,
+    cases,
+    sourceRun.selection.themePack,
+  );
   const current = await resolvePreflight(args, loaded, draft);
   const currentDependencyDigests: Record<string, string> = {
     [`manifest:${bundle.prototypeId}`]: current.manifestDigest,

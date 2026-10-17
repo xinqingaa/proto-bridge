@@ -83,7 +83,7 @@ Runtime 提供：
 - Capture Protocol；
 - 稳定等待、路由准备和 reset。
 
-Capture Protocol 的 manifest 由 Registry 构造，`inputVersion` 对 Screen、Variant、Action 和 Scenario 定义计算摘要。页面语义快照只读取同时具有合法 `data-pb-role` 与 `data-pb-id` 的节点。
+Capture Protocol 的 manifest 由 Registry 构造。`inputVersion` 覆盖 Screen、Variant、Action、Scenario、主题包摘要、键目录摘要和原型声明的时钟。页面语义快照只读取同时具有合法 `data-pb-role` 与 `data-pb-id` 的节点。
 
 Authoring lint 在 Runtime 前发现确定性违规和疑似 CSS-only 遗漏；Inspector 使用同一规则展示 Block、Warning 和 Info，不维护私有建议词表。
 

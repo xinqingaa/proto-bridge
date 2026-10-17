@@ -8,6 +8,7 @@ import type {
 } from "./contracts/evidence.js";
 import type { Run } from "./contracts/run.js";
 import type { BundleSnapshot } from "./contracts/snapshot.js";
+import type { ThemeIdentity } from "./theme/schema.js";
 
 export type EvidenceFactCategory =
   | "content"
@@ -109,6 +110,8 @@ export type EvidenceFailedAttemptReadModel = {
 export type EvidenceReadModel = {
   bundleId: string;
   snapshotId: string;
+  /** Pack, named theme and mode fixed by the source Run. Case `themeId` is the mode. */
+  themePack?: ThemeIdentity;
   sourceRunId: string;
   committedAt: string;
   deliveryStatus: "ready" | "attention";
@@ -496,9 +499,13 @@ export function buildEvidenceReadModel(
     messages.push("所选 Evidence 已完整解析，可继续创建 Handoff。");
   }
 
+  const sourceRun = input.runs.find(
+    (run) => run.runId === input.snapshot.sourceRunId,
+  );
   return {
     bundleId: input.snapshot.bundleId,
     snapshotId: input.snapshot.snapshotId,
+    ...(sourceRun ? { themePack: sourceRun.selection.themePack } : {}),
     sourceRunId: input.snapshot.sourceRunId,
     committedAt: input.snapshot.committedAt,
     deliveryStatus:

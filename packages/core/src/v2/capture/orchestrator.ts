@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import {
   CaseAttempt,
   type CaseAttempt as CaseAttemptType,
@@ -138,25 +139,45 @@ async function executeStartedJob(
   const existingCatalogs = (await store.getBundle(input.bundleId))
     ? await store.listCatalogRevisions(input.bundleId)
     : [];
-  const catalogs: CatalogRevisionType[] = input.preflight.catalogInputs.map(
-    (catalog) =>
-      existingCatalogs.find(
-        (candidate) =>
-          candidate.kind === catalog.kind &&
-          candidate.inputDigest === catalog.inputDigest,
-      ) ??
+  const catalogs: CatalogRevisionType[] = [];
+  for (const catalog of input.preflight.catalogInputs) {
+    const existing = existingCatalogs.find(
+      (candidate) =>
+        candidate.kind === catalog.kind &&
+        candidate.inputDigest === catalog.inputDigest,
+    );
+    if (existing) {
+      catalogs.push(existing);
+      continue;
+    }
+    const catalogRevisionId = generateOperationalId('catalog', now());
+    const entries = catalog.entries.map((entry) => ({
+      ...entry,
+      blobIds: [...entry.blobIds],
+    }));
+    if (catalog.kind === 'theme-pack') {
+      await storeThemePackAssets({
+        store,
+        bundleId: input.bundleId,
+        runtimeBaseUrl: input.runtimeBaseUrl,
+        catalogRevisionId,
+        entries,
+      });
+    }
+    catalogs.push(
       CatalogRevision.parse({
         schemaVersion: V2_SCHEMA_MAJOR,
-        catalogRevisionId: generateOperationalId('catalog', now()),
+        catalogRevisionId,
         workspaceId: store.workspaceId,
         bundleId: input.bundleId,
         prototypeId: input.preflight.selection.prototypeId,
         kind: catalog.kind,
         inputDigest: catalog.inputDigest,
         createdAt: now().toISOString(),
-        entries: catalog.entries,
+        entries,
       }),
-  );
+    );
+  }
   await store.stageJobCatalogs(jobId, catalogs);
 
   const attempts: CaseAttemptType[] = [];
@@ -420,4 +441,61 @@ async function executeStartedJob(
     jobId,
     storedBlobIds: committed.blobIds ?? [],
   };
+}
+
+async function storeThemePackAssets(input: {
+  store: V2Store;
+  bundleId: CaptureOrchestratorInput['bundleId'];
+  runtimeBaseUrl: string;
+  catalogRevisionId: string;
+  entries: Array<{ objectId: string; blobIds: string[]; value?: unknown }>;
+}): Promise<void> {
+  const manifest = input.entries.find((entry) =>
+    entry.objectId.endsWith('/manifest'),
+  );
+  const value = manifest?.value;
+  const assets =
+    value && typeof value === 'object' && 'assets' in value
+      ? (value as { assets?: unknown }).assets
+      : undefined;
+  if (!manifest || !Array.isArray(assets) || assets.length === 0) return;
+  const { request } = await import('playwright');
+  const context = await request.newContext();
+  try {
+    for (const asset of assets) {
+      if (!asset || typeof asset !== 'object') continue;
+      const record = asset as {
+        file?: string;
+        sha1?: string;
+        mediaType?: string;
+        url?: string;
+      };
+      if (!record.file || !record.sha1 || !record.url || !record.mediaType) {
+        throw new Error('Theme asset catalog entry is incomplete.');
+      }
+      const response = await context.get(
+        new URL(record.url, input.runtimeBaseUrl).toString(),
+      );
+      if (!response.ok()) {
+        throw new Error(
+          `Theme asset ${record.file} request failed (${response.status()}).`,
+        );
+      }
+      const bytes = await response.body();
+      const sha1 = createHash('sha1').update(bytes).digest('hex');
+      if (sha1 !== record.sha1) {
+        throw new Error(`Theme asset ${record.file} sha1 mismatch.`);
+      }
+      const stored = await input.store.putBlob({
+        bundleId: input.bundleId,
+        kind: 'theme-asset',
+        mediaType: record.mediaType,
+        bytes,
+        ownerRefs: [{ kind: 'catalog', objectId: input.catalogRevisionId }],
+      });
+      manifest.blobIds.push(stored.blobId);
+    }
+  } finally {
+    await context.dispose();
+  }
 }

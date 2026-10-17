@@ -10,6 +10,7 @@ export const CATALOG_KINDS = [
   'token',
   'asset',
   'scenario',
+  'theme-pack',
 ] as const;
 export const CatalogKind = z.enum(CATALOG_KINDS);
 export type CatalogKind = z.infer<typeof CatalogKind>;

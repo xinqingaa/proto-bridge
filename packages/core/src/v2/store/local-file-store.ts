@@ -2959,6 +2959,7 @@ export class LocalFileStore implements V2Store {
       'image/png',
       'image/jpeg',
       'image/webp',
+      'image/svg+xml',
       'application/json',
       'application/zip',
       'text/plain',

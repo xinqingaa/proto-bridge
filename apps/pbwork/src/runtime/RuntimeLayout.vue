@@ -380,7 +380,7 @@ onMounted(() => {
         prototypeId: resolved.value.prototype.id,
         screenId: resolved.value.screen.screenId,
         variantId: resolved.value.variant.id,
-        themeId: effectiveThemeId.value,
+        theme: activeTheme.table.value.identity,
         ...(resolved.value.variant.fixture
           ? { fixtureId: resolved.value.variant.fixture }
           : {}),
@@ -403,10 +403,9 @@ onMounted(() => {
         (candidate) => candidate.id === target.variantId,
       );
       if (!variant) throw new Error(`UNKNOWN_VARIANT：${target.variantId}`);
-      const pack = loadPrototypeThemePack(target.prototypeId);
       writeThemePackPreference(target.prototypeId, {
-        theme: pack.defaultTheme,
-        mode: target.themeId as "light" | "dark",
+        theme: target.theme.theme,
+        mode: target.theme.mode as "light" | "dark",
       });
       await runForcedRuntimeNavigation(() =>
         router.replace(
@@ -414,8 +413,8 @@ onMounted(() => {
             prototypeId: target.prototypeId,
             screenSlug: screen.screenSlug,
             variantId: target.variantId,
-            themeId: target.themeId,
-            themeName: pack.defaultTheme,
+            themeId: target.theme.mode,
+            themeName: target.theme.theme,
             ...(variant.query ? { query: variant.query } : {}),
           }),
         ),

@@ -25,9 +25,10 @@ export const RESERVED_THEME_ID: ThemeId = 'unspecified';
 export const RESERVED_DEVICE_ID: DeviceId = 'unspecified';
 
 /**
- * Case identity: Screen, Variant, Theme, Device, plus an optional Scenario
- * Checkpoint. Capture Scope (Fragment/Screenshot/Source/Debug/Evidence
- * Level) is deliberately excluded (pb-v2-spec.md "核心对象与关系").
+ * Case identity: Screen, Variant, mode (`themeId`), Device, plus an optional
+ * Scenario Checkpoint. `themeId` is the mode id (`light` / `dark`), not the
+ * theme pack or named theme. Capture Scope is deliberately excluded
+ * (pb-v2-spec.md "核心对象与关系").
  */
 export const CaseKey = z
   .object({

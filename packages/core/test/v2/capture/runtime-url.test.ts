@@ -26,7 +26,7 @@ describe('buildRuntimeCaseUrl', () => {
         themeId: 'light',
       }),
     ).toThrow(V2ContractError);
-    for (const key of ['theme', 'mode']) {
+    for (const key of ['mode']) {
       expect(() => buildRuntimeCaseUrl({
         runtimeBaseUrl: 'http://127.0.0.1:3977',
         path: '/prototype/sample/task-list',

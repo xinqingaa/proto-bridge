@@ -6,9 +6,9 @@ import {
   PrototypeId,
   ScenarioId,
   ScreenId,
-  ThemeId,
   VariantId,
 } from '../contracts/ids.js';
+import { ThemeIdentity } from '../theme/schema.js';
 import {
   CaptureScopeInput,
   normalizeCaptureScope,
@@ -48,7 +48,6 @@ export const ScreenSelectionDraft = z
   .object({
     screenId: ScreenId,
     variants: VariantSelection,
-    themeIds: z.array(ThemeId).min(1),
     deviceIds: z.array(DeviceId).min(1),
     scenarios: ScenarioSelection.default({ mode: 'none' }),
     captureScope: CaptureScopeInput,
@@ -59,6 +58,8 @@ export type ScreenSelectionDraft = z.infer<typeof ScreenSelectionDraft>;
 export const SelectionDraft = z
   .object({
     prototypeId: PrototypeId,
+    /** Must match the Runtime manifest's default theme and mode. */
+    themePack: ThemeIdentity,
     screens: z.array(ScreenSelectionDraft).min(1),
     acceptedWarningIds: z.array(IssueId).default([]),
   })
@@ -92,6 +93,7 @@ export type ResolvedSelectionMatrix = {
 export function selectionDraftFromSelectedCases(
   prototypeId: string,
   cases: SelectedCase[],
+  themePack: ThemeIdentity,
 ): SelectionDraft {
   const groups = new Map<
     string,
@@ -127,13 +129,13 @@ export function selectionDraftFromSelectedCases(
   }
   return SelectionDraft.parse({
     prototypeId,
+    themePack,
     screens: [...groups.values()].map((group) => ({
       screenId: group.screenId,
       variants: {
         mode: 'explicit' as const,
         variantIds: [...group.variantIds],
       },
-      themeIds: [group.themeId],
       deviceIds: [group.deviceId],
       scenarios:
         group.scenarioIds.size > 0
@@ -241,7 +243,7 @@ export function resolveSelectionMatrix(
       screenDraft.screenId,
     );
     const variants = selectedVariantIds(screen, screenDraft.variants);
-    const themes = [...new Set(screenDraft.themeIds)].sort();
+    const themeId = manifest.theme.defaultMode;
     const devices = [...new Set(screenDraft.deviceIds)].sort();
     devices.forEach((deviceId) => resolveCaptureDevice(deviceId));
 
@@ -249,8 +251,7 @@ export function resolveSelectionMatrix(
       const variant = screen.variants.find(
         (candidate) => candidate.variantId === variantId,
       )!;
-      for (const themeId of themes) {
-        for (const deviceId of devices) {
+      for (const deviceId of devices) {
           entries.push(
             makeEntry({
               caseKey: {
@@ -268,7 +269,6 @@ export function resolveSelectionMatrix(
                 : {}),
             }),
           );
-        }
       }
     }
 
@@ -300,8 +300,7 @@ export function resolveSelectionMatrix(
             checkpoint.variantId,
           );
         }
-        for (const themeId of themes) {
-          for (const deviceId of devices) {
+        for (const deviceId of devices) {
             const scenarioScope = {
               ...screenDraft.captureScope,
               // Fragment identities authored for the initial Screen cannot
@@ -341,7 +340,19 @@ export function resolveSelectionMatrix(
           }
         }
       }
-    }
+  }
+
+  const themePack = draft.themePack;
+  if (
+    themePack.packId !== manifest.theme.packId ||
+    themePack.packDigest !== manifest.theme.packDigest ||
+    themePack.theme !== manifest.theme.defaultTheme ||
+    themePack.mode !== manifest.theme.defaultMode
+  ) {
+    throw new V2ContractError(
+      'invalid-schema',
+      `environment.theme-digest-mismatch: Selection theme ${themePack.packId}@${themePack.packDigest}/${themePack.theme}/${themePack.mode} does not match Runtime manifest ${manifest.theme.packId}@${manifest.theme.packDigest}/${manifest.theme.defaultTheme}/${manifest.theme.defaultMode}.`,
+    );
   }
 
   entries.sort((a, b) => {
@@ -364,6 +375,7 @@ export function resolveSelectionMatrix(
   }
   const selection = {
     prototypeId: draft.prototypeId,
+    themePack,
     cases: entries.map((entry) => entry.selectedCase),
     acceptedWarningIds: [...new Set(draft.acceptedWarningIds)].sort(),
   };

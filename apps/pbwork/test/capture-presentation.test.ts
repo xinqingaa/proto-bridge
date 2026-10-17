@@ -40,6 +40,12 @@ function job(
     bundleId: `bundle-${id}`,
     selection: {
       prototypeId: "cold-chain-ops",
+      themePack: {
+        packId: "pbwork-base",
+        packDigest: `sha1:${"a".repeat(40)}`,
+        theme: "default",
+        mode: "light",
+      },
       cases,
       acceptedWarningIds: [],
     },

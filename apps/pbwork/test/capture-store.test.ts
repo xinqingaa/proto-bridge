@@ -24,8 +24,20 @@ describe("PBWork V2 capture store", () => {
     const draft = createPrototypeCaptureDraft("cold-chain-ops");
     const manifest = buildRuntimeCaptureManifest("cold-chain-ops");
     expect(draft).not.toBeNull();
-    const count = resolveSelectionMatrix(draft!, manifest).matrix.length;
+    const resolved = resolveSelectionMatrix(draft!, manifest);
+    const count = resolved.matrix.length;
     expect(count).toBe(26);
+    expect(manifest.theme.packId).toBe("pbwork-base");
+    expect(manifest.clock).toEqual({
+      now: "2026-07-28T00:00:00.000Z",
+      timeZone: "Asia/Shanghai",
+    });
+    expect(
+      manifest.catalogs.find((catalog) => catalog.kind === "theme-pack")
+        ?.inputDigest,
+    ).toBe(manifest.theme.packDigest);
+    expect(resolved.matrix.every((entry) => entry.selectedCase.caseKey.themeId === "light")).toBe(true);
+    expect(resolved.selection.themePack).toEqual(draft!.themePack);
     expect(count).toBeLessThanOrEqual(DEFAULT_CAPTURE_MAX_CASES);
     expect(createPrototypeCaptureDraft("unknown-prototype")).toBeNull();
   });

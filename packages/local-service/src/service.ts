@@ -1258,7 +1258,7 @@ export class ProtoBridgeLocalService {
     const activeCases = await selectedCasesForSnapshot(this.store, BundleId.parse(bundleId), snapshot);
     let current: CapturePreflight | undefined;
     try {
-      current = (await this.runPreflight(selectionDraftFromSelectedCases(run.selection.prototypeId, activeCases))).preflight;
+      current = (await this.runPreflight(selectionDraftFromSelectedCases(run.selection.prototypeId, activeCases, run.selection.themePack))).preflight;
     } catch (error) {
       if (!(error instanceof V2ContractError) || error.code !== 'unknown-reference') throw error;
     }
@@ -2180,7 +2180,7 @@ export class ProtoBridgeLocalService {
       );
       success(
         response,
-        selectionDraftFromSelectedCases(job.selection.prototypeId, cases),
+        selectionDraftFromSelectedCases(job.selection.prototypeId, cases, job.selection.themePack),
       );
       return;
     }
@@ -2317,9 +2317,13 @@ export class ProtoBridgeLocalService {
           'Staleness Report has no stale Case/Scope to recapture.',
         );
       }
+      const sourceRun = await this.store.getRun(bundleId, activeSnapshot.sourceRunId);
+      if (!sourceRun) {
+        throw new V2ContractError('unknown-reference', 'Snapshot source Run does not exist.');
+      }
       success(
         response,
-        selectionDraftFromSelectedCases(bundle.prototypeId, cases),
+        selectionDraftFromSelectedCases(bundle.prototypeId, cases, sourceRun.selection.themePack),
       );
       return;
     }
@@ -2353,9 +2357,17 @@ export class ProtoBridgeLocalService {
           'The requested active Case does not exist.',
         );
       }
+      const sourceRun = await this.store.getRun(bundleId, activeSnapshot.sourceRunId);
+      if (!sourceRun) {
+        throw new V2ContractError('unknown-reference', 'Snapshot source Run does not exist.');
+      }
       success(
         response,
-        selectionDraftFromSelectedCases(bundle.prototypeId, selectedCases),
+        selectionDraftFromSelectedCases(
+          bundle.prototypeId,
+          selectedCases,
+          sourceRun.selection.themePack,
+        ),
       );
       return;
     }
@@ -2408,6 +2420,7 @@ export class ProtoBridgeLocalService {
       const draft = selectionDraftFromSelectedCases(
         run.selection.prototypeId,
         activeCases,
+        run.selection.themePack,
       );
       let current: CapturePreflight | undefined;
       try {
@@ -2516,6 +2529,7 @@ export class ProtoBridgeLocalService {
             selectionDraftFromSelectedCases(
               run.selection.prototypeId,
               activeCases,
+              run.selection.themePack,
             ),
           )
         ).preflight;

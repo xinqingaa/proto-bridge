@@ -98,6 +98,27 @@ try {
     screenshot.content?.some((item) => item.type === "image"),
     "MCP Screenshot tool did not return ImageContent.",
   );
+  const themePack = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_theme_pack",
+      arguments: { handoffId: fixed.handoffId },
+    }),
+  );
+  const darkTheme = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_theme_pack",
+      arguments: { handoffId: fixed.handoffId, mode: "dark" },
+    }),
+  );
+  assert(
+    themePack.packId === "pbwork-base" &&
+      themePack.packDigest?.startsWith("sha1:") &&
+      themePack.captured === true &&
+      Object.keys(themePack.values ?? {}).length > 100 &&
+      darkTheme.captured === false &&
+      Object.keys(darkTheme.values ?? {}).length > 100,
+    "Handoff theme pack did not expose the digest and full value table.",
+  );
 
   process.stdout.write(
     `Evidence vertical slice passed: PBWork and MCP read ${fixed.bundleId}/${fixed.snapshotId} via ${fixed.handoffId}\n`,

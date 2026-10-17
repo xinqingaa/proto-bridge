@@ -49,7 +49,7 @@ try {
     run: reference.RUN_1,
     revisions: [reference.PRIMARY_ACTIVE_REVISION],
     coverage: reference.RUN_1.coverage,
-    catalogs: [screenCatalog],
+    catalogs: [screenCatalog, reference.FIXTURE_THEME_PACK_CATALOG],
   });
   const fixedSnapshotId = created.snapshot.snapshotId;
   const screenshotBytes = Buffer.from(
@@ -102,6 +102,7 @@ try {
     "inspect_evidence_workspace",
     "read_handoff_index",
     "read_screen_packet",
+    "read_theme_pack",
     "read_implementation_plan",
     "read_implementation_tranche",
     "read_case_delta",
@@ -122,8 +123,8 @@ try {
     );
   }
   assert(
-    tools.tools?.length === 16,
-    `Expected 16 default MCP tools, received ${tools.tools?.length ?? 0}.`,
+    tools.tools?.length === 17,
+    `Expected 17 default MCP tools, received ${tools.tools?.length ?? 0}.`,
   );
   for (const removedName of [
     "list_evidence_bundles",
@@ -206,11 +207,11 @@ try {
     }),
   );
   assert(
-    targetComponents.resolutions?.[0]?.status === "resolved" &&
-      targetComponents.resolutions?.[0]?.candidates?.[0]?.symbol === "CommonAppBar" &&
-      targetTokens.resolutions?.[0]?.status === "resolved" &&
-      targetTokens.resolutions?.[0]?.candidates?.[0]?.accessor === "TS.colors.error",
-    "Target component/token resolver did not honor target-owned declarations and current code.",
+    targetComponents.resolutions?.[0]?.status === "pending" &&
+      targetComponents.resolutions?.[0]?.pending?.notice === "Target 待实现" &&
+      targetTokens.resolutions?.[0]?.status === "pending" &&
+      targetTokens.resolutions?.[0]?.id === "color.error",
+    "Flutter target should stay pending until it is adapted to the theme-pack contracts.",
   );
   const boundComponents = parseToolJson(
     await client.request("tools/call", {
@@ -219,8 +220,8 @@ try {
     }),
   );
   assert(
-    boundComponents.resolutions?.[0]?.status === "resolved" &&
-      boundComponents.resolutions?.[0]?.candidates?.[0]?.symbol === "CommonAppBar",
+    JSON.stringify(boundComponents.resolutions) ===
+      JSON.stringify(targetComponents.resolutions),
     "Omitting targetRoot did not use the MCP-bound delivery.targetRoot.",
   );
   targetFixture = await mkdtemp(path.join(os.tmpdir(), "pb-mcp-target-"));
@@ -333,6 +334,28 @@ try {
       handoffIndex.omittedCategories?.includes("full-facts") &&
       Array.isArray(handoffIndex.mandatoryRisks),
     "Handoff index did not preserve fixed identity, risks, or projection boundaries.",
+  );
+
+  const themePack = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_theme_pack",
+      arguments: { handoffId: handoff.handoffId },
+    }),
+  );
+  const otherMode = parseToolJson(
+    await client.request("tools/call", {
+      name: "read_theme_pack",
+      arguments: { handoffId: handoff.handoffId, mode: "dark" },
+    }),
+  );
+  assert(
+    themePack.packId === reference.FIXTURE_THEME_PACK.packId &&
+      themePack.packDigest === reference.FIXTURE_THEME_PACK.packDigest &&
+      themePack.captured === true &&
+      themePack.values?.["color.primary"] === "#111111" &&
+      otherMode.captured === false &&
+      otherMode.values?.["color.primary"] === "#eeeeee",
+    "read_theme_pack did not return the Handoff-fixed table.",
   );
 
   const screenPacket = parseToolJson(

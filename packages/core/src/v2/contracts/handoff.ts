@@ -4,6 +4,7 @@ import {
   BundleId,
   CaseEvidenceRevisionId,
   CaseId,
+  CatalogRevisionId,
   HandoffId,
   ScopeKey,
   SnapshotId,
@@ -17,6 +18,7 @@ import {
   LifecycleOperationKey,
   OperationRequestDigest,
 } from './prototype-lifecycle.js';
+import { ThemeIdentity } from '../theme/schema.js';
 
 export const Risk = z
   .object({
@@ -99,6 +101,15 @@ export const AgentHandoff = z
     workspaceId: WorkspaceId,
     bundleId: BundleId,
     snapshotId: SnapshotId,
+    themePack: z
+      .object({
+        packId: ThemeIdentity.shape.packId,
+        packDigest: ThemeIdentity.shape.packDigest,
+        defaultTheme: ThemeIdentity.shape.theme,
+        defaultMode: ThemeIdentity.shape.mode,
+        catalogRevisionId: CatalogRevisionId,
+      })
+      .strict(),
     createdAt: z.string().datetime(),
     implementationIntent: z.string().optional(),
     selectedCases: z.array(HandoffCaseRef).min(1),

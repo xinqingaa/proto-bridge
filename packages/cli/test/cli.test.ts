@@ -53,7 +53,27 @@ function recorder(cwd: string): {
 
 function manifest() {
   return {
-    protocolVersion: 2,
+    protocolVersion: 3,
+    theme: {
+    packId: 'sample-pack',
+    packDigest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    keyCatalogDigest: 'sha1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+    themes: ['default'],
+    defaultTheme: 'default',
+    modes: ['light', 'dark'],
+    defaultMode: 'light',
+  },
+  clock: { now: '2026-07-28T00:00:00.000Z', timeZone: 'Asia/Shanghai' },
+    catalogs: [{
+    kind: 'theme-pack',
+    inputDigest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    entries: [{
+      objectId: 'sample-pack/default/light',
+      digest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      value: { values: {}, provenance: {} },
+      blobIds: [],
+    }],
+  }],
     inputVersion: 'cli-screenshot-v1',
     capabilities: [
       'describe',
@@ -80,11 +100,16 @@ function manifest() {
 function screenshotDraft() {
   return {
     prototypeId: 'sample',
+    themePack: {
+      packId: 'sample-pack',
+      packDigest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      theme: 'default',
+      mode: 'light',
+    },
     screens: [
       {
         screenId: 'sample.task-list',
         variants: { mode: 'explicit', variantIds: ['default'] },
-        themeIds: ['light'],
         deviceIds: ['iphone-14'],
         scenarios: { mode: 'none' },
         captureScope: {
@@ -141,7 +166,27 @@ function coldChainManifest() {
     })),
   });
   return {
-    protocolVersion: 2,
+    protocolVersion: 3,
+    theme: {
+    packId: 'sample-pack',
+    packDigest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    keyCatalogDigest: 'sha1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+    themes: ['default'],
+    defaultTheme: 'default',
+    modes: ['light', 'dark'],
+    defaultMode: 'light',
+  },
+  clock: { now: '2026-07-28T00:00:00.000Z', timeZone: 'Asia/Shanghai' },
+    catalogs: [{
+    kind: 'theme-pack',
+    inputDigest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    entries: [{
+      objectId: 'sample-pack/default/light',
+      digest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      value: { values: {}, provenance: {} },
+      blobIds: [],
+    }],
+  }],
     inputVersion: 'cold-chain-cli-parity',
     capabilities: [
       'describe',

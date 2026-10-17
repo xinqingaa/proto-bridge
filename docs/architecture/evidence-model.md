@@ -81,11 +81,11 @@ Snapshot 固定 Bundle 在一次提交后的读取视图：
 
 active slot 的激活遵循防降级规则：失败、取消、低 Evidence Level 或 required boundary 不完整不能覆盖已有更可信 revision。零成功 Run 可以提交一个 carry-forward Snapshot，使 latest Attempt 和 Coverage 可追溯，同时保持旧 active Evidence。
 
-收敛版本中，正式 Handoff 所需的 Prototype、Screen、Component 和 Token Catalog 必须由 Snapshot 固定；缺少交付范围所需 Catalog 时不得把组件/Token 事实声明为完整。
+收敛版本中，正式 Handoff 所需的 Prototype、Screen、Component 和 Token Catalog 必须由 Snapshot 固定；缺少交付范围所需 Catalog 时不得把组件/Token 事实声明为完整。Handoff 同时必填主题包身份，并固定一份 theme-pack Catalog。有 tokenBindings 时还要求 token Catalog。
 
 ## Catalog
 
-Catalog revision 固定 Prototype、Screen、Variant、Component、Token、Action 和 Scenario 等目录事实。Catalog 与页面 Evidence 分开版本化，避免目录变化重写历史 revision。
+Catalog revision 固定 Prototype、Screen、Variant、Component、Token、theme-pack、Action 和 Scenario 等目录事实。Token Catalog 只含键定义。theme-pack Catalog 以包摘要为 `inputDigest`，保存包清单和每个「主题 × 模式」的解析值与 provenance。Catalog 与页面 Evidence 分开版本化，避免目录变化重写历史 revision。读模型从 Handoff 默认主题与模式的取值表派生 `resolvedValue`、`chain` 和 `tier`，不把取值复制到每个 Case 节点。
 
 ## Issue 与 Coverage
 
@@ -131,7 +131,7 @@ Runtime provider 的 session、App/build identity、operation 和失败尝试是
 
 ## Blob
 
-Blob 保存 Screenshot、调试数据或目录附件。Blob 必须具有 owner ref，并能从请求的 Snapshot 或 Catalog 到达。Debug/Trace 需要显式许可；MCP 不按文件路径读取 Blob。
+Blob 保存 Screenshot、调试数据、主题资产或目录附件。主题包清单列出的资产以 `theme-asset` 归属 theme-pack Catalog 修订。Blob 必须具有 owner ref，并能从请求的 Snapshot 或 Catalog 到达。Debug/Trace 需要显式许可；MCP 不按文件路径读取 Blob。
 
 Blob 字节按临时文件、fsync、rename、目录 fsync 的顺序持久写入，失败时清理临时文件，与 JSON 原子写入同等耐久。Case 级暂存、必需 Screenshot Blob 失败语义和提交顺序见[采集链路](./capture-pipeline.md)。
 

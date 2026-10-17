@@ -53,7 +53,17 @@ function job(id: string, bundleId: string, runId: string, prototypeId: string, l
     jobId: id,
     workspaceId: "pbwork-local",
     bundleId,
-    selection: { prototypeId, cases: [], acceptedWarningIds: [] },
+    selection: {
+      prototypeId,
+      themePack: {
+        packId: "pbwork-base",
+        packDigest: `sha1:${"a".repeat(40)}`,
+        theme: "default",
+        mode: "light",
+      },
+      cases: [],
+      acceptedWarningIds: [],
+    },
     inputVersion: "registry-v1",
     status: "completed" as const,
     acceptedAt: now,

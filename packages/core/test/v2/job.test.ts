@@ -9,10 +9,11 @@ import { V2_SCHEMA_MAJOR } from '../../src/v2/contracts/version.js';
 import { JOB_STATUSES } from '../../src/v2/contracts/vocabulary.js';
 import { referenceCaseSlice } from '../../src/v2/fixtures/index.js';
 
-const { WORKSPACE_ID, BUNDLE_ID, PROTOTYPE_ID, TASK_LIST_CASE_ID, TASK_LIST_CASE_KEY, FULL_CASE_SCOPE } = referenceCaseSlice;
+const { WORKSPACE_ID, BUNDLE_ID, PROTOTYPE_ID, TASK_LIST_CASE_ID, TASK_LIST_CASE_KEY, FULL_CASE_SCOPE, FIXTURE_THEME_PACK } = referenceCaseSlice;
 
 const SELECTION = {
   prototypeId: PROTOTYPE_ID,
+  themePack: FIXTURE_THEME_PACK,
   cases: [{ caseId: TASK_LIST_CASE_ID, caseKey: TASK_LIST_CASE_KEY, captureScope: FULL_CASE_SCOPE }],
   acceptedWarningIds: [],
 };

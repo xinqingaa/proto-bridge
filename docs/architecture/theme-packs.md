@@ -2,7 +2,7 @@
 
 Core 的 `packages/core/src/v2/theme/` 提供浏览器安全的主题包 Schema、继承解析、引用链、摘要、对比度与作用域校验，通过 `@proto-bridge/core/v2/theme` 和 `@proto-bridge/core/v2` 导出。Core 不读取文件；键目录、常量、包集合和资产字节摘要由调用方提供。
 
-本文描述已经实现的解析与 Runtime 接入。PBWork Runtime 已按原型主题包提供响应式表、CSS、Vuetify 与偏好管理。DS/冷链已使用新键与响应式读取。样例包 `pbwork-sample` 只供 Gallery 与 Playground 对照，不能绑定正式原型。Capture/Handoff 尚未固定包摘要与完整取值表。后续范围见[平台升级计划](../roadmap/pbwork-platform-upgrade.md#第-3-步-采集质量)。
+本文描述已经实现的解析、Runtime 接入与采集固定。PBWork Runtime 已按原型主题包提供响应式表、CSS、Vuetify 与偏好管理。DS/冷链已使用新键与响应式读取。样例包 `pbwork-sample` 只供 Gallery 与 Playground 对照，不能绑定正式原型。Capture 把包摘要、键目录摘要、声明时钟和每个「主题 × 模式」的解析表固定进 Evidence；Handoff 指向其中的默认主题与模式。
 
 ## 输入与所有权
 
@@ -85,7 +85,7 @@ border 包含 width/style/color，各字段允许表达式；asset 为 `none` �
 
 键目录摘要覆盖键定义与对比度配对，忽略标签、说明和来源文字。包摘要覆盖包身份、继承链、键目录摘要、主题和模式列表与默认项、全部解析值、继承链资产摘要。对象键顺序、Primitive 名、表达式写法和标签不影响等价结果的摘要。
 
-任何主题或模式的取值变化都会改变包摘要，即使该组合不是当前请求的组合。摘要接入 Capture inputVersion 与 Handoff 属于后续接入工作。
+任何主题或模式的取值变化都会改变包摘要，即使该组合不是当前请求的组合。Runtime manifest 的 `inputVersion` 覆盖包摘要、键目录摘要和声明时钟，因此取值、键目录或时钟变化都会使已有 Evidence 过期。Handoff 必填 `themePack`，并固定对应的 theme-pack Catalog 修订。
 
 ## PBWork 基础数据与 CSS 生成
 
@@ -111,10 +111,12 @@ PBWork 的数据位于 `src/design-system/theme/` 与 `theme-packs/base/`。`loa
 
 PrototypeRecord 的 themePackId 取代 defaultThemeId。Registry 调用 Core validateThemePacks 检查包存在、作用域、继承与全部组合；任何 block 阻断启动。当前 Web Runtime 支持 light/dark 模式，system 只用于偏好。
 
-Runtime URL 使用 variant/theme/mode；缺省主题/模式取 manifest 默认值。Core Case URL 构造器写 mode，Playwright 环境验证也读取 mode；业务 routeQuery 禁止覆盖这三个键。当前 Capture 的 themeId 字段仍传具体模式，prepare 使用原型包默认主题。内部 Workbench bridge 另带 themeName；该字段不会泄漏进现有严格 Capture 响应。Capture 协议升级、主题摘要/inputVersion、Catalog 与 Handoff 取值表属于平台升级第 3 步。
+Runtime URL 使用 variant/theme/mode；缺省主题/模式取 manifest 默认值。Core Case URL 只写 mode；`CaseKey.themeId` 只表示模式。Playwright 的 `colorScheme` 取该模式，只接受 `light` / `dark`。业务 routeQuery 禁止覆盖 `variant` 与 `mode`。Selection 携带 `themePack`（包 ID、包摘要、默认主题、默认模式）；actual 与 Selection 的身份不一致时阻断为 `environment.theme-digest-mismatch`。内部 Workbench bridge 的 `themeId` 仍是模式字符串，不进入严格 Capture 响应。
 
 DS 与冷链消费者已完成迁移，Runtime 仅生成新表的变量。原有 154 项值作为测试夹具保留：102 项迁入语义层、11 项进入组件层、9 项成为包私有 Primitive、32 项对应 31 个实现常量。所有等价断言均已落地，不再保留 todo。
 
 组件键由 Contract.componentTokens 声明 id 后缀、valueType/default/modeVariant/bindable/enumValues；loadThemeKeyCatalog 汇总为完整的 Core ThemeKeyCatalog。当前 113 个语义键 + 20 个组件键，其中 127 可绑定，6 个 enum 不可绑定；另有 64 个字阶派生部件和 31 个实现常量。Registry 同时校验组件声明与基础包默认值。SurfaceMaterial 负责共享材质；primary-tabs.selection-treatment 在基础包为 glass，AppBar/Tabbar 跟随 surface.treatment。组件 CSS 与 Inspector 绑定使用新键，常量不进入 Evidence/Target；JS 用 computed 读取主题值，以纯常量读取器读取手势阈值等不变值。
 
-Capture 的 token Catalog 已随生产绑定改为新键定义，inputVersion 加入 keyCatalogDigest，避免使用旧绑定的 Evidence 被误认为当前输入；完整包摘要与 theme-pack Catalog 固定仍属于平台升级第 3 步。Workbench 展示记录只是主题表生成的展示数据，不是第二份 Token 语义源。Gallery 与 Playground 可以选择基础包或样例包、包内主题和模式，并对照解析值。样例包改变品牌色、圆角、紧凑密度、玻璃表面、活泼动效和一个品牌标记，另有柑色主题。
+Capture 的 token Catalog 只含键定义（类型、是否可绑定、是否随模式变化、说明与来源），不含取值，常量不进入 Catalog。theme-pack Catalog 的 `inputDigest` 等于包摘要：一条包清单，外加每个「主题 × 模式」的解析值与 provenance。清单列出的资产在采集时按 sha1 校验后存为 `theme-asset` Blob。Workbench 展示记录只是主题表生成的展示数据，不是第二份 Token 语义源。Gallery 与 Playground 可以选择基础包或样例包、包内主题和模式，并对照解析值。样例包改变品牌色、圆角、紧凑密度、玻璃表面、活泼动效和一个品牌标记，另有柑色主题。
+
+Runtime 协议版本为 3。清单必填 `theme` 与 `clock`。`clock` 声明采集用的当前时刻和时区；Playwright 安装该时钟，交互模式仍走真实时间。`useClock()` 读取 `Date`。Preflight 在采集前对每个 Screen 的 default Variant、每个主题和每个模式比较语义树（节点身份、role、可见性、bbox 是否非零、componentId、排序后的 tokenBindings、语义父节点）。分叉是 Authoring Diagnostic `theme.mode-divergence`，不写入 Evidence。MCP `read_theme_pack` 只读 Handoff 固定的 theme-pack Catalog：默认组合 `captured: true`，其它组合返回该表并标注 `captured: false`。`read_screen_packet` 的 token 清单在该 Catalog 存在时附带默认主题与模式的 `resolvedValue`、`chain` 和 `tier`。CLI 不再接受 `--theme`；`snapshot inspect` 打印 `packId@digest/theme/mode`。

@@ -181,6 +181,8 @@ export type PrototypeRecord = {
   owners?: string[];
   roles?: string[];
   themePackId: string;
+  /** Fixed capture clock. Interactive Runtime does not use this instant. */
+  clock: { now: string; timeZone: string };
   /** Optional Tab / module groupings for the overview flow rail. */
   screenGroups?: PrototypeScreenGroup[];
 };

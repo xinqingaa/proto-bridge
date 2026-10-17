@@ -29,7 +29,7 @@ export function themeAssetsPlugin(): Plugin {
     handleHotUpdate(ctx) {
       if (!isThemeAsset(ctx.file)) return;
       const modules = [...ctx.server.moduleGraph.idToModuleMap.values()].filter(
-        (mod) => mod.id.includes("pbwork-theme-assets"),
+        (mod) => mod.id?.includes("pbwork-theme-assets") ?? false,
       );
       for (const mod of modules) ctx.server.moduleGraph.invalidateModule(mod);
       return [...ctx.modules, ...modules];

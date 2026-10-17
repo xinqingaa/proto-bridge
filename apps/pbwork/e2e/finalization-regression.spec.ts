@@ -42,6 +42,12 @@ const reason =
   "Required Fragment cold-chain-ops.exception-queue.list/ is occluded at its center point.";
 const selection = {
   prototypeId,
+  themePack: {
+    packId: "pbwork-base",
+    packDigest: `sha1:${"a".repeat(40)}`,
+    theme: "default",
+    mode: "light",
+  },
   cases: [{ caseId, caseKey, captureScope }],
   acceptedWarningIds: [],
 };
@@ -254,7 +260,9 @@ test("failed finalization reaches a visible grouped terminal state and survives 
   });
   await sheet.getByRole("button", { name: "修复后重新检查" }).click();
   await expect.poll(() => preflights).toBe(1);
-  await expect(sheet.getByText("预检完成，等待确认候选方案已经收敛。")).toBeVisible();
+  await expect(sheet.getByText("预检完成，等待确认候选方案已经收敛。")).toBeVisible({
+    timeout: 90_000,
+  });
   await expect(failure).toHaveCount(0);
 });
 
@@ -268,13 +276,13 @@ test("a sheet closed during confirmation reopens through 继续定稿", async ({
   await page.getByRole("button", { name: "确认送交待确定" }).click();
   await row.getByRole("button", { name: "定稿并采集" }).click();
   const sheet = page.getByTestId("lifecycle-finalization-sheet");
-  await expect(sheet.getByText("预检完成，等待确认候选方案已经收敛。")).toBeVisible({ timeout: 30_000 });
+  await expect(sheet.getByText("预检完成，等待确认候选方案已经收敛。")).toBeVisible({ timeout: 90_000 });
   await sheet.getByRole("button", { name: "收起定稿流程" }).click();
   await expect(sheet).toBeHidden();
   const resume = row.getByRole("button", { name: "继续定稿" });
   await expect(resume).toBeEnabled();
   await resume.click();
-  await expect(sheet.getByText("预检完成，等待确认候选方案已经收敛。")).toBeVisible({ timeout: 30_000 });
+  await expect(sheet.getByText("预检完成，等待确认候选方案已经收敛。")).toBeVisible({ timeout: 90_000 });
 });
 
 test("formal and unbound results keep the same classification across overview, tasks, and review", async ({

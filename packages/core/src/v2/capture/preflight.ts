@@ -19,6 +19,7 @@ export type PreflightWarning = {
 
 export type CapturePreflight = {
   inputVersion: string;
+  clock: RuntimeCaptureManifest['clock'];
   manifestDigest: string;
   catalogInputDigest: string;
   catalogInputs: RuntimeCatalogInput[];
@@ -117,6 +118,24 @@ export function preflightSelection(
   const missingScenarioIds = requiredScenarios.filter(
     (scenarioId) => !selectedScenarios.has(scenarioId),
   );
+  const themePackCatalog = catalogInputs.find(
+    (catalog) => catalog.kind === 'theme-pack',
+  );
+  if (
+    !themePackCatalog ||
+    themePackCatalog.inputDigest !== manifest.theme.packDigest
+  ) {
+    diagnostics.push({
+      diagnosticId: 'theme-digest-mismatch',
+      code: 'theme.digest-mismatch',
+      severity: 'block',
+      message: themePackCatalog
+        ? `theme-pack Catalog digest ${themePackCatalog.inputDigest} does not match manifest pack digest ${manifest.theme.packDigest}.`
+        : 'Runtime manifest has no theme-pack Catalog.',
+      caseIds: [],
+    });
+  }
+
   if (missingScenarioIds.length > 0) {
     diagnostics.push({
       diagnosticId: 'warning-interaction-coverage',
@@ -143,6 +162,7 @@ export function preflightSelection(
     .map((diagnostic) => diagnostic.diagnosticId);
   return {
     inputVersion: manifest.inputVersion,
+    clock: manifest.clock,
     manifestDigest: digestCaptureInput(manifest),
     catalogInputDigest: digestCaptureInput(catalogInputs),
     catalogInputs,

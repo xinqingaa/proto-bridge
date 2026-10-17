@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { BlobId, BundleId, WorkspaceId } from './ids.js';
 import { V2_SCHEMA_MAJOR } from './version.js';
 
-export const BLOB_KINDS = ['screenshot', 'trace', 'debug'] as const;
+export const BLOB_KINDS = ['screenshot', 'trace', 'debug', 'theme-asset'] as const;
 export const BlobKind = z.enum(BLOB_KINDS);
 export type BlobKind = z.infer<typeof BlobKind>;
 

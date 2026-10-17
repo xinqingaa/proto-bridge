@@ -15,8 +15,52 @@ export const PROTOTYPE_ID = 'sample';
 export const SCREEN_ID = 'sample.task-list';
 export const VARIANT_ID = 'default';
 export const THEME_ID = 'light';
+export const FIXTURE_THEME_PACK = {
+  packId: 'sample-pack',
+  packDigest: `sha1:${'a'.repeat(40)}`,
+  theme: 'default',
+  mode: 'light',
+} as const;
+export const FIXTURE_CLOCK = {
+  now: '2026-07-28T00:00:00.000Z',
+  timeZone: 'Asia/Shanghai',
+} as const;
+export const FIXTURE_THEME_MANIFEST = {
+  packId: FIXTURE_THEME_PACK.packId,
+  packDigest: FIXTURE_THEME_PACK.packDigest,
+  keyCatalogDigest: `sha1:${'b'.repeat(40)}`,
+  themes: ['default'],
+  defaultTheme: 'default',
+  modes: ['light', 'dark'],
+  defaultMode: 'light',
+} as const;
 export const DEVICE_ID = 'iphone-14';
 export const BUNDLE_ID = 'sample.default';
+export const FIXTURE_THEME_PACK_CATALOG = {
+  schemaVersion: 1,
+  catalogRevisionId: 'catalog-sample-theme-pack',
+  workspaceId: WORKSPACE_ID,
+  bundleId: BUNDLE_ID,
+  prototypeId: PROTOTYPE_ID,
+  kind: 'theme-pack' as const,
+  inputDigest: FIXTURE_THEME_PACK.packDigest,
+  createdAt: '2026-07-28T00:00:00.000Z',
+  entries: (['light', 'dark'] as const).map((mode) => ({
+    objectId: `${FIXTURE_THEME_PACK.packId}/${FIXTURE_THEME_PACK.theme}/${mode}`,
+    digest: FIXTURE_THEME_PACK.packDigest,
+    value: {
+      values: { 'color.primary': mode === 'light' ? '#111111' : '#eeeeee' },
+      provenance: {
+        'color.primary': {
+          sourcePackId: FIXTURE_THEME_PACK.packId,
+          chain: ['color.primary'],
+          inherited: false,
+        },
+      },
+    },
+    blobIds: [],
+  })),
+};
 
 export const TASK_LIST_CASE_KEY: CaseKey = {
   screenId: SCREEN_ID,

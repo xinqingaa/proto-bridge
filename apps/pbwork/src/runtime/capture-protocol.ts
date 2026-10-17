@@ -1,5 +1,11 @@
-import { computeKeyCatalogDigest } from "@proto-bridge/core/v2";
+import {
+  computeKeyCatalogDigest,
+  listPackChain,
+  resolveAllThemeTables,
+  type ThemeIdentity,
+} from "@proto-bridge/core/v2";
 import { runtimeThemeSources } from "@/design-system/theme/runtime-theme";
+import { themeAssetUrl } from "@/design-system/theme/sources";
 import {
   RUNTIME_CAPTURE_GLOBAL,
   RUNTIME_CAPTURE_PROTOCOL_VERSION,
@@ -36,7 +42,7 @@ type RuntimeContext = {
   prototypeId: string;
   screenId: string;
   variantId: string;
-  themeId: string;
+  theme: ThemeIdentity;
   fixtureId?: string | undefined;
 };
 
@@ -187,7 +193,7 @@ function readBaseline(): RuntimeContext | null {
       typeof value.prototypeId !== "string" ||
       typeof value.screenId !== "string" ||
       typeof value.variantId !== "string" ||
-      typeof value.themeId !== "string" ||
+      !isThemeIdentity(value.theme) ||
       (value.fixtureId !== undefined && typeof value.fixtureId !== "string")
     ) {
       return null;
@@ -196,13 +202,33 @@ function readBaseline(): RuntimeContext | null {
       prototypeId: value.prototypeId,
       screenId: value.screenId,
       variantId: value.variantId,
-      themeId: value.themeId,
+      theme: value.theme,
       ...(value.fixtureId ? { fixtureId: value.fixtureId } : {}),
     };
     return retainedBaseline;
   } catch {
     return null;
   }
+}
+
+function isThemeIdentity(value: unknown): value is ThemeIdentity {
+  if (!value || typeof value !== "object") return false;
+  const theme = value as Partial<ThemeIdentity>;
+  return (
+    typeof theme.packId === "string" &&
+    typeof theme.packDigest === "string" &&
+    typeof theme.theme === "string" &&
+    typeof theme.mode === "string"
+  );
+}
+
+function sameTheme(left: ThemeIdentity, right: ThemeIdentity): boolean {
+  return (
+    left.packId === right.packId &&
+    left.packDigest === right.packDigest &&
+    left.theme === right.theme &&
+    left.mode === right.mode
+  );
 }
 
 function digestText(value: string): string {
@@ -322,7 +348,10 @@ export function buildRuntimeCaptureManifest(
     },
     {
       kind: "token" as const,
-      values: [...runtimeThemeSources.keyCatalog.keys],
+      values: runtimeThemeSources.keyCatalog.keys.map((key) => {
+        const { default: _default, label: _label, ...definition } = key;
+        return definition;
+      }),
       id: (value: { id: string }) => value.id,
     },
     {
@@ -339,19 +368,102 @@ export function buildRuntimeCaptureManifest(
         `${value.ownerScreenId}.${value.id}`,
     },
   ];
-  const catalogs = catalogValues.map((catalog) => {
-    const entries = catalog.values.map((value) => ({
-      objectId: catalog.id(value as never),
-      digest: digestText(JSON.stringify(value)),
-      value,
-      blobIds: [],
-    }));
+  const prototype = loadPrototypes().find((item) => item.id === prototypeId);
+  if (!prototype?.clock) {
+    throw new Error(`MISSING_CAPTURE_CLOCK:${prototypeId}`);
+  }
+  const resolvedPack = resolveAllThemeTables({
+    packId: prototype.themePackId,
+    packs: runtimeThemeSources.packs,
+    keyCatalog: runtimeThemeSources.keyCatalog,
+    constants: runtimeThemeSources.constants,
+  });
+  if (!resolvedPack.digest) {
+    throw new Error(`THEME_PACK_UNRESOLVED:${prototype.themePackId}`);
+  }
+  const keyCatalogDigest = computeKeyCatalogDigest(
+    runtimeThemeSources.keyCatalog,
+  );
+  const packSource = runtimeThemeSources.packs.get(prototype.themePackId);
+  const chain = listPackChain(
+    runtimeThemeSources.packs,
+    prototype.themePackId,
+  ).chain;
+  const assets = Object.entries(packSource?.files ?? {}).map(([file, sha1]) => {
+    const mediaType =
+      resolvedPack.tables
+        .flatMap((table) => Object.values(table.values))
+        .find(
+          (value): value is { file: string; mediaType: string; alt: string; packId: string } =>
+            Boolean(
+              value &&
+                typeof value === "object" &&
+                "file" in value &&
+                "mediaType" in value &&
+                value.file === file,
+            ),
+        )?.mediaType ?? "image/svg+xml";
     return {
-      kind: catalog.kind,
-      inputDigest: digestText(JSON.stringify(entries)),
-      entries,
+      packId: prototype.themePackId,
+      file,
+      sha1,
+      mediaType,
+      url: themeAssetUrl(prototype.themePackId, file),
     };
   });
+  const theme = {
+    packId: prototype.themePackId,
+    packDigest: resolvedPack.digest,
+    keyCatalogDigest,
+    themes: [...new Set(resolvedPack.tables.map((table) => table.identity.theme))].sort(),
+    defaultTheme: packSource?.manifest.defaultTheme ?? "default",
+    modes: [...new Set(resolvedPack.tables.map((table) => table.identity.mode))].sort(),
+    defaultMode: packSource?.manifest.defaultMode ?? "light",
+  };
+  const themePackEntries = [
+    {
+      objectId: `${prototype.themePackId}/manifest`,
+      digest: resolvedPack.digest,
+      value: {
+        packId: theme.packId,
+        packDigest: theme.packDigest,
+        keyCatalogDigest,
+        extendsChain: chain,
+        themes: theme.themes,
+        defaultTheme: theme.defaultTheme,
+        modes: theme.modes,
+        defaultMode: theme.defaultMode,
+        assets,
+      },
+      blobIds: [],
+    },
+    ...resolvedPack.tables.map((table) => ({
+      objectId: `${table.identity.packId}/${table.identity.theme}/${table.identity.mode}`,
+      digest: resolvedPack.digest!,
+      value: { values: table.values, provenance: table.provenance },
+      blobIds: [],
+    })),
+  ];
+  const catalogs = [
+    ...catalogValues.map((catalog) => {
+      const entries = catalog.values.map((value) => ({
+        objectId: catalog.id(value as never),
+        digest: digestText(JSON.stringify(value)),
+        value,
+        blobIds: [],
+      }));
+      return {
+        kind: catalog.kind,
+        inputDigest: digestText(JSON.stringify(entries)),
+        entries,
+      };
+    }),
+    {
+      kind: "theme-pack" as const,
+      inputDigest: resolvedPack.digest,
+      entries: themePackEntries,
+    },
+  ];
   const authoringDiagnostics: RuntimeCaptureManifest["authoringDiagnostics"] =
     validateRegistries().map((error, index) => ({
       diagnosticId: `registry-${error.resourceType}-${error.resourceId ?? "unknown"}-${index}`,
@@ -393,12 +505,14 @@ export function buildRuntimeCaptureManifest(
   );
   return {
     protocolVersion: RUNTIME_CAPTURE_PROTOCOL_VERSION,
+    theme,
+    clock: prototype.clock,
     inputVersion: digestText(
       JSON.stringify({
         screens: versionInput,
-        keyCatalogDigest: computeKeyCatalogDigest(
-          runtimeThemeSources.keyCatalog,
-        ),
+        packDigest: theme.packDigest,
+        keyCatalogDigest,
+        clock: prototype.clock,
       }),
     ),
     capabilities: [
@@ -434,7 +548,7 @@ function sameDimensions(
     actual.prototypeId === expected.prototypeId &&
     actual.screenId === expected.screenId &&
     actual.variantId === expected.variantId &&
-    actual.themeId === expected.themeId &&
+    sameTheme(actual.theme, expected.theme) &&
     (expected.fixtureId === undefined ||
       actual.fixtureId === expected.fixtureId)
   );
@@ -646,7 +760,7 @@ async function waitForExpectedContext(
   }
   throw new ProtocolFailure(
     "dimension-mismatch",
-    `Runtime did not reach ${expected.screenId}/${expected.variantId}/${expected.themeId}.`,
+    `Runtime did not reach ${expected.screenId}/${expected.variantId}/${expected.theme.mode}.`,
   );
 }
 
@@ -1133,7 +1247,7 @@ export function installRuntimeCaptureProtocol(
       prototypeId: ownerScreen!.prototypeId,
       screenId: checkpoint.screenId,
       variantId: checkpoint.variantId,
-      themeId: context.themeId,
+      theme: context.theme,
     });
     await waitForFragments(
       options,

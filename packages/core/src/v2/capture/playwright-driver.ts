@@ -75,11 +75,12 @@ function actualFact(
   actual: RuntimeActualDimensions,
   dimension: 'screenId' | 'variantId' | 'themeId',
 ): Fact {
+  const value = dimension === 'themeId' ? actual.theme.mode : actual[dimension];
   return {
     factId: `${actual.screenId}.runtime.${dimension}`,
     candidates: [
       {
-        value: actual[dimension],
+        value,
         provenance: {
           source: 'runtime-contract',
           locator: `capture-protocol.semantic-snapshot.actual.${dimension}`,
@@ -87,7 +88,7 @@ function actualFact(
       },
     ],
     resolution: 'resolved',
-    effectiveValue: actual[dimension],
+    effectiveValue: value,
   };
 }
 
@@ -679,6 +680,18 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
     if (input.signal?.aborted) throw new Error('Capture cancelled before Case start.');
     const { chromium } = await import('playwright');
     const profile = resolveCaptureDevice(input.entry.selectedCase.caseKey.deviceId);
+    const mode = input.entry.selectedCase.caseKey.themeId;
+    if (mode !== 'light' && mode !== 'dark') {
+      throw new Error(
+        `Protocol error: colorScheme mode must be light or dark, received ${mode}.`,
+      );
+    }
+    const theme = {
+      packId: input.preflight.selection.themePack.packId,
+      packDigest: input.preflight.selection.themePack.packDigest,
+      theme: input.preflight.selection.themePack.theme,
+      mode,
+    };
     const diagnostics: CaptureDiagnostics = {
       console: [],
       pageErrors: [],
@@ -692,15 +705,14 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
       isMobile: profile.isMobile,
       hasTouch: profile.hasTouch,
       locale: 'zh-CN',
-      timezoneId: 'Asia/Shanghai',
-      colorScheme:
-        input.entry.selectedCase.caseKey.themeId === 'dark' ? 'dark' : 'light',
+      timezoneId: input.preflight.clock.timeZone,
+      colorScheme: mode,
       reducedMotion: 'reduce',
       serviceWorkers: 'block',
     });
     await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
     const page = await context.newPage();
-    await page.clock.install({ time: new Date('2026-07-28T00:00:00.000Z') });
+    await page.clock.install({ time: new Date(input.preflight.clock.now) });
     page.on('console', (message) => {
       diagnostics.console.push(`${message.type()}: ${message.text()}`.slice(0, 1000));
     });
@@ -797,11 +809,23 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
             `Runtime manifest changed after Preflight (${input.preflight.inputVersion}).`,
           );
         }
+        const manifestTheme = described.payload.manifest.theme;
+        const selectedTheme = input.preflight.selection.themePack;
+        if (
+          manifestTheme.packId !== selectedTheme.packId ||
+          manifestTheme.packDigest !== selectedTheme.packDigest ||
+          manifestTheme.defaultTheme !== selectedTheme.theme ||
+          manifestTheme.defaultMode !== selectedTheme.mode
+        ) {
+          throw new Error(
+            `environment.theme-digest-mismatch: Runtime ${manifestTheme.packId}@${manifestTheme.packDigest}/${manifestTheme.defaultTheme}/${manifestTheme.defaultMode} does not match Selection ${selectedTheme.packId}@${selectedTheme.packDigest}/${selectedTheme.theme}/${selectedTheme.mode}.`,
+          );
+        }
         const expectedInitial = {
           prototypeId: input.preflight.selection.prototypeId,
           screenId: input.entry.initialScreenId,
           variantId: input.entry.initialVariantId,
-          themeId: input.entry.selectedCase.caseKey.themeId,
+          theme,
         };
         const prepared = await requestRuntimeCapture(page, {
           kind: 'prepare',
@@ -888,7 +912,7 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
             prototypeId: input.preflight.selection.prototypeId,
             screenId: input.entry.selectedCase.caseKey.screenId,
             variantId: input.entry.selectedCase.caseKey.variantId,
-            themeId: input.entry.selectedCase.caseKey.themeId,
+            theme,
             viewport: profile.viewport,
           },
           requiredFragments,

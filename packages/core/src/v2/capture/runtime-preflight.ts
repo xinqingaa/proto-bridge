@@ -7,6 +7,7 @@ import { preflightSelection, type CapturePreflight } from './preflight.js';
 import { requestRuntimeCapture } from './runtime-client.js';
 import { buildRuntimeCaseUrl } from './runtime-url.js';
 import type { SelectionDraft } from './selection.js';
+import { probeThemeConsistency } from './theme-probe.js';
 
 export type InstrumentedRuntimePreflightInput = {
   draft: SelectionDraft;
@@ -100,7 +101,7 @@ export async function preflightInstrumentedRuntime(
         runtimeBaseUrl: input.runtimeBaseUrl,
         path: `/prototype/${encodeURIComponent(input.draft.prototypeId)}/${encodeURIComponent(firstScreenSlug)}`,
         variantId: 'default',
-        themeId: firstDraft.themeIds[0] ?? 'light',
+        themeId: 'light',
       }),
       { waitUntil: 'domcontentloaded' },
     );
@@ -113,6 +114,31 @@ export async function preflightInstrumentedRuntime(
     await waitForProtocol(page);
     const described = await requestRuntimeCapture(page, { kind: 'describe' });
     const manifest = described.payload.manifest;
+    await page.clock.install({ time: new Date(manifest.clock.now) });
+    const probeDiagnostics = await probeThemeConsistency({
+      manifest,
+      screenIds: input.draft.screens.map((screen) => screen.screenId),
+      viewport: firstDevice.viewport,
+      open: async (target) => {
+        const url = new URL(
+          buildRuntimeCaseUrl({
+            runtimeBaseUrl: input.runtimeBaseUrl,
+            path: target.path,
+            variantId: target.variantId,
+            themeId: target.mode,
+            ...(target.routeQuery ? { routeQuery: target.routeQuery } : {}),
+          }),
+        );
+        url.searchParams.set('theme', target.theme);
+        await page.goto(url.toString(), { waitUntil: 'domcontentloaded' });
+        await waitForProtocol(page);
+      },
+      request: (payload) =>
+        requestRuntimeCapture(
+          page,
+          payload as Parameters<typeof requestRuntimeCapture>[1],
+        ),
+    });
     if (
       !manifest.screens.some(
         (screen) => screen.prototypeId === input.draft.prototypeId,
@@ -125,6 +151,7 @@ export async function preflightInstrumentedRuntime(
     }
     const preflight = preflightSelection(input.draft, manifest, {
       ...(input.maxCases === undefined ? {} : { maxCases: input.maxCases }),
+      authoringDiagnostics: probeDiagnostics,
     });
 
     for (const screenDraft of input.draft.screens) {
@@ -161,7 +188,10 @@ export async function preflightInstrumentedRuntime(
           prototypeId: input.draft.prototypeId,
           screenId: entry.selectedCase.caseKey.screenId,
           variantId: entry.selectedCase.caseKey.variantId,
-          themeId: entry.selectedCase.caseKey.themeId,
+          theme: {
+            ...input.draft.themePack,
+            mode: entry.selectedCase.caseKey.themeId,
+          },
         },
       });
       await requestRuntimeCapture(page, {

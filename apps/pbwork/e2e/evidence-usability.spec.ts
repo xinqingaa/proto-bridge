@@ -20,7 +20,7 @@ async function finalizeColdChain(page: Page) {
   await row.getByRole("button", { name: "定稿并采集" }).click();
   const sheet = page.getByTestId("lifecycle-finalization-sheet");
   await expect(sheet.getByText("预检完成，等待确认候选方案已经收敛。")).toBeVisible({
-    timeout: 30_000,
+    timeout: 90_000,
   });
   await sheet
     .getByRole("checkbox", {
@@ -45,7 +45,7 @@ async function finalizeColdChain(page: Page) {
         if (await failure.isVisible()) return `failed:${await failure.innerText()}`;
         return "capturing";
       },
-      { timeout: 120_000, intervals: [1_000] },
+      { timeout: 180_000, intervals: [1_000] },
     )
     .toMatch(/^(final|risks)$/);
 

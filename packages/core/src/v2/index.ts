@@ -20,4 +20,5 @@ export * from './prompts/consumer-contract.js';
 export { PROMPT_ASSETS } from './prompts/generated-assets.js';
 export * from './workspace-config.js';
 export * from './theme/index.js';
+export * from './theme-pack-read.js';
 export * as fixtures from './fixtures/index.js';

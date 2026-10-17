@@ -34,6 +34,7 @@ describe('Delivery review artifacts', () => {
       run: fixture.RUN_1,
       revisions: [fixture.PRIMARY_ACTIVE_REVISION],
       coverage: fixture.RUN_1.coverage,
+      catalogs: [fixture.FIXTURE_THEME_PACK_CATALOG],
     });
     await store.putBlob({
       bundleId: fixture.BUNDLE_ID,

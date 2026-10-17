@@ -12,6 +12,24 @@ import { fixtures } from "@proto-bridge/core/v2";
 import { LocalFileStore } from "@proto-bridge/core/v2/store";
 import type { RuntimeCaptureManifest } from "@proto-bridge/core/v2/runtime-contract";
 
+function selectionTheme(manifest: RuntimeCaptureManifest): SelectionDraft["themePack"] {
+  return {
+    packId: manifest.theme.packId,
+    packDigest: manifest.theme.packDigest,
+    theme: manifest.theme.defaultTheme,
+    mode: manifest.theme.defaultMode,
+  };
+}
+
+function captureTheme(manifest: RuntimeCaptureManifest, mode = "light") {
+  return {
+    packId: manifest.theme.packId,
+    packDigest: manifest.theme.packDigest,
+    theme: manifest.theme.defaultTheme,
+    mode,
+  };
+}
+
 test("the fixed three-page regression baseline still resolves", async ({
   page,
 }) => {
@@ -24,6 +42,41 @@ test("the fixed three-page regression baseline still resolves", async ({
     await expect(page.getByTestId("runtime-root")).toBeVisible();
     await expect(page.getByRole("alert")).toHaveCount(0);
   }
+});
+
+test("a declared capture clock stays on the same instant", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-07-28T00:00:00.000Z") });
+  await page.goto("/prototype/cold-chain-ops/__manifest__");
+  await page.waitForFunction(() =>
+    Boolean(
+      (window as unknown as Record<string, unknown>)
+        .__PROTO_BRIDGE_CAPTURE_V2__,
+    ),
+  );
+  const described = await page.evaluate(async () => {
+    const api = (
+      window as unknown as Record<
+        string,
+        { request(input: unknown): Promise<any> }
+      >
+    ).__PROTO_BRIDGE_CAPTURE_V2__;
+    if (!api) throw new Error("V2 Runtime Capture Protocol missing");
+    return api.request({
+      protocolVersion: 3,
+      requestId: "cold-chain-clock-describe",
+      payload: { kind: "describe" },
+    });
+  });
+  expect(described.ok, JSON.stringify(described)).toBe(true);
+  await page.clock.setFixedTime(new Date("2026-07-28T00:00:00.000Z"));
+  const first = await page.evaluate(() => new Date().toISOString());
+  const second = await page.evaluate(() => new Date().toISOString());
+  expect(described.payload.manifest.clock).toEqual({
+    now: "2026-07-28T00:00:00.000Z",
+    timeZone: "Asia/Shanghai",
+  });
+  expect(first).toBe("2026-07-28T00:00:00.000Z");
+  expect(second).toBe(first);
 });
 
 test("Runtime describes a full Prototype before a Screen route resolves", async ({
@@ -45,7 +98,7 @@ test("Runtime describes a full Prototype before a Screen route resolves", async 
     ).__PROTO_BRIDGE_CAPTURE_V2__;
     if (!api) throw new Error("V2 Runtime Capture Protocol missing");
     return api.request({
-      protocolVersion: 2,
+      protocolVersion: 3,
       requestId: "cold-chain-manifest-describe",
       payload: { kind: "describe" },
     });
@@ -77,7 +130,7 @@ test("Core Capture opens a cold-chain Variant with its authored Screen route and
     ).__PROTO_BRIDGE_CAPTURE_V2__;
     if (!api) throw new Error("V2 Runtime Capture Protocol missing");
     return api.request({
-      protocolVersion: 2,
+      protocolVersion: 3,
       requestId: "cold-chain-variant-describe",
       payload: { kind: "describe" },
     });
@@ -86,6 +139,7 @@ test("Core Capture opens a cold-chain Variant with its authored Screen route and
   const manifest = described.payload.manifest as RuntimeCaptureManifest;
   const draft: SelectionDraft = {
     prototypeId: "cold-chain-ops",
+    themePack: selectionTheme(manifest),
     screens: [
       {
         screenId: "cold-chain-ops.shipment-detail",
@@ -93,7 +147,6 @@ test("Core Capture opens a cold-chain Variant with its authored Screen route and
           mode: "explicit",
           variantIds: ["active-excursion"],
         },
-        themeIds: ["light"],
         deviceIds: ["iphone-14"],
         scenarios: { mode: "none" },
         captureScope: {
@@ -145,7 +198,7 @@ test("cold-chain sequential Sheet actions resolve at their actual scenario step"
     ).__PROTO_BRIDGE_CAPTURE_V2__;
     if (!api) throw new Error("V2 Runtime Capture Protocol missing");
     const response = await api.request({
-      protocolVersion: 2,
+      protocolVersion: 3,
       requestId: "cold-chain-sequential-describe",
       payload: { kind: "describe" },
     });
@@ -161,6 +214,7 @@ test("cold-chain sequential Sheet actions resolve at their actual scenario step"
   };
   const draft: SelectionDraft = {
     prototypeId: "cold-chain-ops",
+    themePack: selectionTheme(manifest),
     screens: [
       {
         screenId: "cold-chain-ops.shipment-detail",
@@ -168,7 +222,6 @@ test("cold-chain sequential Sheet actions resolve at their actual scenario step"
           mode: "explicit",
           variantIds: ["active-excursion", "action-sheet-open"],
         },
-        themeIds: ["light"],
         deviceIds: ["iphone-14"],
         scenarios: {
           mode: "explicit",
@@ -209,12 +262,27 @@ test("Runtime occlusion blocks painted overlays but not scrolled or hit-test-exe
         .__PROTO_BRIDGE_CAPTURE_V2__,
     ),
   );
+  const described = await page.evaluate(async () => {
+    const api = (
+      window as unknown as Record<
+        string,
+        { request(input: unknown): Promise<any> }
+      >
+    ).__PROTO_BRIDGE_CAPTURE_V2__;
+    if (!api) throw new Error("V2 Runtime Capture Protocol missing");
+    return api.request({
+      protocolVersion: 3,
+      requestId: "occlusion-describe",
+      payload: { kind: "describe" },
+    });
+  });
+  expect(described.ok, JSON.stringify(described)).toBe(true);
   const screenId = "cold-chain-ops.exception-queue";
   const expected = {
     prototypeId: "cold-chain-ops",
     screenId,
     variantId: "default",
-    themeId: "light",
+    theme: captureTheme(described.payload.manifest as RuntimeCaptureManifest),
   };
   await page.evaluate(() => {
     const root = document.createElement("div");
@@ -245,7 +313,7 @@ test("Runtime occlusion blocks painted overlays but not scrolled or hit-test-exe
           >
         ).__PROTO_BRIDGE_CAPTURE_V2__;
         if (!api) throw new Error("V2 Runtime Capture Protocol missing");
-        return api.request({ protocolVersion: 2, requestId, payload: body });
+        return api.request({ protocolVersion: 3, requestId, payload: body });
       },
       {
         requestId: `occlusion-${pbId}`,
@@ -292,7 +360,7 @@ test("cold-chain-ops satisfies every authored Variant and required Scenario boun
             ).__PROTO_BRIDGE_CAPTURE_V2__;
             if (!api) throw new Error("V2 Runtime Capture Protocol missing");
             return api.request({
-              protocolVersion: 2,
+              protocolVersion: 3,
               requestId: id,
               payload: body,
             });
@@ -330,6 +398,7 @@ test("cold-chain-ops satisfies every authored Variant and required Scenario boun
   const described = await request("cold-chain-describe", { kind: "describe" });
   expect(described.ok, JSON.stringify(described)).toBe(true);
   expect(described.payload.manifest.authoringDiagnostics).toEqual([]);
+  const theme = captureTheme(described.payload.manifest as RuntimeCaptureManifest);
 
   const exceptionQueue = described.payload.manifest.screens.find(
     (screen: { screenId: string }) =>
@@ -370,7 +439,7 @@ test("cold-chain-ops satisfies every authored Variant and required Scenario boun
           prototypeId: "cold-chain-ops",
           screenId: screen.screenId,
           variantId: variant.variantId,
-          themeId: "light",
+          theme,
         },
       });
       const readiness = await request(`cold-chain-ready-${suffix}`, {
@@ -379,7 +448,7 @@ test("cold-chain-ops satisfies every authored Variant and required Scenario boun
           prototypeId: "cold-chain-ops",
           screenId: screen.screenId,
           variantId: variant.variantId,
-          themeId: "light",
+          theme,
           viewport: { width: 390, height: 844 },
         },
         requiredFragments: variant.requiredFragments,
@@ -474,7 +543,7 @@ test("cold-chain-ops satisfies every authored Variant and required Scenario boun
             prototypeId: "cold-chain-ops",
             screenId: screen.screenId,
             variantId: scenario.initialVariantId,
-            themeId: "light",
+            theme,
           },
         },
       );
@@ -489,7 +558,7 @@ test("cold-chain-ops satisfies every authored Variant and required Scenario boun
           prototypeId: "cold-chain-ops",
           screenId: screen.screenId,
           variantId: scenario.initialVariantId,
-          themeId: "light",
+          theme,
           viewport: { width: 390, height: 844 },
         },
         requiredFragments: initialVariant.requiredFragments,
@@ -548,7 +617,7 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
     ).__PROTO_BRIDGE_CAPTURE_V2__;
     if (!api) throw new Error("V2 Runtime Capture Protocol missing");
     const response = await api.request({
-      protocolVersion: 2,
+      protocolVersion: 3,
       requestId: "e2e-store-describe",
       payload: { kind: "describe" },
     });
@@ -565,11 +634,11 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
   };
   const fullDraft: SelectionDraft = {
     prototypeId: "cold-chain-ops",
+    themePack: selectionTheme(manifest),
     screens: [
       {
         screenId: "cold-chain-ops.exception-queue",
         variants: { mode: "explicit", variantIds: ["default"] },
-        themeIds: ["light"],
         deviceIds: ["iphone-14"],
         scenarios: {
           mode: "explicit",
@@ -587,11 +656,11 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
   };
   const fragmentDraft: SelectionDraft = {
     prototypeId: "cold-chain-ops",
+    themePack: selectionTheme(manifest),
     screens: [
       {
         screenId: "cold-chain-ops.exception-queue",
         variants: { mode: "explicit", variantIds: ["default"] },
-        themeIds: ["light"],
         deviceIds: ["iphone-14"],
         scenarios: { mode: "none" },
         captureScope: {
@@ -872,11 +941,11 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
 
     const genericDraft: SelectionDraft = {
       prototypeId: "cold-chain-ops",
+      themePack: selectionTheme(manifest),
       screens: [
         {
           screenId: "cold-chain-ops.exception-queue",
           variants: { mode: "explicit", variantIds: ["default"] },
-          themeIds: ["light"],
           deviceIds: ["iphone-14"],
           scenarios: { mode: "none" },
           captureScope: {
@@ -910,11 +979,11 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
 
     const screenshotDraft: SelectionDraft = {
       prototypeId: "cold-chain-ops",
+      themePack: selectionTheme(manifest),
       screens: [
         {
           screenId: "cold-chain-ops.exception-queue",
           variants: { mode: "explicit", variantIds: ["empty"] },
-          themeIds: ["light"],
           deviceIds: ["iphone-14"],
           scenarios: { mode: "none" },
           captureScope: {

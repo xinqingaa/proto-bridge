@@ -12,7 +12,12 @@ const actual = {
   prototypeId: 'sample',
   screenId: 'sample.task-list',
   variantId: 'default',
-  themeId: 'light',
+  theme: {
+    packId: 'sample-pack',
+    packDigest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    theme: 'default',
+    mode: 'light',
+  },
   viewport: { width: 390, height: 844, deviceScaleFactor: 3 },
 };
 
@@ -20,6 +25,16 @@ describe('V2 Runtime Capture Protocol schemas', () => {
   it('parses the instrumented task-list manifest and all success response kinds', () => {
     const manifest = RuntimeCaptureManifest.parse({
       protocolVersion: RUNTIME_CAPTURE_PROTOCOL_VERSION,
+      theme: {
+        packId: 'sample-pack',
+        packDigest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        keyCatalogDigest: 'sha1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+        themes: ['default'],
+        defaultTheme: 'default',
+        modes: ['light', 'dark'],
+        defaultMode: 'light',
+      },
+      clock: { now: '2026-07-28T00:00:00.000Z', timeZone: 'Asia/Shanghai' },
       inputVersion: 'registry-task-list-v2',
       capabilities: [
         'describe',
@@ -150,7 +165,7 @@ describe('V2 Runtime Capture Protocol schemas', () => {
     for (const response of responses) {
       expect(
         RuntimeCaptureResponse.parse({
-          protocolVersion: 2,
+          protocolVersion: RUNTIME_CAPTURE_PROTOCOL_VERSION,
           requestId: 'request-contract',
           ok: true,
           ...response,
@@ -258,7 +273,7 @@ describe('V2 Runtime Capture Protocol schemas', () => {
   it('rejects protocol mismatch, malformed requests, and invalid semantic roles', () => {
     expect(() =>
       RuntimeCaptureRequest.parse({
-        protocolVersion: 3,
+        protocolVersion: 2,
         requestId: 'request-bad-version',
         payload: { kind: 'describe' },
       }),

@@ -26,7 +26,7 @@ For theme-pack parser, preparation data, reactive Runtime helpers, or typed CSS 
 `docs/architecture/theme-packs.md`. Runtime now provides the Core-resolved table, CSS variables, local Vuetify themes
 and per-prototype v2 preferences. DS/prototype consumers now use the new keys and reactive Token readers.
 Gallery and Playground can preview `pbwork-base` and `pbwork-sample`. Constants never enter bindings, the token Catalog, or Target mapping.
-Do not claim that Capture/Handoff already pins the complete theme table.
+Capture pins the pack digest and every theme×mode value table; Handoff names the default theme and mode. Case identity stays the mode id.
 See the architecture document for the current activation boundary.
 
 ## Component atomicity

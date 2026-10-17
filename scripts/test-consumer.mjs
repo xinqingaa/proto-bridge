@@ -56,6 +56,7 @@ try {
         unknown: 1,
       },
     },
+    catalogs: [reference.FIXTURE_THEME_PACK_CATALOG],
   });
   await writer.putBlob({
     bundleId: reference.BUNDLE_ID,

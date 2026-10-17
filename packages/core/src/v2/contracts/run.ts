@@ -6,6 +6,7 @@ import { NormalizedCaptureScope } from './scope.js';
 import { CaseKey } from './case.js';
 import { RunTerminationReason } from './vocabulary.js';
 import { V2_SCHEMA_MAJOR } from './version.js';
+import { ThemeIdentity } from '../theme/schema.js';
 
 /** One selected Case plus the Capture Scope requested for it, as fixed inside a normalized Selection. */
 export const SelectedCase = z
@@ -21,6 +22,8 @@ export type SelectedCase = z.infer<typeof SelectedCase>;
 export const NormalizedSelection = z
   .object({
     prototypeId: PrototypeId,
+    /** Default theme and mode fixed for this matrix. Case `themeId` is the mode. */
+    themePack: ThemeIdentity,
     cases: z.array(SelectedCase).min(1),
     acceptedWarningIds: z.array(IssueId).default([]),
   })

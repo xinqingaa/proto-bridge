@@ -8,6 +8,10 @@ export const prototypes = [
     owners: ["冷链运营"],
     roles: ["值守专员", "调度主管"],
     themePackId: "pbwork-base",
+    clock: {
+      now: "2026-07-28T00:00:00.000Z",
+      timeZone: "Asia/Shanghai",
+    },
     screenGroups: [
       {
         id: "exception-response",

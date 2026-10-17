@@ -4,6 +4,7 @@ import { CatalogEntry, CatalogKind } from '../contracts/catalog.js';
 import { AuthoringDiagnostic } from '../contracts/authoring-diagnostic.js';
 import { FragmentRef } from '../contracts/fragment.js';
 import { STABLE_ID_PATTERN, STABLE_ID_RULE } from '../contracts/ids.js';
+import { ThemeIdentity } from '../theme/schema.js';
 
 /**
  * Browser-safe V2 Runtime Capture Protocol.
@@ -12,14 +13,14 @@ import { STABLE_ID_PATTERN, STABLE_ID_RULE } from '../contracts/ids.js';
  * while Core/Playwright uses the same executable schemas at the producer
  * boundary.
  */
-export const RUNTIME_CAPTURE_PROTOCOL_VERSION = 2 as const;
+export const RUNTIME_CAPTURE_PROTOCOL_VERSION = 3 as const;
 export const RUNTIME_CAPTURE_GLOBAL = '__PROTO_BRIDGE_CAPTURE_V2__' as const;
 
 const StableId = z.string().regex(STABLE_ID_PATTERN, STABLE_ID_RULE);
 const RuntimeRouteQueryKey = z
   .string()
   .regex(/^[a-z][a-z0-9_-]*$/)
-  .refine((key) => key !== 'variant' && key !== 'theme' && key !== 'mode');
+  .refine((key) => key !== 'variant' && key !== 'mode');
 export const RuntimeRouteQuery = z.record(
   RuntimeRouteQueryKey,
   z.string().max(512),
@@ -198,10 +199,35 @@ export const RuntimeCatalogInput = z
   .strict();
 export type RuntimeCatalogInput = z.infer<typeof RuntimeCatalogInput>;
 
+/** Declared theme pack carried by the Runtime manifest. Values live in the theme-pack Catalog. */
+export const RuntimeThemeManifest = z
+  .object({
+    packId: ThemeIdentity.shape.packId,
+    packDigest: ThemeIdentity.shape.packDigest,
+    keyCatalogDigest: ThemeIdentity.shape.packDigest,
+    themes: z.array(ThemeIdentity.shape.theme).min(1),
+    defaultTheme: ThemeIdentity.shape.theme,
+    modes: z.array(ThemeIdentity.shape.mode).min(1),
+    defaultMode: ThemeIdentity.shape.mode,
+  })
+  .strict();
+export type RuntimeThemeManifest = z.infer<typeof RuntimeThemeManifest>;
+
+/** Fixed "now" installed by Capture. Interactive Runtime keeps the real clock. */
+export const RuntimeClockManifest = z
+  .object({
+    now: z.string().datetime(),
+    timeZone: z.string().min(1),
+  })
+  .strict();
+export type RuntimeClockManifest = z.infer<typeof RuntimeClockManifest>;
+
 export const RuntimeCaptureManifest = z
   .object({
     protocolVersion: z.literal(RUNTIME_CAPTURE_PROTOCOL_VERSION),
     inputVersion: z.string().min(1),
+    theme: RuntimeThemeManifest,
+    clock: RuntimeClockManifest,
     capabilities: z
       .array(
         z.enum([
@@ -228,7 +254,7 @@ export const RuntimeActualDimensions = z
     prototypeId: StableId,
     screenId: StableId,
     variantId: StableId,
-    themeId: StableId,
+    theme: ThemeIdentity,
     fixtureId: StableId.optional(),
     viewport: z
       .object({
@@ -310,7 +336,7 @@ const PrepareRequest = z
         prototypeId: StableId,
         screenId: StableId,
         variantId: StableId,
-        themeId: StableId,
+        theme: ThemeIdentity,
         fixtureId: StableId.optional(),
       })
       .strict(),

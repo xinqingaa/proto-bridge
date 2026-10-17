@@ -1,6 +1,6 @@
 # PBWork 与 PB 平台升级
 
-> 状态：执行中。第 1 步与第 2 步的实现和退出标准均已满足，均未合入 `main`。第 3 步尚未开始。代码位于 `dev-platform`。合入 `main` 仍需另行授权。核实日期：2026-10-16。本文是计划，不代表现行 Contract。
+> 状态：执行中。第 1、2、3 步的实现和退出标准均已满足，均未合入 `main`。代码位于 `dev-platform`。合入 `main` 仍需另行授权。核实日期：2026-10-17。本文是计划，不代表现行 Contract。
 >
 > 实施设计见[原型主题包与授权设计](./prototype-theme-and-authoring-design.md)。「一刻」原型见[下一份计划](./yike-prototype.md)，以本计划的第 2、3、4、5 步交付的能力为前置条件。
 
@@ -42,8 +42,8 @@ PBWork 现在能产出可采集的原型，但三处明显不足：
 | 步骤 | 状态 | 证据 / 剩余缺口 |
 | --- | --- | --- |
 | 第 1 步 采集可靠性收口 | 实现与验收已完成（未合入 main） | 2026-10-16 收尾：Issue 按内容摘要存储并固定 Fact 引用（不改公共 Schema 字段）、`pb:clean` 共用 Core 启动配置、三份提示模板与 pending claim 专项测试、[ADR 0013](../decisions/0013-capture-reliability.md)。修复 6 个过期断言，并修复 Runtime 返回退出工作台的缺陷、生命周期 E2E 共享 sidecar 与漏 mock Job 的问题、主题包定义被旧颜色门禁误报的问题。验证：build/typecheck、core 435、local-service 39、cli 20、pbwork 198 个单测通过（另 11 个主题迁移 todo 保留给第 2 步）；PBWork Playwright 41 个用例均已有通过记录（最后全量 40 通过，唯一失败的 lifecycle-persistence 修复后单独通过）；runtime/mcp/consumer/evidence-slice/finalization/lifecycle 均覆盖通过。冷链真实定稿与固定引用见下方验收记录。 |
-| 第 2 步 主题包 | 实现与退出标准已满足（未合入 main） | 2026-10-16：用户确认冷链三个 default 屏与迁移前没有视觉差别。验证：`pnpm docs:verify`；PBWork `vitest run` 223 项；Core `vitest run` 433 项；`pnpm typecheck`（Core、Local Service、CLI、MCP）；`pnpm ds:target-sync:verify` 通过，32/32 组件与 127/127 可绑定键已列入映射，159 项 Flutter 适配保持 pending。样例包与 Gallery/Playground 选择器已落地。Capture 仍不固定完整取值表，属第 3 步。 |
-| 第 3 步 采集质量 | 未开始 | 依赖第 2 步。含主题身份接入 Core、Handoff 固定取值表、MCP 读取、主题一致性探针、可声明时钟。 |
+| 第 2 步 主题包 | 实现与退出标准已满足（未合入 main） | 2026-10-16：用户确认冷链三个 default 屏与迁移前没有视觉差别。验证：`pnpm docs:verify`；PBWork `vitest run` 223 项；Core `vitest run` 433 项；`pnpm typecheck`（Core、Local Service、CLI、MCP）；`pnpm ds:target-sync:verify` 通过，32/32 组件与 127/127 可绑定键已列入映射，159 项 Flutter 适配保持 pending。样例包与 Gallery/Playground 选择器已落地。取值表的采集固定见第 3 步。 |
+| 第 3 步 采集质量 | 实现与退出标准已满足（未合入 main） | 2026-10-17：协议 3。Case 身份只保留模式，Selection/Handoff 固定主题包，取值表进 theme-pack Catalog。冷链定稿 Handoff 经 MCP `read_theme_pack` 读到 `pbwork-base` 摘要和完整取值表，深色组合标注未采集。探针在预检中打开每个主题与模式；隐藏节点的夹具会阻断。声明时钟两次读取一致。验证：`pnpm docs:verify`；Core `vitest run` 437 项；`test:e2e:runtime` 8 项、`test:e2e:mcp`、`test:e2e:evidence-slice`、`test:e2e:finalization` 3 项、`test:e2e:lifecycle`；`pnpm ds:target-sync:verify` 通过，159 项 Flutter 适配保持 pending。 |
 | 第 4 步 制作效率 | 未开始 | 依赖第 2 步的键名。含 `v-pb` 与 `pbStyle()`、键类型生成、就近声明与自动汇总、共享原型运行套件、脚手架、实时门禁。 |
 | 第 5 步 DS 通用组件与收口 | 未开始 | 依赖第 4 步的写法与第 2 步的键名。组件清单见该步。 |
 
@@ -125,7 +125,7 @@ flowchart LR
 - 本次按用户授权完成一次 Git 提交 `8b3b325`，未合入 main。其后的第二批改动只保留在工作区。
 - 已接通主题包/原型包 glob 加载、原始资产字节摘要与构建 URL、Registry 的 Core 包/作用域校验。原型改为 themePackId，冷链绑定 pbwork-base。
 - Runtime 已使用解析缓存、响应式主题表与 CSS；provide ThemeTableKey，支持 useToken/useTokenNumber。Vuetify 按身份动态注册并局部选择，表单密度来自当前表；Workbench 外壳主题保持独立。
-- Runtime/画布使用原型隔离的 v2 主题/模式偏好。主题、浅色/深色/跟随系统分别选择；系统变化写具体 mode，保留 system 偏好。返回盖章、强制导航与 history state 已接线。URL 改用 theme（包内主题）与 mode（具体模式）；Core Case URL、环境核验与 routeQuery 保留键同步，当前 Capture themeId 字段不变，完整主题协议与 Evidence 取值固定仍留在平台第 3 步。
+- Runtime/画布使用原型隔离的 v2 主题/模式偏好。主题、浅色/深色/跟随系统分别选择；系统变化写具体 mode，保留 system 偏好。返回盖章、强制导航与 history state 已接线。URL 使用 theme（包内主题）与 mode（具体模式）。Case 身份、取值表与声明时钟的采集规则在第 3 步落地，现行说明见[主题包解析模型](../architecture/theme-packs.md#原型绑定与-capture-边界)。
 - 过渡边界：第三批迁移前，Runtime 暂保留原有组件 CSS 生成结果，再叠加新键目录变量；没有新增新旧键别名。组件 JS 模块级默认值、Contract/Evidence 键绑定与旧文件删除仍属第三批；Gallery/Playground 静态双主题与样例包属第四批。因此第二批接入已完成，不代表整个第 2 步完成。三个 default Screen 的迁移前截图已保存于 `/tmp/pbwork-theme-migration/before-*.png`。
 - 必要验证：PBWork 51 项相关单测、Core URL/协议 7 项通过；Runtime/画布 12 项浏览器检查通过，Manifest describe 与真实 Core Case Capture 各 1 项通过。Capture 专项发现内部 bridge 的 themeName 泄漏到严格响应，修复后只重跑该失败用例并通过。构建、PBWork 类型、文档与 Target 同步检查通过；Target 检查仍如实针对迁移前的 154 个 Catalog 键。未重复第 1 步全链路验收。
 

@@ -15,6 +15,7 @@ import type { NormalizedCaptureScope } from '../../contracts/scope.js';
 import { V2_SCHEMA_MAJOR } from '../../contracts/version.js';
 import {
   BUNDLE_ID,
+  FIXTURE_THEME_PACK,
   FULL_CASE_SCOPE,
   FULL_CASE_SCOPE_KEY,
   LIST_FRAGMENT_SCOPE,
@@ -157,6 +158,7 @@ export const RUN_1: Run = {
   bundleId: BUNDLE_ID,
   selection: {
     prototypeId: PROTOTYPE_ID,
+    themePack: FIXTURE_THEME_PACK,
     cases: [{ caseId: TASK_LIST_CASE_ID, caseKey: TASK_LIST_CASE_KEY, captureScope: FULL_CASE_SCOPE }],
     acceptedWarningIds: [],
   },
@@ -180,6 +182,7 @@ export const RUN_2: Run = {
   bundleId: BUNDLE_ID,
   selection: {
     prototypeId: PROTOTYPE_ID,
+    themePack: FIXTURE_THEME_PACK,
     cases: [{ caseId: TASK_LIST_CASE_ID, caseKey: TASK_LIST_CASE_KEY, captureScope: LIST_FRAGMENT_SCOPE }],
     acceptedWarningIds: [],
   },
@@ -248,6 +251,13 @@ export const HANDOFF: AgentHandoff = {
   workspaceId: WORKSPACE_ID,
   bundleId: BUNDLE_ID,
   snapshotId: SNAPSHOT_ID,
+  themePack: {
+    packId: FIXTURE_THEME_PACK.packId,
+    packDigest: FIXTURE_THEME_PACK.packDigest,
+    defaultTheme: FIXTURE_THEME_PACK.theme,
+    defaultMode: FIXTURE_THEME_PACK.mode,
+    catalogRevisionId: 'catalog-sample-theme-pack',
+  },
   createdAt: T2,
   implementationIntent: 'Implement the task list screen in the target Flutter app',
   selectedCases: [
@@ -314,6 +324,7 @@ export const PARTIAL_RUN: Run = {
   bundleId: BUNDLE_ID,
   selection: {
     prototypeId: PROTOTYPE_ID,
+    themePack: FIXTURE_THEME_PACK,
     cases: [{ caseId: TASK_LIST_CASE_ID, caseKey: TASK_LIST_CASE_KEY, captureScope: LIST_FRAGMENT_SCOPE }],
     acceptedWarningIds: [],
   },

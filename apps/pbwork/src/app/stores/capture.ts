@@ -19,6 +19,7 @@ import {
 } from "@/capture/service-client";
 import { formatCaptureError } from "@/capture/presentation";
 import { loadPrototypes, loadPrototypeScreens, loadPrototypeThemePack } from "@/design-system/loaders";
+import { resolveRuntimeTheme } from "@/design-system/theme/runtime-theme";
 
 const TERMINAL_JOB_STATUSES = [
   "completed",
@@ -74,12 +75,22 @@ export function createPrototypeCaptureDraft(prototypeId: string): SelectionDraft
     .map((screen) => ({
       screenId: screen.screenId,
       ...allSelections(screen.screenId),
-      themeIds: [loadPrototypeThemePack(prototype.id).defaultMode],
       deviceIds: ["iphone-14"],
       captureScope: defaultScope(),
     }));
   if (!screens.length) return null;
-  return { prototypeId, screens, acceptedWarningIds: [] };
+  const pack = loadPrototypeThemePack(prototype.id);
+  const resolved = resolveRuntimeTheme(
+    prototype.themePackId,
+    pack.defaultTheme,
+    pack.defaultMode,
+  );
+  return {
+    prototypeId,
+    themePack: resolved.identity,
+    screens,
+    acceptedWarningIds: [],
+  };
 }
 
 export const useCaptureStore = defineStore("capture-v2", {

@@ -29,6 +29,7 @@ export type HandoffEvaluation = {
   freshnessStatus: FreshnessStatus;
   risks: Risk[];
   catalogRefs: SnapshotCatalogRef[];
+  themePack: AgentHandoff['themePack'];
   interactionCoverage?: NonNullable<AgentHandoff['interactionCoverage']>;
 };
 
@@ -105,7 +106,7 @@ export async function evaluateAgentHandoff(
   let stale = false;
   const selectedRefs: AgentHandoff['selectedCases'] = [];
   const risks: Risk[] = [];
-  const requiredCatalogKinds = new Set<'component' | 'token'>();
+  const requiredCatalogKinds = new Set<'component' | 'token' | 'theme-pack'>();
 
   for (const selected of selectedCases) {
     const resolution = resolveCaseEvidence({
@@ -201,6 +202,7 @@ export async function evaluateAgentHandoff(
     }
     if (revision.facts.some((fact) => fact.factId.endsWith('.tokenBindings'))) {
       requiredCatalogKinds.add('token');
+      requiredCatalogKinds.add('theme-pack');
     }
     if (conflicts.length > 0) {
       risks.push({
@@ -312,11 +314,32 @@ export async function evaluateAgentHandoff(
     }
   }
 
+  const handoffSourceRun = runs.find((run) => run.runId === snapshot.sourceRunId);
+  if (!handoffSourceRun) {
+    throw unknownReferenceError('Handoff source Run', snapshot.sourceRunId);
+  }
+  const themeCatalog = snapshot.catalogRefs.find(
+    (reference) => reference.kind === 'theme-pack',
+  );
+  if (!themeCatalog) {
+    throw new V2ContractError(
+      'unknown-reference',
+      `Handoff Snapshot ${snapshot.snapshotId} has no theme-pack Catalog revision.`,
+      { snapshotId: snapshot.snapshotId },
+    );
+  }
   return {
     selectedCases: selectedRefs,
     coverageStatus: incomplete ? 'partial' : 'complete',
     freshnessStatus: stale ? 'stale' : 'fresh',
     risks: uniqueRisks(risks),
+    themePack: {
+      packId: handoffSourceRun.selection.themePack.packId,
+      packDigest: handoffSourceRun.selection.themePack.packDigest,
+      defaultTheme: handoffSourceRun.selection.themePack.theme,
+      defaultMode: handoffSourceRun.selection.themePack.mode,
+      catalogRevisionId: themeCatalog.catalogRevisionId,
+    },
     catalogRefs: snapshot.catalogRefs,
     ...(input.interactionCoverage
       ? { interactionCoverage: input.interactionCoverage }
@@ -380,6 +403,7 @@ export async function createAgentHandoff(
     workspaceId: input.store.workspaceId,
     bundleId: input.bundleId,
     snapshotId: input.snapshotId,
+    themePack: evaluation.themePack,
     createdAt,
     ...(input.implementationIntent
       ? { implementationIntent: input.implementationIntent }

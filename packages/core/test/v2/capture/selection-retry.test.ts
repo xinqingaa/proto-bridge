@@ -13,9 +13,30 @@ describe('selection retry draft', () => {
     const draft = selectionDraftFromSelectedCases(
       original.prototypeId,
       original.cases,
+      original.themePack,
     );
     const manifest: RuntimeCaptureManifest = {
-      protocolVersion: 2,
+      protocolVersion: 3,
+    theme: {
+    packId: 'sample-pack',
+    packDigest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    keyCatalogDigest: 'sha1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+    themes: ['default'],
+    defaultTheme: 'default',
+    modes: ['light', 'dark'],
+    defaultMode: 'light',
+  },
+  clock: { now: '2026-07-28T00:00:00.000Z', timeZone: 'Asia/Shanghai' },
+    catalogs: [{
+    kind: 'theme-pack',
+    inputDigest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    entries: [{
+      objectId: 'sample-pack/default/light',
+      digest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      value: { values: {}, provenance: {} },
+      blobIds: [],
+    }],
+  }],
       inputVersion: 'retry-test-v1',
       capabilities: [
         'describe',

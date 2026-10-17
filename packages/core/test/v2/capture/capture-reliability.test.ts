@@ -105,7 +105,27 @@ const fakeDriver: CaseCaptureDriver = {
 
 function manifest(inputVersion: string): RuntimeCaptureManifest {
   return {
-    protocolVersion: 2,
+    protocolVersion: 3,
+    theme: {
+    packId: 'sample-pack',
+    packDigest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    keyCatalogDigest: 'sha1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+    themes: ['default'],
+    defaultTheme: 'default',
+    modes: ['light', 'dark'],
+    defaultMode: 'light',
+  },
+  clock: { now: '2026-07-28T00:00:00.000Z', timeZone: 'Asia/Shanghai' },
+    catalogs: [{
+    kind: 'theme-pack',
+    inputDigest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    entries: [{
+      objectId: 'sample-pack/default/light',
+      digest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      value: { values: {}, provenance: {} },
+      blobIds: [],
+    }],
+  }],
     inputVersion,
     capabilities: [
       'describe',
@@ -138,11 +158,16 @@ function manifest(inputVersion: string): RuntimeCaptureManifest {
 function draft(variants: string[]): SelectionDraft {
   return {
     prototypeId: 'sample',
+    themePack: {
+      packId: 'sample-pack',
+      packDigest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      theme: 'default',
+      mode: 'light',
+    },
     screens: [
       {
         screenId: 'sample.task-list',
         variants: { mode: 'explicit', variantIds: variants },
-        themeIds: ['light'],
         deviceIds: ['iphone-14'],
         scenarios: { mode: 'none' },
         captureScope: {
