@@ -2,63 +2,65 @@
 import { computed } from "vue";
 import { ArrowRight, Layers } from "lucide-vue-next";
 import { runtimeThemeSources } from "@/design-system/theme/runtime-theme";
-import { resolvePackTheme } from "@/design-system/theme/presentation";
+import { resolveRuntimeTheme } from "@/design-system/theme/runtime-theme";
+import { comparePreviewTables } from "@/workbench/preview/model";
 
 const props = defineProps<{
   packId: string;
   themeName: string;
-  mode: "light" | "dark";
+  mode: string;
 }>();
 
 const manifest = computed(
   () => runtimeThemeSources.packs.get(props.packId)?.manifest,
 );
 
-const isFoundation = computed(() => props.packId === "pbwork-base");
-const isSample = computed(() => props.packId === "pbwork-sample");
-
-const table = computed(() =>
-  resolvePackTheme(props.packId, props.themeName, props.mode),
-);
-
-const base = computed(() => resolvePackTheme("pbwork-base", "default", props.mode));
-
-const overrideCount = computed(() => {
-  if (isFoundation.value) return 0;
-  return Object.keys(table.value.values).filter(
-    (key) =>
-      JSON.stringify(table.value.values[key]) !==
-      JSON.stringify(base.value.values[key]),
-  ).length;
-});
-
-const label = computed(() => {
-  if (!manifest.value) return "";
-  return manifest.value.label;
-});
-
-const note = computed(() => {
-  if (isFoundation.value) return "所有原型可继承的起点";
-  if (isSample.value) return `覆盖 ${overrideCount.value} 项解析值 · 仅验证换肤`;
-  return overrideCount.value > 0
-    ? `覆盖 ${overrideCount.value} 项解析值`
-    : "当前直接使用基础包 · 尚无自有主题覆盖";
+const facts = computed(() => {
+  const currentManifest = manifest.value;
+  if (!currentManifest) return { note: `主题包不存在：${props.packId}` };
+  try {
+    const table = resolveRuntimeTheme(
+      props.packId,
+      props.themeName,
+      props.mode,
+    );
+    if (!currentManifest.extends) return { note: "共享基础包" };
+    const referenceManifest = runtimeThemeSources.packs.get(
+      currentManifest.extends,
+    )?.manifest;
+    if (!referenceManifest || !referenceManifest.modes.includes(props.mode))
+      return { note: "基础对照未知", baseLabel: currentManifest.extends };
+    // Explicitly compare the parent's declared default, not an inferred theme mapping.
+    const reference = resolveRuntimeTheme(
+      referenceManifest.id,
+      referenceManifest.defaultTheme,
+      props.mode,
+    );
+    const differences = comparePreviewTables(table, reference).filter(
+      (row) => row.changed,
+    ).length;
+    const authored = Object.values(table.provenance).filter(
+      (source) => !source.inherited,
+    ).length;
+    return {
+      baseLabel: referenceManifest.label,
+      note: `当前包定义 ${authored} 项；相对 ${referenceManifest.id}/${referenceManifest.defaultTheme}/${props.mode} 最终值差异 ${differences} 项${currentManifest.scope === "playground" ? " · 仅演示" : ""}`,
+    };
+  } catch (error) {
+    return { note: error instanceof Error ? error.message : String(error) };
+  }
 });
 </script>
 
 <template>
   <div class="theme-lineage">
     <Layers :size="14" />
-    <template v-if="isFoundation">
-      <strong>基础 DS</strong>
-      <span>{{ note }}</span>
-    </template>
-    <template v-else>
-      <strong>基础 DS</strong>
-      <ArrowRight :size="13" />
-      <strong>{{ label }}</strong>
-      <span>{{ note }}</span>
-    </template>
+    <template v-if="facts.baseLabel"
+      ><strong>{{ facts.baseLabel }}</strong
+      ><ArrowRight :size="13"
+    /></template>
+    <strong>{{ manifest?.label ?? packId }}</strong>
+    <span>{{ facts.note }}</span>
     <code>{{ packId }} / {{ themeName }}</code>
   </div>
 </template>

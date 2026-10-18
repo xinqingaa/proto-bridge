@@ -43,7 +43,7 @@ test("tab playgrounds compare adaptive and equal layouts while FilterBar stays u
     await expect(page.locator('[data-tab-layout="equal"]')).toBeVisible();
 
     if (componentId !== "tabbar") {
-      const frames = page.locator(".tab-comparison-frame");
+      const frames = page.locator("[data-tab-layout] .tab-screen");
       const stableHeights = await frames.evaluateAll((elements) =>
         elements.map((element) =>
           Math.round(element.getBoundingClientRect().height),
@@ -72,7 +72,7 @@ test("tab playgrounds compare adaptive and equal layouts while FilterBar stays u
       }
 
       const panelHeights = await page
-        .locator(".tab-comparison .v-window-item--active .panel-slot-demo")
+        .locator("[data-tab-layout] .v-window-item--active .panel-slot-demo")
         .evaluateAll((panels) =>
           panels.map((panel) => panel.getBoundingClientRect().height),
         );
@@ -83,20 +83,22 @@ test("tab playgrounds compare adaptive and equal layouts while FilterBar stays u
 
   await page.goto("/workbench/components/tabbar");
   await expect(page.locator(".pb-tabbar-item")).toHaveCount(6);
-  const widths = await page.locator(".tab-comparison").evaluateAll((sections) =>
-    sections.map((section) => ({
-      mode: section.getAttribute("data-tab-layout"),
-      widths: Array.from(section.querySelectorAll(".pb-tabbar-item")).map(
-        (item) => Math.round(item.getBoundingClientRect().width),
-      ),
-    })),
-  );
+  const widths = await page
+    .locator("[data-tab-layout]")
+    .evaluateAll((sections) =>
+      sections.map((section) => ({
+        mode: section.getAttribute("data-tab-layout"),
+        widths: Array.from(section.querySelectorAll(".pb-tabbar-item")).map(
+          (item) => Math.round(item.getBoundingClientRect().width),
+        ),
+      })),
+    );
   expect(new Set(widths[0]?.widths).size).toBe(1);
   expect(widths[1]?.widths[0]).toBeGreaterThan(widths[0]?.widths[0] ?? 0);
 
   await page.goto("/workbench/components/filter-bar");
   await expect(page.getByLabel("使用场景")).toHaveCount(0);
-  await expect(page.locator(".tab-comparison")).toHaveCount(0);
+  await expect(page.locator("[data-tab-layout]")).toHaveCount(0);
 });
 
 test("component playgrounds expose component types and Contract states without scenario selection", async ({
@@ -111,7 +113,7 @@ test("component playgrounds expose component types and Contract states without s
   for (const componentId of ["tabbar", "primary-tabs", "secondary-tabs"]) {
     await page.goto(`/workbench/components/${componentId}`);
     await expect(page.getByLabel("使用场景")).toHaveCount(0);
-    await expect(page.locator(".tab-comparison")).toHaveCount(2);
+    await expect(page.locator("[data-tab-layout]")).toHaveCount(2);
   }
 
   for (const componentId of [
@@ -163,10 +165,18 @@ test("component playgrounds expose component types and Contract states without s
   await expect(iosDemo).toBeVisible();
   await expect(androidDemo).toBeVisible();
   await expect(page.getByRole("button", { name: "进入" })).toHaveCount(2);
-  await expect(page.getByRole("button", { name: "返回" })).toHaveCount(2);
+  await expect(
+    page
+      .locator("[data-transition-mode]")
+      .getByRole("button", { name: "返回", exact: true }),
+  ).toHaveCount(2);
   const iosEnter = iosDemo.getByRole("button", { name: "进入" });
   await iosEnter.click();
   await expect(iosDemo.getByText("详情", { exact: true })).toBeVisible();
+  await page.locator('.state-actions [data-preview-state="back"]').click();
+  await expect(iosDemo.getByText("今天", { exact: true })).toBeVisible();
+  await page.locator('.state-actions [data-preview-state="android"]').click();
+  await expect(androidDemo.getByText("详情", { exact: true })).toBeVisible();
 
   await page.goto("/workbench/components/filter-bar");
   await expect(page.getByLabel("使用场景")).toHaveCount(0);
@@ -176,9 +186,7 @@ test("component playgrounds expose component types and Contract states without s
   await expect(page.locator('[data-exhibit="type.outlined"]')).toBeVisible();
   await expect(page.locator('[data-exhibit="state.loading"]')).toBeVisible();
   await expect(page.locator('[data-exhibit="state.disabled"]')).toBeVisible();
-  const submitButton = page.locator(
-    '[data-primary-preview] [data-pb-id="ds.button"]',
-  );
+  const submitButton = page.locator("[data-primary-preview] .pb-button");
   await expect(submitButton).toHaveCount(1);
   const initialHeight = await submitButton.evaluate(
     (element) => element.getBoundingClientRect().height,
@@ -205,7 +213,7 @@ test("list playground demonstrates custom rows and desktop refresh/load controls
 
   await page.goto("/workbench/components/scrollable-data-list");
   const mainList = page
-    .locator('[data-pb-id="ds.scrollable-data-list"]')
+    .locator('[data-pb-component="ds.scrollable-data-list"]')
     .filter({ has: page.locator('[role="listitem"]') })
     .first();
   const dimensions = await mainList.evaluate((element) => ({
@@ -227,7 +235,7 @@ test("list playground demonstrates custom rows and desktop refresh/load controls
   await expect(mainList.locator('[role="listitem"]')).toHaveCount(10);
 });
 
-test("wide component exhibits retain their intended visual width and Card surface states", async ({
+test("wide component exhibits retain the phone viewport width and Card surface states", async ({
   page,
 }) => {
   await page.goto("/workbench/components/card");
@@ -239,15 +247,17 @@ test("wide component exhibits retain their intended visual width and Card surfac
     await page
       .locator('[data-exhibit="type.elevated"] .pb-card')
       .evaluate((element) => element.getBoundingClientRect().width),
-  ).toBeGreaterThan(600);
+  ).toBeGreaterThan(200);
 
   await page.goto("/workbench/components/divider");
   for (const stateId of ["plain", "inset"]) {
     expect(
       await page
-        .locator(`[data-exhibit="${stateId === "plain" ? "state" : "type"}.${stateId}"] .pb-divider`)
+        .locator(
+          `[data-exhibit="${stateId === "plain" ? "state" : "type"}.${stateId}"] .pb-divider`,
+        )
         .evaluate((element) => element.getBoundingClientRect().width),
-    ).toBeGreaterThan(600);
+    ).toBeGreaterThan(200);
   }
 
   await page.goto("/workbench/components/app-bar");
@@ -255,7 +265,7 @@ test("wide component exhibits retain their intended visual width and Card surfac
     await page
       .locator('[data-exhibit="state.no-back"] .pb-app-bar')
       .evaluate((element) => element.getBoundingClientRect().width),
-  ).toBeGreaterThan(600);
+  ).toBeGreaterThan(200);
 });
 
 test("sheet surfaces keep semantic radius and FlowSheet clips adjacent pages", async ({
@@ -270,7 +280,7 @@ test("sheet surfaces keep semantic radius and FlowSheet clips adjacent pages", a
   ).toBe("16px 16px 0px 0px");
 
   await page.goto("/workbench/components/flow-sheet");
-  await page.getByRole("button", { name: "打开Flow Sheet" }).click();
+  await page.getByRole("button", { name: "显示交付分步", exact: true }).click();
   const flowSheet = page.locator(".pb-flow-sheet");
   await expect(flowSheet).toBeVisible();
   const layout = await flowSheet.evaluate((element) => {
@@ -318,7 +328,7 @@ test("sheet surfaces keep semantic radius and FlowSheet clips adjacent pages", a
   await expect(flowSheet.getByText("步骤 2")).toBeVisible();
 
   await page.goto("/workbench/components/confirm");
-  await page.getByRole("button", { name: "打开Dialog / Confirm" }).click();
+  await page.getByRole("button", { name: "显示确认操作", exact: true }).click();
   const dialog = page.locator(".pb-dialog");
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "确认" }).click();

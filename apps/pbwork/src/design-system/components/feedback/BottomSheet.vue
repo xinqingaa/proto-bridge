@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, toRefs, watch } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
+import { useOverlayReturnFocus } from "@/design-system/components/_shared/useOverlayReturnFocus";
 import SheetHeader from "@/design-system/components/_shared/SheetHeader.vue";
 
 const props = defineProps<{
@@ -20,6 +21,7 @@ const emit = defineEmits<{
 
 const sheetRef = usePbInspectRef();
 const { title, modelValue, attach, inspectId } = toRefs(props);
+const restoreTriggerFocus = useOverlayReturnFocus(() => Boolean(props.modelValue));
 
 const currentDetent = computed(() => props.detent ?? "content");
 const detentLabels = { content: "适应内容", medium: "半屏", expanded: "展开" };
@@ -98,6 +100,7 @@ watch(modelValue, async (value) => {
     scrim
     :attach="attachTarget"
     absolute
+    @after-leave="restoreTriggerFocus"
     @update:model-value="$emit('update:modelValue', Boolean($event))"
   >
     <v-card

@@ -153,7 +153,7 @@ describe("design contracts", () => {
   });
 
   it("ships the fixed component sample set", () => {
-    expect(componentRecords).toHaveLength(47);
+    expect(componentRecords).toHaveLength(46);
     expect(
       componentRecords.filter((item) => item.category === "action"),
     ).toHaveLength(3);
@@ -171,7 +171,7 @@ describe("design contracts", () => {
     ).toHaveLength(4);
     expect(
       componentRecords.filter((item) => item.category === "feedback"),
-    ).toHaveLength(7);
+    ).toHaveLength(6);
   });
 
   it("ships the expanded semantic token set", () => {

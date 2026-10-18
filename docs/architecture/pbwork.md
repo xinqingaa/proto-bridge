@@ -31,6 +31,16 @@ apps/pbwork/src/
 
 Workbench 组件统一从 `src/workbench/ui` 复用或封装。该层可以使用 Vuetify，但业务视图不能随意创建不一致的原生控件。
 
+## 设计基础与组件的共享预览边界
+
+全部 12 个设计基础分类、浅深主题页与 Registry 46 个组件使用 `src/workbench/preview/`。`PreviewComparison` 管单机/按需双机、局部会话与自然撑开的舞台、fit/100% 显示及预览/来源 Tab；设置侧栏只在预览可见，共同滚动在舞台顶部以紧凑开关呈现。`PreviewSurface` 管手机壳、局部主题、设备视口与 Overlay host。`FoundationSample` / `ThemeSample` 编排分类样板与主题事实，`ComponentDeviceSample` 承接原 Playground 的矩阵、导航/转场、长列表与触发演示，Button/BottomSheet 保留专用样板；不嵌套手机，不连接全局 Playground Store。原型扩展最小登记由 `preview/extensions/` 管理，显式元数据与路径校验后接入原导航和手机舞台，当前正式登记为空。人工规则见[预览工作流](../pbwork/workbench-preview.md)，批次见[平台升级第 6 步](../roadmap/pbwork-platform-upgrade.md#第-6-步-设计基础与组件预览迁移)。
+
+预览来源由主题 manifest 的 scope 与 Prototype Registry 的真实绑定生成，DS 组件归属与渲染主题分开。每台设备有独立的 `ThemeTableKey`、CSS/主题属性、Vuetify Provider、演示状态、实例标识及浮层 host；控制面保持 Workbench 主题。完整已验证主题身份通过单一 prop 原子传入 Provider，避免同步监听器读到跨包的中间组合。预览只在 CSS 输出中把视口单位适配为设备容器单位，Core 表与 digest 不变。手机内容区保留滚动，舞台正常文档流随设备高度撑开、双机空间不足换行，手册不引入 iframe，不改变正式 Runtime/Capture 或业务偏好。
+
+`PreviewValueTable` 在所有资源的来源 Tab 中按分类列出完整实际样板、原始键值与定义来源，并持有只影响表格的搜索；`SourceValuePreview` 按真实值类型渲染色块、字体、几何/表面、动效等，相同项也保留，不显示差异列/筛选或引用链；它与手机复用同一个 Core 解析缓存，不读取被缩放或容器单位改写的显示 CSS。舞台使用 ResizeObserver 测量可用空间，手机设备容器可通过右下角斜线手柄或方向键等比缩放，外层卡片随内容高度撑开，预览比例变化不重建设备；滚动条隐藏后仍保留内容滚动和键盘焦点。布局、共同滚动、显示模式、自定义缩放和 A/B 主题选择由工作台独立 localStorage 偏好跨页共享与恢复，不持久化演示状态或搜索。预览/来源 Tab 以保留实例的翻页动画切换，支持减少动态效果；共同滚动按相对进度双向同步，仅影响预览内容区。实现常量显示为只读且不入差异；原型扩展缺实现的比较侧显示不适用。正式 Evidence 与平台总验收不由预览替代。
+
+原 ComponentPlayground 的 Pinia 会话暂用于未迁移组件；已接入的代表组件使用每设备会话，不能让双机共用原全局可变状态。主题解析继续复用 Core 和现有 Runtime theme registry；具体资源内的只读资料不产生正式 Evidence。
+
 ## Prototype Design System
 
 原型设计基础的依赖链为：

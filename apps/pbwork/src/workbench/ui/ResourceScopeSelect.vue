@@ -19,7 +19,9 @@ const emit = defineEmits<{
 }>();
 
 const prototypes = loadPrototypes();
-const samplePackIds = ["pbwork-sample"]; // Hard-coded list of sample packs
+const samplePackIds = [...runtimeThemeSources.packs.values()]
+  .filter((pack) => pack.manifest.scope === "playground")
+  .map((pack) => pack.manifest.id);
 
 type SelectItem = {
   value: string;
@@ -77,9 +79,11 @@ function handleUpdate(value: string) {
 
 <template>
   <WorkbenchSelect
+    v-if="items.length > 1"
     :model-value="selectedValue"
     :items="items"
     :label="label ?? '查看范围'"
     @update:model-value="handleUpdate"
   />
+  <span v-else>{{ items[0]?.label }}</span>
 </template>

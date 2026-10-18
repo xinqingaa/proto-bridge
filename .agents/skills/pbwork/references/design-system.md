@@ -31,7 +31,9 @@ registration/preview support rather than claiming it exists.
 For theme-pack parser, preparation data, reactive Runtime helpers, or typed CSS generation, also read
 `docs/architecture/theme-packs.md`. Runtime now provides the Core-resolved table, CSS variables, local Vuetify themes
 and per-prototype v2 preferences. DS/prototype consumers now use the new keys and reactive Token readers.
-Gallery and Playground can preview `pbwork-base` and `pbwork-sample`. Constants never enter bindings, the token Catalog, or Target mapping.
+All 12 foundations, theme modes and 46 DS components now use the shared phone preview in
+`src/workbench/preview/`, with real Registry-bound prototype contexts, explicit
+samples, atomic theme identity and isolated device sessions. Prototype variants and own components use explicit metadata plus validated module associations in `workbench/preview/extensions`; the production extension list is empty, with isolated fixture coverage. Preview registration never replaces Runtime/Evidence gates. Constants never enter bindings, the token Catalog, or Target mapping.
 Capture pins the pack digest and every theme×mode value table; Handoff names the default theme and mode. Case identity stays the mode id.
 See the architecture document for the current activation boundary.
 
@@ -109,3 +111,5 @@ Local `v-pb` / `pbStyle()` uses generated keys and the shared `theme/slots.ts`
 dictionary; it does not rebind DS instances. DS-owned semantic parts declare
 `semanticParts` in Inspect Registry, while business children keep explicit
 bindings. See `apps/pbwork/docs/prototypes/authoring-tools.md`.
+
+共享预览尺寸交互与本地偏好以 `apps/pbwork/docs/workbench-preview.md` 为准：拖动手机设备容器等比缩放，外层卡片随手机展示高度撑开，舞台不设纵向内部滚动，双机空间不足换行；预览偏好跨页面共用并持久化。预览/来源 Tab 切换保留实例与搜索，来源隐藏侧栏、表格占满卡片，支持减少动态效果；共同滚动使用舞台顶部紧凑开关并持久化，只联动手机内容滚动进度。来源表格完整列出每项实际样板与值（字体按真实配置逐项渲染），不显示差异列/差异筛选或引用链；同值条目仍全部保留。

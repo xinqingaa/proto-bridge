@@ -28,10 +28,14 @@ test("primary and secondary navigation update the URL and resource view", async 
   await expect(page).toHaveURL(/\/workbench\/components\/button$/);
   await expect(page.getByRole("heading", { name: "Button" })).toBeVisible();
 
-  await page.getByRole("button", { name: "展开 展示组件", exact: true }).click();
+  await page
+    .getByRole("button", { name: "展开 展示组件", exact: true })
+    .click();
   await page.getByRole("link", { name: "Chip", exact: true }).click();
   await expect(page).toHaveURL(/\/workbench\/components\/chip$/);
-  await expect(page.getByRole("heading", { name: "Chip" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Chip", level: 1 }),
+  ).toBeVisible();
 
   const foundationsLink = page.getByRole("link", {
     name: "设计基础",
@@ -87,7 +91,9 @@ test("collapsing side panels expands the content track", async ({ page }) => {
     ),
   ).toBeVisible();
   await collapsedTree
-    .locator('a[href="/workbench/prototypes/cold-chain-ops/screens/shipment-detail"]')
+    .locator(
+      'a[href="/workbench/prototypes/cold-chain-ops/screens/shipment-detail"]',
+    )
     .click();
   await expect(page).toHaveURL(/\/screens\/shipment-detail/);
 });
@@ -123,12 +129,11 @@ test("cold-chain variants update the live Runtime in place", async ({
 
   await expect(root).toBeVisible();
   // Mark the Runtime document: a reload or remount would drop the marker.
-  await runtime
-    .locator("body")
-    .evaluate((body) => {
-      (body.ownerDocument.defaultView as Window & { __pbMarker?: string }).__pbMarker =
-        "kept";
-    });
+  await runtime.locator("body").evaluate((body) => {
+    (
+      body.ownerDocument.defaultView as Window & { __pbMarker?: string }
+    ).__pbMarker = "kept";
+  });
 
   await page.getByRole("button", { name: "预览设置" }).click();
   await selectPreviewSetting(page, "Variant", "持续超温");

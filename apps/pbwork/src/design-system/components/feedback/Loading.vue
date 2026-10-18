@@ -112,7 +112,7 @@ watch(modelValue, async (value) => {
 <style>
 .pb-loading-overlay .v-overlay__scrim {
   position: absolute !important;
-  inset: 0 !important;
+  inset: var(--pb-layout-zero) !important;
   background: var(--pb-color-scrim) !important;
   opacity: var(--pb-opacity-visible);
 }

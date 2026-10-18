@@ -1,3 +1,5 @@
+import { previewExtensions } from "@/workbench/preview/extensions/registry";
+import { extensionNavigation } from "@/workbench/preview/extensions/model";
 import { componentRecords } from "@/design-system/components/registry";
 import { draftLabels, draftRecords } from "@/drafts/registry";
 import {
@@ -168,14 +170,17 @@ export function buildComponentsNavigation(): WorkbenchNavigationItem[] {
     }
     return 0;
   });
-  return orderedRecords.map((record) => ({
-    id: record.id,
-    label: record.label,
-    group:
-      categoryLabels[record.category as (typeof categoryOrder)[number]] ??
-      record.category,
-    to: `/workbench/components/${record.id}`,
-  }));
+  return [
+    ...orderedRecords.map((record) => ({
+      id: record.id,
+      label: record.label,
+      group:
+        categoryLabels[record.category as (typeof categoryOrder)[number]] ??
+        record.category,
+      to: `/workbench/components/${record.id}`,
+    })),
+    ...extensionNavigation(previewExtensions, loadPrototypes()),
+  ];
 }
 
 export function buildPrototypeLifecycleNavigation(): WorkbenchNavigationItem[] {

@@ -187,3 +187,5 @@ pnpm --filter @proto-bridge/pbwork test
 pnpm test:e2e:runtime
 pnpm docs:verify
 ```
+
+原型新增变体/自有组件的展示登记已提供 `src/prototypes/{prototypeId}/preview-resources.ts` 入口，字段、校验与预览模块要求以 [Workbench 预览工作流](../../../../apps/pbwork/docs/workbench-preview.md#显式扩展登记) 为准。普通 DS 公开 props 不登记为扩展；该登记不替代 Runtime/Evidence 或正式体验验收。

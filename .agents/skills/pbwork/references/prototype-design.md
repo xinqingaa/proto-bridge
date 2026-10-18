@@ -240,3 +240,5 @@ mapping, and Evidence mechanics out of `design.md`; they belong to authoring
 contracts or `docs/implementation.md`. Hand formal implementation an approved
 page contract, key states, acceptance signals, and the micro-decisions still
 left to implementation.
+
+原型新增变体/自有组件的展示登记已提供 `src/prototypes/{prototypeId}/preview-resources.ts` 入口，字段、校验与预览模块要求以 [Workbench 预览工作流](../../../../apps/pbwork/docs/workbench-preview.md#显式扩展登记) 为准。普通 DS 公开 props 不登记为扩展；该登记不替代 Runtime/Evidence 或正式体验验收。

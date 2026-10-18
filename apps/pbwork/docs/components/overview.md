@@ -26,6 +26,8 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`summary`�
 
 禁止「一个组件 + 大 type 兼多种语义角色」→ 拆成独立 `componentId`；审计见 [audit-large-types.md](./audit-large-types.md)。
 
+Registry 全部 46 个组件已接入共享手机预览，类型/尺寸/Contract 状态与触发/反馈在设备内，支持真实来源主题、独立设备会话、按需双机及来源表。原型变体/自有组件支持最小显式展示登记，当前正式登记为空，不推断普通 props 使用为扩展。迁移范围以[预览工作流](../workbench-preview.md)为准。
+
 ## Playground 可调项
 
 只允许三类：
