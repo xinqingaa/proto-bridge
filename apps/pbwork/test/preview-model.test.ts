@@ -13,12 +13,15 @@ import {
   fitPreviewScale,
   resolvePreviewDevice,
   previewContexts,
+  themePackContexts,
+  normalizePreviewSelection,
   defaultPreviewSelection,
   previewSelectionError,
   previewAlternatives,
   createPreviewDevice,
   deviceViewportCss,
   comparePreviewTables,
+  sourceThemeColumns,
 } from "@/workbench/preview/model";
 
 describe("Workbench preview boundaries", () => {
@@ -77,6 +80,15 @@ describe("Workbench preview boundaries", () => {
       "prototype:fixture",
       "prototype:broken",
     ]);
+    const options = themePackContexts(contexts, sources.packs);
+    expect(options.map((option) => option.id)).toEqual([
+      "pack:pbwork-base",
+      "pack:fixture",
+      "pack:missing",
+    ]);
+    expect(options.find((option) => option.packId === "fixture")?.label).toBe(
+      "Fixture",
+    );
     const selection = defaultPreviewSelection(contexts[2]!, sources.packs);
     expect(selection).toEqual({
       contextId: "prototype:fixture",
@@ -121,7 +133,7 @@ describe("Workbench preview boundaries", () => {
         contexts,
         sources.packs,
       ),
-    ).toContain("来源不存在");
+    ).toContain("选项不存在");
   });
 
   it("offers no prototype controls without registered prototypes; samples are explicit", () => {
@@ -190,4 +202,91 @@ describe("Workbench preview boundaries", () => {
     ).toHaveLength(0);
     expect(rows.some((r) => r.key.startsWith("layout."))).toBe(false);
   });
+});
+
+it("source columns enumerate actual themes, deduplicate shared packs and retain owners without devices", () => {
+  const contexts = previewContexts(runtimeThemeSources.packs, [
+    { id: "first", label: "First", themePackId: "pbwork-base" },
+    { id: "second", label: "Second", themePackId: "pbwork-base" },
+  ]);
+  const columns = sourceThemeColumns(contexts, runtimeThemeSources.packs);
+  expect(columns.map((c) => c.id)).toEqual([
+    "pbwork-base/default",
+    "pbwork-sample/garden",
+    "pbwork-sample/citrus",
+  ]);
+  expect(columns[0]!.owners).toEqual(["First", "Second"]);
+  expect(columns[0]!.contextIds).toContain("prototype:second");
+  expect(columns[1]!.sample).toBe(true);
+});
+it("missing source packs remain explicit unresolved columns", () => {
+  const contexts = [
+    {
+      id: "prototype:missing",
+      label: "Missing",
+      packId: "absent",
+      kind: "prototype" as const,
+    },
+  ];
+  const columns = sourceThemeColumns(contexts, new Map());
+  expect(columns).toHaveLength(1);
+  expect(columns[0]!.themeLabel).toBe("不可读取");
+  const device = createPreviewDevice(columns[0]!.id, columns[0]!.selection);
+  expect(
+    resolvePreviewDevice(device, contexts, new Map(), resolveRuntimeTheme)
+      .error,
+  ).toBe("主题包不存在：absent");
+});
+
+it("deduplicates appearance options while preserving owners and migrates legacy identities without changing theme or mode", () => {
+  const aliases = previewContexts(runtimeThemeSources.packs, [
+    { id: "first", label: "First", themePackId: "pbwork-base" },
+    { id: "second", label: "Second", themePackId: "pbwork-base" },
+    { id: "sample-owner", label: "Sample Owner", themePackId: "pbwork-sample" },
+  ]);
+  const options = themePackContexts(aliases, runtimeThemeSources.packs);
+  expect(options.map((option) => option.id)).toEqual([
+    "pack:pbwork-base",
+    "pack:pbwork-sample",
+  ]);
+  expect(
+    options.find((option) => option.packId === "pbwork-sample")?.kind,
+  ).toBe("sample");
+  for (const contextId of [
+    "prototype:first",
+    "prototype:second",
+    "foundation:pbwork-base",
+    "pack:pbwork-base",
+  ]) {
+    expect(
+      normalizePreviewSelection(
+        { contextId, theme: "default", mode: "dark" },
+        aliases,
+        runtimeThemeSources.packs,
+      ),
+    ).toEqual({
+      contextId: "pack:pbwork-base",
+      theme: "default",
+      mode: "dark",
+    });
+  }
+  const invalid = normalizePreviewSelection(
+    { contextId: "prototype:first", theme: "missing", mode: "light" },
+    aliases,
+    runtimeThemeSources.packs,
+  );
+  expect(
+    previewSelectionError(invalid, options, runtimeThemeSources.packs),
+  ).toBe("主题不存在：missing");
+  const unknown = {
+    contextId: "prototype:removed",
+    theme: "default",
+    mode: "dark",
+  };
+  expect(
+    normalizePreviewSelection(unknown, aliases, runtimeThemeSources.packs),
+  ).toEqual(unknown);
+  expect(
+    sourceThemeColumns(aliases, runtimeThemeSources.packs)[0]!.owners,
+  ).toEqual(["First", "Second"]);
 });

@@ -16,7 +16,7 @@
 - [ ] 新增或改动的 props 已进 contract + registry；触达文档已更新叙事（不以 props 表为权威）
 - [ ] Contract 含 `playground.presentation`；语义变更已补 `summary`/`behavior`/`states[].kind`（适用时）
 - [ ] Contract ↔ Vue ↔ Registry 经校验一致，Inspector 与 JSON Contract 的 token binding 槽位集合完全一致；文档与 Contract 语义不冲突
-- [ ] 未引入第二图标包；默认图标为 Lucide
+- [ ] 图标实际来源与 Contract.icons.pack 一致；PBWork 自绘稳定 id 与 Lucide 调用方兼容，不虚报来源
 - [ ] 未用大 type 兼多语义角色（见 alignment-protocol / audit-large-types）
 
 - [ ] `ds:keys:generate` 的键类型和 `pb:screens:generate` 的显式边界已更新，新鲜度单测通过
@@ -33,7 +33,7 @@
 - [ ] 手机内保留完整基础样板及全部组件类型/尺寸/状态、触发与反馈；来源 Tab 每个基础值都有真实样板及参数（字体逐项实际渲染），不另造设备外组件状态展台
 - [ ] 卡片与正文左对齐；适应视区/100% 只改展示比例，拖动手机右下角与方向键可等比调整手机显示尺寸，外层卡片随手机高度自然撑开，舞台与设置区无纵向内部滚动，空间不足双机换行；显示比例准确，跨页面及刷新恢复共用偏好，逻辑视口及 Core 表未变；手机内容无可见滚动条但滚轮、触摸和键盘仍可用，外层由页面滚动
 - [ ] 预览/来源 Tab 支持翻页与减少动态效果；切换保留实例、滚动及搜索；来源页隐藏侧栏；双机共同滚动使用舞台顶部紧凑开关、双向无反馈循环，偏好跨页面/刷新保留
-- [ ] 已迁移分类的键值表位于来源 Tab，搜索只筛表格；双机 A/B 值及来源与各自手机一致，不显示差异列/差异筛选，相同项也完整列出，未知与不适用仍明确标注
+- [ ] 已迁移分类的键值表位于来源 Tab，搜索只筛表格；来源按全部真实主题独立列出，去掉 A/B，模式独立并持久化；名称列固定，主题列横向滚动，不显示差异列/差异筛选，相同项也完整列出，未知与不适用仍明确标注
 - [ ] 双机状态、滚动、浮层 host 与实例标识隔离；遮罩、焦点、关闭返回、设备内滚动与主题切换保态已检查
 - [ ] 主题包/包内主题/模式来自真实声明；最终值差异与显式覆盖区分，缺失和解析失败未静默回退；常量独立只读
 - [ ] Runtime 主题与预览声明一致；正式 Evidence 的固定包身份/摘要/取值表、业务节点和关键状态已验证，未以手册预览替代采集
@@ -119,3 +119,5 @@
 - [ ] Component/Token/Theme Schema、Contract、role、Catalog、Theme 或 Bind 池变化已运行 `pnpm ds:target-sync:verify`；连续迭代保留 pending/drift，稳定批次恢复完整 `synced` baseline
 - [ ] `pnpm docs:verify` 已通过
 - [ ] authoring lint、Registry validation 和 Runtime Capture 的 Block 为零；每个 Warning 已修复或记录理由
+
+- [ ] GlassSurface 已检查背景滤镜/高光、宿主形状继承和降低透明度降级；LaunchScreen 使用完整设备内容区；SVG/PNG 导出内容、倍率和实际像素一致

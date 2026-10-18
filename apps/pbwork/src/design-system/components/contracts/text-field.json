@@ -122,9 +122,15 @@
     "revealColor": "color.on-surface-muted",
     "revealSize": "size.icon",
     "revealTarget": "size.touch",
-    "disabledOpacity": "opacity.disabled"
+    "disabledOpacity": "opacity.disabled",
+    "externalLabel": "typography.label",
+    "labelColor": "color.on-surface-muted",
+    "labelGap": "spacing.sm"
   },
   "playground": {
     "presentation": "interactive"
+  },
+  "layout": {
+    "summary": "标签在输入表面上方独立排版，不压住边框；标签通过 for/id 与实际输入关联。"
   }
 }

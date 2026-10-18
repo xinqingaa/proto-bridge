@@ -13,8 +13,6 @@ import { runtimeThemeSources } from "@/design-system/theme/runtime-theme";
 import WorkbenchSwitch from "@/workbench/ui/WorkbenchSwitch.vue";
 import WorkbenchSegmented from "@/workbench/ui/WorkbenchSegmented.vue";
 import { usePreviewPreferences } from "./preferences";
-import { previewExtensions } from "./extensions/registry";
-import { extensionApplicable } from "./extensions/model";
 import PreviewControls from "./PreviewControls.vue";
 import PreviewDevice from "./PreviewDevice.vue";
 import PreviewValueTable from "./PreviewValueTable.vue";
@@ -22,6 +20,7 @@ import { DEFAULT_DEVICE_ID, getDevicePreset } from "@/workbench/canvas/devices";
 import {
   fitPreviewScale,
   previewContexts,
+  themePackContexts,
   previewAlternatives,
   defaultPreviewSelection,
   createPreviewDevice,
@@ -32,8 +31,18 @@ const props = defineProps<{
   initialMode?: string;
   initialContext?: string | undefined;
 }>();
-const contexts = previewContexts(runtimeThemeSources.packs, loadPrototypes());
+const aliases = previewContexts(runtimeThemeSources.packs, loadPrototypes());
+const contexts = themePackContexts(aliases, runtimeThemeSources.packs);
 const preferences = usePreviewPreferences();
+preferences.migrateSelections(aliases, runtimeThemeSources.packs);
+const initialAlias = aliases.find(
+  (context) => context.id === props.initialContext,
+);
+const initialContext = contexts.find(
+  (context) =>
+    context.id === props.initialContext ||
+    context.packId === initialAlias?.packId,
+);
 const settings = computed(() => preferences.settings);
 const devices = ref([
   createPreviewDevice("A", {
@@ -41,32 +50,11 @@ const devices = ref([
       defaultPreviewSelection(contexts[0]!, runtimeThemeSources.packs)),
     ...(props.initialMode ? { mode: props.initialMode } : {}),
     ...(props.initialContext
-      ? defaultPreviewSelection(
-          contexts.find((context) => context.id === props.initialContext)!,
-          runtimeThemeSources.packs,
-        )
+      ? initialContext
+        ? defaultPreviewSelection(initialContext, runtimeThemeSources.packs)
+        : { contextId: props.initialContext }
       : {}),
   }),
-]);
-const deviceBindings = computed(() =>
-  Object.fromEntries(
-    devices.value.map((device) => {
-      const extension = previewExtensions.find(
-        (entry) => entry.id === (device.demo.extensionId || props.resourceId),
-      );
-      return [
-        device.id,
-        extension
-          ? extensionApplicable(extension, device.selection.contextId)
-            ? extension.tokenIds
-            : []
-          : (props.tokenIds ?? []),
-      ];
-    }),
-  ),
-);
-const effectiveTokenIds = computed(() => [
-  ...new Set(Object.values(deviceBindings.value).flat()),
 ]);
 const alternatives = previewAlternatives(contexts, runtimeThemeSources.packs);
 const alternative = computed(() =>
@@ -355,10 +343,9 @@ watch(
             class="source-page"
           >
             <PreviewValueTable
-              :devices="devices"
-              :contexts="contexts"
-              :token-ids="effectiveTokenIds"
-              :device-bindings="deviceBindings"
+              :contexts="aliases"
+              :token-ids="tokenIds ?? []"
+              :resource-id="resourceId"
             />
           </div>
         </Transition>

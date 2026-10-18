@@ -26,9 +26,18 @@
 | `primary` | 主色 | `variant` |
 | `loading` | 加载 | `interaction` |
 | `disabled` | 禁用 | `interaction` |
+| `glass` | 玻璃材质 | `variant` |
+| `glass-loading` | 玻璃加载 | `interaction` |
+| `glass-disabled` | 玻璃禁用 | `interaction` |
+| `glass-primary` | 主色玻璃 | `variant` |
+
 
 ## 用法与反例
 
 - Playground 使用 gallery 并置默认、强调、loading 与 disabled 状态。
 - 不用 Icon Button 承载长文案，也不在业务页直接给 Icon 绑定点击。
 - Props、Slots、Events、默认值与 Token 槽以 [Icon Button Contract](../../../src/design-system/components/contracts/icon-button.json) 为准。
+
+## 玻璃材质
+
+`material="glass"` 是可选材质，默认 `solid` 保持原有外观；与操作类型、尺寸、加载和禁用状态独立。适用于悬浮操作和丰富背景上的按钮。复用 GlassMaterial，前景独立合成保持清晰；降低透明度或不支持滤镜时回退实色，主要操作仍保留强调度。玻璃加载、禁用状态在同一手机预览中展示。

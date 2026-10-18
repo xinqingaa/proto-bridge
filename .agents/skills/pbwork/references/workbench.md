@@ -7,10 +7,11 @@ Prototype Screens or their Design System.
 
 For design-foundation and component resource navigation or preview work, read
 [Workbench preview workflow](../../../../apps/pbwork/docs/workbench-preview.md).
+Theme pack options deduplicate actual pack ids; keep prototype ownership separate and migrate legacy selection aliases without changing theme, mode or sizing.
 Preserve existing categories and detail routes; use phone-contained samples and
 opt-in comparison, with ownership separate from preview theme. Distinguish
 manual acceptance rules from implemented multi-device/registration capabilities.
-All 12 foundations, theme modes and 46 registered DS components use `src/workbench/preview/`; extend that
+All 12 foundations, theme modes and 47 registered DS components use `src/workbench/preview/`; extend that
 shared boundary rather than creating another stage. Commit theme identity as one
 validated object and keep device sessions, overlay hosts and scroll isolated.
 Use the source-tab value table for category-scoped full per-value specimens and facts/search; keep samples stable
@@ -124,3 +125,5 @@ heuristics; do not infer a new boundary or write these transient results to Evid
 See `apps/pbwork/docs/prototypes/authoring-tools.md`.
 
 共享预览尺寸交互与本地偏好以 `apps/pbwork/docs/workbench-preview.md` 为准：拖动手机设备容器等比缩放，外层卡片随手机展示高度撑开，舞台不设纵向内部滚动，双机空间不足换行；预览偏好跨页面共用并持久化。预览/来源 Tab 切换保留实例与搜索，来源隐藏侧栏、表格占满卡片，支持减少动态效果；共同滚动使用舞台顶部紧凑开关并持久化，只联动手机内容滚动进度。来源表格完整列出每项实际样板与值（字体按真实配置逐项渲染），不显示差异列/差异筛选或引用链；同值条目仍全部保留。
+
+来源表按真实 pack/theme 独立列出全部主题，固定名称列并横向滚动；模式独立持久化，不从手机 A/B 推断列。玻璃使用共享 GlassMaterial，形状由宿主决定，保留降低透明度/无滤镜降级。整屏启动预览在同一手机内切换状态；自绘图标的导出复用同一 artwork，下载 UI 不进入 Runtime Icon。

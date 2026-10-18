@@ -67,9 +67,9 @@ function resolveWith(overrides: Record<string, string>) {
 describe("基础主题包（pbwork-base）", () => {
   const sources = loadBaseThemeSources();
 
-  it("键目录规模：可绑定 130、不可绑定 6、派生部件 64", () => {
+  it("键目录规模：可绑定 142、不可绑定 6、派生部件 64", () => {
     const keys = sources.keyCatalog.keys;
-    expect(keys.filter((key) => key.bindable)).toHaveLength(130);
+    expect(keys.filter((key) => key.bindable)).toHaveLength(142);
     expect(keys.filter((key) => !key.bindable)).toHaveLength(6);
     expect(
       keys
@@ -89,15 +89,15 @@ describe("基础主题包（pbwork-base）", () => {
     expect(keys.filter((key) => key.valueType === "typography")).toHaveLength(
       16,
     );
-    expect(keys.filter((key) => key.id.startsWith("color."))).toHaveLength(36);
+    expect(keys.filter((key) => key.id.startsWith("color."))).toHaveLength(39);
     expect(keys.filter((key) => key.id.startsWith("spacing."))).toHaveLength(8);
-    expect(keys.filter((key) => key.id.startsWith("size."))).toHaveLength(18);
+    expect(keys.filter((key) => key.id.startsWith("size."))).toHaveLength(21);
     expect(keys.filter((key) => key.id.startsWith("radius."))).toHaveLength(6);
     expect(keys.filter((key) => key.id.startsWith("elevation."))).toHaveLength(
-      5,
+      6,
     );
     expect(keys.filter((key) => key.id.startsWith("asset."))).toHaveLength(4);
-    expect(sources.constants.constants).toHaveLength(36);
+    expect(sources.constants.constants).toHaveLength(37);
   });
 
   it("只声明包内主题，颜色键仍可按模式变化", () => {
@@ -183,8 +183,8 @@ describe("基础主题包（pbwork-base）", () => {
     ).toEqual(["dark/default", "light/default"]);
     for (const table of first.tables) {
       // 113 个目录键 + 64 个字体部件
-      expect(Object.keys(table.values)).toHaveLength(136 + 64);
-      expect(Object.keys(table.constants)).toHaveLength(36);
+      expect(Object.keys(table.values)).toHaveLength(148 + 64);
+      expect(Object.keys(table.constants)).toHaveLength(37);
     }
   });
 

@@ -27,3 +27,7 @@
 用于同一区域的有限互斥筛选；拥有内容视图区时改用 PrimaryTabs / SecondaryTabs，不把它当路由栏。
 
 Props、Slots、Events、默认值与 Token 槽以 [SegmentedControl Contract](../../../src/design-system/components/contracts/segmented-control.json) 为准。
+
+## 展示与组合
+
+采用紧凑连体选择结构、等分选项与清晰选中表面。职责是局部属性/粒度选择，保持 radiogroup，不拥有 viewport；PrimaryTabs 则负责具名面板，FilterBar 表达独立筛选项。

@@ -76,7 +76,7 @@ const statusTime = computed(() => {
 .phone-shell {
   position: relative;
   flex: 0 0 auto;
-  overflow: hidden;
+  overflow: clip;
   border-radius: 46px;
   background: #f4f5f7;
   box-shadow:
@@ -95,7 +95,7 @@ const statusTime = computed(() => {
   width: 100%;
   height: 100%;
   flex-direction: column;
-  overflow: hidden;
+  overflow: clip;
 }
 
 .phone-body {
@@ -125,7 +125,7 @@ const statusTime = computed(() => {
 .phone-shell.is-overlay .phone-body {
   position: absolute;
   inset: 0;
-  overflow: hidden;
+  overflow: clip;
 }
 
 .status-bar {

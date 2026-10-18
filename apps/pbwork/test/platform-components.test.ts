@@ -338,7 +338,5 @@ it("Heatmap gives missing dates and measured zero distinct explicit evidence", (
   expect(zero.attributes("data-pb-token-background")).toBe(
     "color.surface-variant",
   );
-  expect(missing.attributes("data-pb-token-background")).toBe(
-    "color.surface-recessed",
-  );
+  expect(missing.attributes("data-pb-token-background")).toBe("transparent");
 });

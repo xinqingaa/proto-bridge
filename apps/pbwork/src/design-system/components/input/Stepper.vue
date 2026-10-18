@@ -69,6 +69,11 @@ usePbInspect({
   pbKey: () => props.pbKey,
   getProps: () => ({ ...props }),
   getTokenBindings: () => ({
+    track: "color.surface-recessed",
+    valueFont: "typography.numeric-title",
+    buttonElevation: "elevation.surface",
+    innerGap: "spacing.xs",
+
     surface: "color.surface",
     color: "color.on-surface",
     gap: "spacing.sm",
@@ -100,7 +105,7 @@ usePbInspect({
       :disabled="disabled || current <= lower"
       @click="change(current - increment)"
     >
-      −
+      <span aria-hidden="true">−</span>
     </button>
     <input
       type="number"
@@ -124,22 +129,27 @@ usePbInspect({
 </template>
 <style scoped>
 .stepper {
-  display: flex;
   align-items: center;
-  gap: var(--pb-spacing-sm);
+  gap: var(--pb-spacing-xs);
+  display: inline-flex;
+  padding: var(--pb-spacing-xs);
+  border: var(--pb-border-hairline);
+  border-radius: var(--pb-radius-control);
+  background: var(--pb-color-surface-recessed);
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-content);
 }
 button,
 input {
   min-height: var(--pb-size-touch);
-  border: var(--pb-border-hairline);
+  border: none;
   border-radius: var(--pb-radius-control);
   background: var(--pb-color-surface);
   color: inherit;
   font: inherit;
 }
 button {
+  box-shadow: var(--pb-elevation-surface);
   min-width: var(--pb-size-touch);
   padding: var(--pb-spacing-xs);
   cursor: pointer;
@@ -148,7 +158,9 @@ input {
   width: var(--pb-size-avatar-large);
   min-width: var(--pb-layout-zero);
   text-align: center;
-  font: var(--pb-typography-numeric-content);
+  font: var(--pb-typography-numeric-title);
+  appearance: textfield;
+  background: transparent;
 }
 button:focus-visible,
 input:focus-visible {
@@ -159,5 +171,13 @@ button:disabled,
 input:disabled {
   opacity: var(--pb-opacity-disabled);
   cursor: default;
+}
+</style>
+
+<style scoped>
+input::-webkit-inner-spin-button,
+input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: var(--pb-layout-zero);
 }
 </style>

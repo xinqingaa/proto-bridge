@@ -161,7 +161,8 @@ export type ComponentContract = {
     presentation: PlaygroundPresentation;
   };
   icons?: {
-    pack: "lucide";
+    pack: "lucide" | "pbwork";
+    artwork?: string;
     defaults?: string[];
   };
 };

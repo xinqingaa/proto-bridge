@@ -198,6 +198,18 @@ describe("legacy-migration 覆盖性", () => {
       .sort();
     expect(untouched).toEqual(
       [
+        "button.glass-primary-tint",
+        "icon-button.glass-primary-tint",
+        "tabbar.selection-tint",
+        "primary-tabs.selection-tint",
+        "border.glass",
+        "color.glass-clear",
+        "color.glass-edge",
+        "color.glass-tint",
+        "elevation.glass",
+        "size.brand",
+        "size.plot",
+        "size.ring",
         "app-bar.surface-treatment",
         "primary-tabs.selection-treatment",
         "tabbar.surface-treatment",

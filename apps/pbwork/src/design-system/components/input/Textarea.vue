@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useTokenNumber } from "@/design-system/theme/runtime-theme";
 
-import { computed, toRefs } from "vue";
+import { useId, computed, toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { radiusStyle } from "@/design-system/components/_shared/radius";
 const TEXTAREA_ROWS = useTokenNumber("textarea.rows");
@@ -18,6 +18,7 @@ const props = defineProps<{
 defineEmits<{ "update:modelValue": [string] }>();
 
 const rootRef = usePbInspectRef();
+const fieldId = `pb-field-${useId().replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 const { label, showLabel, modelValue, placeholder, disabled, inspectId } =
   toRefs(props);
 
@@ -50,6 +51,9 @@ usePbInspect({
     "textarea.rows",
   ],
   getTokenBindings: () => ({
+    externalLabel: "typography.label",
+    labelColor: "color.on-surface-muted",
+    labelGap: "spacing.sm",
     surface: labeled.value ? "color.surface" : "color.surface-recessed",
     border: "color.border",
     focus: "color.primary",
@@ -62,23 +66,26 @@ usePbInspect({
 </script>
 
 <template>
-  <v-textarea
-    ref="rootRef"
-    class="pb-textarea"
-    :class="{ 'is-plain': !labeled, 'is-labeled': labeled }"
-    data-pb-id="ds.textarea"
-    data-pb-role="field"
-    :label="labeled ? (label ?? '') : undefined"
-    :hide-details="!labeled"
-    :flat="!labeled"
-    :variant="fieldVariant"
-    :model-value="modelValue ?? ''"
-    :placeholder="placeholder ?? ''"
-    :rows="TEXTAREA_ROWS"
-    :disabled="disabled ?? false"
-    :style="radiusStyle('md')"
-    @update:model-value="$emit('update:modelValue', String($event ?? ''))"
-  />
+  <div ref="rootRef" class="field-composition" data-pb-role="field">
+    <label v-if="labeled" :for="fieldId" class="field-label">{{ label }}</label>
+    <v-textarea
+      :id="fieldId"
+      class="pb-textarea"
+      :class="{ 'is-plain': !labeled, 'is-labeled': labeled }"
+      data-pb-id="ds.textarea"
+      :label="undefined"
+      :aria-label="label ?? undefined"
+      :hide-details="!labeled"
+      :flat="!labeled"
+      :variant="fieldVariant"
+      :model-value="modelValue ?? ''"
+      :placeholder="placeholder ?? ''"
+      :rows="TEXTAREA_ROWS"
+      :disabled="disabled ?? false"
+      :style="radiusStyle('md')"
+      @update:model-value="$emit('update:modelValue', String($event ?? ''))"
+    />
+  </div>
 </template>
 
 <style scoped>
@@ -111,5 +118,18 @@ usePbInspect({
 }
 .pb-textarea.v-input--disabled {
   opacity: var(--pb-opacity-disabled);
+}
+</style>
+
+<style scoped>
+.field-composition {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-sm);
+  min-width: var(--pb-layout-zero);
+}
+.field-label {
+  font: var(--pb-typography-label);
+  color: var(--pb-color-on-surface-muted);
 }
 </style>

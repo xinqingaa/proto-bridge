@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import GlassSample from "./GlassSample.vue";
 import { computed, ref } from "vue";
 import type { ResolvedThemeTable } from "@proto-bridge/core/v2";
 import type { TokenCategory } from "@/design-system/types";
@@ -123,6 +124,9 @@ function layoutStyle(id: string) {
       >
         <span class="layout-fill" :style="layoutStyle(key.id)">内容区域</span>
       </div>
+      <div v-else-if="category === 'layout' && key.id === 'surface.treatment'">
+        <p>当前主题：{{ value(key.id) }} · 下方为共享玻璃材质样板</p><GlassSample />
+      </div>
       <div v-else-if="category === 'layout'" class="shape-sample">
         {{ key.label }} · {{ value(key.id) }}
       </div>
@@ -133,8 +137,9 @@ function layoutStyle(id: string) {
         >
       </div>
       <div v-else-if="category === 'effect'" class="effect-demo">
+        <GlassSample v-if="key.id === 'surface.glass-backdrop'" />
         <div
-          v-if="key.valueType === 'filter'"
+          v-else-if="key.valueType === 'filter'"
           :style="{ backdropFilter: variable(key.id) }"
         >
           玻璃表面
@@ -336,5 +341,15 @@ small {
   .motion-track i {
     transition: none;
   }
+}
+</style>
+
+<style scoped>
+.effect-demo:has(.glass-exhibit) {
+  display: block;
+  background: none;
+}
+.effect-demo :deep(.glass-exhibit) {
+  padding: 0;
 }
 </style>

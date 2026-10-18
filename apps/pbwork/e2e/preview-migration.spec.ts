@@ -80,7 +80,7 @@ test("all 12 foundations and theme modes use the shared phone and source table, 
       );
     expect(columns[1], category).toBeGreaterThan(columns[0]!);
     expect(await page.locator("[data-source-sample]").count(), category).toBe(
-      await samples.count(),
+      (await samples.count()) * 3,
     );
     await expect(
       page.getByRole("columnheader", { name: "差异", exact: true }),
@@ -119,7 +119,7 @@ for (const appearance of ["base", "sample-dark"]) {
     if (appearance === "sample-dark") {
       const controls = page.locator('[data-preview-settings="A"]');
       await controls
-        .getByRole("combobox", { name: "预览来源", exact: true })
+        .getByRole("combobox", { name: "主题包", exact: true })
         .press("ArrowDown");
       await page
         .getByRole("option", { name: "样例主题包 · 仅演示", exact: true })
@@ -138,6 +138,8 @@ for (const appearance of ["base", "sample-dark"]) {
           phone.locator(`[data-pb-component="ds.${contract.id}"]`).first(),
         ).toHaveCount(1);
       for (const state of contract.states) {
+        if (contract.id === "tabbar" && state.id === "tasks-selected")
+          await phone.getByRole("tab", { name: "任务", exact: true }).click();
         await expect(
           phone
             .locator(

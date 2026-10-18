@@ -10,7 +10,11 @@ import {
   type Component,
 } from "vue";
 
-import { Home, List, User } from "lucide-vue-next";
+import { resolvePbIcon } from "@/design-system/components/_shared/icons";
+const Home = resolvePbIcon("home"),
+  List = resolvePbIcon("list"),
+  User = resolvePbIcon("user");
+import brandExample from "./preview-brand.svg?url";
 import DataList from "@/design-system/components/data/DataList.vue";
 import ScreenTransition from "@/design-system/components/navigation/ScreenTransition.vue";
 import type {
@@ -153,13 +157,12 @@ const tallPreview = computed(() =>
 );
 const isOverlayPreview = computed(() => isTriggerPresentation.value);
 const isButton = computed(() => record.value?.id === "button");
-const isTabbar = computed(() => record.value?.id === "tabbar");
 const isFilterBar = computed(() => record.value?.id === "filter-bar");
 const isScrollableDataList = computed(
   () => record.value?.id === "scrollable-data-list",
 );
 const isSplitTabPresentation = computed(() =>
-  ["tabbar", "primary-tabs", "secondary-tabs"].includes(record.value?.id ?? ""),
+  ["primary-tabs", "secondary-tabs"].includes(record.value?.id ?? ""),
 );
 const isScreenTransitionDemo = computed(
   () => record.value?.id === "screen-transition",
@@ -572,7 +575,7 @@ function tabComparisonBind(modeId: string, grow: boolean) {
       tabComparisonValues.value[modeId] ?? resolvedProps.value.modelValue,
     inspectId: `preview.${props.device.id}.${props.componentId}.${modeId}`,
     grow,
-    fill: !isTabbar.value,
+    fill: true,
   });
 }
 function onTabComparisonUpdate(modeId: string, value: unknown) {
@@ -686,18 +689,6 @@ const previewComponent = computed(() => {
     : null;
 });
 
-function tabbarSelectedLabel(modeId: string) {
-  if (!isTabbar.value) return "";
-  const items = tabComparisonBind(modeId, modeId === "equal").items;
-  if (!Array.isArray(items)) return "当前目的地";
-  const selected = items.find(
-    (item) =>
-      item &&
-      typeof item === "object" &&
-      (item as { value?: string }).value === tabComparisonValues.value[modeId],
-  ) as { label?: string } | undefined;
-  return selected?.label ?? "当前目的地";
-}
 const filterRows = computed(() => {
   const selected = String(resolvedProps.value.modelValue ?? "全部");
   const rows = [
@@ -790,11 +781,7 @@ function applyState(id: string) {
           <strong>{{ mode.label }}</strong
           ><span>{{ mode.hint }}</span>
         </header>
-        <div class="tab-screen" :class="{ 'is-tabbar': isTabbar }">
-          <div v-if="isTabbar" class="tab-screen-body">
-            <strong>{{ tabbarSelectedLabel(mode.id) }}</strong>
-            <span>当前目的地</span>
-          </div>
+        <div class="tab-screen">
           <component
             :is="previewComponent"
             v-bind="tabComparisonBind(mode.id, mode.grow)"
@@ -1058,6 +1045,12 @@ function applyState(id: string) {
                 @select="lastComponentAction = '已选择列表项'"
                 @toggle="onGroupedToggle"
               >
+                <template v-if="record.id === 'brand-mark'" #mark
+                  ><img
+                    :src="brandExample"
+                    alt="PBWork 示例标识"
+                    class="brand-example"
+                /></template>
                 <template v-if="record.id === 'card'">
                   <div class="card-slot-demo">
                     <strong>外部内容</strong>
@@ -1146,35 +1139,59 @@ function applyState(id: string) {
               <span v-if="!group.title || item.label !== group.title">{{
                 item.label
               }}</span>
-              <component
-                :is="previewComponent"
-                v-bind="exhibitBind(item.props, group.scope, item.id)"
+              <div
+                class="exhibit-body"
+                :class="{ 'app-bar-stage': record.id === 'app-bar' }"
               >
-                <template v-if="record.id === 'card'">
-                  <div class="card-slot-demo">
-                    <strong>外部内容</strong>
-                    <span>Card 只提供 surface；内容由调用方定义。</span>
+                <div
+                  v-if="record.id === 'app-bar'"
+                  class="app-bar-sheet"
+                  aria-hidden="true"
+                >
+                  <div class="app-bar-sheet-copy">
+                    <p>今晚复核东区入库，冷链温度保持在要求区间。</p>
+                    <p>运输单 1842 待确认签收，异常项已单独列出。</p>
                   </div>
-                </template>
-                <template v-else-if="record.id === 'data-list'">
-                  <div role="listitem" class="list-slot-demo is-heading">
-                    <strong>仅标题行</strong>
-                  </div>
-                  <div role="listitem" class="list-slot-demo is-record">
-                    <div>
-                      <strong>双行业务记录</strong>
-                      <span>副标题、状态与密度由调用方决定</span>
+                </div>
+                <component
+                  :is="previewComponent"
+                  v-bind="exhibitBind(item.props, group.scope, item.id)"
+                >
+                  <template v-if="record.id === 'brand-mark'" #mark
+                    ><img
+                      :src="brandExample"
+                      alt="PBWork 示例标识"
+                      class="brand-example"
+                  /></template>
+                  <template v-if="record.id === 'card'">
+                    <div class="card-slot-demo">
+                      <strong>外部内容</strong>
+                      <span>Card 只提供 surface；内容由调用方定义。</span>
                     </div>
-                    <span class="list-state">进行中</span>
-                  </div>
-                </template>
-                <template v-if="record.id === 'tab-viewport'" #item="{ value }">
-                  <div class="panel-slot-demo">
-                    <strong>{{ value }}</strong>
-                    <span>由外部导航控制的保活内容视图</span>
-                  </div>
-                </template>
-              </component>
+                  </template>
+                  <template v-else-if="record.id === 'data-list'">
+                    <div role="listitem" class="list-slot-demo is-heading">
+                      <strong>仅标题行</strong>
+                    </div>
+                    <div role="listitem" class="list-slot-demo is-record">
+                      <div>
+                        <strong>双行业务记录</strong>
+                        <span>副标题、状态与密度由调用方决定</span>
+                      </div>
+                      <span class="list-state">进行中</span>
+                    </div>
+                  </template>
+                  <template
+                    v-if="record.id === 'tab-viewport'"
+                    #item="{ value }"
+                  >
+                    <div class="panel-slot-demo">
+                      <strong>{{ value }}</strong>
+                      <span>由外部导航控制的保活内容视图</span>
+                    </div>
+                  </template>
+                </component>
+              </div>
             </div>
           </div>
         </div>
@@ -1318,11 +1335,11 @@ function applyState(id: string) {
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  color: rgba(var(--v-theme-on-surface), 0.62);
+  color: var(--pb-color-on-surface-muted);
   font-size: 0.75rem;
 }
 .phone-column > header strong {
-  color: rgba(var(--v-theme-on-surface), 0.92);
+  color: var(--pb-color-on-surface);
   font-size: 0.875rem;
 }
 .tab-screen {
@@ -1331,30 +1348,11 @@ function applyState(id: string) {
   height: 100%;
   min-height: 0;
 }
-.tab-screen-body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  justify-content: center;
-  gap: 6px;
-  min-height: 0;
-  padding: 24px 20px;
-  color: var(--pb-color-on-surface-muted, #64748b);
-  text-align: center;
-}
-.tab-screen-body strong {
-  color: var(--pb-color-on-surface, #1f2937);
-  font: var(--pb-typography-title);
-}
 .tab-screen > :deep(.pb-tabs) {
   flex: 1;
   min-height: 0;
   padding: 16px;
   box-sizing: border-box;
-}
-.tab-screen.is-tabbar > :deep(.pb-tabbar-shell) {
-  flex: none;
-  width: 100%;
 }
 .phone-stage.is-transition {
   display: flex;
@@ -1641,7 +1639,10 @@ function applyState(id: string) {
   padding-bottom: var(--pb-layout-zero);
   border-bottom: none;
 }
-.exhibit-row.is-wide .exhibit-item > :deep(*) {
+.exhibit-body {
+  width: var(--pb-layout-fill);
+}
+.exhibit-row.is-wide .exhibit-body > :deep(*) {
   width: var(--pb-layout-fill);
 }
 .token-bindings {
@@ -1780,5 +1781,68 @@ function applyState(id: string) {
 }
 .scrollable-list-demo {
   height: 540px;
+}
+</style>
+
+<style scoped>
+.brand-example {
+  width: var(--pb-size-brand);
+  height: var(--pb-size-brand);
+  object-fit: contain;
+}
+</style>
+
+<style scoped>
+.app-bar-stage {
+  position: relative;
+  width: var(--pb-layout-fill);
+  min-height: calc(var(--pb-size-navigation-bar) + var(--pb-spacing-2xl));
+}
+.app-bar-stage :deep(.pb-app-bar) {
+  position: relative;
+  z-index: var(--pb-layer-content);
+  width: var(--pb-layout-fill);
+}
+.app-bar-sheet {
+  position: absolute;
+  inset: var(--pb-layout-zero);
+  overflow: clip;
+  pointer-events: none;
+}
+.app-bar-sheet-copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-sm);
+  padding: calc(var(--pb-size-navigation-bar) - var(--pb-spacing-md))
+    var(--pb-spacing-md) var(--pb-spacing-md);
+  color: var(--pb-color-on-surface);
+  font: var(--pb-typography-content);
+}
+.app-bar-sheet-copy p {
+  margin: var(--pb-layout-zero);
+}
+</style>
+
+<style scoped>
+.exhibit-body:has(.pb-button.is-glass, .pb-icon-button.is-glass) {
+  padding: var(--pb-spacing-lg);
+  border-radius: var(--pb-radius-surface);
+  background: linear-gradient(
+    120deg,
+    var(--pb-color-primary-soft),
+    var(--pb-color-surface-recessed),
+    var(--pb-color-action-soft)
+  );
+}
+</style>
+
+<style scoped>
+.gallery-cell:has(.pb-icon-button.is-glass) {
+  background: linear-gradient(
+    120deg,
+    var(--pb-color-primary-soft),
+    var(--pb-color-surface-recessed),
+    var(--pb-color-action-soft)
+  );
 }
 </style>

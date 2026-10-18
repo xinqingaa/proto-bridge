@@ -50,8 +50,8 @@ usePbInspect({
     fill: "color.primary",
     track: "color.primary-soft",
     color: "color.on-surface",
-    typography: "typography.numeric-content",
-    diameter: "size.avatar-large",
+    typography: "typography.numeric-title",
+    diameter: "size.ring",
     stroke: "size.stroke",
   }),
 });

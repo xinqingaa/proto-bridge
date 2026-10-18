@@ -6,7 +6,7 @@
 
 优先按 `componentId` 映射；role 只在没有可靠 `componentId` 时提供通用语义回退。比如 `flow-sheet` 的身份是 `componentId=flow-sheet`，role 仍是通用的 `sheet`，不需要创建 `flow-sheet` role。
 
-当前 46 个组件均在 `proto-bridge.target.json` 标为条目 pending：Producer 已完成主题包与绑定目录迁移，Flutter 尚未按新 Contract 适配。旧具体映射表已移除，避免与 pending 同 ID 并存造成 resolver conflict；现有 Dart 组件仍保留，但不能宣称已匹配新 Producer。
+当前 47 个组件均在 `proto-bridge.target.json` 标为条目 pending：Producer 已完成主题包与绑定目录迁移，Flutter 尚未按新 Contract 适配。旧具体映射表已移除，避免与 pending 同 ID 并存造成 resolver conflict；现有 Dart 组件仍保留，但不能宣称已匹配新 Producer。
 
 `page`、`section`、`summary`、`list`、`field` 等 role 要结合 Fragment 上下文选择本地容器，不能覆盖一个已存在且更精确的 `componentId`。
 
@@ -71,3 +71,7 @@ Target 只翻译语义，不复制 Web 表达：例如百分比映射为 Flutter
 只维护业务代码、组件/Token 映射、路由和原生测试，不携带 ProtoBridge 专属 Driver
 Bridge、Case/Scenario 副本或 App build identity。实验背景、保留代码位置和重新评估
 条件见仓库 Roadmap。
+
+## PBWork 材质与组件品质变更
+
+Producer 新增 GlassSurface 及 8 个材质/数据展示键，并调整自绘图标、AppBar、数据/输入与启动展示契约。相关映射明确保持 pending，不声称 Flutter 已实现视觉和新 API；尤其自绘 SVG 不能静默映射为同名 Lucide 并报告一致。条目理由与未实现清单以 `proto-bridge.target.json` 为准。

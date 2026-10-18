@@ -125,6 +125,12 @@ usePbInspect({
   pbKey: () => props.pbKey,
   getProps: () => ({ ...props }),
   getTokenBindings: () => ({
+    surface: "color.surface",
+    surfaceRadius: "radius.surface",
+    selectionRadius: "radius.control-compact",
+    unit: "typography.caption",
+    selectedFont: "typography.numeric-title",
+
     color: "color.on-surface",
     muted: "color.on-surface-muted",
     gap: "spacing.sm",
@@ -152,7 +158,7 @@ usePbInspect({
     :aria-disabled="disabled"
   >
     <div class="column">
-      <span>小时</span>
+      <span class="unit">小时</span>
       <div
         ref="hourRef"
         class="wheel"
@@ -183,7 +189,7 @@ usePbInspect({
       </div>
     </div>
     <div class="column">
-      <span>分钟</span>
+      <span class="unit">分钟</span>
       <div
         ref="minuteRef"
         class="wheel"
@@ -218,6 +224,10 @@ usePbInspect({
 <style scoped>
 .duration {
   display: flex;
+  position: relative;
+  padding: var(--pb-spacing-sm);
+  border-radius: var(--pb-radius-surface);
+  background: var(--pb-color-surface);
   gap: var(--pb-spacing-sm);
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-content);
@@ -239,7 +249,9 @@ usePbInspect({
   scroll-snap-type: y mandatory;
   padding-block: var(--pb-size-control);
   border-radius: var(--pb-radius-control);
-  background: var(--pb-color-surface-recessed);
+  background: transparent;
+  scrollbar-width: none;
+  mask-image: var(--pb-layout-wheel-mask);
 }
 .wheel.disabled {
   overflow: hidden;
@@ -260,9 +272,40 @@ button {
 }
 button.selected {
   color: var(--pb-color-on-surface);
-  background: var(--pb-color-surface-selected);
+  background: transparent;
+  font: var(--pb-typography-numeric-title);
 }
 .wheel:focus-visible {
   outline: var(--pb-border-focus);
+}
+</style>
+
+<style scoped>
+.duration::before {
+  content: "";
+  position: absolute;
+  left: var(--pb-spacing-sm);
+  right: var(--pb-spacing-sm);
+  top: var(--pb-layout-half);
+  height: var(--pb-size-control);
+  transform: translateY(var(--pb-layout-half-negative));
+  border-radius: var(--pb-radius-control-compact);
+  background: var(--pb-color-surface-recessed);
+}
+.column {
+  position: relative;
+  gap: var(--pb-layout-zero);
+}
+.unit {
+  position: absolute;
+  top: var(--pb-layout-half);
+  right: var(--pb-spacing-sm);
+  transform: translateY(var(--pb-layout-half-negative));
+  z-index: var(--pb-layer-content);
+  font: var(--pb-typography-caption);
+  pointer-events: none;
+}
+.wheel::-webkit-scrollbar {
+  display: none;
 }
 </style>

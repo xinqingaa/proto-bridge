@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, toRefs, useSlots } from "vue";
+import { useId, computed, ref, toRefs, useSlots } from "vue";
 import Icon from "@/design-system/components/action/Icon.vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 
@@ -22,6 +22,7 @@ defineEmits<{ "update:modelValue": [value: string] }>();
 
 const slots = useSlots();
 const rootRef = usePbInspectRef();
+const fieldId = `pb-field-${useId().replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 const {
   label,
   showLabel,
@@ -69,6 +70,9 @@ usePbInspect({
     inspectId: inspectId.value,
   }),
   getTokenBindings: () => ({
+    externalLabel: "typography.label",
+    labelColor: "color.on-surface-muted",
+    labelGap: "spacing.sm",
     border: "color.border",
     surface: labeled.value ? "color.surface" : "color.surface-recessed",
     radius: "radius.control",
@@ -102,49 +106,51 @@ usePbInspect({
 </script>
 
 <template>
-  <v-text-field
-    ref="rootRef"
-    class="pb-field radius-md"
-    :class="{ 'is-plain': !labeled, 'is-labeled': labeled }"
-    data-pb-id="ds.text-field"
-    data-pb-role="field"
-    :label="labeled ? (label ?? '') : undefined"
-    :aria-label="!labeled ? (label ?? undefined) : undefined"
-    :hide-details="!errorMessage"
-    :flat="!labeled"
-    :variant="fieldVariant"
-    :type="resolvedType"
-    :autocomplete="autocomplete ?? 'off'"
-    :model-value="modelValue ?? ''"
-    :placeholder="placeholder ?? ''"
-    :disabled="disabled ?? false"
-    :clearable="clearable ?? false"
-    :error="Boolean(errorMessage)"
-    :error-messages="errorMessage ? [errorMessage] : []"
-    @update:model-value="$emit('update:modelValue', String($event ?? ''))"
-    @click:clear="$emit('update:modelValue', '')"
-  >
-    <template v-if="slots['prepend-inner']" #prepend-inner>
-      <slot name="prepend-inner" />
-    </template>
-    <template v-if="canReveal || slots['append-inner']" #append-inner>
-      <button
-        v-if="canReveal"
-        class="pb-field__reveal"
-        type="button"
-        :aria-label="passwordVisible ? '隐藏密码' : '显示密码'"
-        :aria-pressed="passwordVisible"
-        @click="passwordVisible = !passwordVisible"
-      >
-        <Icon
-          :name="passwordVisible ? 'eye-off' : 'eye'"
-          size="md"
-          tone="muted"
-        />
-      </button>
-      <slot v-else name="append-inner" />
-    </template>
-  </v-text-field>
+  <div ref="rootRef" class="field-composition" data-pb-role="field">
+    <label v-if="labeled" :for="fieldId" class="field-label">{{ label }}</label>
+    <v-text-field
+      :id="fieldId"
+      class="pb-field radius-md"
+      :class="{ 'is-plain': !labeled, 'is-labeled': labeled }"
+      data-pb-id="ds.text-field"
+      :label="undefined"
+      :aria-label="label ?? undefined"
+      :hide-details="!errorMessage"
+      :flat="!labeled"
+      :variant="fieldVariant"
+      :type="resolvedType"
+      :autocomplete="autocomplete ?? 'off'"
+      :model-value="modelValue ?? ''"
+      :placeholder="placeholder ?? ''"
+      :disabled="disabled ?? false"
+      :clearable="clearable ?? false"
+      :error="Boolean(errorMessage)"
+      :error-messages="errorMessage ? [errorMessage] : []"
+      @update:model-value="$emit('update:modelValue', String($event ?? ''))"
+      @click:clear="$emit('update:modelValue', '')"
+    >
+      <template v-if="slots['prepend-inner']" #prepend-inner>
+        <slot name="prepend-inner" />
+      </template>
+      <template v-if="canReveal || slots['append-inner']" #append-inner>
+        <button
+          v-if="canReveal"
+          class="pb-field__reveal"
+          type="button"
+          :aria-label="passwordVisible ? '隐藏密码' : '显示密码'"
+          :aria-pressed="passwordVisible"
+          @click="passwordVisible = !passwordVisible"
+        >
+          <Icon
+            :name="passwordVisible ? 'eye-off' : 'eye'"
+            size="md"
+            tone="muted"
+          />
+        </button>
+        <slot v-else name="append-inner" />
+      </template>
+    </v-text-field>
+  </div>
 </template>
 
 <style scoped>
@@ -197,5 +203,18 @@ usePbInspect({
   background: transparent;
   color: var(--pb-color-on-surface-muted);
   cursor: pointer;
+}
+</style>
+
+<style scoped>
+.field-composition {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-sm);
+  min-width: var(--pb-layout-zero);
+}
+.field-label {
+  font: var(--pb-typography-label);
+  color: var(--pb-color-on-surface-muted);
 }
 </style>

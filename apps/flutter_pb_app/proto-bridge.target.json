@@ -10,7 +10,7 @@
   "components": {
     "app-bar": {
       "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
     },
     "avatar": {
       "status": "pending",
@@ -26,7 +26,7 @@
     },
     "button": {
       "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "reason": "PBWork 玻璃控件升级：材质、选中滑动与有限 API 已更新，Flutter 待按当前 Contract 与主题复核实现。"
     },
     "card": {
       "status": "pending",
@@ -66,11 +66,11 @@
     },
     "icon": {
       "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
     },
     "icon-button": {
       "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "reason": "PBWork 玻璃控件升级：材质、选中滑动与有限 API 已更新，Flutter 待按当前 Contract 与主题复核实现。"
     },
     "loading": {
       "status": "pending",
@@ -78,11 +78,11 @@
     },
     "menu": {
       "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
     },
     "primary-tabs": {
       "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "reason": "PBWork 玻璃控件升级：材质、选中滑动与有限 API 已更新，Flutter 待按当前 Contract 与主题复核实现。"
     },
     "progress": {
       "status": "pending",
@@ -122,15 +122,15 @@
     },
     "tabbar": {
       "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "reason": "PBWork 玻璃控件升级：材质、选中滑动与有限 API 已更新，Flutter 待按当前 Contract 与主题复核实现。"
     },
     "text-field": {
       "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
     },
     "textarea": {
       "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
     },
     "toast": {
       "status": "pending",
@@ -138,23 +138,23 @@
     },
     "segmented-control": {
       "status": "pending",
-      "reason": "PBWork 平台升级新增通用组件；本轮未实现 Flutter，需按 Producer Contract 与主题表适配。"
+      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
     },
     "stepper": {
       "status": "pending",
-      "reason": "PBWork 平台升级新增通用组件；本轮未实现 Flutter，需按 Producer Contract 与主题表适配。"
+      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
     },
     "duration-picker": {
       "status": "pending",
-      "reason": "PBWork 平台升级新增通用组件；本轮未实现 Flutter，需按 Producer Contract 与主题表适配。"
+      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
     },
     "ring-progress": {
       "status": "pending",
-      "reason": "PBWork 平台升级新增通用组件；本轮未实现 Flutter，需按 Producer Contract 与主题表适配。"
+      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
     },
     "metric": {
       "status": "pending",
-      "reason": "PBWork 平台升级新增通用组件；本轮未实现 Flutter，需按 Producer Contract 与主题表适配。"
+      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
     },
     "tag": {
       "status": "pending",
@@ -162,15 +162,15 @@
     },
     "mini-bars": {
       "status": "pending",
-      "reason": "PBWork 平台升级新增通用组件；本轮未实现 Flutter，需按 Producer Contract 与主题表适配。"
+      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
     },
     "heatmap": {
       "status": "pending",
-      "reason": "PBWork 平台升级新增通用组件；本轮未实现 Flutter，需按 Producer Contract 与主题表适配。"
+      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
     },
     "month-calendar": {
       "status": "pending",
-      "reason": "PBWork 平台升级新增通用组件；本轮未实现 Flutter，需按 Producer Contract 与主题表适配。"
+      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
     },
     "list-cell": {
       "status": "pending",
@@ -186,11 +186,15 @@
     },
     "brand-mark": {
       "status": "pending",
-      "reason": "PBWork 平台升级新增通用组件；本轮未实现 Flutter，需按 Producer Contract 与主题表适配。"
+      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
     },
     "launch-screen": {
       "status": "pending",
-      "reason": "PBWork 平台升级新增通用组件；本轮未实现 Flutter，需按 Producer Contract 与主题表适配。"
+      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
+    },
+    "glass-surface": {
+      "status": "pending",
+      "reason": "PBWork 新增纯玻璃容器，Flutter 材质、轮廓继承与降级尚未实现。"
     }
   },
   "tokens": {
@@ -713,6 +717,54 @@
     "badge.label-size": {
       "status": "pending",
       "reason": "PBWork 紧凑 Badge 显式固定既有字号；本轮未适配 Flutter，需按 Producer Contract 复核。"
+    },
+    "color.glass-tint": {
+      "status": "pending",
+      "reason": "PBWork 新增材质/数据展示语义键；Flutter accessor 与视觉实现待适配。"
+    },
+    "color.glass-clear": {
+      "status": "pending",
+      "reason": "PBWork 新增材质/数据展示语义键；Flutter accessor 与视觉实现待适配。"
+    },
+    "color.glass-edge": {
+      "status": "pending",
+      "reason": "PBWork 新增材质/数据展示语义键；Flutter accessor 与视觉实现待适配。"
+    },
+    "border.glass": {
+      "status": "pending",
+      "reason": "PBWork 新增材质/数据展示语义键；Flutter accessor 与视觉实现待适配。"
+    },
+    "elevation.glass": {
+      "status": "pending",
+      "reason": "PBWork 新增材质/数据展示语义键；Flutter accessor 与视觉实现待适配。"
+    },
+    "size.brand": {
+      "status": "pending",
+      "reason": "PBWork 新增材质/数据展示语义键；Flutter accessor 与视觉实现待适配。"
+    },
+    "size.plot": {
+      "status": "pending",
+      "reason": "PBWork 新增材质/数据展示语义键；Flutter accessor 与视觉实现待适配。"
+    },
+    "size.ring": {
+      "status": "pending",
+      "reason": "PBWork 新增材质/数据展示语义键；Flutter accessor 与视觉实现待适配。"
+    },
+    "tabbar.selection-tint": {
+      "status": "pending",
+      "reason": "PBWork 新增玻璃控件主题色，Flutter 尚待映射当前主题取值。"
+    },
+    "primary-tabs.selection-tint": {
+      "status": "pending",
+      "reason": "PBWork 新增玻璃控件主题色，Flutter 尚待映射当前主题取值。"
+    },
+    "button.glass-primary-tint": {
+      "status": "pending",
+      "reason": "PBWork 新增玻璃控件主题色，Flutter 尚待映射当前主题取值。"
+    },
+    "icon-button.glass-primary-tint": {
+      "status": "pending",
+      "reason": "PBWork 新增玻璃控件主题色，Flutter 尚待映射当前主题取值。"
     }
   },
   "queryExclusions": []

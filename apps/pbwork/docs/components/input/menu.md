@@ -33,3 +33,7 @@
 - 用于服务类型、负责人等有限选项；选项结构由受控数据或 `item` slot 提供。
 - 不把任意命令菜单、树形选择或远程自由搜索静默塞进本 Contract。
 - Props、Slots、Events、默认值与 Token 槽以 [Menu Contract](../../../src/design-system/components/contracts/menu.json) 为准。
+
+## 展示与组合
+
+字段标签与选择表面分离并关联真实输入，错误提示按需出现；选择、加载和菜单焦点行为沿用原机制。

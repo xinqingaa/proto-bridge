@@ -27,3 +27,7 @@
 用于一个数字、单位与可选百分比变化；未提供 change 时隐藏变化量，0 则显示持平。不要用颜色代替变化文字。
 
 Props、Slots、Events、默认值与 Token 槽以 [Metric Contract](../../../src/design-system/components/contracts/metric.json) 为准。
+
+## 展示与组合
+
+主值采用数字展示字阶，单位、变化与说明分层，保留调用方提供的真实值和正负变化语义。

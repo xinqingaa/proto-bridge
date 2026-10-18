@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { previewExtensions } from "./extensions/registry";
 import ExtensionSample from "./extensions/ExtensionSample.vue";
+import IconCatalog from "./IconCatalog.vue";
+import GlassSample from "./GlassSample.vue";
+import TabbarPreview from "./TabbarPreview.vue";
+import LaunchPreview from "./LaunchPreview.vue";
 import { computed } from "vue";
 import ResourcePageShell from "@/workbench/views/ResourcePageShell.vue";
 import PreviewComparison from "./PreviewComparison.vue";
 import ComponentDeviceSample from "./ComponentDeviceSample.vue";
 import ComponentSample from "./ComponentSample.vue";
 import { componentRecords } from "@/design-system/components/registry";
-import { loadComponentContract } from "@/design-system/loaders";
+import { loadPrototypes, loadComponentContract } from "@/design-system/loaders";
 const props = defineProps<{ componentId: string }>();
 const requested = computed(() =>
   previewExtensions.find((entry) => entry.id === props.componentId),
@@ -24,6 +28,10 @@ const tokenIds = computed(
       ...new Set(Object.values(contract.value?.tokenBindings ?? {})),
     ],
 );
+const prototypes = loadPrototypes();
+function ownerPack(ownerId: string) {
+  return prototypes.find((owner) => owner.id === ownerId)?.themePackId;
+}
 function extensionFor(device: import("./model").PreviewDeviceSession) {
   return (
     previewExtensions.find((entry) => entry.id === device.demo.extensionId) ??
@@ -51,9 +59,19 @@ function extensionFor(device: import("./model").PreviewDeviceSession) {
         ><ExtensionSample
           v-if="extensionFor(sample.device)"
           :extension="extensionFor(sample.device)!"
+          :owner-theme-pack-id="
+            ownerPack(extensionFor(sample.device)!.ownerPrototypeId)
+          "
           :device="sample.device"
           :attach="sample.attach"
-          :table="sample.table" /><ComponentSample
+          :table="sample.table" /><IconCatalog
+          v-else-if="componentId === 'icon'"
+          :device="sample.device" /><GlassSample
+          v-else-if="componentId === 'glass-surface'" /><LaunchPreview
+          v-else-if="componentId === 'launch-screen'"
+          :device="sample.device" /><TabbarPreview
+          v-else-if="componentId === 'tabbar'"
+          :device="sample.device" /><ComponentSample
           v-else-if="['button', 'bottom-sheet'].includes(componentId)"
           :component-id="componentId"
           :attach="sample.attach"

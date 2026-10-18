@@ -28,3 +28,7 @@
 调用方显式传 month 与 modelValue，处理两个更新事件；月份切换不自动改选中日期，组件不读取系统“今天”。不承诺完整日期范围选择器。
 
 Props、Slots、Events、默认值与 Token 槽以 [MonthCalendar Contract](../../../src/design-system/components/contracts/month-calendar.json) 为准。
+
+## 展示与组合
+
+月份使用可读年月标题和 SVG 翻月按钮；七列保持 Flex 等分。today 由调用方提供确定日期，区别于选中与禁用，不读取系统当前日期。

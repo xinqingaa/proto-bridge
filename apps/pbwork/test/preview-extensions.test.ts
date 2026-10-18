@@ -67,8 +67,14 @@ describe("explicit prototype presentation registration", () => {
       },
     ]);
     expect(extensionNavigation([], env.owners)).toEqual([]);
-    expect(extensionApplicable(own, "foundation:pbwork-base")).toBe(false);
-    expect(extensionApplicable(own, "prototype:two")).toBe(true);
+    expect(extensionApplicable(own, "pbwork-sample", "pbwork-base")).toBe(
+      false,
+    );
+    expect(extensionApplicable(own, "pbwork-base")).toBe(false);
+    expect(extensionApplicable(own, "pbwork-base", "pbwork-base")).toBe(true);
+    expect(extensionApplicable(variant, "pbwork-sample", "pbwork-base")).toBe(
+      true,
+    );
   });
   it.each([
     [{ ...variant, id: "button" }, "INVALID_OR_DUPLICATE_ID"],
@@ -114,6 +120,7 @@ describe("explicit prototype presentation registration", () => {
     const wrapper = mount(ExtensionSample, {
       props: {
         extension: own,
+        ownerThemePackId: "pbwork-base",
         device,
         attach: "#device-B",
         table: resolveRuntimeTheme("pbwork-base", "default", "light"),
@@ -125,6 +132,7 @@ describe("explicit prototype presentation registration", () => {
     );
     expect(wrapper.text()).toContain("空态");
     await wrapper.setProps({
+      table: resolveRuntimeTheme("pbwork-sample", "garden", "light"),
       device: createPreviewDevice("A", {
         contextId: "foundation:pbwork-base",
         theme: "default",

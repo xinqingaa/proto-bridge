@@ -8,10 +8,11 @@ import { themeAssetUrl } from "@/design-system/theme/sources";
 const props = withDefaults(
   defineProps<{
     name?: string;
+    layout?: "inline" | "stacked";
     inspectId?: string;
     pbKey?: string;
   }>(),
-  { name: "品牌" },
+  { name: "品牌", layout: "inline" },
 );
 
 const rootRef = ref<HTMLElement | null>(null);
@@ -40,10 +41,10 @@ usePbInspect({
   getTokenBindings: () => ({
     color: "color.on-surface",
     gap: "spacing.sm",
-    typography: "typography.subtitle",
+    typography: "typography.title-lg",
     mark: "asset.brand-mark",
     wordmark: "asset.brand-wordmark",
-    size: "size.avatar",
+    size: "size.brand",
   }),
 });
 </script>
@@ -51,6 +52,7 @@ usePbInspect({
   <div
     ref="rootRef"
     class="brand"
+    :class="{ 'is-stacked': props.layout === 'stacked' }"
     data-pb-role="image"
     role="img"
     :aria-label="name"
@@ -58,7 +60,7 @@ usePbInspect({
       pbStyle({
         gap: 'spacing.sm',
         color: 'color.on-surface',
-        typography: 'typography.subtitle',
+        typography: 'typography.title-lg',
       })
     "
   >
@@ -85,13 +87,23 @@ usePbInspect({
   min-width: var(--pb-layout-zero);
 }
 .mark {
-  width: var(--pb-size-avatar);
-  height: var(--pb-size-avatar);
+  width: var(--pb-size-brand);
+  height: var(--pb-size-brand);
   object-fit: contain;
 }
 .wordmark {
   max-width: var(--pb-layout-fill);
-  height: var(--pb-size-avatar);
+  height: var(--pb-size-brand);
   object-fit: contain;
+}
+</style>
+
+<style scoped>
+.brand.is-stacked {
+  flex-direction: column;
+  text-align: center;
+}
+.brand {
+  font: var(--pb-typography-title-lg);
 }
 </style>

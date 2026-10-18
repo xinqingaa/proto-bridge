@@ -115,6 +115,33 @@ function openScenario(id: string) {
         </div>
       </section>
       <section>
+        <h3>玻璃材质</h3>
+        <p>同一材质保留三种操作等级。</p>
+        <div class="glass-button-scene">
+          <span class="glass-scene-copy" aria-hidden="true"
+            >今日记录 · 下一步安排</span
+          >
+          <div class="glass-button-actions">
+            <PbButton
+              v-for="kind in ['primary', 'secondary', 'outlined'] as const"
+              :key="kind"
+              :label="
+                kind === 'primary'
+                  ? '开始记录'
+                  : kind === 'secondary'
+                    ? '保存草稿'
+                    : '查看详情'
+              "
+              :kind="kind"
+              material="glass"
+              :loading="demo.busy"
+              :inspect-id="`${prefix}.glass.${kind}`"
+              @click="submit"
+            />
+          </div>
+        </div>
+      </section>
+      <section>
         <h3>状态</h3>
         <div
           v-for="state in contract.states"
@@ -122,6 +149,7 @@ function openScenario(id: string) {
           class="sample-row"
           :data-exhibit="`state.${state.id}`"
           :data-preview-state="state.id"
+          :class="{ 'is-glass-sample': state.props?.material === 'glass' }"
         >
           <span>{{ state.label }}</span>
           <PbButton
@@ -225,5 +253,40 @@ function openScenario(id: string) {
 .sample-row > span {
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);
+}
+</style>
+
+<style scoped>
+.glass-button-scene {
+  position: relative;
+  padding: var(--pb-spacing-lg);
+  border-radius: var(--pb-radius-surface);
+  background: linear-gradient(
+    120deg,
+    var(--pb-color-primary-soft),
+    var(--pb-color-surface-recessed),
+    var(--pb-color-action-soft)
+  );
+}
+.glass-scene-copy {
+  display: block;
+  margin-bottom: var(--pb-spacing-md);
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-subtitle);
+}
+.glass-button-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pb-spacing-sm);
+}
+.sample-row.is-glass-sample {
+  padding: var(--pb-spacing-sm-plus);
+  border-radius: var(--pb-radius-surface);
+  background: linear-gradient(
+    120deg,
+    var(--pb-color-primary-soft),
+    var(--pb-color-surface-recessed),
+    var(--pb-color-action-soft)
+  );
 }
 </style>

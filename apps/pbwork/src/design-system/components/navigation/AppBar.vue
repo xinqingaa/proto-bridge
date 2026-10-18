@@ -1,16 +1,12 @@
 <script setup lang="ts">
+import GlassMaterial from "../_shared/GlassMaterial.vue";
+import Icon from "../action/Icon.vue";
 import SurfaceMaterial from "@/design-system/components/_shared/SurfaceMaterial.vue";
 import { useToken } from "@/design-system/theme/runtime-theme";
-import { useTokenNumber } from "@/design-system/theme/runtime-theme";
-import { themeConstantNumber } from "@/design-system/theme/constants";
 
-import { computed, toRefs, useSlots } from "vue";
-import { ArrowLeft } from "lucide-vue-next";
+import { computed, toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import IconButton from "@/design-system/components/action/IconButton.vue";
-import { elevationStyle } from "@/design-system/components/_shared/appearance";
-const NO_ELEVATION = themeConstantNumber("layer.base");
-const BACK_ICON_SIZE = useTokenNumber("size.icon");
 
 type ActionIcon = "more" | "plus" | "search" | "settings";
 
@@ -21,9 +17,10 @@ const ACTION_ARIA_LABELS: Record<ActionIcon, string> = {
   settings: "设置",
 };
 
-const surfaceTreatment = useToken("app-bar.surface-treatment");
+const themeTreatment = useToken("app-bar.surface-treatment");
 const props = defineProps<{
   title: string;
+  background?: "theme" | "solid" | "glass" | "transparent";
   dense?: boolean;
   elevated?: boolean;
   showBack?: boolean;
@@ -37,7 +34,11 @@ const props = defineProps<{
 
 defineEmits<{ back: []; action: [] }>();
 
-const slots = useSlots();
+const surfaceTreatment = computed(() =>
+  props.background === "theme" || !props.background
+    ? themeTreatment.value
+    : props.background,
+);
 const rootRef = usePbInspectRef();
 const {
   title,
@@ -67,6 +68,7 @@ usePbInspect({
   instanceId: inspectId,
   componentId: "app-bar",
   getProps: () => ({
+    background: props.background ?? "theme",
     title: title.value,
     dense: dense.value ?? false,
     elevated: elevated.value ?? false,
@@ -78,6 +80,18 @@ usePbInspect({
     inspectId: inspectId.value,
   }),
   getTokenBindings: () => ({
+    lineHeight: "size.navigation-bar",
+    touch: "size.touch",
+    focus: "border.focus",
+    focusRadius: "radius.control",
+    lineGap: "spacing.sm",
+    glassTint: "color.glass-tint",
+    glassClear: "color.glass-clear",
+    glassEdge: "border.glass",
+    glassLight: "elevation.glass",
+    glassFallback: "color.surface",
+    glassFallbackBorder: "border.default",
+
     materialOpacity: "opacity.translucent",
     materialBackdrop: "surface.glass-backdrop",
     materialBorder: "border.default",
@@ -105,94 +119,133 @@ usePbInspect({
 </script>
 
 <template>
-  <v-toolbar
+  <header
     ref="rootRef"
     class="pb-app-bar app-bar"
     data-pb-id="ds.app-bar"
     data-pb-role="app-bar"
-    flat
-    color="surface"
-    :density="dense ? 'compact' : 'default'"
-    :elevation="NO_ELEVATION"
-    :style="elevationStyle(elevated ? 'card' : 'none')"
     :class="{
+      'is-dense': dense,
+      'is-transparent': surfaceTreatment === 'transparent',
+      'is-material': surfaceTreatment === 'glass',
       'is-elevated': elevated,
-      'is-material': surfaceTreatment !== 'solid',
     }"
   >
-    <SurfaceMaterial
-      v-if="surfaceTreatment !== 'solid'"
-      treatment-key="app-bar.surface-treatment"
+    <GlassMaterial
+      v-if="surfaceTreatment === 'glass'"
+      class="app-bar-material"
     />
-    <template v-if="showBack" #prepend>
-      <v-btn
-        class="pb-app-bar-back"
-        icon
-        variant="text"
-        :aria-label="backLabel ?? '返回'"
-        @click="$emit('back')"
-      >
-        <ArrowLeft :size="BACK_ICON_SIZE" aria-hidden="true" />
-      </v-btn>
-    </template>
-    <v-toolbar-title v-if="title" class="pb-app-bar-title">
-      <h2 class="pb-app-bar-heading">{{ title }}</h2>
-    </v-toolbar-title>
-    <template v-if="slots.append || showAction" #append>
-      <div class="pb-app-bar-actions">
-        <slot name="append">
-          <IconButton
-            v-if="showAction"
-            :ariaLabel="resolvedActionLabel"
-            :icon="resolvedActionIcon"
-            size="sm"
-            @click="$emit('action')"
-          />
-        </slot>
+    <SurfaceMaterial
+      v-else-if="surfaceTreatment !== 'transparent'"
+      treatment-key="app-bar.surface-treatment"
+      :treatment="
+        surfaceTreatment === 'glass'
+          ? 'glass'
+          : surfaceTreatment === 'outlined'
+            ? 'outlined'
+            : 'solid'
+      "
+    />
+    <div class="app-bar-foreground">
+      <div class="app-bar-line">
+        <div class="app-bar-side">
+          <button
+            v-if="showBack"
+            class="pb-app-bar-back"
+            type="button"
+            :aria-label="backLabel ?? '返回'"
+            @click="$emit('back')"
+          >
+            <Icon name="chevron-left" />
+          </button>
+        </div>
+        <h2 v-if="title" class="pb-app-bar-title pb-app-bar-heading">
+          {{ title }}
+        </h2>
+        <div class="app-bar-side is-trailing">
+          <slot name="append"
+            ><IconButton
+              v-if="showAction"
+              :ariaLabel="resolvedActionLabel"
+              :icon="resolvedActionIcon"
+              variant="text"
+              size="sm"
+              @click="$emit('action')"
+          /></slot>
+        </div>
       </div>
-    </template>
-  </v-toolbar>
+    </div>
+  </header>
 </template>
-
 <style scoped>
 .pb-app-bar {
-  position: relative !important;
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  align-self: stretch;
   flex: none;
+  width: var(--pb-layout-fill);
+  min-width: var(--pb-layout-zero);
   padding-top: var(--pb-safe-top, var(--pb-layout-zero));
-  border-bottom: var(--pb-border-hairline);
-  box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;
+  color: var(--pb-color-on-surface);
 }
-.pb-app-bar.is-material {
-  background: transparent !important;
+.app-bar-material {
+  z-index: var(--pb-layer-base);
 }
-.pb-app-bar.is-material :deep(.v-toolbar__content) {
+.app-bar-foreground {
+  /* Safari needs a separate composited foreground above the backdrop filter. */
+  transform: translateZ(var(--pb-layout-zero));
   position: relative;
   z-index: var(--pb-layer-content);
 }
-.pb-app-bar.is-elevated {
-  box-shadow: var(
-    --pb-component-shadow,
-    var(--pb-elevation-surface)
-  ) !important;
-}
-.pb-app-bar :deep(.v-toolbar__content) {
-  padding-inline: var(--pb-spacing-md);
-}
-.pb-app-bar-title,
-.pb-app-bar-heading {
-  margin: var(--pb-layout-zero);
-  font: var(--pb-typography-subtitle);
-}
-.pb-app-bar-actions {
+.app-bar-line {
+  position: relative;
+  z-index: var(--pb-layer-content);
   display: flex;
   align-items: center;
-  gap: var(--pb-spacing-xs);
+  gap: var(--pb-spacing-sm);
+  min-height: var(--pb-size-navigation-bar);
+  padding-inline: var(--pb-spacing-md);
 }
-</style>
-
-<style scoped>
-/* Preserve the established title inset independently of lazy vendor CSS order. */
-.pb-app-bar .pb-app-bar-title {
-  margin-inline-start: calc(var(--pb-spacing-md) + var(--pb-spacing-xs));
+.app-bar-side {
+  display: flex;
+  align-items: center;
+  flex: var(--pb-layout-flex-fill);
+  min-width: var(--pb-size-touch);
+}
+.is-trailing {
+  justify-content: flex-end;
+}
+.pb-app-bar-title {
+  flex: initial;
+  margin: var(--pb-layout-zero);
+  font: var(--pb-typography-subtitle);
+  text-align: center;
+  min-width: var(--pb-layout-zero);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pb-app-bar-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--pb-size-touch);
+  min-height: var(--pb-size-touch);
+  color: inherit;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+.pb-app-bar-back:focus-visible {
+  outline: var(--pb-border-focus);
+  outline-offset: var(--pb-layout-focus-inset);
+  border-radius: var(--pb-radius-control);
+}
+.is-dense .app-bar-line {
+  min-height: var(--pb-size-touch);
+}
+.is-elevated {
+  box-shadow: var(--pb-elevation-surface);
 }
 </style>

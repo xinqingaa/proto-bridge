@@ -15,7 +15,7 @@
     "summary": "有限范围内增减数值，按钮与数值输入使用同一边界。"
   },
   "visualAnatomy": {
-    "summary": "使用当前主题的语义色、字阶、间距和受控形状，不在实例上换绑。"
+    "summary": "连续容器内排列减少动作、数字输入与增加动作，数字采用独立字阶，范围边界可辨。"
   },
   "propsSchema": {
     "type": "object",
@@ -76,7 +76,9 @@
     }
   ],
   "slots": [],
-  "events": ["update:modelValue"],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "surface": "color.surface",
     "color": "color.on-surface",
@@ -90,7 +92,11 @@
     "border": "border.hairline",
     "number": "typography.numeric-content",
     "focusOffset": "spacing.xxs",
-    "contentExtent": "size.avatar-large"
+    "contentExtent": "size.avatar-large",
+    "track": "color.surface-recessed",
+    "valueFont": "typography.numeric-title",
+    "buttonElevation": "elevation.surface",
+    "innerGap": "spacing.xs"
   },
   "playground": {
     "presentation": "interactive"

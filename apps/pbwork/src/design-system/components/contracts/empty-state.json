@@ -61,7 +61,8 @@
     "presentation": "interactive"
   },
   "icons": {
-    "pack": "lucide",
-    "defaults": ["inbox"]
+    "pack": "pbwork",
+    "defaults": ["inbox"],
+    "artwork": "_shared/glyph-artwork.json"
   }
 }

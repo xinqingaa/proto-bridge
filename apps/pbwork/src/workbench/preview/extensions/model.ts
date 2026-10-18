@@ -96,10 +96,11 @@ export function extensionNavigation(
 }
 export function extensionApplicable(
   extension: PreviewExtension,
-  contextId: string,
+  selectedPackId: string,
+  ownerThemePackId?: string,
 ) {
   return (
     extension.kind === "variant" ||
-    contextId === `prototype:${extension.ownerPrototypeId}`
+    Boolean(ownerThemePackId && selectedPackId === ownerThemePackId)
   );
 }

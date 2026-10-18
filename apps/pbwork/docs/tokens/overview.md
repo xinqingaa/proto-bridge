@@ -29,13 +29,13 @@
 
 ## Bind 池 vs 扩展 Token
 
-| 集合       | 文件                  | 用途                                       |
-| ---------- | --------------------- | ------------------------------------------ |
-| 全量主题键 | key-catalog + Contract.componentTokens | 136 项定义，由 Core 解析取值 |
-| Bind 池 | theme/bindings.ts | 自动选择 bindable=true 的 130 项 |
-| 不可绑定控制项 | density、motion.personality、surface.treatment 与三个组件材质控制 | 影响包内表达式或共享材质分支 |
-| 实现常量 | theme/constants.json | 36 项；CSS 可消费，JS 经 themeConstantNumber/Css 读取；不进入 Catalog/绑定/Target |
-| 绑定字面量 | transparent、none | 由 Core 声明；不是 Token，不生成 Target obligation |
+| 集合           | 文件                                                              | 用途                                                                              |
+| -------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| 全量主题键     | key-catalog + Contract.componentTokens                            | 148 项定义，由 Core 解析取值                                                      |
+| Bind 池        | theme/bindings.ts                                                 | 自动选择 bindable=true 的 142 项                                                  |
+| 不可绑定控制项 | density、motion.personality、surface.treatment 与三个组件材质控制 | 影响包内表达式或共享材质分支                                                      |
+| 实现常量       | theme/constants.json                                              | 37 项；CSS 可消费，JS 经 themeConstantNumber/Css 读取；不进入 Catalog/绑定/Target |
+| 绑定字面量     | transparent、none                                                 | 由 Core 声明；不是 Token，不生成 Target obligation                                |
 
 组件内 JS 读取主题键使用 useToken/useTokenNumber 的 computed；禁止模块级缓存主题默认值。字阶部件只读且不可绑定。Contract 与 Inspector 只列可绑定的主题键，不把布局比例、层级或手势阈值等常量伪装成主题证据。
 

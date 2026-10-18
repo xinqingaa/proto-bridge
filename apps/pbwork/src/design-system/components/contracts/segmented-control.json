@@ -98,7 +98,13 @@
     "target": "size.touch",
     "focus": "border.focus",
     "disabledOpacity": "opacity.disabled",
-    "focusOffset": "spacing.xxs"
+    "focusOffset": "spacing.xxs",
+    "compactRadius": "radius.control-compact",
+    "selectedText": "color.on-surface",
+    "inactiveText": "color.on-surface-muted",
+    "labelFont": "typography.label",
+    "selectedElevation": "elevation.surface",
+    "selectedSurface": "color.surface"
   },
   "playground": {
     "presentation": "interactive"

@@ -30,7 +30,7 @@
 | `layout`                   | 跨端容器、项宽、溢出与视图区归属；不表达 CSS      |
 | `visualAnatomy`            | 跨端材质、层级与轮廓；不表达伪元素或样式 API      |
 | `playground.presentation`  | **必填**：`interactive` \| `gallery` \| `trigger` |
-| `icons`                    | 可选；`pack` 固定 `lucide`                        |
+| `icons`                    | 可选；`pack` 为 `lucide` 或 `pbwork`，按实际图形来源声明                        |
 
 `propsSchema` / `defaultProps` **只服务 Vue 与 Playground**。Target **不得**把 propsSchema 当作公开 API 契约。
 
@@ -96,7 +96,7 @@ Role 表达跨组件的产品职责，`componentId` 表达精确组件身份。`
 
 ## 图标
 
-DS **唯一**图标包为 **Lucide**（稳定 icon id）。基础组件 `icon` 承载策展清单；Playground 仅对 `icon`、`icon-button` 使用 `gallery` 平铺。Flutter 换 `lucide_icons`（或同类）属 P1.5。
+DS 基础 `icon` 承载 **PBWork 自绘 SVG** 策展清单，保留既有稳定 icon id；接收调用方组件的导航仍兼容 Lucide，不能将调用方图形误标成自绘。图形定义位于 `_shared/glyph-artwork.json`，预览和下载复用同一源；SVG 坐标及笔画是受控图形资产，不是实例自由样式。Playground 仅对 `icon`、`icon-button` 使用 `gallery` 平铺。Flutter 换 `lucide_icons`（或同类）属 P1.5。
 
 ## 非目标
 

@@ -83,6 +83,13 @@ usePbInspect({
   pbKey: () => props.pbKey,
   getProps: () => ({ ...props }),
   getTokenBindings: () => ({
+    compactRadius: "radius.control-compact",
+    selectedText: "color.on-surface",
+    inactiveText: "color.on-surface-muted",
+    labelFont: "typography.label",
+    selectedElevation: "elevation.surface",
+    selectedSurface: "color.surface",
+
     color: "color.on-surface",
     gap: "spacing.sm",
     typography: "typography.content",
@@ -135,9 +142,9 @@ usePbInspect({
 <style scoped>
 .segments {
   display: flex;
-  gap: var(--pb-spacing-xs);
+  gap: var(--pb-layout-zero);
   padding: var(--pb-spacing-xs);
-  border-radius: var(--pb-radius-control);
+  border-radius: var(--pb-radius-control-compact);
   background: var(--pb-color-surface-recessed);
 }
 button {
@@ -145,12 +152,16 @@ button {
   min-height: var(--pb-size-touch);
   padding: var(--pb-spacing-xs) var(--pb-spacing-sm);
   border: none;
-  border-radius: var(--pb-radius-control);
+  border-radius: var(--pb-radius-control-compact);
   background: transparent;
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-label);
   cursor: pointer;
 }
 button.selected {
-  background: var(--pb-color-surface-selected);
+  background: var(--pb-color-surface);
+  color: var(--pb-color-on-surface);
+  box-shadow: var(--pb-elevation-surface);
 }
 button:focus-visible,
 input:focus-visible {

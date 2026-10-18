@@ -73,7 +73,7 @@ const status = computed(() =>
   >
     <header class="device-caption">
       <span v-if="comparing" class="device-marker">{{ device.id }}</span>
-      <strong>{{ context?.label ?? "未知来源" }}</strong>
+      <strong>{{ context?.label ?? "未知主题包" }}</strong>
       <small
         >{{
           manifest?.themes.find((t) => t.id === device.selection.theme)?.label

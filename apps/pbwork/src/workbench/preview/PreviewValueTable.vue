@@ -3,8 +3,13 @@ import type {
   ResolvedThemeTypography,
   ResolvedThemeValue,
 } from "@proto-bridge/core/v2";
+import { loadPrototypes } from "@/design-system/loaders";
 import { computed, ref } from "vue";
 import WorkbenchTextField from "@/workbench/ui/WorkbenchTextField.vue";
+import WorkbenchSegmented from "@/workbench/ui/WorkbenchSegmented.vue";
+import { usePreviewPreferences } from "./preferences";
+import { previewExtensions } from "./extensions/registry";
+import { extensionApplicable } from "./extensions/model";
 import SourceValuePreview from "./SourceValuePreview.vue";
 import {
   runtimeThemeSources,
@@ -15,14 +20,14 @@ import { themeAssetUrl } from "@/design-system/theme/sources";
 import { normalizeTokenCssVarName } from "@/design-system/theme/presentation";
 import {
   resolvePreviewDevice,
-  type PreviewDeviceSession,
+  sourceThemeColumns,
+  createPreviewDevice,
   type PreviewContext,
 } from "./model";
 const props = defineProps<{
-  devices: PreviewDeviceSession[];
   contexts: PreviewContext[];
   tokenIds: string[];
-  deviceBindings?: Record<string, string[]>;
+  resourceId: string;
 }>();
 function typographyDetails(value: ResolvedThemeValue | undefined) {
   if (!value || typeof value !== "object" || !("size" in value))
@@ -31,8 +36,36 @@ function typographyDetails(value: ResolvedThemeValue | undefined) {
   return `字号 ${typeof type.size === "number" ? type.size + "px" : type.size} · 字重 ${type.weight} · 行高 ${type.lineHeight} · 字体 ${type.family.join(", ")}${type.features.length ? " · 特性 " + type.features.join(", ") : ""}`;
 }
 const query = ref("");
+const preferences = usePreviewPreferences();
+const mode = computed({
+  get: () => preferences.settings.sourceMode,
+  set: (value: string) => {
+    preferences.settings.sourceMode = value;
+  },
+});
+const modes = computed(() =>
+  [
+    ...new Set(
+      [...runtimeThemeSources.packs.values()].flatMap((p) => p.manifest.modes),
+    ),
+  ].map((value) => ({
+    value,
+    label: value === "light" ? "浅色" : value === "dark" ? "深色" : value,
+  })),
+);
+const columns = computed(() =>
+  sourceThemeColumns(props.contexts, runtimeThemeSources.packs),
+);
+const extension = computed(() =>
+  previewExtensions.find((e) => e.id === props.resourceId),
+);
+const prototypes = loadPrototypes();
 const entries = computed(() =>
-  props.devices.map((device) => {
+  columns.value.map((column) => {
+    const device = createPreviewDevice(column.id, {
+      ...column.selection,
+      mode: mode.value,
+    });
     const result = resolvePreviewDevice(
       device,
       props.contexts,
@@ -41,6 +74,16 @@ const entries = computed(() =>
     );
     return {
       ...result,
+      column,
+      applicable:
+        !extension.value ||
+        extensionApplicable(
+          extension.value,
+          column.packId,
+          prototypes.find(
+            (owner) => owner.id === extension.value?.ownerPrototypeId,
+          )?.themePackId,
+        ),
       css: result.table
         ? themeTableToCssVars(
             result.table,
@@ -90,6 +133,7 @@ const rows = computed(() => {
         <h2>值与来源</h2>
         <span>{{ rows.length }} 项</span>
       </div>
+      <WorkbenchSegmented v-model="mode" :items="modes" label="来源模式" />
       <WorkbenchTextField
         v-model="query"
         aria-label="搜索键值"
@@ -101,33 +145,49 @@ const rows = computed(() => {
       :key="entry.device.id"
       role="alert"
     >
-      {{ entry.device.id }}：{{ entry.error }}
+      {{ entry.column.label }}：{{ entry.error }}
     </p>
     <details class="pack-metadata">
       <summary>主题包信息</summary>
       <div v-for="entry in entries" :key="entry.device.id">
         <template v-if="entry.table && entry.context"
-          ><strong>{{ entry.context.label }}</strong
+          ><strong>{{ entry.column.label }}</strong
           ><code
-            >{{ entry.device.id }} · {{ entry.table.identity.packId }} /
+            >{{ entry.table.identity.packId }} /
             {{ entry.table.identity.theme }} /
             {{ entry.table.identity.mode }}</code
           ><code>{{ entry.table.identity.packDigest }}</code></template
         >
       </div>
     </details>
-    <div class="value-table-scroll">
-      <table>
+    <div
+      class="value-table-scroll"
+      tabindex="0"
+      aria-label="主题取值表，可横向滚动"
+    >
+      <table
+        :style="{ width: `${200 + entries.length * 300}px`, minWidth: '100%' }"
+      >
+        <colgroup>
+          <col style="width: 200px" />
+          <col
+            v-for="entry in entries"
+            :key="entry.device.id"
+            style="width: 300px"
+          />
+        </colgroup>
         <thead>
           <tr>
             <th scope="col">名称 / Key</th>
             <th v-for="entry in entries" :key="entry.device.id" scope="col">
-              {{ entries.length === 2 ? entry.device.id + " · " : ""
-              }}{{ entry.context?.label
+              {{ entry.column.themeLabel
               }}<small
-                >{{ entry.device.selection.theme }} ·
-                {{ entry.device.selection.mode }}</small
-              >
+                >{{ entry.column.packLabel
+                }}{{ entry.column.sample ? " · 仅演示" : "" }}</small
+              ><small>{{ entry.column.owners.join("、") }}</small
+              ><small>{{
+                mode === "light" ? "浅色" : mode === "dark" ? "深色" : mode
+              }}</small>
             </th>
           </tr>
         </thead>
@@ -140,13 +200,7 @@ const rows = computed(() => {
               ><small v-if="key.constant">只读常量 · 不可覆盖、不可绑定</small>
             </th>
             <td v-for="entry in entries" :key="entry.device.id">
-              <span
-                v-if="
-                  deviceBindings &&
-                  !deviceBindings?.[entry.device.id]?.includes(key.id)
-                "
-                >不适用</span
-              >
+              <span v-if="!entry.applicable">不适用</span>
               <template v-else>
                 <SourceValuePreview
                   v-if="entry.table"
@@ -245,8 +299,16 @@ td {
   border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   overflow-wrap: anywhere;
 }
+thead th:first-child,
+tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: rgb(var(--v-theme-surface));
+  box-shadow: 1px 0 rgba(var(--v-border-color), var(--v-border-opacity));
+}
 thead th:first-child {
-  width: 24%;
+  z-index: 2;
 }
 thead th {
   font-weight: 600;

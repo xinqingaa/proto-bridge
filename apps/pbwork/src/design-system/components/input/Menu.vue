@@ -2,7 +2,7 @@
 import { useTokenNumber } from "@/design-system/theme/runtime-theme";
 import { themeConstantNumber } from "@/design-system/theme/constants";
 
-import { computed, ref, toRefs, watch } from "vue";
+import { useId, computed, ref, toRefs, watch } from "vue";
 import { Check, ChevronDown } from "lucide-vue-next";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { radiusStyle } from "@/design-system/components/_shared/radius";
@@ -29,6 +29,7 @@ const emit = defineEmits<{
 }>();
 
 const rootRef = usePbInspectRef();
+const fieldId = `pb-field-${useId().replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 const {
   label,
   modelValue,
@@ -92,6 +93,9 @@ usePbInspect({
     "size.icon-compact",
   ],
   getTokenBindings: () => ({
+    externalLabel: "typography.label",
+    labelColor: "color.on-surface-muted",
+    labelGap: "spacing.sm",
     surface: "color.surface",
     border: "color.border",
     focus: "color.primary",
@@ -115,48 +119,53 @@ usePbInspect({
 </script>
 
 <template>
-  <v-select
-    ref="rootRef"
-    class="pb-select"
-    data-pb-id="ds.menu"
-    data-pb-role="field"
-    :label="label"
-    :model-value="modelValue ?? ''"
-    :items="resolvedOptions"
-    :placeholder="placeholder ?? '请选择'"
-    :clearable="clearable ?? false"
-    :loading="loading ?? false"
-    :error-messages="error ? [error] : []"
-    :disabled="disabled ?? false"
-    :menu="menuOpen"
-    :menu-props="{
-      contentClass: 'pb-select-menu',
-      maxHeight: MENU_MAX_HEIGHT,
-      offset: MENU_OFFSET,
-    }"
-    :style="radiusStyle('md')"
-    @update:menu="updateMenu"
-    @update:model-value="emit('update:modelValue', String($event ?? ''))"
-  >
-    <template #append-inner>
-      <ChevronDown
-        class="pb-select-chevron"
-        :class="{ 'is-open': menuOpen }"
-        :size="COMPACT_ICON_SIZE"
-      />
-    </template>
-    <template #item="{ props: itemProps, item }">
-      <v-list-item v-bind="itemProps" class="pb-select-option">
-        <template #append>
-          <Check
-            v-if="item.value === modelValue"
-            :size="COMPACT_ICON_SIZE"
-            class="pb-select-check"
-          />
-        </template>
-      </v-list-item>
-    </template>
-  </v-select>
+  <div ref="rootRef" class="field-composition" data-pb-role="field">
+    <label v-if="true" :for="fieldId" class="field-label">{{ label }}</label>
+    <v-select
+      :id="fieldId"
+      class="pb-select"
+      data-pb-id="ds.menu"
+      :label="undefined"
+      :aria-label="label"
+      variant="outlined"
+      :hide-details="!error"
+      :model-value="modelValue ?? ''"
+      :items="resolvedOptions"
+      :placeholder="placeholder ?? '请选择'"
+      :clearable="clearable ?? false"
+      :loading="loading ?? false"
+      :error-messages="error ? [error] : []"
+      :disabled="disabled ?? false"
+      :menu="menuOpen"
+      :menu-props="{
+        contentClass: 'pb-select-menu',
+        maxHeight: MENU_MAX_HEIGHT,
+        offset: MENU_OFFSET,
+      }"
+      :style="radiusStyle('md')"
+      @update:menu="updateMenu"
+      @update:model-value="emit('update:modelValue', String($event ?? ''))"
+    >
+      <template #append-inner>
+        <ChevronDown
+          class="pb-select-chevron"
+          :class="{ 'is-open': menuOpen }"
+          :size="COMPACT_ICON_SIZE"
+        />
+      </template>
+      <template #item="{ props: itemProps, item }">
+        <v-list-item v-bind="itemProps" class="pb-select-option">
+          <template #append>
+            <Check
+              v-if="item.value === modelValue"
+              :size="COMPACT_ICON_SIZE"
+              class="pb-select-check"
+            />
+          </template>
+        </v-list-item>
+      </template>
+    </v-select>
+  </div>
 </template>
 
 <style scoped>
@@ -223,5 +232,18 @@ usePbInspect({
 }
 .pb-select-menu .pb-select-check {
   color: var(--pb-color-primary);
+}
+</style>
+
+<style scoped>
+.field-composition {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-sm);
+  min-width: var(--pb-layout-zero);
+}
+.field-label {
+  font: var(--pb-typography-label);
+  color: var(--pb-color-on-surface-muted);
 }
 </style>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import GlassMaterial from "../_shared/GlassMaterial.vue";
 import { useTokenNumber } from "@/design-system/theme/runtime-theme";
 import { themeConstantNumber } from "@/design-system/theme/constants";
 
@@ -26,6 +27,7 @@ const props = defineProps<{
   label: string;
   /** 主要 / 次要 / 描边。默认主要类型。 */
   kind?: ButtonKind;
+  material?: "solid" | "glass";
   size?: ComponentSize;
   loading?: boolean;
   block?: boolean;
@@ -65,6 +67,7 @@ usePbInspect({
   getProps: () => ({
     label: label.value,
     kind: resolvedKind.value,
+    material: props.material ?? "solid",
     size: size.value ?? "md",
     loading: loading.value ?? false,
     block: block.value ?? false,
@@ -75,6 +78,15 @@ usePbInspect({
   getTokenBindings: () => {
     const s = resolvedSize.value;
     return {
+      glassTint: "color.glass-tint",
+      glassBackdrop: "surface.glass-backdrop",
+      glassEdge: "border.glass",
+      glassLight: "elevation.glass",
+      glassFallback: "color.surface",
+      glassFallbackBorder: "border.default",
+      glassPrimaryTint: "button.glass-primary-tint",
+      glassOutline: "border.default",
+      glassSecondary: "color.on-surface",
       background: colors.value.bgColor,
       border: colors.value.borderColor,
       onBackground: colors.value.textColor,
@@ -127,20 +139,27 @@ usePbInspect({
     :elevation="NO_ELEVATION"
     :disabled="isUnavailable"
     :aria-busy="loading ? 'true' : undefined"
-    :class="{ 'is-loading': loading ?? false }"
+    :class="{
+      'is-loading': loading ?? false,
+      'is-glass': material === 'glass',
+      ['kind-' + resolvedKind]: true,
+    }"
     :style="buttonStyle"
     @click="$emit('click')"
   >
-    <span v-if="loading" class="pb-button__loader" aria-hidden="true">
-      <v-progress-circular
-        indeterminate
-        :size="LOADER_SIZE"
-        :width="LOADER_STROKE"
-        :color="undefined"
-      />
+    <GlassMaterial v-if="material === 'glass'" />
+    <span class="pb-button-foreground">
+      <span v-if="loading" class="pb-button__loader" aria-hidden="true">
+        <v-progress-circular
+          indeterminate
+          :size="LOADER_SIZE"
+          :width="LOADER_STROKE"
+          :color="undefined"
+        />
+      </span>
+      <slot>{{ label }}</slot>
     </span>
     <template v-if="slots.prepend" #prepend><slot name="prepend" /></template>
-    <slot>{{ label }}</slot>
     <template v-if="slots.append" #append><slot name="append" /></template>
   </v-btn>
 </template>
@@ -176,6 +195,33 @@ usePbInspect({
   gap: var(--pb-spacing-xs);
   color: inherit;
 }
+.pb-button.is-glass {
+  isolation: isolate;
+  background: transparent !important;
+  border-color: transparent !important;
+  overflow: visible;
+  color: var(--pb-color-on-surface) !important;
+}
+.pb-button.is-glass.kind-primary {
+  --pb-glass-material-fallback: var(--pb-color-action);
+  --pb-glass-material-tint: var(--pb-button-glass-primary-tint);
+  color: var(--pb-color-on-action) !important;
+}
+.pb-button.is-glass.kind-outlined {
+  border: var(--pb-border-default) !important;
+}
+.pb-button-foreground,
+.pb-button :deep(.v-btn__prepend),
+.pb-button :deep(.v-btn__append) {
+  position: relative;
+  z-index: var(--pb-layer-content);
+  transform: translateZ(var(--pb-layout-zero));
+}
+.pb-button-foreground {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pb-spacing-xs);
+}
 .pb-button__loader {
   display: inline-flex;
   flex: none;
@@ -193,5 +239,11 @@ usePbInspect({
 }
 .pb-button.is-loading.v-btn--disabled {
   opacity: var(--pb-opacity-visible) !important;
+}
+</style>
+
+<style scoped>
+.pb-button :deep(.v-btn__content) {
+  border-radius: inherit;
 }
 </style>

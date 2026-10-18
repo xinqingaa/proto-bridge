@@ -18,7 +18,19 @@
     "tab-viewport.duration": 240,
     "toast.duration": 4000,
     "primary-tabs.selection-treatment": "glass",
-    "tabbar.surface-treatment": "{surface.treatment}",
-    "app-bar.surface-treatment": "{surface.treatment}"
+    "tabbar.surface-treatment": "glass",
+    "app-bar.surface-treatment": "{surface.treatment}",
+    "tabbar.selection-tint": "#ffffff99",
+    "primary-tabs.selection-tint": "#ffffffcc",
+    "button.glass-primary-tint": "#202124e6",
+    "icon-button.glass-primary-tint": "#2f73d2e6"
+  },
+  "modes": {
+    "dark": {
+      "tabbar.selection-tint": "#ffffff24",
+      "primary-tabs.selection-tint": "#a0aec02e",
+      "button.glass-primary-tint": "#f1f3f5e6",
+      "icon-button.glass-primary-tint": "#8dbaffeb"
+    }
   }
 }

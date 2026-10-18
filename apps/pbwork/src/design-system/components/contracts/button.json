@@ -12,7 +12,8 @@
     "一行只有一颗按钮时使用主要类型并占满；两颗时左侧次要、右侧主要，等分撑满且文案尽量等长",
     "描边类型是最弱档，只用于卡片内轻量动作，不进入 Confirm / Sheet / FlowSheet 决策区",
     "loading 时不可点，spinner 与文案同时可见，不得用加载图标替换文字",
-    "loading 阻止重复触发但保留强调度；只有 disabled 使用 opacity.disabled"
+    "loading 阻止重复触发但保留强调度；只有 disabled 使用 opacity.disabled",
+    "material=glass 复用共享玻璃材质，与操作类型独立；降低透明度时使用清晰实色表面。"
   ],
   "propsSchema": {
     "type": "object",
@@ -41,6 +42,10 @@
       "type": {
         "type": "string",
         "enum": ["button", "submit", "reset"]
+      },
+      "material": {
+        "type": "string",
+        "enum": ["solid", "glass"]
       }
     },
     "required": ["label"]
@@ -51,7 +56,8 @@
     "size": "md",
     "loading": false,
     "block": false,
-    "disabled": false
+    "disabled": false,
+    "material": "solid"
   },
   "states": [
     {
@@ -67,6 +73,32 @@
       "label": "禁用",
       "kind": "interaction",
       "props": {
+        "disabled": true
+      }
+    },
+    {
+      "id": "glass",
+      "label": "玻璃材质",
+      "kind": "variant",
+      "props": {
+        "material": "glass"
+      }
+    },
+    {
+      "id": "glass-loading",
+      "label": "玻璃加载",
+      "kind": "interaction",
+      "props": {
+        "material": "glass",
+        "loading": true
+      }
+    },
+    {
+      "id": "glass-disabled",
+      "label": "玻璃禁用",
+      "kind": "interaction",
+      "props": {
+        "material": "glass",
         "disabled": true
       }
     }
@@ -88,9 +120,27 @@
     "easing": "motion.easing-standard",
     "pressedScale": "motion.press-scale",
     "loaderSize": "size.icon-inline",
-    "loaderStroke": "size.stroke"
+    "loaderStroke": "size.stroke",
+    "glassTint": "color.glass-tint",
+    "glassBackdrop": "surface.glass-backdrop",
+    "glassEdge": "border.glass",
+    "glassLight": "elevation.glass",
+    "glassFallback": "color.surface",
+    "glassFallbackBorder": "border.default",
+    "glassOutline": "border.default",
+    "glassSecondary": "color.on-surface",
+    "glassPrimaryTint": "button.glass-primary-tint"
   },
   "playground": {
     "presentation": "interactive"
+  },
+  "componentTokens": {
+    "glass-primary-tint": {
+      "valueType": "color",
+      "default": "{color.action}",
+      "modeVariant": true,
+      "bindable": true,
+      "label": "主要操作玻璃底色"
+    }
   }
 }

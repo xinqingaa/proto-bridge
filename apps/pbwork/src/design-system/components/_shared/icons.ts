@@ -1,42 +1,7 @@
 import type { Component } from "vue";
-import {
-  AlertCircle,
-  AlertTriangle,
-  Check,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ClipboardCheck,
-  Clock3,
-  Copy,
-  Dumbbell,
-  Eye,
-  EyeOff,
-  FileText,
-  FolderOpen,
-  Footprints,
-  Home,
-  Inbox,
-  List,
-  MapPin,
-  MoreHorizontal,
-  PersonStanding,
-  Plus,
-  RefreshCw,
-  Radio,
-  Search,
-  Settings,
-  ShieldCheck,
-  SlidersHorizontal,
-  Snowflake,
-  Sparkles,
-  Thermometer,
-  Truck,
-  User,
-  X,
-} from "lucide-vue-next";
-
-/** Curated Lucide ids used by PBWork DS. Stable across Vue / Flutter sync. */
+import { defineComponent, h, markRaw } from "vue";
+import artwork from "./glyph-artwork.json";
+/** PBWork original SVG glyphs. Stable ids are preserved for consumers. */
 export const PB_ICON_NAMES = [
   "more",
   "plus",
@@ -76,45 +41,38 @@ export const PB_ICON_NAMES = [
 
 export type PbIconName = (typeof PB_ICON_NAMES)[number];
 
-const ICON_MAP: Record<PbIconName, Component> = {
-  more: MoreHorizontal,
-  plus: Plus,
-  search: Search,
-  settings: Settings,
-  home: Home,
-  list: List,
-  user: User,
-  inbox: Inbox,
-  check: Check,
-  "chevron-down": ChevronDown,
-  "chevron-left": ChevronLeft,
-  "chevron-right": ChevronRight,
-  "alert-triangle": AlertTriangle,
-  "alert-circle": AlertCircle,
-  clock: Clock3,
-  "refresh-cw": RefreshCw,
-  "clipboard-check": ClipboardCheck,
-  "shield-check": ShieldCheck,
-  "folder-open": FolderOpen,
-  thermometer: Thermometer,
-  snowflake: Snowflake,
-  copy: Copy,
-  "file-text": FileText,
-  "sliders-horizontal": SlidersHorizontal,
-  "map-pin": MapPin,
-  radio: Radio,
-  truck: Truck,
-  dumbbell: Dumbbell,
-  eye: Eye,
-  "eye-off": EyeOff,
-  footprints: Footprints,
-  "person-standing": PersonStanding,
-  sparkles: Sparkles,
-  x: X,
-};
+export const PB_ICON_ARTWORK = artwork;
+const ICON_MAP = Object.fromEntries(
+  PB_ICON_NAMES.map((name) => [
+    name,
+    markRaw(
+      defineComponent({
+        name: `PbGlyph-${name}`,
+        props: { size: { type: Number, required: true } },
+        setup: (props) => () =>
+          h(
+            "svg",
+            {
+              xmlns: "http://www.w3.org/2000/svg",
+              viewBox: artwork.viewBox,
+              width: props.size,
+              height: props.size,
+              fill: "none",
+              stroke: "currentColor",
+              "stroke-width": artwork.strokeWidth,
+              "stroke-linecap": "round",
+              "stroke-linejoin": "round",
+              "data-pb-glyph": name,
+            },
+            [h("path", { d: artwork.paths[name] })],
+          ),
+      }),
+    ),
+  ]),
+) as unknown as Record<PbIconName, Component>;
 
 export function resolvePbIcon(name: PbIconName | undefined): Component {
-  return ICON_MAP[name ?? "more"] ?? MoreHorizontal;
+  return ICON_MAP[name ?? "more"] ?? ICON_MAP.more;
 }
 
 export function isPbIconName(value: string): value is PbIconName {

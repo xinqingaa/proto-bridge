@@ -16,7 +16,7 @@
     "summary": "Two equal vertical columns, each showing three snap rows; selected row centered, contained vertical scroll, no horizontal swipe ownership."
   },
   "visualAnatomy": {
-    "summary": "Hour/minute labels above neutral recessed wheels; selected row uses the selected surface and numeric content typography."
+    "summary": "两个滚轮共用中央选择带，单位对齐选中行，上下以遮罩衰减；不把滚动条作为装饰。"
   },
   "propsSchema": {
     "type": "object",
@@ -30,7 +30,12 @@
       },
       "minuteStep": {
         "type": "integer",
-        "enum": [1, 5, 15, 30]
+        "enum": [
+          1,
+          5,
+          15,
+          30
+        ]
       },
       "disabled": {
         "type": "boolean"
@@ -62,7 +67,9 @@
     }
   ],
   "slots": [],
-  "events": ["update:modelValue"],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "color": "color.on-surface",
     "muted": "color.on-surface-muted",
@@ -76,7 +83,12 @@
     "disabledOpacity": "opacity.disabled",
     "number": "typography.numeric-content",
     "row": "size.control",
-    "settleDuration": "motion.duration-short"
+    "settleDuration": "motion.duration-short",
+    "surface": "color.surface",
+    "surfaceRadius": "radius.surface",
+    "selectionRadius": "radius.control-compact",
+    "unit": "typography.caption",
+    "selectedFont": "typography.numeric-title"
   },
   "playground": {
     "presentation": "interactive"

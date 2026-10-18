@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Icon from "../action/Icon.vue";
 import { computed, ref, watch, nextTick } from "vue";
 import { usePbInspect } from "@/runtime/inspect/usePbInspect";
 import { vPb, pbStyle } from "@/authoring/pb-style";
@@ -10,6 +11,7 @@ const props = withDefaults(
     month?: string;
     modelValue?: string;
     disabledDates?: string[];
+    today?: string;
     inspectId?: string;
     pbKey?: string;
   }>(),
@@ -17,6 +19,7 @@ const props = withDefaults(
     label: "选择日期",
     month: "2026-07",
     modelValue: "2026-07-28",
+    today: "",
     disabledDates: () => ["2026-07-15"],
   },
 );
@@ -107,6 +110,15 @@ usePbInspect({
   pbKey: () => props.pbKey,
   getProps: () => ({ ...props }),
   getTokenBindings: () => ({
+    rowGap: "spacing.sm-plus",
+    headerGap: "spacing.sm",
+    headerBorder: "border.hairline",
+    heading: "typography.subtitle",
+    number: "typography.numeric-content",
+    todayWidth: "border.width",
+    todayColor: "color.primary",
+    dayRadius: "radius.pill",
+
     color: "color.on-surface",
     muted: "color.on-surface-muted",
     gap: "spacing.sm",
@@ -146,9 +158,11 @@ usePbInspect({
         :disabled="!weeks.length"
         @click="moveMonth(-1)"
       >
-        ‹</button
+        <Icon name="chevron-left" /></button
       ><strong aria-live="polite">{{
-        weeks.length ? month : "无效月份"
+        weeks.length
+          ? `${(props.month ?? "").slice(0, 4)}年 ${Number((props.month ?? "").slice(5))}月`
+          : "无效月份"
       }}</strong
       ><button
         type="button"
@@ -156,7 +170,7 @@ usePbInspect({
         :disabled="!weeks.length"
         @click="moveMonth(1)"
       >
-        ›
+        <Icon name="chevron-right" />
       </button>
     </header>
     <div class="row" aria-hidden="true">
@@ -172,7 +186,8 @@ usePbInspect({
           :disabled="props.disabledDates.includes(day)"
           :aria-pressed="modelValue === day"
           :tabindex="focusTarget === day ? 0 : -1"
-          :class="{ selected: modelValue === day }"
+          :class="{ selected: modelValue === day, today: props.today === day }"
+          :aria-current="props.today === day ? 'date' : undefined"
           v-pb="
             part(
               'day',
@@ -216,21 +231,22 @@ header {
   justify-content: center;
   flex: var(--pb-layout-flex-fill);
   min-width: var(--pb-layout-zero);
-  min-height: var(--pb-size-control-compact);
+  min-height: var(--pb-size-touch);
 }
 button {
-  min-width: var(--pb-size-touch);
+  min-width: var(--pb-layout-zero);
   min-height: var(--pb-size-touch);
   padding: var(--pb-spacing-xs);
   border: none;
   border-radius: var(--pb-radius-control);
   background: transparent;
   color: inherit;
-  font: inherit;
+  font: var(--pb-typography-numeric-content);
   cursor: pointer;
 }
 .row .selected {
   background: var(--pb-color-primary);
+  color: var(--pb-color-on-primary);
 }
 .row[aria-hidden] {
   font: var(--pb-typography-caption);
@@ -245,5 +261,33 @@ button:disabled,
 input:disabled {
   opacity: var(--pb-opacity-disabled);
   cursor: default;
+}
+</style>
+
+<style scoped>
+.calendar {
+  gap: var(--pb-spacing-sm-plus);
+}
+header {
+  padding-bottom: var(--pb-spacing-sm);
+  border-bottom: var(--pb-border-hairline);
+}
+header strong {
+  font: var(--pb-typography-subtitle);
+}
+header button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--pb-size-touch);
+  color: var(--pb-color-on-surface);
+}
+.row .today:not(.selected) {
+  box-shadow: inset var(--pb-layout-zero) var(--pb-layout-zero)
+    var(--pb-layout-zero) var(--pb-border-width) var(--pb-color-primary);
+  color: var(--pb-color-primary);
+}
+.row button {
+  border-radius: var(--pb-radius-pill);
 }
 </style>

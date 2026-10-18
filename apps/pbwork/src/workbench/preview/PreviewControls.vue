@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { loadPrototypes } from "@/design-system/loaders";
 import { previewExtensions } from "./extensions/registry";
 import { extensionsForComponent } from "./extensions/model";
 import { computed } from "vue";
@@ -9,6 +10,7 @@ import {
   type PreviewContext,
   type PreviewDeviceSession,
 } from "./model";
+const prototypes = loadPrototypes();
 const props = defineProps<{
   resourceId?: string;
   device: PreviewDeviceSession;
@@ -32,6 +34,15 @@ function setContext(id: string) {
       runtimeThemeSources.packs,
     );
 }
+function setExtension(id: string) {
+  const extension = previewExtensions.find((entry) => entry.id === id);
+  const packId = prototypes.find(
+    (owner) => owner.id === extension?.ownerPrototypeId,
+  )?.themePackId;
+  const next = props.contexts.find((context) => context.packId === packId);
+  if (next) setContext(next.id);
+  props.device.demo.extensionId = id;
+}
 const extensions = computed(() =>
   extensionsForComponent(previewExtensions, props.resourceId ?? ""),
 );
@@ -49,15 +60,15 @@ const extensions = computed(() =>
       }}
     </h3>
     <div class="setting-field">
-      <span>来源</span>
+      <span>主题包</span>
       <WorkbenchSelect
         v-if="contexts.length > 1"
         :model-value="device.selection.contextId"
         :items="items"
-        aria-label="预览来源"
+        aria-label="主题包"
         @update:model-value="setContext"
       />
-      <strong v-else>{{ context?.label ?? "未知来源" }}</strong>
+      <strong v-else>{{ context?.label ?? "未知主题包" }}</strong>
     </div>
     <div class="setting-dimensions">
       <div class="setting-field">
@@ -93,12 +104,6 @@ const extensions = computed(() =>
     <p v-if="context?.kind === 'sample'" class="setting-note">
       仅用于演示主题效果
     </p>
-    <p
-      v-else-if="context?.kind === 'prototype' && manifest?.scope === 'base'"
-      class="setting-note"
-    >
-      沿用基础主题包
-    </p>
     <div v-if="extensions.length" class="setting-field">
       <span>组件实现</span
       ><WorkbenchSelect
@@ -111,7 +116,7 @@ const extensions = computed(() =>
           })),
         ]"
         aria-label="组件实现"
-        @update:model-value="device.demo.extensionId = String($event)"
+        @update:model-value="setExtension(String($event))"
       />
     </div>
   </section>

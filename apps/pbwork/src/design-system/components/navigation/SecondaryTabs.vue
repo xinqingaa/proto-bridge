@@ -47,7 +47,8 @@ const tabStyle = computed(() => ({
   "--pb-tabs-active-background": "transparent",
   "--pb-tabs-active-color": "var(--pb-secondary-tabs-active-color)",
   "--pb-tabs-inactive-color": "var(--pb-color-on-surface-muted)",
-  "--pb-tabs-typography": "var(--pb-typography-label)",
+  "--pb-tabs-typography": "var(--pb-typography-content)",
+  "--pb-tabs-active-typography": "var(--pb-typography-label)",
   "--pb-tabs-radius": "var(--pb-radius-control)",
   "--pb-tabs-height": `var(--pb-${sizeToken(size.value ?? "md").replaceAll(".", "-")})`,
 }));
@@ -98,7 +99,8 @@ usePbInspect({
     radius: "radius.control",
     height: sizeToken(size.value ?? "md"),
     target: "size.touch",
-    typography: "typography.label",
+    typography: "typography.content",
+    activeTypography: "typography.label",
     panel: "typography.caption",
     trackGap: "spacing.sm-plus",
     caretSize: "size.caret",
@@ -112,6 +114,7 @@ usePbInspect({
     "radius.control",
     sizeToken(size.value ?? "md"),
     "size.touch",
+    "typography.content",
     "typography.label",
     "typography.caption",
     "spacing.sm-plus",
@@ -200,12 +203,14 @@ usePbInspect({
   display: flex;
   flex-direction: column;
   gap: var(--pb-spacing-sm-plus);
+  width: var(--pb-layout-fill);
   min-width: var(--pb-layout-zero);
   background: transparent;
 }
 .pb-tab-bar {
   --v-tabs-height: var(--pb-tabs-height, var(--pb-size-control));
   flex: none;
+  width: var(--pb-layout-fill);
   height: var(--v-tabs-height);
   background: transparent;
   overflow: visible;
@@ -214,29 +219,33 @@ usePbInspect({
   border-bottom: var(--pb-border-hairline);
 }
 .pb-tab-bar :deep(.v-slide-group__container),
-.pb-tab-bar :deep(.v-slide-group__content) {
+.pb-tab-bar :deep(.v-slide-group__content),
+.pb-tab-bar :deep(.v-tab),
+.pb-tab-bar :deep(.v-btn__content) {
   overflow: visible;
 }
-.pb-tab-bar :deep(.v-tab) {
+.pb-tab-bar :deep(.v-tab.v-btn) {
+  flex: none;
   height: var(--v-tabs-height);
+  min-width: var(--pb-layout-zero);
   min-height: var(--v-tabs-height);
   padding: var(--pb-layout-zero) var(--pb-spacing-md);
   border-radius: var(--pb-tabs-radius, var(--pb-radius-control));
   color: var(--pb-tabs-inactive-color, var(--pb-color-on-surface-muted));
-  font: var(--pb-tabs-typography, var(--pb-typography-label));
+  font: var(--pb-tabs-typography, var(--pb-typography-content));
   letter-spacing: normal;
   text-transform: none;
 }
-.pb-tab-bar.v-tabs--grow :deep(.v-tab) {
-  min-width: var(--pb-layout-zero);
+.pb-tab-bar.v-tabs--grow :deep(.v-tab.v-btn) {
   flex: var(--pb-layout-flex-fill);
   padding-inline: var(--pb-spacing-xs);
 }
-.pb-tab-bar :deep(.v-tab--selected) {
+.pb-tab-bar :deep(.v-tab--selected.v-btn) {
   color: var(
     --pb-tabs-active-color,
     var(--pb-secondary-tabs-active-color)
   ) !important;
+  font: var(--pb-tabs-active-typography, var(--pb-typography-label));
 }
 .pb-tab-bar :deep(.v-tabs-slider),
 .pb-tab-bar :deep(.v-tab__slider) {
@@ -250,7 +259,7 @@ usePbInspect({
 }
 .pb-tab-bar :deep(.v-tab--selected .pb-tab-label)::after {
   position: absolute;
-  bottom: var(--pb-layout-inset-sm-negative);
+  top: var(--pb-layout-fill);
   left: var(--pb-layout-half);
   width: var(--pb-layout-zero);
   height: var(--pb-layout-zero);

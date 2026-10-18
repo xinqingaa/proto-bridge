@@ -236,6 +236,12 @@
       "valueType": "number",
       "value": -90,
       "label": "圆环起始角度"
+    },
+    {
+      "id": "layout.wheel-mask",
+      "valueType": "enum",
+      "value": "linear-gradient(transparent, #000 30%, #000 70%, transparent)",
+      "description": "滚轮上下边缘衰减"
     }
   ]
 }

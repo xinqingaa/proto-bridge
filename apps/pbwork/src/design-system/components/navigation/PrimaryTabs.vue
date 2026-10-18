@@ -2,18 +2,15 @@
 import { sizeToken } from "@/design-system/components/_shared/appearance";
 import { useTokenNumber } from "@/design-system/theme/runtime-theme";
 
-import {
-  computed,
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  toRefs,
-  watch,
-} from "vue";
+import { computed, ref, toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { usePointerSwipe } from "@/design-system/components/_shared/usePointerSwipe";
-import SurfaceMaterial from "@/design-system/components/_shared/SurfaceMaterial.vue";
+import { useToken } from "@/design-system/theme/runtime-theme";
+import SurfaceMaterial from "../_shared/SurfaceMaterial.vue";
+import GlassMaterial from "../_shared/GlassMaterial.vue";
+import GlassSelection from "../_shared/GlassSelection.vue";
+import { useSlidingSelection } from "../_shared/useSlidingSelection";
+const selectionTreatment = useToken("primary-tabs.selection-treatment");
 const SLIDE_DURATION_MS = useTokenNumber("motion.duration-long");
 
 const props = withDefaults(
@@ -58,21 +55,15 @@ const {
 const indicatorVisible = computed(() => showIndicator.value ?? false);
 
 const tabStyle = computed(() => ({
-  "--pb-tabs-track-background": "var(--pb-color-surface-recessed)",
   "--pb-tabs-selection-surface": "var(--pb-color-surface-selected)",
   "--pb-tabs-selection-opacity": "var(--pb-opacity-translucent)",
   "--pb-tabs-selection-elevation": "var(--pb-elevation-floating)",
-  "--pb-tabs-selection-radius": "var(--pb-radius-pill)",
-  "--pb-tabs-selection-bridge-height": "var(--pb-spacing-xs)",
-  "--pb-tabs-selection-bridge-offset": "var(--pb-layout-inset-xs-negative)",
-  "--pb-tabs-selection-arc-inset": "var(--pb-spacing-xs)",
-  "--pb-tabs-selection-arc-offset": "var(--pb-layout-inset-xs-negative)",
-  "--pb-tabs-selection-arc-radius": "var(--pb-radius-pill)",
-  "--pb-tabs-track-radius": "var(--pb-radius-surface)",
+  "--pb-tabs-selection-radius": "var(--pb-radius-control-compact)",
+  "--pb-tabs-track-radius": "var(--pb-radius-control)",
   "--pb-tabs-active-color": "var(--pb-primary-tabs-active-color)",
   "--pb-tabs-inactive-color": "var(--pb-color-on-surface-muted)",
   "--pb-tabs-typography": "var(--pb-typography-label)",
-  "--pb-tabs-radius": "var(--pb-radius-pill)",
+  "--pb-tabs-radius": "var(--pb-radius-control-compact)",
   "--pb-tabs-height": `var(--pb-${sizeToken(size.value ?? "md").replaceAll(".", "-")})`,
   "--pb-tabs-pill-duration": "var(--pb-motion-duration-long)",
   "--pb-tabs-pill-easing": "var(--pb-motion-easing-standard)",
@@ -92,65 +83,14 @@ const swipe = usePointerSwipe(
   { swipe: swipeEnabled, mouseSwipe },
 );
 
-const pill = ref({ left: Number.NaN, width: Number.NaN, ready: false });
-const pillTransitionReady = ref(false);
-
-function measurePill() {
-  const track = trackRef.value;
-  if (!track) return;
-  const active = Array.from(
-    track.querySelectorAll<HTMLElement>(".pb-tab"),
-  ).find((el) => el.getAttribute("data-pb-key") === tab.value);
-  if (!active) return;
-  const trackBox = track.getBoundingClientRect();
-  const tabBox = active.getBoundingClientRect();
-  pill.value = {
-    left: tabBox.left - trackBox.left + track.scrollLeft,
-    width: tabBox.width,
-    ready: true,
-  };
-}
-
-let resizeObserver: ResizeObserver | null = null;
-let pillTransitionFrame: number | null = null;
-
-onMounted(() => {
-  measurePill();
-  if (trackRef.value && typeof ResizeObserver !== "undefined") {
-    resizeObserver = new ResizeObserver(() => measurePill());
-    resizeObserver.observe(trackRef.value);
-  }
-  pillTransitionFrame = requestAnimationFrame(() => {
-    pillTransitionFrame = requestAnimationFrame(() => {
-      pillTransitionReady.value = true;
-      pillTransitionFrame = null;
-    });
-  });
-});
-
-onBeforeUnmount(() => {
-  resizeObserver?.disconnect();
-  resizeObserver = null;
-  if (pillTransitionFrame !== null) {
-    cancelAnimationFrame(pillTransitionFrame);
-    pillTransitionFrame = null;
-  }
-});
-
-watch(
-  [tab, items, grow, size, align],
-  async () => {
-    await nextTick();
-    measurePill();
+const selection = useSlidingSelection(
+  trackRef,
+  tab,
+  [items, grow, size, align],
+  (value) => {
+    tab.value = value;
   },
-  { flush: "post" },
 );
-
-const pillStyle = computed(() => ({
-  "--pb-tabs-pill-translation": `${pill.value.left}px`,
-  "--pb-tabs-pill-width": `${pill.value.width}px`,
-}));
-
 usePbInspect({
   semanticParts: [
     { suffix: "tab", role: "tab" },
@@ -176,18 +116,25 @@ usePbInspect({
   }),
   getState: () => ({ selected: tab.value }),
   getTokenBindings: () => ({
+    glassTint: "color.glass-tint",
+    glassClear: "color.glass-clear",
+    glassEdge: "border.glass",
+    glassLight: "elevation.glass",
+    glassFallback: "color.surface",
+    glassFallbackBorder: "border.default",
+
     materialOpacity: "opacity.translucent",
     materialBackdrop: "surface.glass-backdrop",
     materialBorder: "border.default",
-    trackSurface: "color.surface-recessed",
+    selectionTint: "primary-tabs.selection-tint",
     selectionSurface: "color.surface-selected",
     selectionOpacity: "opacity.translucent",
     selectionElevation: "elevation.floating",
     activeColor: "primary-tabs.active-color",
     inactiveColor: "color.on-surface-muted",
     border: showDivider.value ? "border.hairline" : "transparent",
-    trackRadius: "radius.surface",
-    radius: "radius.pill",
+    trackRadius: "radius.control",
+    radius: "radius.control-compact",
     height: sizeToken(size.value ?? "md"),
     target: "size.touch",
     typography: "typography.label",
@@ -209,8 +156,8 @@ usePbInspect({
     "color.on-surface-muted",
     "border.hairline",
     "elevation.floating",
-    "radius.surface",
-    "radius.pill",
+    "radius.control",
+    "radius.control-compact",
     sizeToken(size.value ?? "md"),
     "size.touch",
     "typography.label",
@@ -238,20 +185,28 @@ usePbInspect({
       'is-fill': fill,
       'is-grow': grow ?? false,
       'align-center': align === 'center',
-      'is-pill-transition-ready': pillTransitionReady,
+      'is-pill-transition-ready': selection.animated.value,
     }"
     :style="tabStyle"
     data-pb-role="tab-bar"
   >
-    <div ref="trackRef" class="pb-tabs-track" role="tablist">
+    <div
+      ref="trackRef"
+      class="pb-tabs-track"
+      role="tablist"
+      @keydown="selection.onKeydown"
+    >
+      <GlassMaterial />
       <div
         class="pb-tabs-pill"
-        :class="{ 'is-ready': pill.ready }"
+        :class="{ 'is-ready': selection.ready.value }"
         aria-hidden="true"
-        :style="pillStyle"
+        :style="selection.style.value"
       >
+        <GlassSelection v-if="selectionTreatment === 'glass'" />
         <SurfaceMaterial
-          :active="true"
+          v-else
+          active
           selection
           treatment-key="primary-tabs.selection-treatment"
         />
@@ -267,6 +222,7 @@ usePbInspect({
         :tabindex="tab === item.value ? 0 : -1"
         :data-pb-id="`${inspectId ?? 'ds.primary-tabs'}.tab`"
         :data-pb-key="item.value"
+        :data-selection-key="item.value"
         data-pb-role="tab"
         @click="tab = item.value"
       >
@@ -321,12 +277,14 @@ usePbInspect({
   display: flex;
   flex-direction: column;
   gap: var(--pb-spacing-sm-plus);
+  width: var(--pb-layout-fill);
   min-width: var(--pb-layout-zero);
   background: transparent;
 }
 .pb-tabs-track {
   position: relative;
-  display: inline-flex;
+  display: flex;
+  width: var(--pb-layout-fill);
   max-width: var(--pb-layout-fill);
   align-items: stretch;
   gap: var(--pb-layout-zero);
@@ -334,18 +292,16 @@ usePbInspect({
   padding: var(--pb-spacing-xs);
   overflow: auto;
   border-radius: var(--pb-tabs-track-radius, var(--pb-radius-surface));
-  background: var(--pb-tabs-track-background);
+  background: transparent;
+  --pb-glass-selection-tint: var(--pb-primary-tabs-selection-tint);
+  --pb-glass-selection-shadow: var(--pb-elevation-floating);
   scrollbar-width: none;
 }
 .pb-tabs-track::-webkit-scrollbar {
   display: none;
 }
-.pb-tabs.is-grow .pb-tabs-track {
-  display: flex;
-  width: var(--pb-layout-fill);
-}
 .pb-tabs.align-center .pb-tabs-track {
-  align-self: center;
+  justify-content: center;
 }
 .pb-tabs.has-divider .pb-tabs-track {
   border-bottom: var(--pb-border-hairline);
@@ -355,14 +311,14 @@ usePbInspect({
   top: var(--pb-spacing-xs);
   bottom: var(--pb-spacing-xs);
   left: var(--pb-layout-zero);
-  z-index: var(--pb-layer-base);
+  z-index: var(--pb-layer-content);
   border-radius: var(--pb-tabs-selection-radius);
   overflow: visible;
   transition: none;
   pointer-events: none;
-  width: var(--pb-tabs-pill-width);
+  width: var(--pb-selection-width);
   opacity: var(--pb-opacity-hidden);
-  transform: translateX(var(--pb-tabs-pill-translation));
+  transform: translateX(var(--pb-selection-left));
 }
 .pb-tabs-pill.is-ready {
   opacity: var(--pb-opacity-visible);
@@ -376,6 +332,7 @@ usePbInspect({
 .pb-tab {
   position: relative;
   z-index: var(--pb-layer-content);
+  transform: translateZ(var(--pb-layout-zero));
   display: inline-flex;
   flex: none;
   align-items: center;
@@ -464,8 +421,8 @@ usePbInspect({
   font: var(--pb-typography-caption);
 }
 @media (prefers-reduced-motion: reduce) {
-  .pb-tabs-pill {
-    transition-duration: var(--pb-motion-duration-instant);
+  .pb-tabs.is-pill-transition-ready .pb-tabs-pill {
+    transition: none;
   }
   .pb-tab-window :deep(.v-window__container),
   .pb-tab-window :deep(.v-window-x-transition-enter-active),

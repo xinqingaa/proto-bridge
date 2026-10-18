@@ -28,3 +28,7 @@
 用于 0–23 小时的时长，不是一天中的时间；minuteStep 为 1 / 5 / 15 / 30，外部值显示到下方可用分钟档，交互后发出合法总分钟数。使用原生纵滚与 scroll-snap，不复制指针仲裁或时钟。
 
 Props、Slots、Events、默认值与 Token 槽以 [DurationPicker Contract](../../../src/design-system/components/contracts/duration-picker.json) 为准。
+
+## 展示与组合
+
+小时与分钟共享中央选中带，单位在中心行固定，边缘通过遮罩衰减；滚动条隐藏但滚动/键盘仍可用。遮罩来自不可覆盖的实现常量。

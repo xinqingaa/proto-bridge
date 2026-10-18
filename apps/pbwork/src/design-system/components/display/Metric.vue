@@ -41,7 +41,7 @@ usePbInspect({
     color: "color.on-surface",
     muted: "color.on-surface-muted",
     gap: "spacing.sm",
-    value: "typography.numeric-title",
+    value: "typography.numeric-display",
     caption: "typography.caption",
     positive: "color.success",
     negative: "color.error",
@@ -68,7 +68,7 @@ usePbInspect({
       <strong
         v-pb="
           part('value', 'text', {
-            typography: 'typography.numeric-title',
+            typography: 'typography.numeric-display',
             color: 'color.on-surface',
           })
         "

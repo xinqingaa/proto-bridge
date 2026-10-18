@@ -6,12 +6,17 @@ import { extensionApplicable, type PreviewExtension } from "./model";
 import { extensionPreviewModules } from "./registry";
 const props = defineProps<{
   extension: PreviewExtension;
+  ownerThemePackId?: string | undefined;
   device: PreviewDeviceSession;
   attach: string;
   table: ResolvedThemeTable;
 }>();
 const applicable = computed(() =>
-  extensionApplicable(props.extension, props.device.selection.contextId),
+  extensionApplicable(
+    props.extension,
+    props.table.identity.packId,
+    props.ownerThemePackId,
+  ),
 );
 const view = computed(() => {
   const loader = extensionPreviewModules.get(props.extension.preview);
@@ -40,9 +45,7 @@ const view = computed(() => {
         }}</small
       >
     </header>
-    <p v-if="!applicable" role="status">
-      不适用：此来源没有登记该组件实现，请选择所属原型。
-    </p>
+    <p v-if="!applicable" role="status">不适用：请选择所属原型使用的主题包。</p>
     <component
       v-else-if="view"
       :is="view"

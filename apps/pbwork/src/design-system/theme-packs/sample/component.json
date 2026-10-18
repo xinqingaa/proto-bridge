@@ -1,0 +1,28 @@
+{
+  "values": {
+    "button.glass-primary-tint": "#14352ce6",
+    "icon-button.glass-primary-tint": "#0b6b4fe6"
+  },
+  "modes": {
+    "dark": {
+      "button.glass-primary-tint": "#e7f6efe6",
+      "icon-button.glass-primary-tint": "#7dceadeb"
+    }
+  },
+  "themes": {
+    "citrus": {
+      "values": {
+        "button.glass-primary-tint": "#3d2412e6",
+        "icon-button.glass-primary-tint": "#9a4b08e6"
+      }
+    }
+  },
+  "themeModes": {
+    "citrus": {
+      "dark": {
+        "button.glass-primary-tint": "#f8efe6e6",
+        "icon-button.glass-primary-tint": "#f0b27aeb"
+      }
+    }
+  }
+}

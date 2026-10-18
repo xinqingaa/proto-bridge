@@ -335,7 +335,7 @@
     "presentation": "gallery"
   },
   "icons": {
-    "pack": "lucide",
+    "pack": "pbwork",
     "defaults": [
       "more",
       "plus",
@@ -371,6 +371,7 @@
       "person-standing",
       "sparkles",
       "x"
-    ]
+    ],
+    "artwork": "_shared/glyph-artwork.json"
   }
 }

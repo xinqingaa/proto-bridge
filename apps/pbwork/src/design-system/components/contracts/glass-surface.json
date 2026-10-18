@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "id": "glass-surface",
+  "category": "display",
+  "semantic": {
+    "policy": "fixed",
+    "defaultRole": "section"
+  },
+  "summary": "只提供玻璃材质的容器，轮廓继承宿主，内容通过 slot 组织。",
+  "behavior": [
+    "材质层不拦截输入、不模糊前景；不拥有导航和滚动",
+    "clear 适合丰富背景；减少透明度或不支持滤镜时使用实色降级"
+  ],
+  "layout": {
+    "summary": "相对定位容器，材质绝对定位覆盖，内容保持文档流；轮廓继承宿主。"
+  },
+  "visualAnatomy": {
+    "summary": "背景模糊与饱和度、透明底色、边缘高光和内外阴影，不声称原生光学折射。"
+  },
+  "propsSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "clear": {
+        "type": "boolean"
+      }
+    }
+  },
+  "defaultProps": {
+    "clear": false
+  },
+  "states": [
+    {
+      "id": "clear",
+      "label": "清透",
+      "kind": "variant",
+      "props": {
+        "clear": true
+      }
+    }
+  ],
+  "slots": ["default"],
+  "events": [],
+  "tokenBindings": {
+    "tint": "color.glass-tint",
+    "clearTint": "color.glass-clear",
+    "edge": "border.glass",
+    "light": "elevation.glass",
+    "backdrop": "surface.glass-backdrop",
+    "fallback": "color.surface",
+    "fallbackBorder": "border.default"
+  },
+  "playground": {
+    "presentation": "interactive"
+  }
+}

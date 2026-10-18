@@ -10,10 +10,11 @@
   "behavior": [
     "品牌、插画、内容和 actions 提供插槽，默认动作发出 start；不写路由或定时跳转",
     "busy 由已有 Button 的 loading 行为处理，不伪装为 disabled",
-    "原型可放入 PrototypeShell 的 launch 插槽；主题资源仅随 Token 解析变化"
+    "原型可放入 PrototypeShell 的 launch 插槽；主题资源仅随 Token 解析变化",
+    "不添加定时跳转；系统启动与交互欢迎通过 mode 明确区分。"
   ],
   "layout": {
-    "summary": "Centered vertical document flow: brand, optional illustration, heading, description/content, actions; host owns viewport and navigation."
+    "summary": "占满由壳提供的确定内容高度，品牌居中；welcome 才展示标题、说明和动作，launch 不提供进入按钮。"
   },
   "visualAnatomy": {
     "summary": "Brand assets resolve from current pack; title/content typography and semantic spacing; loading belongs to shared Button."
@@ -33,6 +34,10 @@
       },
       "busy": {
         "type": "boolean"
+      },
+      "mode": {
+        "type": "string",
+        "enum": ["welcome", "launch"]
       }
     }
   },
@@ -40,7 +45,8 @@
     "title": "开始新的一天",
     "description": "留一点时间给重要的事",
     "actionLabel": "开始",
-    "busy": false
+    "busy": false,
+    "mode": "welcome"
   },
   "states": [
     {
@@ -59,6 +65,14 @@
         "title": "欢迎回来",
         "actionLabel": "继续"
       }
+    },
+    {
+      "id": "launch-only",
+      "label": "静态启动",
+      "kind": "variant",
+      "props": {
+        "mode": "launch"
+      }
     }
   ],
   "slots": ["brand", "illustration", "default", "actions"],
@@ -67,7 +81,7 @@
     "surface": "color.surface",
     "color": "color.on-surface",
     "muted": "color.on-surface-muted",
-    "gap": "spacing.sm",
+    "gap": "spacing.lg",
     "typography": "typography.content",
     "padding": "spacing.lg",
     "title": "typography.title",

@@ -14,6 +14,7 @@ const props = withDefaults(
     description?: string;
     actionLabel?: string;
     busy?: boolean;
+    mode?: "welcome" | "launch";
     inspectId?: string;
     pbKey?: string;
   }>(),
@@ -22,6 +23,7 @@ const props = withDefaults(
     description: "留一点时间给重要的事",
     actionLabel: "开始",
     busy: false,
+    mode: "welcome",
   },
 );
 const emit = defineEmits<{ start: [] }>();
@@ -53,7 +55,7 @@ usePbInspect({
     surface: "color.surface",
     color: "color.on-surface",
     muted: "color.on-surface-muted",
-    gap: "spacing.sm",
+    gap: "spacing.lg",
     typography: "typography.content",
     padding: "spacing.lg",
     title: "typography.title",
@@ -67,12 +69,13 @@ usePbInspect({
   <section
     ref="rootRef"
     class="launch"
+    :class="{ 'is-launch-only': props.mode === 'launch' }"
     data-pb-role="page"
     :aria-busy="busy"
     :style="
       pbStyle({
         padding: 'spacing.lg',
-        gap: 'spacing.sm',
+        gap: 'spacing.lg',
         background: 'color.surface',
         color: 'color.on-surface',
         typography: 'typography.content',
@@ -81,11 +84,13 @@ usePbInspect({
   >
     <slot name="brand"
       ><BrandMark
+        layout="stacked"
         :inspect-id="`${inspectId ?? 'ds.launch-screen'}.brand`" /></slot
     ><slot name="illustration"
       ><img v-if="image" :src="image.url" :alt="image.alt"
     /></slot>
     <h1
+      v-if="props.mode !== 'launch'"
       v-pb="
         part('title', 'text', {
           typography: 'typography.title',
@@ -97,7 +102,7 @@ usePbInspect({
       {{ title }}
     </h1>
     <p
-      v-if="description"
+      v-if="description && props.mode !== 'launch'"
       v-pb="
         part('description', 'text', {
           typography: 'typography.content',
@@ -110,6 +115,7 @@ usePbInspect({
     </p>
     <slot /><slot name="actions"
       ><Button
+        v-if="props.mode !== 'launch'"
         :label="props.actionLabel"
         :loading="props.busy"
         :inspect-id="`${inspectId ?? 'ds.launch-screen'}.start`"
@@ -125,6 +131,9 @@ usePbInspect({
   justify-content: center;
   box-sizing: border-box;
   min-height: var(--pb-layout-fill);
+  flex: var(--pb-layout-flex-fill);
+  width: var(--pb-layout-fill);
+  gap: var(--pb-spacing-lg);
   text-align: center;
 }
 img {

@@ -9,13 +9,13 @@
   "summary": "当前页面的主要内容分区：每项对应具名内容面板，轨道和选中胶囊均由主题语义表面令牌决定。",
   "behavior": [
     "轨道填满组件容器而非视口；默认项按内容宽排列，equal 状态才平分轨道，项过多时横向滚动",
-    "轨道使用 color.surface-recessed，当前项使用 color.surface-selected；当前项为无描边、悬浮的半透明玻璃选中面，顶部仅以低对比阴影形成承托过渡，不形成第二道表面、边框或渐变",
+    "轨道使用共享玻璃材质；选中底使用中性透明填色和高光，不叠加背景滤镜，保持比主 Tabbar 更轻的层级。",
     "首次进入时先完成胶囊定位再开启后续切换动效，避免出现无选中态的首帧",
     "内容进入对应具名视图；可按场景启用触摸或鼠标横滑",
     "同一物理区域只有一个横滑 owner；嵌套时由页面关闭外层横滑"
   ],
   "layout": {
-    "summary": "轨道填满组件容器，选项默认按内容宽排列，equal 状态等分；内容视口由组件所有。",
+    "summary": "小圆角玻璃轨道填满容器，选项默认按内容宽排列，equal 状态等分；选中底连续滑动，内容视口由组件所有。",
     "containerWidth": "fill-parent",
     "track": {
       "width": "fill-container",
@@ -29,12 +29,12 @@
     }
   },
   "visualAnatomy": {
-    "summary": "recessed 轨道上悬浮单一半透明 glass selection，不增加描边或第二层表面。",
+    "summary": "保留原有小圆角玻璃轨道、高光边缘和内外光影；浅色选中底使用半透明白色，避免灰蓝叠色。",
     "selection": {
-      "material": "translucent-glass",
-      "border": "none",
+      "material": "theme-controlled",
+      "border": "semantic-glass-edge",
       "layering": "floating",
-      "contour": "top-transition-arc"
+      "contour": "host-radius"
     }
   },
   "propsSchema": {
@@ -131,15 +131,14 @@
   "slots": ["overview", "activity", "data", "settings"],
   "events": ["update:modelValue"],
   "tokenBindings": {
-    "trackSurface": "color.surface-recessed",
     "selectionSurface": "color.surface-selected",
     "selectionOpacity": "opacity.translucent",
     "selectionElevation": "elevation.floating",
     "activeColor": "primary-tabs.active-color",
     "inactiveColor": "color.on-surface-muted",
     "border": "border.hairline",
-    "trackRadius": "radius.surface",
-    "radius": "radius.pill",
+    "trackRadius": "radius.control",
+    "radius": "radius.control-compact",
     "height": "size.control",
     "target": "size.touch",
     "typography": "typography.label",
@@ -154,7 +153,14 @@
     "easing": "motion.easing-standard",
     "materialOpacity": "opacity.translucent",
     "materialBackdrop": "surface.glass-backdrop",
-    "materialBorder": "border.default"
+    "materialBorder": "border.default",
+    "glassTint": "color.glass-tint",
+    "glassClear": "color.glass-clear",
+    "glassEdge": "border.glass",
+    "glassFallback": "color.surface",
+    "glassFallbackBorder": "border.default",
+    "selectionTint": "primary-tabs.selection-tint",
+    "glassLight": "elevation.glass"
   },
   "playground": {
     "presentation": "interactive"
@@ -164,7 +170,8 @@
       "valueType": "color",
       "default": "{color.on-surface}",
       "modeVariant": true,
-      "bindable": true
+      "bindable": true,
+      "label": "一级标签选中文字"
     },
     "selection-treatment": {
       "valueType": "enum",
@@ -172,6 +179,13 @@
       "modeVariant": false,
       "enumValues": ["solid", "outlined", "glass"],
       "bindable": false
+    },
+    "selection-tint": {
+      "valueType": "color",
+      "default": "{color.glass-clear}",
+      "modeVariant": true,
+      "bindable": true,
+      "label": "页内导航选中玻璃底色"
     }
   }
 }

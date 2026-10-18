@@ -30,3 +30,7 @@
 - 用于处理说明、备注等多行内容；短单行值使用 Text Field。
 - 不在业务页写固定 rows、高度、边框或错误色来制造平行 Textarea。
 - Props、Slots、Events、默认值与 Token 槽以 [Textarea Contract](../../../src/design-system/components/contracts/textarea.json) 为准。
+
+## 展示与组合
+
+标签在多行输入表面上方独立排版，明确关联实际输入；行数、禁用和内容仍由原契约控制。

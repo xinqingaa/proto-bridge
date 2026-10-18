@@ -12,7 +12,7 @@
 - `showBack` 只控制返回入口；根目的地是否显示 App Bar 由页面组合决定。
 - 尾部仅承载一个明确操作；复杂工具栏由页面另行组织。
 
-标题起始缩进由语义间距组合固定，避免异步依赖样式的加载顺序改变既有外观。
+标题在两侧动作空间之间居中，保持单行，超长时截断。
 
 ## 行为要点
 
@@ -23,12 +23,20 @@
 
 ## States
 
-| id | label | kind |
-| --- | --- | --- |
+| id        | label  | kind      |
+| --------- | ------ | --------- |
 | `no-back` | 无返回 | `content` |
+
+| `glass` | 玻璃背景 | `variant` |
+
+| `transparent` | 透明背景 | `variant` |
 
 ## 用法与反例
 
 - 栈页通常使用返回入口；根页只有在需要统一标题/全局操作时才添加。
 - 不在 App Bar 内塞入多行表单、Tabs 或业务列表，也不让组件读取 Router。
 - Props、Slots、Events、默认值与 Token 槽以 [App Bar Contract](../../../src/design-system/components/contracts/app-bar.json) 为准。
+
+## 展示与组合
+
+两侧等分空间承托居中单行标题，超长时截断。背景通过 theme/solid/glass/transparent 有限枚举选择，theme 读取当前主题；不开放任意色值。玻璃与独立 GlassSurface 复用材质层，返回与 action 仍由调用方处理。

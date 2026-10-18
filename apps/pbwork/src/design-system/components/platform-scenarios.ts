@@ -1,4 +1,18 @@
 export const platformScenarios = {
+  "glass-surface": [
+    {
+      id: "default",
+      label: "常规玻璃",
+      description: "导航及浮动控件承托清晰内容。",
+      props: { clear: false },
+    },
+    {
+      id: "clear",
+      label: "清透玻璃",
+      description: "丰富背景上的高透材质。",
+      props: { clear: true },
+    },
+  ],
   "segmented-control": [
     {
       id: "default",
@@ -198,6 +212,9 @@ export const platformScenarios = {
             label: "四",
             value: 4,
           },
+          { id: "fri", label: "五", value: 2 },
+          { id: "sat", label: "六", value: 6 },
+          { id: "sun", label: "日", value: 4 },
         ],
       },
     },
@@ -218,120 +235,12 @@ export const platformScenarios = {
       description: "按周分列的日强度图，以日期保持稳定身份。",
       props: {
         label: "每日完成记录",
-        days: [
-          {
-            date: "2026-07-01",
-            value: 1,
-          },
-          {
-            date: "2026-07-02",
-            value: 2,
-          },
-          {
-            date: "2026-07-03",
-            value: 3,
-          },
-          {
-            date: "2026-07-04",
-            value: 4,
-          },
-          {
-            date: "2026-07-05",
-            value: 0,
-          },
-          {
-            date: "2026-07-06",
-            value: 1,
-          },
-          {
-            date: "2026-07-07",
-            value: 2,
-          },
-          {
-            date: "2026-07-08",
-            value: 3,
-          },
-          {
-            date: "2026-07-09",
-            value: 4,
-          },
-          {
-            date: "2026-07-10",
-            value: 0,
-          },
-          {
-            date: "2026-07-11",
-            value: 1,
-          },
-          {
-            date: "2026-07-12",
-            value: 2,
-          },
-          {
-            date: "2026-07-13",
-            value: 3,
-          },
-          {
-            date: "2026-07-14",
-            value: 4,
-          },
-          {
-            date: "2026-07-15",
-            value: 0,
-          },
-          {
-            date: "2026-07-16",
-            value: 1,
-          },
-          {
-            date: "2026-07-17",
-            value: 2,
-          },
-          {
-            date: "2026-07-18",
-            value: 3,
-          },
-          {
-            date: "2026-07-19",
-            value: 4,
-          },
-          {
-            date: "2026-07-20",
-            value: 0,
-          },
-          {
-            date: "2026-07-21",
-            value: 1,
-          },
-          {
-            date: "2026-07-22",
-            value: 2,
-          },
-          {
-            date: "2026-07-23",
-            value: 3,
-          },
-          {
-            date: "2026-07-24",
-            value: 4,
-          },
-          {
-            date: "2026-07-25",
-            value: 0,
-          },
-          {
-            date: "2026-07-26",
-            value: 1,
-          },
-          {
-            date: "2026-07-27",
-            value: 2,
-          },
-          {
-            date: "2026-07-28",
-            value: 3,
-          },
-        ],
+        days: Array.from({ length: 84 }, (_, index) => ({
+          date: new Date(Date.UTC(2026, 4, 4 + index))
+            .toISOString()
+            .slice(0, 10),
+          value: index % 5 === 0 ? 0 : (index * 3) % 7,
+        })),
         modelValue: "2026-07-12",
       },
     },

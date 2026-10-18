@@ -27,3 +27,7 @@
 用于确定进度，value / max 映射至完整圆环；未知进度使用 Spinner，不以此伪装倒计时时钟。
 
 Props、Slots、Events、默认值与 Token 槽以 [RingProgress Contract](../../../src/design-system/components/contracts/ring-progress.json) 为准。
+
+## 展示与组合
+
+使用独立环形数据尺寸与数字字阶，进度比值和可访问名称保持一致；不复用头像尺寸限制数据可读性。

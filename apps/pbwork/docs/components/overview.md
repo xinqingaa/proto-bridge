@@ -1,6 +1,6 @@
 # 组件总论
 
-当前共 46 个组件；全部以基础包与样例包分别验证浅色和深色。样例包仅用于 Gallery / Playground，正式原型使用自己的绑定主题包。短提示只有 Toast，撤销是它的可选动作。
+当前共 47 个组件；全部以基础包与样例包分别验证浅色和深色。样例包仅用于 Gallery / Playground，正式原型使用自己的绑定主题包。短提示只有 Toast，撤销是它的可选动作。
 
 ## 唯一注册源
 
@@ -18,7 +18,7 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`summary`�
 
 `category` 按职责六类（不按 Overlay 实现）：`action` / `input` / `display` / `navigation` / `data` / `feedback`。
 
-跨栈字段 `layout`、`visualAnatomy`、`icons` 按适用性声明（`pack` 仅 `lucide`）；拥有滚动/视口/复杂层级或 material 的组件必须写前两项。详见 [alignment-protocol.md](./alignment-protocol.md)。
+跨栈字段 `layout`、`visualAnatomy`、`icons` 按适用性声明（`pack` 为 `lucide` 或 `pbwork`）；拥有滚动/视口/复杂层级或 material 的组件必须写前两项。详见 [alignment-protocol.md](./alignment-protocol.md)。
 
 `playground.presentation`：**默认 `interactive`**；**`gallery` 仅 `icon` / `icon-button`**；overlay 用 `trigger`。互动状态必须在舞台内可观察，Token 绑定为只读资料；设备边界与对比的人工验收按[Workbench 预览工作流](../workbench-preview.md)。
 
@@ -26,7 +26,7 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`summary`�
 
 禁止「一个组件 + 大 type 兼多种语义角色」→ 拆成独立 `componentId`；审计见 [audit-large-types.md](./audit-large-types.md)。
 
-Registry 全部 46 个组件已接入共享手机预览，类型/尺寸/Contract 状态与触发/反馈在设备内，支持真实来源主题、独立设备会话、按需双机及来源表。原型变体/自有组件支持最小显式展示登记，当前正式登记为空，不推断普通 props 使用为扩展。迁移范围以[预览工作流](../workbench-preview.md)为准。
+Registry 全部 47 个组件已接入共享手机预览，类型/尺寸/Contract 状态与触发/反馈在设备内，支持真实来源主题、独立设备会话、按需双机及来源表。原型变体/自有组件支持最小显式展示登记，当前正式登记为空，不推断普通 props 使用为扩展。迁移范围以[预览工作流](../workbench-preview.md)为准。
 
 ## Playground 可调项
 
@@ -78,7 +78,7 @@ Registry 全部 46 个组件已接入共享手机预览，类型/尺寸/Contract
 
 ### 展示（display）
 
-[chip](./display/chip.md) · [badge](./display/badge.md) · [avatar](./display/avatar.md) · [divider](./display/divider.md) · [card](./display/card.md) · [progress](./display/progress.md) · [empty-state](./display/empty-state.md) · [spinner](./display/spinner.md) · [RingProgress](./display/ring-progress.md) · [Metric](./display/metric.md) · [Tag](./display/tag.md) · [MiniBars](./display/mini-bars.md) · [Heatmap](./display/heatmap.md) · [MonthCalendar](./display/month-calendar.md)
+[chip](./display/chip.md) · [badge](./display/badge.md) · [avatar](./display/avatar.md) · [divider](./display/divider.md) · [card](./display/card.md) · [GlassSurface](./display/glass-surface.md) · [progress](./display/progress.md) · [empty-state](./display/empty-state.md) · [spinner](./display/spinner.md) · [RingProgress](./display/ring-progress.md) · [Metric](./display/metric.md) · [Tag](./display/tag.md) · [MiniBars](./display/mini-bars.md) · [Heatmap](./display/heatmap.md) · [MonthCalendar](./display/month-calendar.md)
 
 ### 导航（navigation）
 

@@ -41,6 +41,10 @@
       "actionLabel": {
         "type": "string",
         "description": "无障碍名称；未传时按 actionIcon 推导"
+      },
+      "background": {
+        "type": "string",
+        "enum": ["theme", "solid", "glass", "transparent"]
       }
     },
     "required": ["title"]
@@ -53,7 +57,8 @@
     "backLabel": "返回",
     "showAction": true,
     "actionIcon": "more",
-    "actionLabel": "更多操作"
+    "actionLabel": "更多操作",
+    "background": "theme"
   },
   "states": [
     {
@@ -62,6 +67,22 @@
       "kind": "content",
       "props": {
         "showBack": false
+      }
+    },
+    {
+      "id": "glass",
+      "label": "玻璃背景",
+      "kind": "variant",
+      "props": {
+        "background": "glass"
+      }
+    },
+    {
+      "id": "transparent",
+      "label": "透明背景",
+      "kind": "variant",
+      "props": {
+        "background": "transparent"
       }
     }
   ],
@@ -79,7 +100,18 @@
     "materialOpacity": "opacity.translucent",
     "materialBackdrop": "surface.glass-backdrop",
     "materialBorder": "border.default",
-    "titleInset": "spacing.xs"
+    "titleInset": "spacing.xs",
+    "glassTint": "color.glass-tint",
+    "glassClear": "color.glass-clear",
+    "glassEdge": "border.glass",
+    "glassLight": "elevation.glass",
+    "glassFallback": "color.surface",
+    "glassFallbackBorder": "border.default",
+    "lineHeight": "size.navigation-bar",
+    "touch": "size.touch",
+    "focus": "border.focus",
+    "focusRadius": "radius.control",
+    "lineGap": "spacing.sm"
   },
   "playground": {
     "presentation": "interactive"
@@ -92,5 +124,11 @@
       "enumValues": ["solid", "outlined", "glass"],
       "bindable": false
     }
+  },
+  "visualAnatomy": {
+    "summary": " 玻璃表面采用统一透明底色、边缘与内外光影。"
+  },
+  "layout": {
+    "summary": "两侧等分空间承托居中单行标题，超长时截断。背景仅允许 theme/solid/glass/transparent。"
   }
 }

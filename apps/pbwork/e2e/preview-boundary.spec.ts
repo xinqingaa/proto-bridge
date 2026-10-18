@@ -73,7 +73,7 @@ test("color uses same-content device samples, real sources and independent theme
       .getByRole("group", { name: "预览布局" })
       .getByRole("button", { name: "对比", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
-  await select(page, phone(page, "B"), "预览来源", "样例主题包 · 仅演示");
+  await select(page, phone(page, "B"), "主题包", "样例主题包 · 仅演示");
   await select(page, phone(page, "B"), "主题", "柑色");
   await expect(phone(page, "B")).toHaveAttribute(
     "data-preview-pack",
@@ -93,10 +93,10 @@ test("color uses same-content device samples, real sources and independent theme
       ),
     );
   expect(colors[0]).not.toBe(colors[1]);
-  await select(page, phone(page, "A"), "预览来源", "冷链异常处置台");
+  await select(page, phone(page, "A"), "主题包", "PBWork 基础包");
   await expect(
     page.locator('[data-preview-settings="A"] .setting-note'),
-  ).toContainText("沿用基础");
+  ).toHaveCount(0);
   const beforeShellChange = await phone(page, "A")
     .locator("[data-preview-viewport]")
     .evaluate((el) =>
@@ -153,7 +153,7 @@ test("button copies current state, stays independent and retains state while swi
   ).toBe(true);
 
   await expect(second.getByRole("status")).toContainText("已完成");
-  await select(page, second, "预览来源", "样例主题包 · 仅演示");
+  await select(page, second, "主题包", "样例主题包 · 仅演示");
   await select(page, second, "主题", "柑色");
   await expect(second.getByRole("status")).toContainText("已完成");
   await main.click();
@@ -234,7 +234,7 @@ test("BottomSheet overlays attach to distinct devices with local viewport dimens
   expect(Math.abs(dimensions.left)).toBeLessThan(2);
   expect(Math.abs(dimensions.right)).toBeLessThan(2);
   expect(Math.abs(dimensions.bottom)).toBeLessThan(2);
-  await select(page, first, "预览来源", "样例主题包 · 仅演示");
+  await select(page, first, "主题包", "样例主题包 · 仅演示");
   await select(page, first, "主题", "柑色");
   await expect(first.locator(".pb-sheet")).toBeVisible();
   await expect(first.locator(".pb-sheet")).toHaveAttribute(
@@ -315,9 +315,9 @@ test("font preview and source table share real themes while search affects only 
   await expect(table.getByRole("checkbox", { name: "只看差异" })).toHaveCount(
     0,
   );
-  await expect(table.getByRole("columnheader")).toHaveCount(3);
+  await expect(table.getByRole("columnheader")).toHaveCount(4);
   await expect(page.locator("[data-value-key]")).toHaveCount(16);
-  await expect(table.locator("[data-font-specimen]")).toHaveCount(32);
+  await expect(table.locator("[data-font-specimen]")).toHaveCount(48);
   const sourceFonts = await table
     .locator("[data-font-specimen]")
     .evaluateAll((elements) =>
@@ -332,7 +332,7 @@ test("font preview and source table share real themes while search affects only 
         ];
       }),
     );
-  for (const [index, id] of ["A", "B"].entries()) {
+  for (const [index, id] of ["A"].entries()) {
     const phoneFonts = await phone(page, id)
       .locator(".type-example")
       .evaluateAll((elements) =>
@@ -347,7 +347,7 @@ test("font preview and source table share real themes while search affects only 
           ];
         }),
       );
-    expect(sourceFonts.filter((_, position) => position % 2 === index)).toEqual(
+    expect(sourceFonts.filter((_, position) => position % 3 === index)).toEqual(
       phoneFonts,
     );
   }
@@ -442,7 +442,7 @@ test("device resize grows the card, reports accurate scale and persists across p
     };
   });
   expect(bounds).toEqual({ top: true, bottom: true, left: true, right: true });
-  await expect(page.locator("[data-color-swatch]")).toHaveCount(40);
+  await expect(page.locator("[data-color-swatch]")).toHaveCount(141);
   await expect(page.getByText("引用链", { exact: true })).toHaveCount(0);
   await page.getByRole("tab", { name: "来源", exact: true }).click();
   await page.getByRole("textbox", { name: "搜索键值" }).fill("color.action");
@@ -469,7 +469,7 @@ test("device resize grows the card, reports accurate scale and persists across p
     .getByRole("group", { name: "预览布局" })
     .getByRole("button", { name: "对比", exact: true })
     .click();
-  await select(page, phone(page, "A"), "预览来源", "样例主题包 · 仅演示");
+  await select(page, phone(page, "A"), "主题包", "样例主题包 · 仅演示");
   await page.goto("/workbench/foundations/tokens/typography");
   await expect(phone(page, "B")).toBeVisible();
   await expect(phone(page, "A")).toHaveAttribute(

@@ -9,15 +9,15 @@
   "summary": "应用根目的地导航：视图区在上，底部只负责当前位置与目的地切换。",
   "behavior": [
     "固定同时展示图标与文字；适用于 2–5 个应用根目的地",
-    "默认等宽平分导航轨道；grow=false 时按内容自适应宽度排列",
-    "点击无 ripple 反馈，立即切换；选中仅以 color.navigation-active 与 600 字重表达，不显示顶部指示器",
+    "所有目的地始终均分导航轨道，不提供按内容宽度排列的模式。",
+    "点击无 ripple 反馈；同一个玻璃选中底随当前位置连续滑动并适配宽度，图标与文字使用强调色。支持方向键及 Home/End，降低动态效果时取消滑动。",
     "不拥有视图区、转场或横滑；页面壳以 TabViewport 承接内容"
   ],
   "layout": {
-    "summary": "底部导航轨道填满应用壳宽度；默认 2–5 个目的地等分，grow=false 时按内容排列。"
+    "summary": "小圆角浮动玻璃底栏保留安全区留白，所有目的地等宽平分。"
   },
   "visualAnatomy": {
-    "summary": "单一底栏 surface 上固定展示图标与文字；选中态不增加顶部指示器或独立胶囊。"
+    "summary": "主体使用 radius.surface，选中底使用 radius.control；玻璃材质上以薄选中底、强调色图标与文字指示目的地。"
   },
   "propsSchema": {
     "type": "object",
@@ -25,9 +25,6 @@
     "properties": {
       "modelValue": {
         "type": "string"
-      },
-      "grow": {
-        "type": "boolean"
       },
       "items": {
         "type": "array",
@@ -51,7 +48,6 @@
   },
   "defaultProps": {
     "modelValue": "home",
-    "grow": true,
     "items": [
       {
         "value": "home",
@@ -75,14 +71,6 @@
       "props": {
         "modelValue": "tasks"
       }
-    },
-    {
-      "id": "adaptive",
-      "label": "自适应",
-      "kind": "variant",
-      "props": {
-        "grow": false
-      }
     }
   ],
   "slots": [],
@@ -100,28 +88,50 @@
     "iconSize": "size.icon",
     "materialOpacity": "opacity.translucent",
     "materialBackdrop": "surface.glass-backdrop",
-    "materialBorder": "border.default"
+    "materialBorder": "border.default",
+    "glassTint": "color.glass-tint",
+    "glassClear": "color.glass-clear",
+    "glassEdge": "border.glass",
+    "glassLight": "elevation.glass",
+    "glassFallback": "color.surface",
+    "glassFallbackBorder": "border.default",
+    "selectionTint": "tabbar.selection-tint",
+    "radius": "radius.surface",
+    "inset": "spacing.xs",
+    "outerInset": "spacing.md",
+    "duration": "motion.duration-long",
+    "easing": "motion.easing-standard",
+    "selectionRadius": "radius.control"
   },
   "playground": {
     "presentation": "interactive"
   },
   "icons": {
-    "pack": "lucide",
-    "defaults": ["home", "list", "user"]
+    "pack": "pbwork",
+    "defaults": ["home", "list", "user"],
+    "artwork": "_shared/glyph-artwork.json"
   },
   "componentTokens": {
     "active": {
       "valueType": "color",
       "default": "{color.primary}",
       "modeVariant": true,
-      "bindable": true
+      "bindable": true,
+      "label": "底部导航选中颜色"
     },
     "surface-treatment": {
       "valueType": "enum",
-      "default": "{surface.treatment}",
+      "default": "glass",
       "modeVariant": false,
       "enumValues": ["solid", "outlined", "glass"],
       "bindable": false
+    },
+    "selection-tint": {
+      "valueType": "color",
+      "default": "{color.glass-tint}",
+      "modeVariant": true,
+      "bindable": true,
+      "label": "主导航选中玻璃底色"
     }
   }
 }

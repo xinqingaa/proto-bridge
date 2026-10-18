@@ -28,3 +28,7 @@
 适合次数、数量等有限步进输入；调用方提供合法 min ≤ max 与正 step，保持受控值回写，不用它编辑无限精度测量。
 
 Props、Slots、Events、默认值与 Token 槽以 [Stepper Contract](../../../src/design-system/components/contracts/stepper.json) 为准。
+
+## 展示与组合
+
+减/加与可编辑数值组成整体容器；数值突出，范围边界、步长与禁用行为一致。保留原生 number 语义，隐藏浏览器装饰性步进箭头。

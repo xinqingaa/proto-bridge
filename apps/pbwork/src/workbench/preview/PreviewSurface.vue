@@ -14,6 +14,7 @@ import {
 } from "@/design-system/theme/runtime-theme";
 import { useRuntimeVuetifyTheme } from "@/design-system/theme/vuetify-theme";
 import { deviceViewportCss } from "./model";
+
 const props = defineProps<{ identity: ThemeIdentity; scale: number }>();
 // One prop commits the validated tuple atomically; synchronous theme watchers
 // must never observe a new pack with the previous pack's theme.
@@ -41,44 +42,46 @@ const hostId = `preview-host-${useId().replace(/[^a-zA-Z0-9_-]/g, "-")}`;
       height: `${device.height * scale + 24}px`,
     }"
   >
-    <div class="preview-scaled" :style="{ transform: `scale(${scale})` }">
-      <PhoneShell
-        :width="device.width"
-        :height="device.height"
-        :dark="identity.mode === 'dark'"
-        chrome="overlay"
-        time="09:41"
-      >
-        <div
-          class="preview-surface"
-          :style="css"
-          v-bind="active.attributes.value"
+    <div class="preview-frame">
+      <div class="preview-scaled" :style="{ zoom: scale }">
+        <PhoneShell
+          :width="device.width"
+          :height="device.height"
+          :dark="identity.mode === 'dark'"
+          chrome="overlay"
+          time="09:41"
         >
-          <v-theme-provider :theme="vuetify" class="preview-theme">
-            <v-defaults-provider :defaults="defaults">
-              <div
-                :id="hostId"
-                class="preview-viewport"
-                data-preview-viewport
-                :style="{
-                  '--preview-safe-top': `${SAFE_TOP}px`,
-                  '--preview-safe-bottom': `${SAFE_BOTTOM}px`,
-                }"
-              >
+          <div
+            class="preview-surface"
+            :style="css"
+            v-bind="active.attributes.value"
+          >
+            <v-theme-provider :theme="vuetify" class="preview-theme">
+              <v-defaults-provider :defaults="defaults">
                 <div
-                  class="preview-scroll"
-                  data-preview-scroll
-                  tabindex="0"
-                  role="region"
-                  aria-label="手机内容"
+                  :id="hostId"
+                  class="preview-viewport"
+                  data-preview-viewport
+                  :style="{
+                    '--preview-safe-top': `${SAFE_TOP}px`,
+                    '--preview-safe-bottom': `${SAFE_BOTTOM}px`,
+                  }"
                 >
-                  <slot :attach="`#${hostId}`" :table="active.table.value" />
+                  <div
+                    class="preview-scroll"
+                    data-preview-scroll
+                    tabindex="0"
+                    role="region"
+                    aria-label="手机内容"
+                  >
+                    <slot :attach="`#${hostId}`" :table="active.table.value" />
+                  </div>
                 </div>
-              </div>
-            </v-defaults-provider>
-          </v-theme-provider>
-        </div>
-      </PhoneShell>
+              </v-defaults-provider>
+            </v-theme-provider>
+          </div>
+        </PhoneShell>
+      </div>
     </div>
   </div>
 </template>
@@ -88,11 +91,13 @@ const hostId = `preview-host-${useId().replace(/[^a-zA-Z0-9_-]/g, "-")}`;
   flex: none;
   margin: 0 auto;
 }
-.preview-scaled {
+.preview-frame {
   position: absolute;
   top: 12px;
   left: 12px;
-  transform-origin: top left;
+}
+.preview-scaled {
+  position: relative;
 }
 .preview-surface,
 .preview-viewport {
@@ -109,9 +114,8 @@ const hostId = `preview-host-${useId().replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 }
 .preview-viewport {
   position: relative;
-  overflow: hidden;
+  overflow: clip;
   container-type: size;
-  isolation: isolate;
 }
 .preview-scroll {
   position: absolute;

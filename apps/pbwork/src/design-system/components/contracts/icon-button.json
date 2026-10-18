@@ -10,7 +10,8 @@
   "behavior": [
     "ariaLabel 始终说明操作目的",
     "loading 保留操作强调度并阻止重复触发",
-    "disabled 阻止激活并使用 opacity.disabled"
+    "disabled 阻止激活并使用 opacity.disabled",
+    "material=glass 复用共享玻璃材质，与操作类型独立；降低透明度时使用清晰实色表面。"
   ],
   "propsSchema": {
     "type": "object",
@@ -75,6 +76,10 @@
       },
       "disabled": {
         "type": "boolean"
+      },
+      "material": {
+        "type": "string",
+        "enum": ["solid", "glass"]
       }
     },
     "required": ["ariaLabel"]
@@ -86,7 +91,8 @@
     "tone": "secondary",
     "variant": "tonal",
     "loading": false,
-    "disabled": false
+    "disabled": false,
+    "material": "solid"
   },
   "states": [
     {
@@ -112,6 +118,41 @@
       "props": {
         "disabled": true
       }
+    },
+    {
+      "id": "glass",
+      "label": "玻璃材质",
+      "kind": "variant",
+      "props": {
+        "material": "glass"
+      }
+    },
+    {
+      "id": "glass-loading",
+      "label": "玻璃加载",
+      "kind": "interaction",
+      "props": {
+        "material": "glass",
+        "loading": true
+      }
+    },
+    {
+      "id": "glass-disabled",
+      "label": "玻璃禁用",
+      "kind": "interaction",
+      "props": {
+        "material": "glass",
+        "disabled": true
+      }
+    },
+    {
+      "id": "glass-primary",
+      "label": "主色玻璃",
+      "kind": "variant",
+      "props": {
+        "material": "glass",
+        "tone": "primary"
+      }
     }
   ],
   "slots": [],
@@ -126,13 +167,24 @@
     "duration": "motion.duration-short",
     "easing": "motion.easing-standard",
     "pressedScale": "motion.press-scale-strong",
-    "disabledOpacity": "opacity.disabled"
+    "disabledOpacity": "opacity.disabled",
+    "glassTint": "color.glass-tint",
+    "glassBackdrop": "surface.glass-backdrop",
+    "glassEdge": "border.glass",
+    "glassLight": "elevation.glass",
+    "glassFallback": "color.surface",
+    "glassFallbackBorder": "border.default",
+    "glassOutline": "border.default",
+    "glassForeground": "color.on-surface",
+    "glassAccent": "color.primary",
+    "glassOnAccent": "color.on-primary",
+    "glassPrimaryTint": "icon-button.glass-primary-tint"
   },
   "playground": {
     "presentation": "gallery"
   },
   "icons": {
-    "pack": "lucide",
+    "pack": "pbwork",
     "defaults": [
       "more",
       "plus",
@@ -168,6 +220,16 @@
       "person-standing",
       "sparkles",
       "x"
-    ]
+    ],
+    "artwork": "_shared/glyph-artwork.json"
+  },
+  "componentTokens": {
+    "glass-primary-tint": {
+      "valueType": "color",
+      "default": "{color.primary}",
+      "modeVariant": true,
+      "bindable": true,
+      "label": "主要操作玻璃底色"
+    }
   }
 }

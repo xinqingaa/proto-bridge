@@ -128,7 +128,8 @@
     "radius": "radius.control",
     "height": "size.control",
     "target": "size.touch",
-    "typography": "typography.label",
+    "typography": "typography.content",
+    "activeTypography": "typography.label",
     "panel": "typography.caption",
     "trackGap": "spacing.sm-plus",
     "caretSize": "size.caret",
@@ -143,13 +144,15 @@
       "valueType": "color",
       "default": "{color.on-surface}",
       "modeVariant": true,
-      "bindable": true
+      "bindable": true,
+      "label": "二级标签选中文字"
     },
     "indicator": {
       "valueType": "color",
       "default": "{color.on-surface}",
       "modeVariant": true,
-      "bindable": true
+      "bindable": true,
+      "label": "二级标签指示条"
     }
   }
 }

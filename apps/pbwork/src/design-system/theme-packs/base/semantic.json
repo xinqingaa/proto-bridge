@@ -267,7 +267,19 @@
     "spacing.lg-plus": 40,
     "spacing.2xl": 48,
     "size.panel-medium": "50dvh",
-    "size.panel-large": "86dvh"
+    "size.panel-large": "86dvh",
+    "color.glass-tint": "#ffffff73",
+    "color.glass-clear": "#ffffff24",
+    "border.glass": {
+      "width": 1,
+      "style": "solid",
+      "color": "{color.glass-edge}"
+    },
+    "elevation.glass": "inset 0 1px 1px #ffffffd9, inset 0 -1px 1px #ffffff40, 0 8px 20px #1d304014",
+    "size.plot": 160,
+    "size.brand": 72,
+    "size.ring": 112,
+    "color.glass-edge": "#ffffffa6"
   },
   "modes": {
     "dark": {
@@ -310,7 +322,11 @@
       "elevation.floating": "0 6px 18px rgba(0, 0, 0, 0.28)",
       "elevation.menu": "0 8px 20px rgba(0, 0, 0, 0.45)",
       "elevation.overlay": "0 22px 48px rgba(0, 0, 0, 0.58)",
-      "opacity.translucent": 0.8
+      "opacity.translucent": 0.8,
+      "color.glass-tint": "#252b3866",
+      "color.glass-clear": "#20263024",
+      "elevation.glass": "inset 0 1px 1px #ffffff33, inset 0 -1px 1px #ffffff14, 0 8px 20px #00000040",
+      "color.glass-edge": "#ffffff33"
     }
   }
 }

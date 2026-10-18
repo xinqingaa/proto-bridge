@@ -78,7 +78,7 @@ export function previewSelectionError(
   packs: ReadonlyMap<string, ThemePackSource>,
 ): string | undefined {
   const context = contexts.find((c) => c.id === selection.contextId);
-  if (!context) return "预览来源不存在";
+  if (!context) return "主题包选项不存在";
   const manifest = packs.get(context.packId)?.manifest;
   if (!manifest) return `主题包不存在：${context.packId}`;
   if (!manifest.themes.some((t) => t.id === selection.theme))
@@ -216,4 +216,84 @@ export function fitPreviewScale(
     0.1,
     Math.min(1, (perDevice - 24) / deviceWidth, (height - 24) / deviceHeight),
   );
+}
+
+/** Source columns enumerate actual themes independently of device sessions. */
+export function sourceThemeColumns(
+  contexts: readonly PreviewContext[],
+  packs: ReadonlyMap<string, ThemePackSource>,
+) {
+  const seen = new Set<string>();
+  return contexts.flatMap((context) => {
+    const manifest = packs.get(context.packId)?.manifest;
+    const owners = contexts.filter((c) => c.packId === context.packId);
+    return (manifest?.themes ?? [{ id: "", label: "不可读取" }]).flatMap(
+      (theme) => {
+        const id = `${context.packId}/${theme.id}`;
+        if (seen.has(id)) return [];
+        seen.add(id);
+        return [
+          {
+            id,
+            packId: context.packId,
+            label: `${manifest?.label ?? context.packId} · ${theme.label}`,
+            packLabel: manifest?.label ?? context.packId,
+            themeLabel: theme.label,
+            sample: manifest?.scope === "playground",
+            owners: owners
+              .filter((c) => c.kind === "prototype")
+              .map((c) => c.label),
+            contextIds: owners.map((c) => c.id),
+            selection: {
+              contextId: context.id,
+              theme: theme.id,
+              mode: manifest?.defaultMode ?? "",
+            },
+          },
+        ];
+      },
+    );
+  });
+}
+
+/** Pack identity drives appearance; prototype aliases are retained only for ownership and migration. */
+export function themePackContexts(
+  contexts: readonly PreviewContext[],
+  packs: ReadonlyMap<string, ThemePackSource>,
+): PreviewContext[] {
+  const seen = new Set<string>();
+  return contexts.flatMap((context) => {
+    if (seen.has(context.packId)) return [];
+    seen.add(context.packId);
+    const manifest = packs.get(context.packId)?.manifest;
+    return [
+      {
+        ...context,
+        id: `pack:${context.packId}`,
+        kind:
+          manifest?.scope === "base"
+            ? "foundation"
+            : manifest?.scope === "playground"
+              ? "sample"
+              : context.kind,
+        label: manifest
+          ? `${manifest.label}${manifest.scope === "playground" ? " · 仅演示" : ""}`
+          : context.packId,
+      },
+    ];
+  });
+}
+
+export function normalizePreviewSelection(
+  selection: PreviewSelection,
+  aliases: readonly PreviewContext[],
+  packs: ReadonlyMap<string, ThemePackSource>,
+): PreviewSelection {
+  const context = [...aliases, ...themePackContexts(aliases, packs)].find(
+    (context) => context.id === selection.contextId,
+  );
+  return {
+    ...selection,
+    ...(context ? { contextId: `pack:${context.packId}` } : {}),
+  };
 }

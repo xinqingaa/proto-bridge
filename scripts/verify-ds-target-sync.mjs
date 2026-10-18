@@ -58,6 +58,7 @@ const componentDigests = Object.fromEntries(
 );
 const sectionDigests = {
   components: digest(contracts),
+  iconAssets: digest(await readJson("apps/pbwork/src/design-system/components/_shared/glyph-artwork.json")),
   roles: digest(SEMANTIC_ROLES),
   protocolSchemas: digest({ componentSchema, themeProtocolSchema }),
   tokenCatalog: digest(catalog),
@@ -255,8 +256,8 @@ function verifyProducerProtocol() {
   if (canonical(semanticPolicies) !== canonical(["fixed", "contextual", "decorative"])) {
     errors.push("Component semantic policies drifted from fixed/contextual/decorative.");
   }
-  if (componentSchema.properties?.icons?.properties?.pack?.const !== "lucide") {
-    errors.push("Component icon protocol must keep Lucide as the only pack.");
+  if (canonical(componentSchema.properties?.icons?.properties?.pack?.enum) !== canonical(["lucide", "pbwork"])) {
+    errors.push("Component icon protocol must declare stable lucide/pbwork pack identities.");
   }
 }
 

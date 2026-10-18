@@ -28,14 +28,24 @@
     },
     "category": {
       "type": "string",
-      "enum": ["action", "input", "display", "navigation", "data", "feedback"]
+      "enum": [
+        "action",
+        "input",
+        "display",
+        "navigation",
+        "data",
+        "feedback"
+      ]
     },
     "semantic": {
       "oneOf": [
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["policy", "defaultRole"],
+          "required": [
+            "policy",
+            "defaultRole"
+          ],
           "properties": {
             "policy": {
               "const": "fixed"
@@ -48,7 +58,11 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["policy", "defaultRole", "allowedRoles"],
+          "required": [
+            "policy",
+            "defaultRole",
+            "allowedRoles"
+          ],
           "properties": {
             "policy": {
               "const": "contextual"
@@ -69,7 +83,9 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["policy"],
+          "required": [
+            "policy"
+          ],
           "properties": {
             "policy": {
               "const": "decorative"
@@ -80,7 +96,9 @@
     },
     "propsSchema": {
       "type": "object",
-      "required": ["type"],
+      "required": [
+        "type"
+      ],
       "properties": {
         "type": {
           "const": "object"
@@ -113,20 +131,33 @@
         },
         "containerWidth": {
           "type": "string",
-          "enum": ["fill-parent", "content"]
+          "enum": [
+            "fill-parent",
+            "content"
+          ]
         },
         "track": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["width", "itemSizing", "overflow"],
+          "required": [
+            "width",
+            "itemSizing",
+            "overflow"
+          ],
           "properties": {
             "width": {
               "type": "string",
-              "enum": ["fill-container", "content"]
+              "enum": [
+                "fill-container",
+                "content"
+              ]
             },
             "itemSizing": {
               "type": "string",
-              "enum": ["content", "equal"]
+              "enum": [
+                "content",
+                "equal"
+              ]
             },
             "equalState": {
               "type": "string",
@@ -134,22 +165,32 @@
             },
             "overflow": {
               "type": "string",
-              "enum": ["horizontal-scroll", "none"]
+              "enum": [
+                "horizontal-scroll",
+                "none"
+              ]
             }
           }
         },
         "viewport": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["ownership"],
+          "required": [
+            "ownership"
+          ],
           "properties": {
             "ownership": {
               "type": "string",
-              "enum": ["component", "none"]
+              "enum": [
+                "component",
+                "none"
+              ]
             },
             "transition": {
               "type": "string",
-              "enum": ["horizontal"]
+              "enum": [
+                "horizontal"
+              ]
             }
           }
         }
@@ -167,19 +208,32 @@
         "selection": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["material", "border", "layering"],
+          "required": [
+            "material",
+            "border",
+            "layering"
+          ],
           "properties": {
             "material": {
-              "const": "translucent-glass"
+              "enum": [
+                "translucent-glass",
+                "theme-controlled"
+              ]
             },
             "border": {
-              "const": "none"
+              "enum": [
+                "none",
+                "semantic-glass-edge"
+              ]
             },
             "layering": {
               "const": "floating"
             },
             "contour": {
-              "const": "top-transition-arc"
+              "enum": [
+                "top-transition-arc",
+                "host-radius"
+              ]
             }
           }
         }
@@ -193,7 +247,11 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "label", "kind"],
+        "required": [
+          "id",
+          "label",
+          "kind"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -208,7 +266,11 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["variant", "interaction", "content"],
+            "enum": [
+              "variant",
+              "interaction",
+              "content"
+            ],
             "description": "variant=appearance enum; interaction=loading/disabled; content=empty/closed."
           },
           "props": {
@@ -243,11 +305,17 @@
     "playground": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["presentation"],
+      "required": [
+        "presentation"
+      ],
       "properties": {
         "presentation": {
           "type": "string",
-          "enum": ["interactive", "gallery", "trigger"],
+          "enum": [
+            "interactive",
+            "gallery",
+            "trigger"
+          ],
           "description": "interactive=live scene; gallery=compact state matrix (icon/icon-button only); trigger=overlay via button."
         }
       }
@@ -255,10 +323,15 @@
     "icons": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["pack"],
+      "required": [
+        "pack"
+      ],
       "properties": {
         "pack": {
-          "const": "lucide"
+          "enum": [
+            "lucide",
+            "pbwork"
+          ]
         },
         "defaults": {
           "type": "array",
@@ -267,6 +340,12 @@
             "minLength": 1
           },
           "uniqueItems": true
+        },
+        "artwork": {
+          "type": "string",
+          "enum": [
+            "_shared/glyph-artwork.json"
+          ]
         }
       }
     },
@@ -275,7 +354,12 @@
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["valueType", "default", "modeVariant", "bindable"],
+        "required": [
+          "valueType",
+          "default",
+          "modeVariant",
+          "bindable"
+        ],
         "properties": {
           "valueType": {
             "enum": [
@@ -304,6 +388,12 @@
             "items": {
               "type": "string"
             }
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
           }
         }
       }

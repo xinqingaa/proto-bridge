@@ -27,3 +27,7 @@
 用于小规模序列的概览；值不大于零时条高为零，原始值仍可读；需要轴、缩放或复杂图表时用原型自有图表。
 
 Props、Slots、Events、默认值与 Token 槽以 [MiniBars Contract](../../../src/design-system/components/contracts/mini-bars.json) 为准。
+
+## 展示与组合
+
+图表使用独立 plot 尺度而非头像尺寸，柱宽受控并保留零值真实高度；默认示例为完整七日。图例文案与样本数量一致，空/零值仍可辨识。

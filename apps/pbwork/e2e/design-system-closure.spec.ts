@@ -4,6 +4,11 @@ test("foundation previews expose width tokens and distinct semantic icons", asyn
   page,
 }) => {
   await page.goto("/workbench/foundations/tokens/border");
+  // Measure authored border widths without zoom rasterization rounding.
+  await page
+    .getByRole("group", { name: "预览尺寸" })
+    .getByRole("button", { name: "100%", exact: true })
+    .click();
 
   const widthSamples = page.locator(".border-sample.is-width-only");
   await expect(widthSamples).toHaveCount(3);
@@ -39,7 +44,10 @@ test("tab playgrounds compare adaptive and equal layouts while FilterBar stays u
   for (const componentId of ["tabbar", "primary-tabs", "secondary-tabs"]) {
     await page.goto(`/workbench/components/${componentId}`);
     await expect(page.getByLabel("使用场景")).toHaveCount(0);
-    await expect(page.locator('[data-tab-layout="adaptive"]')).toBeVisible();
+    if (componentId === "tabbar")
+      await expect(page.locator('[data-tab-layout="adaptive"]')).toHaveCount(0);
+    else
+      await expect(page.locator('[data-tab-layout="adaptive"]')).toBeVisible();
     await expect(page.locator('[data-tab-layout="equal"]')).toBeVisible();
 
     if (componentId !== "tabbar") {
@@ -82,7 +90,7 @@ test("tab playgrounds compare adaptive and equal layouts while FilterBar stays u
   }
 
   await page.goto("/workbench/components/tabbar");
-  await expect(page.locator(".pb-tabbar-item")).toHaveCount(6);
+  await expect(page.locator(".pb-tabbar-item")).toHaveCount(3);
   const widths = await page
     .locator("[data-tab-layout]")
     .evaluateAll((sections) =>
@@ -94,7 +102,7 @@ test("tab playgrounds compare adaptive and equal layouts while FilterBar stays u
       })),
     );
   expect(new Set(widths[0]?.widths).size).toBe(1);
-  expect(widths[1]?.widths[0]).toBeGreaterThan(widths[0]?.widths[0] ?? 0);
+  expect(widths).toHaveLength(1);
 
   await page.goto("/workbench/components/filter-bar");
   await expect(page.getByLabel("使用场景")).toHaveCount(0);
@@ -107,13 +115,19 @@ test("component playgrounds expose component types and Contract states without s
   for (const componentId of ["icon", "icon-button"]) {
     await page.goto(`/workbench/components/${componentId}`);
     await expect(page.getByLabel("使用场景")).toHaveCount(0);
-    await expect(page.locator(".gallery-matrix")).toBeVisible();
+    await expect(
+      page.locator(
+        componentId === "icon" ? ".icon-options" : ".gallery-matrix",
+      ),
+    ).toBeVisible();
   }
 
   for (const componentId of ["tabbar", "primary-tabs", "secondary-tabs"]) {
     await page.goto(`/workbench/components/${componentId}`);
     await expect(page.getByLabel("使用场景")).toHaveCount(0);
-    await expect(page.locator("[data-tab-layout]")).toHaveCount(2);
+    await expect(page.locator("[data-tab-layout]")).toHaveCount(
+      componentId === "tabbar" ? 1 : 2,
+    );
   }
 
   for (const componentId of [

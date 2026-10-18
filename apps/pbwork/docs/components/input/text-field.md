@@ -37,3 +37,7 @@
 - 用于姓名、编号、账号和密码等单行文本；上下文已有明确标题时保持 plain。
 - 不在业务页复制边框、label 或错误布局，也不把 `showLabel` 当作纯视觉旋钮。
 - Props、Slots、Events、默认值与 Token 槽以 [Text Field Contract](../../../src/design-system/components/contracts/text-field.json) 为准。
+
+## 展示与组合
+
+显示标签时使用输入表面上方的独立标签，并通过 for/id 关联真实输入；标签不挤占描边。无标签、错误、密码显隐与焦点行为保留。

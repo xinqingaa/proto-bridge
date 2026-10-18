@@ -15,7 +15,7 @@
     "summary": "紧凑柱形对比，零值、空集合与数值标签均可辨识。"
   },
   "visualAnatomy": {
-    "summary": "使用当前主题的语义色、字阶、间距和受控形状，不在实例上换绑。"
+    "summary": "受控柱宽、独立图表高度、对齐基线、数值与类别标签；零值不伪造正高度。"
   },
   "propsSchema": {
     "type": "object",
@@ -40,7 +40,11 @@
               "type": "number"
             }
           },
-          "required": ["id", "label", "value"]
+          "required": [
+            "id",
+            "label",
+            "value"
+          ]
         }
       }
     }
@@ -66,6 +70,21 @@
       {
         "id": "thu",
         "label": "四",
+        "value": 4
+      },
+      {
+        "id": "fri",
+        "label": "五",
+        "value": 2
+      },
+      {
+        "id": "sat",
+        "label": "六",
+        "value": 6
+      },
+      {
+        "id": "sun",
+        "label": "日",
         "value": 4
       }
     ]
@@ -104,8 +123,12 @@
     "fill": "color.primary",
     "track": "color.surface-variant",
     "radius": "radius.mark",
-    "plot": "size.avatar-large",
-    "caption": "typography.caption"
+    "plot": "size.plot",
+    "caption": "typography.caption",
+    "barWidth": "size.control-compact",
+    "axis": "border.hairline",
+    "heading": "typography.label",
+    "plotInset": "spacing.md"
   },
   "playground": {
     "presentation": "interactive"

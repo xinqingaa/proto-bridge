@@ -15,7 +15,7 @@
     "summary": "确定进度环，展示完成比例与可访问数值。"
   },
   "visualAnatomy": {
-    "summary": "使用当前主题的语义色、字阶、间距和受控形状，不在实例上换绑。"
+    "summary": "独立数据直径承托环形轨道和居中数字，文本与图形使用相同比值。"
   },
   "propsSchema": {
     "type": "object",
@@ -61,8 +61,8 @@
     "fill": "color.primary",
     "track": "color.primary-soft",
     "color": "color.on-surface",
-    "typography": "typography.numeric-content",
-    "diameter": "size.avatar-large",
+    "typography": "typography.numeric-title",
+    "diameter": "size.ring",
     "stroke": "size.stroke"
   },
   "playground": {

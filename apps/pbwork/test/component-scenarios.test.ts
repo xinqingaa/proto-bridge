@@ -87,7 +87,7 @@ describe("component business scenarios", () => {
       ]),
     );
     expect(controlKeys("tabbar")).toEqual(
-      expect.arrayContaining(["modelValue", "grow"]),
+      expect.arrayContaining(["modelValue"]),
     );
     expect(controlKeys("tabbar")).not.toEqual(
       expect.arrayContaining(["showView", "mouseSwipe", "viewHeight"]),
@@ -96,6 +96,7 @@ describe("component business scenarios", () => {
       expect.arrayContaining(["pullRefresh", "loadMore", "hasMore"]),
     );
     expect(controlKeys("tabbar")).not.toContain("viewHeight");
+    expect(controlKeys("tabbar")).not.toContain("grow");
     expect(controlKeys("card")).toEqual(["elevated"]);
     expect(controlKeys("card")).not.toEqual(
       expect.arrayContaining(["title", "subtitle"]),

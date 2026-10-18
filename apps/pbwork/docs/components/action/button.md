@@ -14,11 +14,11 @@
 
 ## 类型
 
-| 类型 | `kind` | 场景 | 禁止 |
-| --- | --- | --- | --- |
-| 主要类型 | `primary`（默认） | 一行只有一颗按钮时必须用；两颗时的确认、提交、保存、继续 | 同一行两颗主要类型 |
-| 次要类型 | `secondary` | 只与主要类型成对：取消、保存草稿、稍后 | 单独出现；充当关闭或返回 |
-| 描边类型 | `outlined` | 最弱档；卡片内查看、了解更多等轻量动作 | Confirm、Sheet、FlowSheet 的决策区 |
+| 类型     | `kind`            | 场景                                                     | 禁止                               |
+| -------- | ----------------- | -------------------------------------------------------- | ---------------------------------- |
+| 主要类型 | `primary`（默认） | 一行只有一颗按钮时必须用；两颗时的确认、提交、保存、继续 | 同一行两颗主要类型                 |
+| 次要类型 | `secondary`       | 只与主要类型成对：取消、保存草稿、稍后                   | 单独出现；充当关闭或返回           |
+| 描边类型 | `outlined`        | 最弱档；卡片内查看、了解更多等轻量动作                   | Confirm、Sheet、FlowSheet 的决策区 |
 
 决策区（Confirm / Bottom Sheet / Flow Sheet 操作行）布局：
 
@@ -41,9 +41,17 @@
 | --- | --- | --- |
 | `loading` | 加载 | `interaction` |
 | `disabled` | 禁用 | `interaction` |
+| `glass` | 玻璃材质 | `variant` |
+| `glass-loading` | 玻璃加载 | `interaction` |
+| `glass-disabled` | 玻璃禁用 | `interaction` |
+
 
 ## 用法与反例
 
 - 需要关闭或返回时使用 Sheet 顶栏 Icon Button，不用 Button 冒充。
 - 不用 Button 模拟 Icon Button、Tab、Chip 或导航目的地。
 - Props、Slots、Events、默认值与 Token 槽以 [Button Contract](../../../src/design-system/components/contracts/button.json) 为准。
+
+## 玻璃材质
+
+`material="glass"` 是可选材质，默认 `solid` 保持原有外观；与操作类型、尺寸、加载和禁用状态独立。适用于悬浮操作和丰富背景上的按钮。复用 GlassMaterial，前景独立合成保持清晰；降低透明度或不支持滤镜时回退实色，主要操作仍保留强调度。玻璃加载、禁用状态在同一手机预览中展示。

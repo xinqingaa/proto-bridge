@@ -20,6 +20,17 @@ const iconOptions = PB_ICON_NAMES.map((name) => ({ label: name, value: name }));
 
 export const componentRecords = [
   {
+    id: "glass-surface",
+    label: "GlassSurface",
+    description:
+      "独立玻璃材质容器；形状由宿主决定。macOS 若无玻璃效果，请在系统设置 → 辅助功能（无障碍）→ 显示中关闭‘降低透明度’，然后刷新页面。",
+    category: "display",
+    view: "display/GlassSurface.vue",
+    contract: "contracts/glass-surface.json",
+    example: {},
+    controls: [{ key: "clear", label: "清透材质", control: "boolean" }],
+  },
+  {
     id: "button",
     label: "Button",
     description: "表单与决策区操作；类型为主要、次要或描边。",
@@ -40,6 +51,15 @@ export const componentRecords = [
         ],
       },
       { key: "size", label: "尺寸", control: "select", options: sizeOptions },
+      {
+        key: "material",
+        label: "材质",
+        control: "select",
+        options: [
+          { label: "普通", value: "solid" },
+          { label: "液态玻璃", value: "glass" },
+        ],
+      },
       { key: "loading", label: "加载中", control: "boolean" },
       { key: "block", label: "占满宽度", control: "boolean" },
       { key: "disabled", label: "禁用", control: "boolean" },
@@ -48,7 +68,7 @@ export const componentRecords = [
   {
     id: "icon",
     label: "Icon",
-    description: "Lucide 常用图标；按稳定 name 渲染，尺寸与颜色走 Token。",
+    description: "PBWork 自绘 SVG 图标；按稳定 name 渲染，尺寸与颜色走 Token。",
     category: "action",
     view: "action/Icon.vue",
     contract: "contracts/icon.json",
@@ -88,6 +108,15 @@ export const componentRecords = [
     contract: "contracts/icon-button.json",
     example: {},
     controls: [
+      {
+        key: "material",
+        label: "材质",
+        control: "select",
+        options: [
+          { label: "普通", value: "solid" },
+          { label: "液态玻璃", value: "glass" },
+        ],
+      },
       { key: "ariaLabel", label: "无障碍名称", control: "text" },
       {
         key: "icon",
@@ -448,6 +477,17 @@ export const componentRecords = [
     contract: "contracts/app-bar.json",
     example: {},
     controls: [
+      {
+        key: "background",
+        label: "背景",
+        control: "select",
+        options: [
+          { value: "theme", label: "跟随主题" },
+          { value: "solid", label: "实色" },
+          { value: "glass", label: "玻璃" },
+          { value: "transparent", label: "透明" },
+        ],
+      },
       { key: "title", label: "标题", control: "text" },
       { key: "dense", label: "紧凑", control: "boolean" },
       { key: "elevated", label: "显示阴影", control: "boolean" },
@@ -469,7 +509,7 @@ export const componentRecords = [
   {
     id: "primary-tabs",
     label: "一级 Tab",
-    description: "页内主分区：Liquid Glass 胶囊标出当前视图。",
+    description: "页内主分区：小圆角玻璃轨道与中性选中底标出当前视图。",
     category: "navigation",
     view: "navigation/PrimaryTabs.vue",
     contract: "contracts/primary-tabs.json",
@@ -552,7 +592,6 @@ export const componentRecords = [
           { label: "我的", value: "profile" },
         ],
       },
-      { key: "grow", label: "等宽铺满", control: "boolean" },
     ],
   },
   {
@@ -670,7 +709,8 @@ export const componentRecords = [
   {
     id: "toast",
     label: "Toast",
-    description: "短提示。可只显示文本，也可带一个撤销之类的动作，不打断当前页面。",
+    description:
+      "短提示。可只显示文本，也可带一个撤销之类的动作，不打断当前页面。",
     category: "feedback",
     view: "feedback/Toast.vue",
     contract: "contracts/toast.json",
@@ -1008,6 +1048,7 @@ export const componentRecords = [
     contract: "contracts/month-calendar.json",
     example: {},
     controls: [
+      { key: "today", label: "今日日期", control: "text" },
       {
         key: "label",
         label: "label",
@@ -1117,6 +1158,15 @@ export const componentRecords = [
     example: {},
     controls: [
       {
+        key: "layout",
+        label: "组合",
+        control: "select",
+        options: [
+          { value: "inline", label: "横向" },
+          { value: "stacked", label: "纵向" },
+        ],
+      },
+      {
         key: "name",
         label: "name",
         control: "text",
@@ -1132,6 +1182,15 @@ export const componentRecords = [
     contract: "contracts/launch-screen.json",
     example: {},
     controls: [
+      {
+        key: "mode",
+        label: "内容模式",
+        control: "select",
+        options: [
+          { value: "welcome", label: "欢迎" },
+          { value: "launch", label: "静态启动" },
+        ],
+      },
       {
         key: "title",
         label: "title",

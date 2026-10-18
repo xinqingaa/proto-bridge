@@ -16,7 +16,7 @@
     "summary": "Monday-first seven-cell columns, chronological weeks in one contained horizontal scroll area; missing days occupy cells."
   },
   "visualAnatomy": {
-    "summary": "Three finite intensity colors, observed zero neutral surface, missing recessed surface; selected cell has focus outline and date text."
+    "summary": "按周排列的日期强度图，提供月份、星期、强度图例和选中日期的实际值。"
   },
   "propsSchema": {
     "type": "object",
@@ -49,8 +49,240 @@
     "label": "每日完成记录",
     "days": [
       {
-        "date": "2026-07-01",
+        "date": "2026-05-04",
+        "value": 0
+      },
+      {
+        "date": "2026-05-05",
+        "value": 3
+      },
+      {
+        "date": "2026-05-06",
+        "value": 6
+      },
+      {
+        "date": "2026-05-07",
+        "value": 2
+      },
+      {
+        "date": "2026-05-08",
+        "value": 5
+      },
+      {
+        "date": "2026-05-09",
+        "value": 0
+      },
+      {
+        "date": "2026-05-10",
+        "value": 4
+      },
+      {
+        "date": "2026-05-11",
+        "value": 0
+      },
+      {
+        "date": "2026-05-12",
+        "value": 3
+      },
+      {
+        "date": "2026-05-13",
+        "value": 6
+      },
+      {
+        "date": "2026-05-14",
+        "value": 0
+      },
+      {
+        "date": "2026-05-15",
+        "value": 5
+      },
+      {
+        "date": "2026-05-16",
         "value": 1
+      },
+      {
+        "date": "2026-05-17",
+        "value": 4
+      },
+      {
+        "date": "2026-05-18",
+        "value": 0
+      },
+      {
+        "date": "2026-05-19",
+        "value": 0
+      },
+      {
+        "date": "2026-05-20",
+        "value": 6
+      },
+      {
+        "date": "2026-05-21",
+        "value": 2
+      },
+      {
+        "date": "2026-05-22",
+        "value": 5
+      },
+      {
+        "date": "2026-05-23",
+        "value": 1
+      },
+      {
+        "date": "2026-05-24",
+        "value": 0
+      },
+      {
+        "date": "2026-05-25",
+        "value": 0
+      },
+      {
+        "date": "2026-05-26",
+        "value": 3
+      },
+      {
+        "date": "2026-05-27",
+        "value": 6
+      },
+      {
+        "date": "2026-05-28",
+        "value": 2
+      },
+      {
+        "date": "2026-05-29",
+        "value": 0
+      },
+      {
+        "date": "2026-05-30",
+        "value": 1
+      },
+      {
+        "date": "2026-05-31",
+        "value": 4
+      },
+      {
+        "date": "2026-06-01",
+        "value": 0
+      },
+      {
+        "date": "2026-06-02",
+        "value": 3
+      },
+      {
+        "date": "2026-06-03",
+        "value": 0
+      },
+      {
+        "date": "2026-06-04",
+        "value": 2
+      },
+      {
+        "date": "2026-06-05",
+        "value": 5
+      },
+      {
+        "date": "2026-06-06",
+        "value": 1
+      },
+      {
+        "date": "2026-06-07",
+        "value": 4
+      },
+      {
+        "date": "2026-06-08",
+        "value": 0
+      },
+      {
+        "date": "2026-06-09",
+        "value": 3
+      },
+      {
+        "date": "2026-06-10",
+        "value": 6
+      },
+      {
+        "date": "2026-06-11",
+        "value": 2
+      },
+      {
+        "date": "2026-06-12",
+        "value": 5
+      },
+      {
+        "date": "2026-06-13",
+        "value": 0
+      },
+      {
+        "date": "2026-06-14",
+        "value": 4
+      },
+      {
+        "date": "2026-06-15",
+        "value": 0
+      },
+      {
+        "date": "2026-06-16",
+        "value": 3
+      },
+      {
+        "date": "2026-06-17",
+        "value": 6
+      },
+      {
+        "date": "2026-06-18",
+        "value": 0
+      },
+      {
+        "date": "2026-06-19",
+        "value": 5
+      },
+      {
+        "date": "2026-06-20",
+        "value": 1
+      },
+      {
+        "date": "2026-06-21",
+        "value": 4
+      },
+      {
+        "date": "2026-06-22",
+        "value": 0
+      },
+      {
+        "date": "2026-06-23",
+        "value": 0
+      },
+      {
+        "date": "2026-06-24",
+        "value": 6
+      },
+      {
+        "date": "2026-06-25",
+        "value": 2
+      },
+      {
+        "date": "2026-06-26",
+        "value": 5
+      },
+      {
+        "date": "2026-06-27",
+        "value": 1
+      },
+      {
+        "date": "2026-06-28",
+        "value": 0
+      },
+      {
+        "date": "2026-06-29",
+        "value": 0
+      },
+      {
+        "date": "2026-06-30",
+        "value": 3
+      },
+      {
+        "date": "2026-07-01",
+        "value": 6
       },
       {
         "date": "2026-07-02",
@@ -58,35 +290,35 @@
       },
       {
         "date": "2026-07-03",
-        "value": 3
+        "value": 0
       },
       {
         "date": "2026-07-04",
-        "value": 4
-      },
-      {
-        "date": "2026-07-05",
-        "value": 0
-      },
-      {
-        "date": "2026-07-06",
         "value": 1
       },
       {
-        "date": "2026-07-07",
-        "value": 2
-      },
-      {
-        "date": "2026-07-08",
-        "value": 3
-      },
-      {
-        "date": "2026-07-09",
+        "date": "2026-07-05",
         "value": 4
       },
       {
-        "date": "2026-07-10",
+        "date": "2026-07-06",
         "value": 0
+      },
+      {
+        "date": "2026-07-07",
+        "value": 3
+      },
+      {
+        "date": "2026-07-08",
+        "value": 0
+      },
+      {
+        "date": "2026-07-09",
+        "value": 2
+      },
+      {
+        "date": "2026-07-10",
+        "value": 5
       },
       {
         "date": "2026-07-11",
@@ -94,31 +326,31 @@
       },
       {
         "date": "2026-07-12",
-        "value": 2
-      },
-      {
-        "date": "2026-07-13",
-        "value": 3
-      },
-      {
-        "date": "2026-07-14",
         "value": 4
       },
       {
-        "date": "2026-07-15",
+        "date": "2026-07-13",
         "value": 0
       },
       {
-        "date": "2026-07-16",
-        "value": 1
+        "date": "2026-07-14",
+        "value": 3
       },
       {
-        "date": "2026-07-17",
+        "date": "2026-07-15",
+        "value": 6
+      },
+      {
+        "date": "2026-07-16",
         "value": 2
       },
       {
+        "date": "2026-07-17",
+        "value": 5
+      },
+      {
         "date": "2026-07-18",
-        "value": 3
+        "value": 0
       },
       {
         "date": "2026-07-19",
@@ -130,35 +362,27 @@
       },
       {
         "date": "2026-07-21",
-        "value": 1
+        "value": 3
       },
       {
         "date": "2026-07-22",
-        "value": 2
+        "value": 6
       },
       {
         "date": "2026-07-23",
-        "value": 3
-      },
-      {
-        "date": "2026-07-24",
-        "value": 4
-      },
-      {
-        "date": "2026-07-25",
         "value": 0
       },
       {
-        "date": "2026-07-26",
+        "date": "2026-07-24",
+        "value": 5
+      },
+      {
+        "date": "2026-07-25",
         "value": 1
       },
       {
-        "date": "2026-07-27",
-        "value": 2
-      },
-      {
-        "date": "2026-07-28",
-        "value": 3
+        "date": "2026-07-26",
+        "value": 4
       }
     ],
     "modelValue": "2026-07-12"
@@ -195,9 +419,13 @@
     "cell": "size.icon",
     "radius": "radius.mark",
     "caption": "typography.caption",
-    "missing": "color.surface-recessed",
+    "missing": "transparent",
     "cellGap": "spacing.xs",
-    "focusOffset": "spacing.xxs"
+    "focusOffset": "spacing.xxs",
+    "axis": "typography.micro",
+    "axisGap": "spacing.sm",
+    "legendCell": "size.icon-inline",
+    "missingBorder": "border.hairline"
   },
   "playground": {
     "presentation": "interactive"

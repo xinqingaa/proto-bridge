@@ -31,7 +31,7 @@ registration/preview support rather than claiming it exists.
 For theme-pack parser, preparation data, reactive Runtime helpers, or typed CSS generation, also read
 `docs/architecture/theme-packs.md`. Runtime now provides the Core-resolved table, CSS variables, local Vuetify themes
 and per-prototype v2 preferences. DS/prototype consumers now use the new keys and reactive Token readers.
-All 12 foundations, theme modes and 46 DS components now use the shared phone preview in
+All 12 foundations, theme modes and 47 DS components now use the shared phone preview in
 `src/workbench/preview/`, with real Registry-bound prototype contexts, explicit
 samples, atomic theme identity and isolated device sessions. Prototype variants and own components use explicit metadata plus validated module associations in `workbench/preview/extensions`; the production extension list is empty, with isolated fixture coverage. Preview registration never replaces Runtime/Evidence gates. Constants never enter bindings, the token Catalog, or Target mapping.
 Capture pins the pack digest and every theme×mode value table; Handoff names the default theme and mode. Case identity stays the mode id.
@@ -50,7 +50,7 @@ Follow `apps/pbwork/docs/components/alignment-protocol.md`:
 
 Check the JSON Contract, Vue implementation, `components/registry.ts`, relevant
 `components/scenarios.ts`, component documentation, and tests. Do not change
-only Vue or only documentation when semantics changed. Use Lucide for icons.
+only Vue or only documentation when semantics changed. Use the stable PBWork SVG registry for DS icons; caller-supplied Lucide components remain supported. Declare the actual icon pack.
 Check `apps/pbwork/docs/components/audit-large-types.md` for suspiciously large type.
 
 ## Token and Theme atomicity
@@ -113,3 +113,5 @@ dictionary; it does not rebind DS instances. DS-owned semantic parts declare
 bindings. See `apps/pbwork/docs/prototypes/authoring-tools.md`.
 
 共享预览尺寸交互与本地偏好以 `apps/pbwork/docs/workbench-preview.md` 为准：拖动手机设备容器等比缩放，外层卡片随手机展示高度撑开，舞台不设纵向内部滚动，双机空间不足换行；预览偏好跨页面共用并持久化。预览/来源 Tab 切换保留实例与搜索，来源隐藏侧栏、表格占满卡片，支持减少动态效果；共同滚动使用舞台顶部紧凑开关并持久化，只联动手机内容滚动进度。来源表格完整列出每项实际样板与值（字体按真实配置逐项渲染），不显示差异列/差异筛选或引用链；同值条目仍全部保留。
+
+来源表按真实 pack/theme 独立列出全部主题，固定名称列并横向滚动；模式独立持久化，不从手机 A/B 推断列。玻璃使用共享 GlassMaterial，形状由宿主决定，保留降低透明度/无滤镜降级。整屏启动预览在同一手机内切换状态；自绘图标的导出复用同一 artwork，下载 UI 不进入 Runtime Icon。

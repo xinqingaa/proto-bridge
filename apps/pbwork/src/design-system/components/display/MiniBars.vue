@@ -18,6 +18,9 @@ const props = withDefaults(
       { id: "tue", label: "二", value: 5 },
       { id: "wed", label: "三", value: 0 },
       { id: "thu", label: "四", value: 4 },
+      { id: "fri", label: "五", value: 2 },
+      { id: "sat", label: "六", value: 6 },
+      { id: "sun", label: "日", value: 4 },
     ],
   },
 );
@@ -49,6 +52,10 @@ usePbInspect({
   pbKey: () => props.pbKey,
   getProps: () => ({ ...props }),
   getTokenBindings: () => ({
+    barWidth: "size.control-compact",
+    axis: "border.hairline",
+    heading: "typography.label",
+    plotInset: "spacing.md",
     color: "color.on-surface",
     muted: "color.on-surface-muted",
     gap: "spacing.sm",
@@ -56,7 +63,7 @@ usePbInspect({
     fill: "color.primary",
     track: "color.surface-variant",
     radius: "radius.mark",
-    plot: "size.avatar-large",
+    plot: "size.plot",
     caption: "typography.caption",
   }),
 });
@@ -76,7 +83,7 @@ usePbInspect({
       })
     "
   >
-    <figcaption>{{ label }}</figcaption>
+    <figcaption>{{ label }}<small>每日记录</small></figcaption>
     <span v-if="!props.items.length" role="status">暂无数据</span>
     <div v-else class="bars">
       <div v-for="item in normalized" :key="item.id" class="column">
@@ -149,8 +156,9 @@ usePbInspect({
 .track {
   display: flex;
   align-items: flex-end;
-  height: var(--pb-size-avatar-large);
-  width: var(--pb-layout-fill);
+  height: var(--pb-size-plot);
+  width: var(--pb-size-control-compact);
+  max-width: var(--pb-layout-fill);
   border-radius: var(--pb-radius-mark);
   background: var(--pb-color-surface-variant);
 }
@@ -158,5 +166,29 @@ usePbInspect({
   display: block;
   width: var(--pb-layout-fill);
   height: var(--pb-bar-height);
+}
+</style>
+
+<style scoped>
+figcaption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font: var(--pb-typography-label);
+}
+figcaption small {
+  font: var(--pb-typography-caption);
+  color: var(--pb-color-on-surface-muted);
+}
+.bars {
+  padding-top: var(--pb-spacing-md);
+}
+.track {
+  background: transparent;
+  border-bottom: var(--pb-border-hairline);
+}
+.track i {
+  border-radius: var(--pb-radius-mark) var(--pb-radius-mark)
+    var(--pb-layout-zero) var(--pb-layout-zero);
 }
 </style>
