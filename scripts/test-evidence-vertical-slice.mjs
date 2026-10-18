@@ -72,6 +72,12 @@ try {
     index.screenshotGroups?.length > 0,
     "The shared Handoff does not contain a Screenshot group.",
   );
+  assert(
+    index.captureClock?.now === "2026-07-28T00:00:00.000Z" &&
+      index.captureClock?.timeZone === "Asia/Shanghai" &&
+      index.captureClock?.catalogRevisionId,
+    "MCP did not expose the Handoff-pinned capture clock.",
+  );
   const screenId = index.screens?.[0]?.screenId;
   assert(screenId, "Handoff index did not expose a Screen.");
   const packet = parseToolJson(

@@ -10,6 +10,7 @@ import { readThemePackTable } from './theme-pack-read.js';
 import { V2ContractError, unknownReferenceError } from './contracts/errors.js';
 import { sha1Hex } from './contracts/hash-sha1.js';
 import type { AgentHandoff } from './contracts/handoff.js';
+import { RuntimeClockManifest } from './runtime-contract/protocol.js';
 import type {
   EvidenceCaseReadModel,
   EvidenceReadModel,
@@ -95,6 +96,7 @@ export type HandoffIndexProjection = {
     stalenessReportId: string;
     revisionIds: string[];
   };
+  captureClock: (RuntimeClockManifest & { catalogRevisionId: string }) | null;
   mandatoryRisks: AgentHandoff['risks'];
   readiness: ReconstructionAcceptanceContract['readiness'];
   coverageStatus: AgentHandoff['coverageStatus'];
@@ -492,6 +494,7 @@ export function buildHandoffIndex(
         ),
       ).sort(),
     },
+    captureClock: readFixedCaptureClock(input),
     mandatoryRisks: input.handoff.risks.map((risk) => ({
       ...risk,
       refs: [...risk.refs],
@@ -533,6 +536,30 @@ export function buildHandoffIndex(
     ],
     warnings,
   };
+}
+
+/** The clock belongs to the immutable prototype Catalog, never the current Runtime. */
+function readFixedCaptureClock(
+  input: ConsumerProjectionInput,
+): HandoffIndexProjection['captureClock'] {
+  const { handoff } = input;
+  const catalogs = (input.catalogs ?? []).filter((catalog) =>
+    catalog.kind === 'prototype'
+    && catalog.workspaceId === handoff.workspaceId
+    && catalog.bundleId === handoff.bundleId
+    && handoff.resourceRefs.some((reference) =>
+      reference.kind === 'prototype-catalog'
+      && reference.ref === `pb://workspace/${handoff.workspaceId}/bundle/${handoff.bundleId}/snapshot/${handoff.snapshotId}/catalog/${catalog.catalogRevisionId}`,
+    ),
+  );
+  if (catalogs.length !== 1) return null;
+  const catalog = catalogs[0]!;
+  const entries = catalog.entries.filter((entry) => entry.objectId === catalog.prototypeId);
+  if (entries.length !== 1) return null;
+  const clock = RuntimeClockManifest.safeParse(objectValue(entries[0]!.value)?.clock);
+  return clock.success
+    ? { ...clock.data, catalogRevisionId: catalog.catalogRevisionId }
+    : null;
 }
 
 export function buildStructureIR(

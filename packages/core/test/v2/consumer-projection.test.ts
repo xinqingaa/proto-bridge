@@ -11,6 +11,7 @@ import {
   buildStructureIR,
   compareStructureIR,
   fixtures,
+  CatalogRevision,
   type AgentHandoff,
   type BlobRecord,
   type ConsumerProjectionInput,
@@ -38,6 +39,55 @@ const DIGEST_OTHER = `sha256:${'3'.repeat(64)}`;
 const DIGEST_THIRD = `sha256:${'4'.repeat(64)}`;
 
 describe('Consumer projection', () => {
+  it('reads the capture clock only from the Handoff-pinned prototype Catalog', () => {
+    const input = projectionFixture();
+    const catalog = CatalogRevision.parse({
+      schemaVersion: input.handoff.schemaVersion,
+      catalogRevisionId: 'catalog-prototype-clock',
+      workspaceId: input.handoff.workspaceId,
+      bundleId: input.handoff.bundleId,
+      prototypeId: 'example',
+      kind: 'prototype',
+      inputDigest: 'clock-input',
+      createdAt: input.handoff.createdAt,
+      entries: [{
+        objectId: 'example',
+        digest: 'clock-entry',
+        value: {
+          id: 'example',
+          clock: { now: '2026-07-28T00:00:00.000Z', timeZone: 'Asia/Shanghai' },
+        },
+        blobIds: [],
+      }],
+    });
+    input.handoff.resourceRefs.push({
+      kind: 'prototype-catalog',
+      ref: `pb://workspace/${input.handoff.workspaceId}/bundle/${input.handoff.bundleId}/snapshot/${input.handoff.snapshotId}/catalog/${catalog.catalogRevisionId}`,
+    });
+    input.catalogs = [catalog, {
+      ...catalog,
+      catalogRevisionId: 'catalog-newer-clock',
+      entries: [{
+        ...catalog.entries[0]!,
+        value: { clock: { now: '2026-10-18T00:00:00.000Z', timeZone: 'UTC' } },
+      }],
+    }];
+    expect(buildHandoffIndex(input).captureClock).toEqual({
+      now: '2026-07-28T00:00:00.000Z',
+      timeZone: 'Asia/Shanghai',
+      catalogRevisionId: 'catalog-prototype-clock',
+    });
+    input.catalogs = input.catalogs.slice(1);
+    expect(buildHandoffIndex(input).captureClock).toBeNull();
+    input.catalogs = [{
+      ...catalog,
+      entries: [{ ...catalog.entries[0]!, value: { clock: { now: 'invalid' } } }],
+    }];
+    expect(buildHandoffIndex(input).captureClock).toBeNull();
+    input.catalogs = [{ ...catalog, workspaceId: 'other-workspace' }];
+    expect(buildHandoffIndex(input).captureClock).toBeNull();
+  });
+
   it('fails terminally instead of falling back when a required capability is missing', () => {
     expect(() =>
       assertConsumerCapabilities([

@@ -50,7 +50,7 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 | Tool | 用途 |
 | --- | --- |
 | `inspect_evidence_workspace` | 确认 Workspace、能力、契约版本、构建与进程身份、Store generation |
-| `read_handoff_index` | 默认入口：固定 refs、风险、Screen/Case/Scenario 摘要和 digest 分组 |
+| `read_handoff_index` | 默认入口：固定 refs、采集时钟、风险、Screen/Case/Scenario 摘要和 digest 分组；时钟读取规则见主题包解析模型 |
 | `read_screen_packet` | 单 Screen 的 baseline、canonicalBrief、inventory、Case/Scenario 和 Screenshot 分组；token 清单可附默认主题与模式的解析值 |
 | `read_theme_pack` | 只读 Handoff 固定的 theme-pack Catalog。默认组合已采集；其它组合返回取值表并标注未采集 |
 | `read_implementation_plan` | 诊断：Region tranche 索引与 obligation 计数（非默认实施路径） |

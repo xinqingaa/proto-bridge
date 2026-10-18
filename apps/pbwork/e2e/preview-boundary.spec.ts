@@ -249,8 +249,14 @@ test("BottomSheet overlays attach to distinct devices with local viewport dimens
   await expect
     .poll(() =>
       second
-        .locator("[data-preview-viewport]")
-        .evaluate((host) => host.contains(document.activeElement)),
+        .locator(".pb-sheet")
+        // The opening button is already inside this device. Wait for focus
+        // to enter the dialog after its transition before sending Escape.
+        .evaluate((sheet) =>
+          Boolean(
+            sheet.closest(".v-overlay__content")?.contains(document.activeElement),
+          ),
+        ),
     )
     .toBe(true);
   await page.keyboard.press("Escape");

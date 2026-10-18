@@ -38,6 +38,8 @@ pnpm pb:mcp -- --print-config
 
 诊断工具 `read_implementation_plan` / `read_implementation_tranche` 不属于默认实施路径，不得按 tranche 顺序编码。
 
+`read_handoff_index.captureClock` 返回固定原型 Catalog 中的 `now`、`timeZone` 和来源 `catalogRevisionId`；缺失、非法或有歧义时为 `null`，不回退当前 Runtime。固定读取边界见[主题包解析模型](../../docs/architecture/theme-packs.md#原型绑定与-capture-边界)。
+
 `read_theme_pack` 只经 Handoff 固定的 theme-pack Catalog 读取解析值。默认返回 Handoff 的默认主题与模式，并标注 `captured: true`；请求其它组合时返回该表并标注 `captured: false`。不回退 active 或 latest。`read_screen_packet` 返回 baseline Structure、`canonicalBrief` 与按 `regionId`/`caseId` 聚合的 inventory；token 清单在固定 theme-pack Catalog 存在时附带默认主题与模式的 `resolvedValue`、`chain` 和 `tier`。`read_case_delta` 返回紧凑语义 patch；完整 provenance 必须定向读取。`read_reconstruction_obligations` 按 Screen/维度分页，用于实施后五维复查。`summarize_reconstruction_review` 严格校验每个 observation 的依据和理由，分别输出 Case/Screenshot/Scenario/obligation Review completeness 与五维 findings；它仍是 consumer-reported summary，不冒充独立 Runtime 或视觉验收。
 
 普通 JSON 响应没有按字节截断规则；detail/obligation continuation 绑定固定 Snapshot 和规范化查询。整包 Snapshot、Case、revision、Catalog 和 Acceptance Contract 等旧入口不在 MCP 表面。
