@@ -12,7 +12,7 @@
 
 ## Roadmap
 
-- 尚未实施的产品演进统一进入 `docs/roadmap/`，不得混入描述当前行为的主体文档；
+- 尚未实施的平台级产品演进统一进入 `docs/roadmap/`，不得混入描述当前行为的主体文档；业务原型的设计、实施方案与唯一进度统一归 `apps/pbwork/src/prototypes/{prototypeId}/docs/`，Roadmap 只按需链接入口，不复制业务计划；
 - Roadmap 必须声明当前基线、状态、目标投入、主线与探索项、依赖、退出标准和范围缩减顺序；
 - Roadmap 中的 MUST、Block、Schema 和 Tool 只表示目标设计，不因文档评审自动成为现行 Contract；
 - 能力落地时按所有权矩阵同步现行文档、Schema、实现和测试；未落地内容继续留在 Roadmap；

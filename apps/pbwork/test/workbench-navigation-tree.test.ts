@@ -36,7 +36,7 @@ describe("workbench navigation tree", () => {
       (node) => node.id === "screen-cold-chain-ops.exception-queue",
     );
 
-    expect(prototypes.count).toBe(1);
+    expect(prototypes.count).toBe(2);
     expect(components.children).toHaveLength(6);
     expect(drafts.children).toEqual([
       {
@@ -183,7 +183,7 @@ describe("workbench navigation tree", () => {
       registered: "active" | "review" | "final" | "archived",
     ) => (id === "cold-chain-ops" ? ("review" as const) : registered);
 
-    expect(countPrototypesForLifecycle("active", effective)).toBe(0);
+    expect(countPrototypesForLifecycle("active", effective)).toBe(1);
     expect(countPrototypesForLifecycle("review", effective)).toBe(1);
 
     const activeTree = buildWorkbenchNavigationTree(effective, "active");
@@ -195,7 +195,9 @@ describe("workbench navigation tree", () => {
       (node) => node.id === "prototypes",
     );
 
-    expect(activePrototypes?.children?.map((node) => node.id)).toEqual([]);
+    expect(activePrototypes?.children?.map((node) => node.id)).toEqual([
+      "prototype-yike",
+    ]);
     expect(reviewPrototypes?.children?.map((node) => node.id)).toEqual([
       "prototype-cold-chain-ops",
     ]);

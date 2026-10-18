@@ -62,5 +62,59 @@
       "screenId": "cold-chain-ops.shipment-detail",
       "pbId": "cold-chain-ops.shipment-detail.timeline"
     }
+  ],
+  "yike.checkin": [
+    {
+      "screenId": "yike.checkin",
+      "pbId": "yike.checkin.root"
+    },
+    {
+      "screenId": "yike.checkin",
+      "pbId": "yike.checkin.habit-list"
+    },
+    {
+      "screenId": "yike.checkin",
+      "pbId": "yike.checkin.navigation"
+    }
+  ],
+  "yike.focus": [
+    {
+      "screenId": "yike.focus",
+      "pbId": "yike.focus.root"
+    },
+    {
+      "screenId": "yike.focus",
+      "pbId": "yike.focus.timer"
+    },
+    {
+      "screenId": "yike.focus",
+      "pbId": "yike.focus.mode-tabs"
+    },
+    {
+      "screenId": "yike.focus",
+      "pbId": "yike.focus.primary-action"
+    },
+    {
+      "screenId": "yike.focus",
+      "pbId": "yike.focus.navigation"
+    }
+  ],
+  "yike.review": [
+    {
+      "screenId": "yike.review",
+      "pbId": "yike.review.root"
+    },
+    {
+      "screenId": "yike.review",
+      "pbId": "yike.review.range-tabs"
+    },
+    {
+      "screenId": "yike.review",
+      "pbId": "yike.review.chart"
+    },
+    {
+      "screenId": "yike.review",
+      "pbId": "yike.review.navigation"
+    }
   ]
 }

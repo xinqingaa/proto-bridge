@@ -1,0 +1,100 @@
+{
+  "values": {
+    "color.on-background": "{color.on-surface}"
+  },
+  "modes": {},
+  "themes": {
+    "mechanical": {
+      "values": {
+        "color.primary": "#a84a2d",
+        "color.primary-soft": "#f5e8e3",
+        "color.on-primary": "#ffffff",
+        "color.background": "#e8eae8",
+        "color.surface": "#f5f6f4",
+        "color.surface-recessed": "#dcdfdc",
+        "color.on-surface": "#1d2220",
+        "color.on-surface-muted": "#5a615d",
+        "color.outline": "#7a827c",
+        "color.error": "#b4442a",
+        "color.error-soft": "#ffe8e3"
+      }
+    },
+    "water": {
+      "values": {
+        "color.primary": "#4a6b4b",
+        "color.primary-soft": "#eff3ef",
+        "color.on-primary": "#ffffff",
+        "color.background": "#e3e6e0",
+        "color.surface": "#f1f2ee",
+        "color.surface-recessed": "#d8dcd5",
+        "color.on-surface": "#1e2925",
+        "color.on-surface-muted": "#59645e",
+        "color.outline": "#757f7a",
+        "color.error": "#a4553f",
+        "color.error-soft": "#ffeae3"
+      }
+    },
+    "sundial": {
+      "values": {
+        "color.primary": "#2a3f71",
+        "color.primary-soft": "#ebebed",
+        "color.on-primary": "#ffffff",
+        "color.background": "#e2e0db",
+        "color.surface": "#eceae5",
+        "color.surface-recessed": "#d7d5cf",
+        "color.on-surface": "#1c1b19",
+        "color.on-surface-muted": "#5e5a53",
+        "color.outline": "#7a7770",
+        "color.error": "#a63a2b",
+        "color.error-soft": "#ffe6e1"
+      }
+    }
+  },
+  "themeModes": {
+    "mechanical": {
+      "dark": {
+        "color.primary": "#f0826a",
+        "color.primary-soft": "#2d1913",
+        "color.on-primary": "#1a0d08",
+        "color.background": "#141715",
+        "color.surface": "#1e221f",
+        "color.surface-recessed": "#191c1a",
+        "color.on-surface": "#eceeeb",
+        "color.on-surface-muted": "#9aa29d",
+        "color.outline": "#737b76",
+        "color.error": "#e07656",
+        "color.error-soft": "#3d1f18"
+      }
+    },
+    "water": {
+      "dark": {
+        "color.primary": "#94b794",
+        "color.primary-soft": "#1a2319",
+        "color.on-primary": "#0f170e",
+        "color.background": "#101412",
+        "color.surface": "#191e1b",
+        "color.surface-recessed": "#141815",
+        "color.on-surface": "#e6ece6",
+        "color.on-surface-muted": "#9aa59f",
+        "color.outline": "#747e79",
+        "color.error": "#d27c62",
+        "color.error-soft": "#3a201a"
+      }
+    },
+    "sundial": {
+      "dark": {
+        "color.primary": "#a8bfe9",
+        "color.primary-soft": "#171c29",
+        "color.on-primary": "#0c0f15",
+        "color.background": "#161619",
+        "color.surface": "#212126",
+        "color.surface-recessed": "#1b1b1f",
+        "color.on-surface": "#e8e6e1",
+        "color.on-surface-muted": "#9f9c96",
+        "color.outline": "#74747e",
+        "color.error": "#e0806f",
+        "color.error-soft": "#3d1d1a"
+      }
+    }
+  }
+}

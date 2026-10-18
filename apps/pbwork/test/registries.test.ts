@@ -195,8 +195,8 @@ describe("design contracts", () => {
     );
   });
 
-  it("ships the registered cold-chain prototype and its screens", () => {
-    expect(prototypes.map((item) => item.id)).toEqual(["cold-chain-ops"]);
+  it("ships the registered prototypes and their screens", () => {
+    expect(prototypes.map((item) => item.id)).toEqual(["cold-chain-ops", "yike"]);
     const coldChainScreens = prototypeScreens.filter(
       (item) => item.prototypeId === "cold-chain-ops",
     );
@@ -228,6 +228,7 @@ describe("design contracts", () => {
       "empty",
       "error",
     ]);
+    expect(prototypeScreens.find((item) => item.screenId === "yike.focus")?.requiredScenarioIds).toEqual(["start-focus"]);
     expect(queue?.actions?.map((item) => item.id)).toEqual([
       "show-critical",
       "open-primary-exception",

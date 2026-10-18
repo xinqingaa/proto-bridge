@@ -31,8 +31,9 @@ ProtoBridge（PB）把可交互原型转化为可追溯、可固定引用的 Evi
 | 修改主题包解析模块 | [主题包解析模型](./architecture/theme-packs.md) |
 | 修改 PBWork Token 或组件 | [PBWork 开发规范](./pbwork/development.md) → [组件总论](./pbwork/components/overview.md) |
 | 维护仓库 | [开发规范](./maintenance/development.md) → [文档维护](./maintenance/documentation.md) |
-| 评审后续产品投入 | [路线图](./roadmap/README.md) → [PBWork 与 PB 平台升级](./roadmap/pbwork-platform-upgrade.md) → [「一刻」原型](./roadmap/yike-prototype.md) |
-| 理解 git 分发与 npm 计划 | [ADR 0011](./decisions/0011-producer-git-and-npm-tooling.md) → [路线图的未排期议题](./roadmap/README.md#未排期议题) |
+| 查看已确定的平台升级 | [平台升级记录](./roadmap/README.md) |
+| 追溯关键平台升级 | [PBWork 与 PB 平台关键升级](./history/pbwork-platform-upgrade.md) |
+| 理解 git 分发与 npm 计划 | [ADR 0011](./decisions/0011-producer-git-and-npm-tooling.md) |
 | 理解架构转型背景 | [从 V1 到 Evidence 架构](./history/v1-to-evidence-architecture.md) |
 | 理解渐进消费与按需读取 | [渐进消费：按需读取到底是谁在按需？](./history/progressive-evidence-consumption.md) |
 
@@ -48,7 +49,8 @@ ProtoBridge（PB）把可交互原型转化为可追溯、可固定引用的 Evi
 - PBWork Token、组件、手势和页面组装：`apps/pbwork/docs/`，根目录下的 `docs/pbwork` 是其软链接
 - 包级命令和 API：各 `packages/*/README.md`
 - 设计取舍及理由：`docs/decisions/`
-- 计划性演进、投入与退出标准：`docs/roadmap/`；不代表当前行为或现行 Contract
+- 平台级计划性演进、投入与退出标准：`docs/roadmap/`；不代表当前行为或现行 Contract
+- 业务原型设计、实施方案与唯一进度：`apps/pbwork/src/prototypes/{prototypeId}/docs/`
 - 历史迁移：`docs/history/`
 - Agent 执行入口：根目录 `AGENTS.md` 与 `.agents/skills/*/SKILL.md`
 

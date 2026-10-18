@@ -1,0 +1,13 @@
+{
+  "values": {
+    "tabbar.active": "{color.on-surface}",
+    "primary-tabs.active-color": "{color.on-surface}",
+    "secondary-tabs.active-color": "{color.on-surface}",
+    "secondary-tabs.indicator": "{color.primary}",
+    "primary-tabs.selection-tint": "{color.primary-soft}",
+    "tabbar.selection-tint": "{color.primary-soft}"
+  },
+  "modes": {},
+  "themes": {},
+  "themeModes": {}
+}

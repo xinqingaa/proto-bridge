@@ -4,6 +4,7 @@
 
 原型通过 Registry 的 `themePackId` 绑定主题包；冷链使用 `pbwork-base`。包内声明主题和模式，Workbench 画布预览设置分别选择主题、浅色/深色/跟随系统。主题不是业务 Variant。
 
+
 解析、加载、资产摘要、CSS 与响应式读取的权威说明见[主题包解析模型](../../../../docs/architecture/theme-packs.md)。Runtime 已提供主题表并动态注册 Vuetify 主题；Workbench 外壳主题保持独立。
 
 ## URL 与偏好

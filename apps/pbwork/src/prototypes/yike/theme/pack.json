@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "yike",
+  "label": "一刻",
+  "extends": "pbwork-base",
+  "scope": "prototype",
+  "modes": ["light", "dark"],
+  "defaultMode": "light",
+  "themes": [
+    { "id": "mechanical", "label": "机械", "default": true },
+    { "id": "water", "label": "水位" },
+    { "id": "sundial", "label": "日影" }
+  ],
+  "defaultTheme": "mechanical"
+}
