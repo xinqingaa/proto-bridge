@@ -1,6 +1,6 @@
 # PBWork 与 PB 平台升级
 
-> 状态：执行中。第 1–5 步各自的退出标准均已满足，均未合入 `main`。新增第 6 步：设计基础与组件预览迁移，6A 规范同步与 6B 共享边界/代表入口已完成，6C–6E 待实施。总退出标准尚未作为一批重跑。代码位于 `dev-platform`。合入 `main` 仍需另行授权。核实日期：2026-10-17。本文是计划，不代表现行 Contract。
+> 状态：执行中。第 1–6 步各自的退出标准均已满足，均未合入 `main`。第 6 步设计基础与组件预览迁移于 2026-10-18 完成：6A–6D 已交付，来源与组件品质修复已确认，6E 验收通过；展示草稿按用户决定保留。总退出标准尚未作为一批重跑。代码位于 `dev-platform`。合入 `main` 仍需另行授权。核实日期：2026-10-18。本文是计划，不代表现行 Contract。
 >
 > 实施设计见[原型主题包与授权设计](./prototype-theme-and-authoring-design.md)。「一刻」原型见[下一份计划](./yike-prototype.md)，以本计划第 2–5 步的能力及第 6 步预览迁移完成为前置条件；一刻正式制作留给后续独立对话。
 
@@ -47,7 +47,7 @@ PBWork 现在能产出可采集的原型，但三处明显不足：
 | 第 4 步 制作效率 | 实现与退出标准已满足（未提交、未合入 main） | 2026-10-17：`v-pb` / `pbStyle()`、生成键类型与显式 default 边界、Screen 就近声明 / glob 汇总、共享运行套件、脚手架与当前 Screen 实时诊断均已落地。冷链三屏默认截图迁移前后字节一致；原样脚手架通过 Preflight、同 Case 双采集及 Workbench 定稿。PBWork 236 项单测、build、Runtime 9 项、`docs:verify`、`ds:target-sync:verify` 通过；159 项 Flutter pending 保持。见本步验收记录。 |
 | 第 5 步 DS 通用组件与收口 | 实现与退出标准已满足（未合入 main） | 2026-10-17：清单内 15 个通用组件与带档位的 BottomSheet 已进入 Contract、Registry、Playground 与手册。基础包与样例包的浅色、深色均可渲染。`pnpm docs:verify`、`pnpm typecheck`、PBWork 326 项单测与 build、`ds:target-sync:verify` 通过；47/47 组件与 130/130 可绑定键已映射，177 项 Flutter 适配保持 pending。见本步验收记录。 |
 
-| 第 6 步 设计基础与组件预览迁移 | 6A、6B 已完成；6C–6E 待实施 | 2026-10-17 用户确认：保留分类与主要路由，具体资源内手机预览，条件主题选择、按需最多双机，设计基础和组件的全部样例/状态/触发/反馈在手机内。本步止于平台预览验收，不制作 yike。验证结果见本步进度。 |
+| 第 6 步 设计基础与组件预览迁移 | 已完成（未合入 main） | 2026-10-18：12 个设计基础分类、主题页与 Registry 47 个组件均在共享手机内；来源矩阵与组件品质修复经用户确认完成；展示草稿保留。验证见本步 6E 记录。不制作 yike。 |
 
 ```mermaid
 flowchart LR
@@ -291,7 +291,7 @@ Screen 代码按 SFC 的 script + template（不含 style）计，CSS 按 scoped
 
 ## 第 6 步 设计基础与组件预览迁移
 
-状态：6A/6B 已完成；2026-10-18 按用户要求推进 6C 全部设计基础与主题页、6D Registry 全组件及扩展接入，实现与本批验证已完成。6E 草稿/旧引用清理与最终收口仍待实施；不启动 yike。批次验证见下方本日记录。
+状态：已完成（2026-10-18）。6A–6D、来源与组件品质修复、6E 验收均已通过。用户决定保留 `theme-studio` 与 `component-studio` 展示草稿；正式入口仍是预览工作流，草稿不进入 Evidence。不启动 yike。平台总退出标准仍待整批重跑。批次验证见下方记录。
 
 ### 决策与当前基线
 
@@ -332,9 +332,9 @@ Screen 代码按 SFC 的 script + template（不含 style）计，CSS 按 scoped
 | 6B 共享预览边界（已完成） | `src/workbench/PhoneShell.vue`、预览专用共享组件/composable、`src/design-system/theme/presentation.ts`、`src/workbench/ui/ResourceScopeSelect.vue` / `ThemeLineage.vue`、`src/app/stores/playground.ts` | 一台/两台手机、条件控件、真实主题来源、独立状态与局部 Provider 成立；颜色、Button、BottomSheet 三类代表在正式实现可验证，无需先重写所有页面 |
 | 6C 设计基础迁移（已完成） | `src/workbench/views/TokenGallery.vue`、`ThemePreview.vue`、按需拆出的分类样板、`src/design-system/tokenCategories.ts`（仅确有分类适配需要） | 全部现有分类均有可读手机样板；包内主题切换、完整键值/来源/差异可查；演示与手机外资料职责一致，不丢失旧信息、不产生平行主题手册 |
 | 6D 组件迁移与扩展接入（已完成） | `src/workbench/views/ComponentPlayground.vue`、演示会话、现有 `components/registry.ts` / `scenarios.ts` / Contract 的实际必要字段、原型扩展最小显式展示登记与校验 | Registry 全部有效组件的类型/尺寸/状态/触发/反馈在手机内；导航/布局分支、滚动、Overlay、焦点均成立；真实变体/自有组件可被同一舞台承载，无扩展不显示空入口 |
-| 6E 验收与收口 | 受影响单测/Playwright、手册当前行为、Skill、检查单、主题/组件展示草稿及旧专用路由的引用清理 | 范围内验收完成，手册能力边界与代码一致；展示草稿只在正式替代完整后删除；yike 等业务草稿保留；平台总退出标准另行记录真实执行结果 |
+| 6E 验收与收口（已完成） | 受影响单测/Playwright、手册当前行为、Skill、检查单；展示草稿按 2026-10-18 用户决定保留 | 范围内验收完成，手册能力边界与代码一致；`theme-studio`、`component-studio` 与 yike 等草稿均保留，正式预览不依赖它们；平台总退出标准另行记录真实执行结果 |
 
-6A 交付文档与人工工作流，6B 交付共享边界与三个代表入口；6C/6D 已全量实施并完成本批验证，6E 待收口；扩展能力由隔离夹具验证，真实业务资源仍需在作者流程中完成正式 Evidence 验收。
+6A 交付文档与人工工作流，6B 交付共享边界与三个代表入口；6C/6D 已全量实施，来源与组件品质修复已确认，6E 验收已通过。扩展能力由隔离夹具验证，真实业务资源仍需在作者流程中完成正式 Evidence 验收。展示草稿保留，不作为正式预览入口。
 
 6A 验证记录（2026-10-17）：`pnpm docs:verify` 通过（150 份 Markdown）；仓库检索确认旧展示规范与两个旧计划路径无残留引用；`git diff --check` 通过。本批仅修改文档与 Skill，不修改 Runtime、DS Contract、主题数据或 Target 指纹，未重跑产品测试或重建 Target 基线。
 
@@ -479,9 +479,19 @@ Screen 代码按 SFC 的 script + template（不含 style）计，CSS 按 scoped
 - 手机原有样板与交互保留，来源样板只说明键值；字体手机说明改为当前主题配置，不再固定称所有主题使用同一套系统字体。来源 metadata 保留真实身份与摘要，不附带自动差异统计。
 - 验证：类型检查、Vite build、11 项相关浏览器检查通过，最终排版调整后补跑字体与全部 12 分类的 2 项检查通过。双机全部 16 个字阶的字体族、字号、字重、行高和数字特性均与对应手机一致；完整条目、实际样板、列宽及来源切换均已检查并复查截图。预览规范、架构、检查单与 Skill references 已同步；文档校验和 diff 检查通过。
 
-#### 来源与组件品质集中修复调研（2026-10-18，待实施）
+#### 来源与组件品质集中修复（2026-10-18，已完成）
 
-本节记录用户最新反馈的调查结果及建议，不将拟议能力描述为已实现。已应用 PBWork / frontend-design 方法，阅读正式组件、Contract、预览及 yike 草稿，并对 46 个组件默认预览逐项截图初筛；本轮未执行弹层全部打开态、深浅色全状态与交付验收。保留既有代码，本轮仅补充调研记录。
+用户于 2026-10-18 确认来源表独立主题矩阵与点名组件品质修复已经落地。下文保留当日调查时的问题与方向，作为这批改动的范围记录；完成状态以本节标题和随后的 6E 验收为准，不再把这些建议描述为待实施。展示草稿按同一天的决定保留。
+
+#### 6E 验收记录（2026-10-18）
+
+- 用户确认来源与组件品质集中修复完成，并决定保留 `theme-studio`、`component-studio` 与 `studio-shared` 展示草稿。正式预览入口仍是工作台资源页；草稿不进入 Capture 或 Evidence。yike 业务草稿同样保留，本步不制作 yike。
+- 手册当前能力边界改为 12 个分类、47 个组件、独立来源矩阵，并写明展示草稿只作探索参照。路线图索引与一刻前置记录同步：第 6 步完成，平台总退出标准仍未整批重跑。
+- 验证：`pnpm docs:verify`（151 份 Markdown）；PBWork authoring lint、`vitest run` 47 个文件 / 353 项、`vue-tsc` 与 Vite build 通过。`pnpm ds:target-sync:verify` 为 47/47 组件、142/142 可绑定键，surface `sha256:1588dc04af0d23bd04bcb67fc17caef7a258696af24987a0c121f5344a3b3b55`；189 项 Flutter pending 如实保留，本步不声称已适配 Flutter，不重建 Target baseline。
+- 浏览器回归 46 项通过：`preview-boundary`、`preview-migration`、`preview-polish`、`preview-theme-packs`、`design-system-closure`、`platform-components`、`liquid-controls`、`workbench-navigation`。覆盖 12 分类与主题页、47 组件在基础包浅色和样例包深色下的 Contract 状态、来源独立主题列、图标导出、玻璃材质、启动页、步进/时长/月历、AppBar，以及双机会话、Overlay 边界与导航。
+- 平台总退出标准（全量 Playwright、冷链定稿、runtime/mcp/consumer/evidence-slice/finalization/lifecycle）本步不重跑，不据此宣称整份平台升级完成。
+
+调查记录（同日早些时候）：已应用 PBWork / frontend-design 方法，阅读正式组件、Contract、预览及 yike 草稿，并对当时 46 个组件默认预览逐项截图初筛。初筛本身不是交付验收。
 
 **来源表独立于手机对比**
 
@@ -537,4 +547,4 @@ Screen 代码按 SFC 的 script + template（不含 style）计，CSS 按 scoped
 3. 点名的数据/输入/品牌/整屏组件及 Icon：从 yike 草稿提取信息层级、比例与节奏，重新写通用 Contract 与主题化实现；不搬业务组件、草稿 CSS 或独有视觉符号。
 4. 其余初筛项按优先级专项检查，避免在本次调研中擅自扩成全库重做。
 
-正式实施会涉及 Vue、Contracts、Registry/scenarios、主题/常量、组件手册、预览规范、检查单、Skill references 与 Target drift。自绘图标遵循用户明确要求，需同步现有只允许 Lucide 的类型/文档及相关 Target 资源映射，不能仅替换渲染却继续报告 Lucide。按批验证基础包/样例包深浅色、交互/可访问性、完整来源矩阵及跨端元数据；不将本轮截图初筛视作正式 Evidence 或已交付。yike 正式制作仍另开任务。
+这批改动已进入 Vue、Contracts、Registry/scenarios、主题/常量、组件手册、预览规范与 Target drift 记录。自绘图标保留原稳定 id，并同步类型、文档与 Target 资源映射，不再把渲染结果继续报告为仅 Lucide。基础包/样例包深浅色、交互与来源矩阵由上方 6E 浏览器回归覆盖；Flutter pending 仍如实保留。截图初筛不是正式 Evidence。yike 正式制作仍另开任务。
