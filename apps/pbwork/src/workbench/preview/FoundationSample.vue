@@ -138,6 +138,7 @@ function layoutStyle(id: string) {
       </div>
       <div v-else-if="category === 'effect'" class="effect-demo">
         <GlassSample v-if="key.id === 'surface.glass-backdrop'" />
+        <div v-else-if="key.id === 'effect.artwork-shadow'" class="shape-sample" :style="{filter: variable(key.id)}">物件投影</div>
         <div
           v-else-if="key.valueType === 'filter'"
           :style="{ backdropFilter: variable(key.id) }"

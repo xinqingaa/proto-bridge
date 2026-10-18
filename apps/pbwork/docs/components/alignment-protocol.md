@@ -71,7 +71,7 @@
 - 声明 `disabled` 的交互组件统一消费 `opacity.disabled`（当前默认 `0.38`），阻止鼠标、键盘及原生提交；Playground 必须把可用态与禁用态并置并写明条件。
 - `loading` 阻止重复触发并保留文字/忙碌反馈，**不得**复用 disabled 的 0.38 外观。
 
-Button 公开三种类型：`kind=primary`（主要）、`secondary`（次要）、`outlined`（描边）。页面不配色槽，也不把实现层 Vuetify variant 暴露为公开 API。
+Button 公开有限操作类型：`primary`（中性主要）、`secondary`（次要）、`outlined`（描边）、`accent`（品牌强调）、`danger`（危险）、`quiet`（轻量）。页面不配色槽，也不把实现层 Vuetify variant 暴露为公开 API。
 
 ## 分级同步义务
 

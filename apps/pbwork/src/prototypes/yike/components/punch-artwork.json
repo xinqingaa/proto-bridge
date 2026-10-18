@@ -1,0 +1,9 @@
+{
+  "viewBox": "0 0 20 20",
+  "cx": 10,
+  "cy": 10,
+  "radius": 7,
+  "stampRadius": 3.5,
+  "stamp": "M3 3h14v14H3Z",
+  "drop": "M10 2C8 5 4 8 4 12a6 6 0 0 0 12 0c0-4-4-7-6-10Z"
+}

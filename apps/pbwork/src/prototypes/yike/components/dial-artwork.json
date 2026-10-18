@@ -1,0 +1,46 @@
+{
+  "mechanical": {
+    "viewBox": "0 0 312 312",
+    "width": 312,
+    "height": 312,
+    "cx": 156,
+    "cy": 156,
+    "radius": 116.48,
+    "knob": 74.88,
+    "readoutY": 172,
+    "captionY": 195,
+    "gripRadius": 5.2,
+    "gripOffset": 2.08
+  },
+  "water": {
+    "viewBox": "0 0 236 368",
+    "width": 236,
+    "height": 368,
+    "cx": 118,
+    "cy": 184,
+    "radius": 112,
+    "readoutY": 204,
+    "captionY": 118,
+    "vessel": "M34 0H202Q236 0 236 34V240C236 325 190 368 118 368S0 325 0 240V34Q0 0 34 0Z",
+    "wave": "M0 6 C30 1 60 11 90 6 S150 1 180 6 S225 10 240 6 V12 H0Z",
+    "waveHeight": 10
+  },
+  "sundial": {
+    "viewBox": "0 0 316 404",
+    "width": 316,
+    "height": 404,
+    "cx": 158,
+    "cy": 158,
+    "radius": 148,
+    "readoutY": 353,
+    "captionY": 384,
+    "shadowBlur": 3,
+    "shadowViewHeight": 316
+  },
+  "circleDegrees": 360,
+  "halfDegrees": 180,
+  "minuteScale": 60,
+  "zero": 0,
+  "half": 0.5,
+  "full": 1
+}

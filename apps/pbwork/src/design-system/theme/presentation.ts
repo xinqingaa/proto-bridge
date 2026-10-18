@@ -110,6 +110,7 @@ export function themeKeyCategory(key: {
   valueType: string;
 }): TokenCategory {
   const family = key.id.split(".")[0]!;
+  if (family === "tracking") return "typography";
   if (["spacing", "radius", "opacity", "motion", "border"].includes(family))
     return family as TokenCategory;
   if (

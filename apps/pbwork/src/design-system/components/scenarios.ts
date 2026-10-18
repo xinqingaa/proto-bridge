@@ -39,6 +39,24 @@ const scenarios: Record<string, ComponentScenario[]> = {
         kind: "outlined",
       },
     },
+    {
+      id: "accent",
+      label: "品牌强调",
+      description: "开始专注、保存成果等与主题品牌色一致的主要动作。",
+      props: { label: "开始专注", kind: "accent" },
+    },
+    {
+      id: "danger",
+      label: "危险操作",
+      description: "删除、重置等有明确破坏性的操作。",
+      props: { label: "删除记录", kind: "danger" },
+    },
+    {
+      id: "quiet",
+      label: "轻量操作",
+      description: "跳过或辅助取消，不作为导航入口。",
+      props: { label: "暂时跳过", kind: "quiet" },
+    },
   ],
   icon: [
     {

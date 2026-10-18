@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import GlassMaterial from "../_shared/GlassMaterial.vue";
 import { computed, ref, nextTick } from "vue";
 import { usePbInspect } from "@/runtime/inspect/usePbInspect";
 import { vPb } from "@/authoring/pb-style";
@@ -6,6 +7,7 @@ import { useComponentParts } from "../_shared/componentParts";
 
 const props = withDefaults(
   defineProps<{
+    material?: "solid" | "glass";
     label?: string;
     items?: Array<{ id: string; label: string; disabled?: boolean }>;
     modelValue?: string;
@@ -14,6 +16,7 @@ const props = withDefaults(
     pbKey?: string;
   }>(),
   {
+    material: "solid",
     label: "统计范围",
     items: () => [
       { id: "week", label: "周" },
@@ -83,6 +86,12 @@ usePbInspect({
   pbKey: () => props.pbKey,
   getProps: () => ({ ...props }),
   getTokenBindings: () => ({
+    glassTint: "color.glass-tint",
+    glassEdge: "border.glass",
+    glassLight: "elevation.glass",
+    glassBackdrop: "surface.glass-backdrop",
+    glassFallback: "color.surface",
+    glassFallbackBorder: "border.default",
     compactRadius: "radius.control-compact",
     selectedText: "color.on-surface",
     inactiveText: "color.on-surface-muted",
@@ -108,6 +117,7 @@ usePbInspect({
   <div
     ref="rootRef"
     class="segments"
+    :class="{ 'is-glass': material === 'glass' }"
     role="radiogroup"
     data-pb-role="filter"
     data-no-swipe
@@ -115,6 +125,7 @@ usePbInspect({
     :aria-disabled="disabled"
     @keydown="key"
   >
+    <GlassMaterial v-if="material === 'glass'" />
     <button
       v-for="item in items"
       :key="item.id"
@@ -141,6 +152,7 @@ usePbInspect({
 </template>
 <style scoped>
 .segments {
+  position: relative;
   display: flex;
   gap: var(--pb-layout-zero);
   padding: var(--pb-spacing-xs);
@@ -148,6 +160,7 @@ usePbInspect({
   background: var(--pb-color-surface-recessed);
 }
 button {
+  position: relative;
   flex: var(--pb-layout-flex-fill);
   min-height: var(--pb-size-touch);
   padding: var(--pb-spacing-xs) var(--pb-spacing-sm);
@@ -157,6 +170,9 @@ button {
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-label);
   cursor: pointer;
+}
+.segments.is-glass {
+  background: transparent;
 }
 button.selected {
   background: var(--pb-color-surface);

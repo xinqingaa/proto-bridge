@@ -7,6 +7,7 @@ const roles = computed(() =>
     (key) => key.valueType === "typography",
   ),
 );
+const tracking = computed(() => runtimeThemeSources.keyCatalog.keys.filter(key => key.id.startsWith("tracking.")));
 </script>
 <template>
   <div class="type-sample">
@@ -29,6 +30,10 @@ const roles = computed(() =>
         >
         <template v-else>把时间留给重要的事<br />Today, 09:41</template>
       </div>
+    </section>
+    <section v-for="key in tracking" :key="key.id" :data-typography-key="key.id">
+      <header><strong>{{key.label}}</strong><code>{{key.id}}</code></header>
+      <div :style="{letterSpacing: `var(${normalizeTokenCssVarName(key.id)})`}">把时间留给重要的事<br />Today, 09:41</div>
     </section>
   </div>
 </template>

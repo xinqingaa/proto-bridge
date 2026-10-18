@@ -11,4 +11,6 @@
 5. DS 通用组件。
 6. 设计基础与组件预览工作流。
 
-旧的附属设计草案、重复批次日志和未立项的发散议题已移除。现行规则查 Product、Architecture、Reference 和 PBWork 手册；业务原型的计划与进度仅在各自 `prototypes/{prototypeId}/docs/` 维护。
+上述升级已完成，本目录当前没有待执行的平台计划。现行规则查 Product、Architecture、Reference 和 PBWork 手册；后续平台提案独立立项，不以某个业务原型的制作进度作为平台完成状态。
+
+业务原型的计划与进度仅在各自 `prototypes/{prototypeId}/docs/` 维护，本目录不维护其入口或排期。

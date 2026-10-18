@@ -31,8 +31,8 @@
 
 | 集合           | 文件                                                              | 用途                                                                              |
 | -------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| 全量主题键     | key-catalog + Contract.componentTokens                            | 148 项定义，由 Core 解析取值                                                      |
-| Bind 池        | theme/bindings.ts                                                 | 自动选择 bindable=true 的 142 项                                                  |
+| 全量主题键     | key-catalog + Contract.componentTokens                            | 154 项定义，由 Core 解析取值                                                      |
+| Bind 池        | theme/bindings.ts                                                 | 自动选择 bindable=true 的 148 项                                                  |
 | 不可绑定控制项 | density、motion.personality、surface.treatment 与三个组件材质控制 | 影响包内表达式或共享材质分支                                                      |
 | 实现常量       | theme/constants.json                                              | 37 项；CSS 可消费，JS 经 themeConstantNumber/Css 读取；不进入 Catalog/绑定/Target |
 | 绑定字面量     | transparent、none                                                 | 由 Core 声明；不是 Token，不生成 Target obligation                                |
@@ -74,3 +74,5 @@ DS 组件由 Contract/运行时 registration 提供 bindings，不在每个业�
 - **size.touch**：触控目标下限相关尺寸，优先保证可点区域。
 
 局部页面样式可用 `v-pb` / `pbStyle()` 同时生成 CSS 与 Token Evidence；生成键类型、新鲜度和共享槽字典见[制作工具](../prototypes/authoring-tools.md#一次声明样式和证据)。DS 组件实例仍按 Registry 绑定。
+
+字距使用独立的 `tracking.display/heading/label/caption` 角色，不改变字阶复合对象或系统字族。突出操作的最小宽度使用 `size.action-min-inline`；物件轮廓投影使用 `effect.artwork-shadow`（CSS filter），不能借用玻璃的 backdrop-filter。基础包取中性零字距/不限制宽度/无投影，原型主题按角色覆盖。

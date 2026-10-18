@@ -1,23 +1,94 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { computed, ref } from "vue";
+import { useRoute } from "vue-router";
 import { vPb } from "@/authoring/pb-style";
-import PrototypeShell from "@/runtime/prototype/PrototypeShell.vue";
-import { prototypeNavigation } from "@/runtime/prototype/navigation";
+import { useClock } from "@/runtime/useClock";
+import SegmentedControl from "@/design-system/components/input/SegmentedControl.vue";
+import Button from "@/design-system/components/action/Button.vue";
+import GlassSurface from "@/design-system/components/display/GlassSurface.vue";
+import YikeWeekChart from "../../components/YikeWeekChart.vue";
+import YikeMonthCalendar from "../../components/YikeMonthCalendar.vue";
+import { useYikeStore } from "../../model";
+import { durationLabel, reviewPeriod, reviewSummary, shiftReviewPeriod } from "../../statistics";
 import { scope } from "./screen";
-const route = useRoute(); const router = useRouter(); const range = ref<"week" | "month">("week"); const selected = ref(4);
-const week = [35, 50, 0, 80, 50, 0, 0]; const total = computed(() => week.reduce((sum, value) => sum + value, 0)); const activeDays = computed(() => week.filter(Boolean).length); const max = computed(() => Math.max(...week, 1));
-function tab(slug: string) { return prototypeNavigation(router, route, "yike").tab(slug); }
+
+const route = useRoute();
+const store = useYikeStore();
+const clock = useClock();
+const today = computed(() => { void clock.value; return store.today(); });
+const range = ref<"week" | "month">("week");
+const anchor = ref(today.value);
+const selected = ref("");
+const period = computed(() => reviewPeriod(anchor.value, range.value));
+const summary = computed(() => reviewSummary(store.data, period.value.start, period.value.end));
+const earliest = computed(() => [store.data.initializedOn, ...store.data.focusRecords.flatMap(record => record.intervals.map(interval => interval.date)), ...store.data.checkins.map(item => item.date)].sort()[0] ?? today.value);
+const canPrevious = computed(() => period.value.start > reviewPeriod(earliest.value, range.value).start);
+const canNext = computed(() => period.value.start < reviewPeriod(today.value, range.value).start);
+const face = computed(() => route.query.theme === "water" ? "water" : route.query.theme === "sundial" ? "sundial" : "mechanical");
+const selectedRecords = computed(() => store.data.focusRecords.flatMap(record => {
+  const seconds = record.intervals.filter(interval => interval.date === selected.value).reduce((sum, interval) => sum + interval.durationSeconds, 0);
+  return seconds > 0 ? [{ ...record, seconds }] : [];
+}));
+const selectedHabits = computed(() => store.data.checkins.filter(item => item.date === selected.value).map(item => store.data.habits.find(habit => habit.id === item.habitId)).filter(habit => habit !== undefined));
+const modeLabels = { pomodoro: "番茄钟", stopwatch: "正计时", countdown: "倒计时" };
+function chooseRange(value: string) {
+  if (value !== "week" && value !== "month") return;
+  anchor.value = selected.value || period.value.start;
+  range.value = value;
+  selected.value = "";
+}
+function move(offset: number) {
+  if ((offset < 0 && !canPrevious.value) || (offset > 0 && !canNext.value)) return;
+  anchor.value = shiftReviewPeriod(period.value.start, range.value, offset);
+  selected.value = "";
+}
+function chooseMonth(month: string) {
+  const date = `${month}-01`;
+  if (date > today.value || date < reviewPeriod(earliest.value, "month").start) return;
+  anchor.value = date;
+  selected.value = "";
+}
 </script>
 <template>
-  <PrototypeShell title="回顾" screen-id="yike.review"><div class="yike-review" v-pb="scope.node('root', 'page')"><header class="yike-page-head"><div><span class="yike-eyebrow">{{ range === 'week' ? '10月12日 – 18日' : '2026年10月' }}</span><h1>时间去了哪里</h1></div><div class="yike-range" v-pb="scope.node('range-tabs', 'tab-bar')"><button type="button" :class="{ 'is-active': range === 'week' }" @click="range = 'week'">周</button><button type="button" :class="{ 'is-active': range === 'month' }" @click="range = 'month'">月</button></div></header>
-    <div class="yike-metric"><strong>{{ Math.floor(total / 60) }}<small>小时</small>{{ total % 60 }}<small>分</small></strong><span>{{ range === 'week' ? `本周专注 · ${activeDays} 天有记录` : '十月已专注' }}</span></div>
-    <div v-if="range === 'week'" class="yike-chart" v-pb="scope.node('chart', 'chart')"><button v-for="(value,index) in week" :key="index" type="button" class="yike-bar" :class="{ 'is-selected': selected === index, 'is-today': index === 4 }" :style="{ '--bar-height': `${Math.max(value / max * 100, value ? 8 : 2)}%` }" @click="selected = index"><span>{{ value || '' }}</span><i></i><small>{{ ['一','二','三','四','五','六','日'][index] }}</small></button></div>
-    <div v-else class="yike-calendar"><i v-for="day in 31" :key="day" :class="{ 'is-today': day === 16, 'is-marked': [2,4,7,9,12,16,18,21,24].includes(day) }">{{ day }}</i></div>
-    <section class="yike-detail"><span>周{{ ['一','二','三','四','五','六','日'][selected] }} · {{ week[selected] }} 分钟</span><p>{{ week[selected] ? '上午 09:20 · 专注一轮' : '这一天没有专注记录。' }}</p></section>
-    <nav class="yike-navigation" aria-label="主导航" v-pb="scope.node('navigation', 'navigation')"><button type="button" @click="tab('focus')">专注</button><button type="button" @click="tab('checkin')">打卡</button><button class="is-active" type="button">回顾</button></nav>
-  </div></PrototypeShell>
+  <div class="yike-review" v-pb="scope.node('root', 'page', { tokens: { background: 'color.background', padding: 'spacing.lg' } })">
+    <header><p>回顾</p><h1>时间去了哪里</h1></header>
+    <SegmentedControl :model-value="range" :items="[{ id: 'week', label: '周' }, { id: 'month', label: '月' }]" label="回顾范围" material="glass" inspect-id="yike.review.range-tabs" @update:model-value="chooseRange" />
+    <div class="period">
+      <Button label="上一期" kind="quiet" size="sm" :disabled="!canPrevious" inspect-id="yike.review.previous" @click="move(-1)" />
+      <span>{{ period.start }} — {{ period.end }}</span>
+      <Button label="下一期" kind="quiet" size="sm" :disabled="!canNext" inspect-id="yike.review.next" @click="move(1)" />
+    </div>
+    <GlassSurface inspect-id="yike.review.summary" class="summary">
+      <strong>{{ durationLabel(summary.seconds) }}</strong>
+      <p>{{ range === 'week' ? `专注 ${summary.focusCount} 次` : `专注 ${summary.focusDays} 天` }} · 打卡 {{ summary.checkinCount }} 次</p>
+    </GlassSurface>
+    <YikeWeekChart v-if="range === 'week'" :face="face" :week-start="period.start" :today="today" :days="summary.days" v-model="selected" inspect-id="yike.review.chart" />
+    <YikeMonthCalendar v-else :face="face" :month="period.start.slice(0, 7)" :today="today" :days="summary.days" v-model="selected" inspect-id="yike.review.chart" @update:month="chooseMonth" />
+    <GlassSurface v-if="selected" inspect-id="yike.review.day-detail" class="day-detail">
+      <h2>{{ selected }}</h2>
+      <p v-if="!selectedRecords.length && !selectedHabits.length">这一天还没有记录。</p>
+      <ul v-else>
+        <li v-for="record in selectedRecords" :key="record.id">{{ new Date(record.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }} · {{ modeLabels[record.mode] }} · {{ durationLabel(record.seconds) }}</li>
+        <li v-for="habit in selectedHabits" :key="habit.id">已完成 · {{ habit.name }}</li>
+      </ul>
+    </GlassSurface>
+    <p v-else-if="summary.seconds === 0 && summary.checkinCount === 0" class="empty">这段时间还没有记录。可以从底部「专注」开始一段时间，或到「打卡」完成今天的习惯。</p>
+    <section v-else-if="summary.seconds > 0" class="distribution">
+      <h2>专注方式</h2>
+      <p v-for="(seconds, mode) in summary.byMode" :key="mode">{{ modeLabels[mode] }} · {{ durationLabel(seconds) }}</p>
+    </section>
+  </div>
 </template>
 <style scoped>
-.yike-review { display:flex; min-block-size:var(--pb-layout-fill); flex-direction:column; padding:var(--pb-space-6) var(--pb-space-6) var(--pb-space-2); background:var(--pb-color-background); color:var(--pb-color-on-surface); }.yike-page-head,.yike-navigation { display:flex; align-items:center; justify-content:space-between; }.yike-eyebrow { color:var(--pb-color-on-surface-muted); font:var(--pb-typography-caption); }.yike-page-head h1 { margin:var(--pb-space-2) var(--pb-layout-zero) var(--pb-layout-zero); font:var(--pb-typography-heading); }.yike-range { display:flex; padding:var(--pb-space-2); border-radius:var(--pb-radius-pill); background:var(--pb-color-surface-recessed); }.yike-range button { min-block-size:var(--pb-size-control-compact); padding-inline:var(--pb-space-4); border-radius:var(--pb-radius-pill); color:var(--pb-color-on-surface-muted); }.yike-range button.is-active { background:var(--pb-color-surface); color:var(--pb-color-on-surface); }.yike-metric { display:flex; flex-direction:column; gap:var(--pb-space-2); margin-block:var(--pb-space-6); }.yike-metric strong { font:var(--pb-typography-numeric-display); }.yike-metric small { margin-inline:var(--pb-space-2); font:var(--pb-typography-body-sm); }.yike-metric span,.yike-detail span,.yike-detail p { color:var(--pb-color-on-surface-muted); font:var(--pb-typography-content); }.yike-chart { display:flex; flex:var(--pb-layout-flex-fill); min-block-size:var(--pb-size-panel-medium); align-items:end; justify-content:space-around; gap:var(--pb-space-2); padding-block:var(--pb-space-6); border-block:var(--pb-border-width) solid var(--pb-color-outline); }.yike-bar { display:flex; min-inline-size:var(--pb-size-control-compact); flex:var(--pb-layout-flex-fill); flex-direction:column; align-items:center; justify-content:end; gap:var(--pb-space-2); color:var(--pb-color-on-surface-muted); }.yike-bar span { min-block-size:var(--pb-size-control-compact); font:var(--pb-typography-micro); }.yike-bar i { display:block; inline-size:var(--pb-size-marker); block-size:var(--bar-height); min-block-size:var(--pb-size-marker); border-radius:var(--pb-radius-pill); background:var(--pb-color-primary-soft); }.yike-bar.is-selected i,.yike-bar.is-today i { background:var(--pb-color-primary); }.yike-bar small { font:var(--pb-typography-caption); }.yike-calendar { display:flex; flex-wrap:wrap; gap:var(--pb-space-2); padding-block:var(--pb-space-6); }.yike-calendar i { display:flex; inline-size:var(--pb-size-control-compact); block-size:var(--pb-size-control-compact); align-items:center; justify-content:center; border-radius:var(--pb-radius-round); color:var(--pb-color-on-surface-muted); font:var(--pb-typography-caption); font-style:normal; }.yike-calendar i.is-marked { background:var(--pb-color-primary-soft); color:var(--pb-color-primary); }.yike-calendar i.is-today { background:var(--pb-color-primary); color:var(--pb-color-on-primary); }.yike-detail { padding-block:var(--pb-space-6); }.yike-detail p { margin-block:var(--pb-space-2) var(--pb-layout-zero); }.yike-navigation { justify-content:space-around; margin-block-start:auto; border-block-start:var(--pb-border-width) solid var(--pb-color-outline); color:var(--pb-color-on-surface-muted); }.yike-navigation button { min-block-size:var(--pb-size-touch); padding-inline:var(--pb-space-6); color:inherit; font:var(--pb-typography-caption); }.yike-navigation button.is-active { color:var(--pb-color-on-surface); }
+.yike-review { display:flex; flex-direction:column; gap:var(--pb-spacing-lg); padding:var(--pb-spacing-lg); min-block-size:var(--pb-layout-fill); block-size:var(--pb-layout-fill); overflow:auto; color:var(--pb-color-on-surface); }
+header p,.period,.empty,.summary p,.day-detail p,.distribution p { font:var(--pb-typography-content); color:var(--pb-color-on-surface-muted); }
+h1 { font:var(--pb-typography-headline); }
+h2 { font:var(--pb-typography-title-sm); }
+p,h1,h2 { margin:var(--pb-layout-zero); }
+.period { display:flex; align-items:center; justify-content:space-between; gap:var(--pb-spacing-xs); }
+.period span { font:var(--pb-typography-caption); text-align:center; }
+.summary,.day-detail { display:flex; flex-direction:column; gap:var(--pb-spacing-sm); padding:var(--pb-spacing-md); }
+.summary strong { font:var(--pb-typography-numeric-title); }
+ul { margin:var(--pb-layout-zero); padding-inline-start:var(--pb-spacing-lg); font:var(--pb-typography-content); }
+.distribution { display:flex; flex-direction:column; gap:var(--pb-spacing-sm); }
 </style>

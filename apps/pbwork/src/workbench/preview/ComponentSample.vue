@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, watch } from "vue";
 import PbButton from "@/design-system/components/action/Button.vue";
+import { BUTTON_KINDS, type ButtonKind } from "@/design-system/components/_shared/colorTokens";
 import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
 import { componentScenarios } from "@/design-system/components/scenarios";
 import { loadComponentContract } from "@/design-system/loaders";
@@ -36,6 +37,14 @@ const buttonSizes = computed(() => {
   const control = record.value.controls.find((c) => c.key === "size");
   return control && "options" in control ? (control.options ?? []) : [];
 });
+const buttonKindLabels: Record<ButtonKind, string> = {
+  primary: "主要",
+  secondary: "次要",
+  outlined: "描边",
+  accent: "开始记录",
+  danger: "删除",
+  quiet: "跳过",
+};
 let timer: ReturnType<typeof setTimeout> | undefined;
 watch(
   () => demo.value.busy,
@@ -92,7 +101,7 @@ function openScenario(id: string) {
           <span>{{ scenario.label }}</span>
           <PbButton
             :label="String(scenario.props?.label ?? '确认')"
-            :kind="scenario.props?.kind as 'primary' | 'secondary' | 'outlined'"
+            :kind="scenario.props?.kind as ButtonKind"
             :inspect-id="`${prefix}.type.${scenario.id}`"
             @click="submit"
           />
@@ -116,22 +125,16 @@ function openScenario(id: string) {
       </section>
       <section>
         <h3>玻璃材质</h3>
-        <p>同一材质保留三种操作等级。</p>
+        <p>同一玻璃材质适配全部公开操作类型。</p>
         <div class="glass-button-scene">
           <span class="glass-scene-copy" aria-hidden="true"
             >今日记录 · 下一步安排</span
           >
           <div class="glass-button-actions">
             <PbButton
-              v-for="kind in ['primary', 'secondary', 'outlined'] as const"
+              v-for="kind in BUTTON_KINDS"
               :key="kind"
-              :label="
-                kind === 'primary'
-                  ? '开始记录'
-                  : kind === 'secondary'
-                    ? '保存草稿'
-                    : '查看详情'
-              "
+              :label="buttonKindLabels[kind]"
               :kind="kind"
               material="glass"
               :loading="demo.busy"

@@ -1,0 +1,6 @@
+{
+  "cell": {"viewBox":"0 0 44 44","size":38,"cx":22,"cy":22,"radius":19,"inkRadius":12,"edge":3,"side":38,"corner":3},
+  "year": {"cell":4,"gap":1.5,"pitch":5.5,"rows":7,"circleRadius":2,"squareRadius":0.4,"emptyRadius":1,"minimumColumns":1},
+  "zero":0,
+  "full":1
+}

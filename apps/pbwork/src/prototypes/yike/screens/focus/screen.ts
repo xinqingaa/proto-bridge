@@ -14,7 +14,7 @@ export default defineScreen({
   prototypeId: "yike",
   label: "专注",
   title: "专注",
-  view: "yike/screens/focus/Focus.vue",
+  view: "yike/screens/YikeRoot.vue",
   queryKeys: [],
   defaultVariantId: "default",
   shellFragments: [scope.ref("root")],

@@ -1,0 +1,245 @@
+<script setup lang="ts">
+import { computed } from "vue";
+import Icon from "@/design-system/components/action/Icon.vue";
+import YikeHabitGlyph, { type YikeHabitIcon } from "./YikeHabitGlyph.vue";
+import artwork from "./punch-artwork.json";
+const props = defineProps<{
+  inspectId: string;
+  face: "mechanical" | "water" | "sundial";
+  habit: { id: string; name: string; icon: YikeHabitIcon; meta: string };
+  days: readonly { date: string; completed: boolean }[];
+  today: string;
+  disabled?: boolean;
+}>();
+const emit = defineEmits<{ open: [id: string]; toggleToday: [id: string] }>();
+const doneToday = computed(() =>
+  props.days.some((day) => day.date === props.today && day.completed),
+);
+const stamp = computed(() => Array.from(props.habit.name.trim())[0] ?? "印");
+</script>
+<template>
+  <article
+    class="habit-card"
+    :class="`is-${face}`"
+    :data-pb-id="inspectId"
+    data-pb-role="card"
+    :data-pb-key="habit.id"
+    data-pb-token-background="color.surface"
+    data-pb-token-radius="radius.surface"
+    data-pb-token-padding="spacing.md"
+  >
+    <button
+      type="button"
+      class="habit-name"
+      :data-pb-id="`${inspectId}.open`"
+      data-pb-role="button"
+      :data-pb-key="habit.id"
+      data-pb-token-color="color.on-surface"
+      data-pb-token-typography="typography.title-sm"
+      @click="emit('open', habit.id)"
+    >
+      <YikeHabitGlyph :icon="habit.icon" />
+      <span
+        ><strong>{{ habit.name }}</strong
+        ><small>{{ habit.meta }}</small></span
+      >
+      <Icon name="chevron-right" size="sm" tone="muted" />
+    </button>
+    <div class="week" :aria-label="`${habit.name}本周记录`">
+      <span
+        v-for="day in days"
+        :key="day.date"
+        class="day"
+        :class="{
+          'is-on': day.completed && day.date <= today,
+          'is-today': day.date === today,
+          'is-future': day.date > today,
+        }"
+        :aria-label="`${day.date}：${day.date > today ? '未来' : day.completed ? '已完成' : '未完成'}`"
+        :data-pb-id="`${inspectId}.day`"
+        data-pb-role="status"
+        :data-pb-key="`day-${day.date}`"
+        data-pb-token-color="color.primary"
+        data-pb-token-outline="color.outline"
+      >
+        <svg :viewBox="artwork.viewBox" aria-hidden="true">
+          <path v-if="face === 'sundial'" class="hole" :d="artwork.stamp" />
+          <path
+            v-else-if="face === 'water' && day.completed && day.date <= today"
+            class="drop"
+            :d="artwork.drop"
+          />
+          <circle
+            v-else
+            class="hole"
+            :cx="artwork.cx"
+            :cy="artwork.cy"
+            :r="artwork.radius"
+          />
+          <circle
+            v-if="face === 'sundial' && day.completed && day.date <= today"
+            class="stamp-dot"
+            :cx="artwork.cx"
+            :cy="artwork.cy"
+            :r="artwork.stampRadius"
+          />
+        </svg>
+      </span>
+      <button
+        type="button"
+        class="today"
+        :class="{ 'is-done': doneToday }"
+        :disabled="disabled"
+        :aria-pressed="doneToday"
+        :aria-label="`${habit.name}今天${doneToday ? '取消打卡' : '打卡'}`"
+        :data-pb-id="`${inspectId}.today`"
+        data-pb-role="button"
+        :data-pb-key="habit.id"
+        data-pb-token-color="color.primary"
+        data-pb-token-border="border.default"
+        data-pb-token-size="size.touch"
+        @click="emit('toggleToday', habit.id)"
+      >
+        <Icon
+          v-if="face === 'mechanical' && doneToday"
+          name="check"
+          size="sm"
+        />
+        <svg
+          v-else-if="face === 'water'"
+          :viewBox="artwork.viewBox"
+          aria-hidden="true"
+        >
+          <path :d="artwork.drop" />
+        </svg>
+        <span v-else-if="face === 'sundial'" aria-hidden="true">{{
+          stamp
+        }}</span>
+      </button>
+    </div>
+  </article>
+</template>
+<style scoped>
+.habit-card {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--pb-spacing-sm-plus) + var(--pb-spacing-xxs));
+  padding: var(--pb-spacing-md) var(--pb-spacing-md)
+    calc(var(--pb-spacing-sm-plus) + var(--pb-spacing-xxs));
+  border-radius: var(--pb-radius-surface);
+  background: var(--pb-color-surface);
+}
+button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+button:focus-visible {
+  outline: var(--pb-border-focus);
+  outline-offset: var(--pb-spacing-xxs);
+}
+.habit-name {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--pb-spacing-sm) + var(--pb-spacing-xxs));
+  min-block-size: var(--pb-size-touch);
+  padding: var(--pb-layout-zero);
+  color: var(--pb-color-on-surface);
+  text-align: start;
+}
+.habit-name > span {
+  flex: var(--pb-layout-flex-fill);
+  min-inline-size: var(--pb-layout-zero);
+  overflow-wrap: anywhere;
+}
+strong {
+  display: block;
+  font: var(--pb-typography-subtitle);
+}
+small {
+  display: block;
+  margin-block-start: var(--pb-spacing-xxs);
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
+.week {
+  display: flex;
+  align-items: center;
+}
+.day {
+  display: flex;
+  justify-content: center;
+  flex: var(--pb-layout-flex-fill);
+  min-inline-size: var(--pb-layout-zero);
+}
+.day svg {
+  inline-size: calc(var(--pb-spacing-sm-plus) + var(--pb-spacing-xxs));
+  block-size: calc(var(--pb-spacing-sm-plus) + var(--pb-spacing-xxs));
+  overflow: visible;
+}
+.hole {
+  fill: transparent;
+  stroke: var(--pb-color-outline);
+  stroke-width: var(--pb-border-width);
+}
+.is-today .hole {
+  stroke: var(--pb-color-primary);
+}
+.is-mechanical .is-on .hole {
+  fill: var(--pb-color-on-surface);
+  stroke: var(--pb-color-on-surface);
+}
+.is-mechanical .is-on.is-today .hole,
+.drop,
+.stamp-dot {
+  fill: var(--pb-color-primary);
+  stroke: var(--pb-color-primary);
+}
+.is-future {
+  opacity: var(--pb-opacity-disabled);
+}
+.today {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  inline-size: var(--pb-size-touch);
+  block-size: var(--pb-size-touch);
+  margin-inline-start: var(--pb-spacing-sm);
+  padding: var(--pb-layout-zero);
+  border: var(--pb-border-default);
+  border-radius: var(--pb-radius-pill);
+  color: var(--pb-color-primary);
+}
+.today svg {
+  inline-size: var(--pb-size-icon);
+  block-size: var(--pb-size-icon);
+  fill: transparent;
+  stroke: currentColor;
+  stroke-width: var(--pb-border-width);
+}
+.is-mechanical .today.is-done {
+  color: var(--pb-color-on-primary);
+  background: var(--pb-color-primary);
+  border-color: var(--pb-color-primary);
+}
+.today.is-done svg {
+  fill: currentColor;
+}
+.today span {
+  font: var(--pb-typography-title-sm);
+  color: var(--pb-color-on-surface-muted);
+  opacity: var(--pb-opacity-disabled);
+}
+.today.is-done {
+  border-color: var(--pb-color-primary);
+}
+.today.is-done span {
+  color: var(--pb-color-primary);
+  opacity: var(--pb-opacity-visible);
+}
+.today:disabled {
+  opacity: var(--pb-opacity-disabled);
+  cursor: default;
+}
+</style>

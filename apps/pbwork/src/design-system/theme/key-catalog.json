@@ -808,7 +808,11 @@
       "valueType": "enum",
       "bindable": false,
       "modeVariant": false,
-      "enumValues": ["calm", "standard", "lively"],
+      "enumValues": [
+        "calm",
+        "standard",
+        "lively"
+      ],
       "label": "动效性格",
       "description": "动效性格：calm 舒缓、standard 标准、lively 活泼；时长与按压缩放由主题包按此键取值"
     },
@@ -890,7 +894,11 @@
       "valueType": "enum",
       "bindable": false,
       "modeVariant": false,
-      "enumValues": ["solid", "outlined", "glass"],
+      "enumValues": [
+        "solid",
+        "outlined",
+        "glass"
+      ],
       "label": "表面处理",
       "description": "表面材质处理：solid 实色、outlined 描边、glass 玻璃；由组件层 *-treatment 键默认引用"
     },
@@ -909,7 +917,11 @@
       "valueType": "enum",
       "bindable": false,
       "modeVariant": false,
-      "enumValues": ["compact", "regular", "comfortable"],
+      "enumValues": [
+        "compact",
+        "regular",
+        "comfortable"
+      ],
       "label": "密度",
       "description": "界面密度：compact 紧凑、regular 常规、comfortable 宽松；间距与控件高度由主题包按此键取值"
     },
@@ -1102,6 +1114,60 @@
       "bindable": true,
       "modeVariant": true,
       "label": "玻璃高光"
+    },
+    {
+      "id": "tracking.display",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "label": "数字展示字距",
+      "description": "大号数字与展示读数的字距"
+    },
+    {
+      "id": "tracking.heading",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "label": "标题字距",
+      "description": "页面标题与局部模式标题的字距"
+    },
+    {
+      "id": "tracking.label",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "label": "操作标签字距",
+      "description": "主次操作标签的字距"
+    },
+    {
+      "id": "tracking.caption",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "label": "说明字距",
+      "description": "紧凑说明与标注的字距"
+    },
+    {
+      "id": "size.action-min-inline",
+      "tier": "semantic",
+      "valueType": "length",
+      "bindable": true,
+      "modeVariant": false,
+      "label": "主操作最小宽度",
+      "description": "突出主次操作的最小行内尺寸，不改变触控高度"
+    },
+    {
+      "id": "effect.artwork-shadow",
+      "tier": "semantic",
+      "valueType": "filter",
+      "bindable": true,
+      "modeVariant": true,
+      "label": "图形投影",
+      "description": "独立物件与插画的轮廓投影，不用于背景玻璃滤镜"
     }
   ],
   "contrastPairs": [

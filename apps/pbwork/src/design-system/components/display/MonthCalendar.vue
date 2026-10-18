@@ -7,6 +7,7 @@ import { useComponentParts } from "../_shared/componentParts";
 import { monthDays, shiftMonth, shiftDay } from "../_shared/calendar";
 const props = withDefaults(
   defineProps<{
+    dayLabels?: Record<string, string>;
     label?: string;
     month?: string;
     modelValue?: string;
@@ -182,7 +183,7 @@ usePbInspect({
           v-if="day"
           type="button"
           :data-date="day"
-          :aria-label="day"
+          :aria-label="props.dayLabels?.[day] ?? day"
           :disabled="props.disabledDates.includes(day)"
           :aria-pressed="modelValue === day"
           :tabindex="focusTarget === day ? 0 : -1"
@@ -203,7 +204,14 @@ usePbInspect({
           @keydown="key($event, day)"
           @click="select(day)"
         >
-          {{ Number(day.slice(-2)) }}</button
+          <slot
+            name="day"
+            :date="day"
+            :selected="modelValue === day"
+            :today="props.today === day"
+            :disabled="props.disabledDates.includes(day)"
+            >{{ Number(day.slice(-2)) }}</slot
+          ></button
         ><span v-else aria-hidden="true"
       /></template>
     </div>

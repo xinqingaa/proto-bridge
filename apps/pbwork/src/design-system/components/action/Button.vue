@@ -25,7 +25,7 @@ const LOADER_STROKE = useTokenNumber("size.stroke");
 
 const props = defineProps<{
   label: string;
-  /** 主要 / 次要 / 描边。默认主要类型。 */
+  /** 中性主要/次要/描边，或强调/危险/轻量操作。默认主要类型。 */
   kind?: ButtonKind;
   material?: "solid" | "glass";
   size?: ComponentSize;
@@ -95,6 +95,8 @@ usePbInspect({
       height: sizeToken(s),
       paddingX: controlPaddingToken(s),
       typography: "typography.label",
+      tracking: "tracking.label",
+      actionMinInline: "size.action-min-inline",
       disabledOpacity: "opacity.disabled",
       borderWidth: "border.width",
       duration: "motion.duration-short",
@@ -114,6 +116,8 @@ usePbInspect({
       sizeToken(s),
       controlPaddingToken(s),
       "typography.label",
+      "tracking.label",
+      "size.action-min-inline",
       "opacity.disabled",
       "border.width",
       "motion.duration-short",
@@ -180,7 +184,7 @@ usePbInspect({
   color: var(--pb-btn-fg) !important;
   font: var(--pb-typography-label);
   text-transform: none;
-  letter-spacing: normal;
+  letter-spacing: var(--pb-tracking-label);
   box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;
   transition:
     box-shadow var(--pb-motion-duration-short) var(--pb-motion-easing-standard),
@@ -245,5 +249,23 @@ usePbInspect({
 <style scoped>
 .pb-button :deep(.v-btn__content) {
   border-radius: inherit;
+}
+</style>
+
+<style scoped>
+.pb-button.kind-accent {
+  min-inline-size: var(--pb-size-action-min-inline);
+}
+.pb-button.is-glass.kind-accent {
+  --pb-glass-material-fallback: var(--pb-color-primary);
+  --pb-glass-material-tint: var(--pb-color-primary);
+  color: var(--pb-color-on-primary) !important;
+}
+.pb-button.is-glass.kind-danger {
+  color: var(--pb-color-error) !important;
+  border-color: var(--pb-color-error) !important;
+}
+.pb-button.is-glass.kind-quiet {
+  color: var(--pb-color-on-surface-muted) !important;
 }
 </style>

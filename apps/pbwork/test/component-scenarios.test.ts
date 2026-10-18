@@ -16,6 +16,19 @@ describe("component business scenarios", () => {
     }
   });
 
+  it("exposes every finite public Button kind in its DS scenarios", () => {
+    expect(componentScenarios("button").map((scenario) => scenario.props?.kind)).toEqual(
+      expect.arrayContaining([
+        "primary",
+        "secondary",
+        "outlined",
+        "accent",
+        "danger",
+        "quiet",
+      ]),
+    );
+  });
+
   it("exposes content, type, and behavior controls without token knobs", () => {
     const controlKeys = (id: string) =>
       componentRecords

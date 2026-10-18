@@ -6,14 +6,15 @@
     "policy": "fixed",
     "defaultRole": "button"
   },
-  "summary": "表单与决策区操作；公开三种类型：主要、次要、描边。loading 保留文案，disabled 走 opacity.disabled。",
+  "summary": "表单与决策区操作，保留中性主要/次要/描边，提供强调、危险和轻量操作。",
   "behavior": [
-    "公开类型只有 kind=primary / secondary / outlined，页面不配色槽",
-    "一行只有一颗按钮时使用主要类型并占满；两颗时左侧次要、右侧主要，等分撑满且文案尽量等长",
+    "kind为primary / secondary / outlined / accent / danger / quiet，调用方不传自由色槽。",
+    "主要决策选择primary或accent，一行仅一个强调动作；两个操作时左侧取消、右侧确认。",
     "描边类型是最弱档，只用于卡片内轻量动作，不进入 Confirm / Sheet / FlowSheet 决策区",
     "loading 时不可点，spinner 与文案同时可见，不得用加载图标替换文字",
     "loading 阻止重复触发但保留强调度；只有 disabled 使用 opacity.disabled",
-    "material=glass 复用共享玻璃材质，与操作类型独立；降低透明度时使用清晰实色表面。"
+    "material=glass 复用共享玻璃材质，与操作类型独立；降低透明度时使用清晰实色表面。",
+    "accent用于开始/保存等品牌强调；danger用于删除/重置等危险动作；quiet用于跳过/辅助取消，不替代图标关闭或导航。"
   ],
   "propsSchema": {
     "type": "object",
@@ -24,11 +25,22 @@
       },
       "kind": {
         "type": "string",
-        "enum": ["primary", "secondary", "outlined"]
+        "enum": [
+          "primary",
+          "secondary",
+          "outlined",
+          "accent",
+          "danger",
+          "quiet"
+        ]
       },
       "size": {
         "type": "string",
-        "enum": ["sm", "md", "lg"]
+        "enum": [
+          "sm",
+          "md",
+          "lg"
+        ]
       },
       "loading": {
         "type": "boolean"
@@ -41,14 +53,23 @@
       },
       "type": {
         "type": "string",
-        "enum": ["button", "submit", "reset"]
+        "enum": [
+          "button",
+          "submit",
+          "reset"
+        ]
       },
       "material": {
         "type": "string",
-        "enum": ["solid", "glass"]
+        "enum": [
+          "solid",
+          "glass"
+        ]
       }
     },
-    "required": ["label"]
+    "required": [
+      "label"
+    ]
   },
   "defaultProps": {
     "label": "确认",
@@ -101,10 +122,41 @@
         "material": "glass",
         "disabled": true
       }
+    },
+    {
+      "id": "accent",
+      "label": "开始专注",
+      "kind": "variant",
+      "props": {
+        "kind": "accent",
+        "label": "开始专注"
+      }
+    },
+    {
+      "id": "danger",
+      "label": "删除记录",
+      "kind": "variant",
+      "props": {
+        "kind": "danger",
+        "label": "删除记录"
+      }
+    },
+    {
+      "id": "quiet",
+      "label": "暂时跳过",
+      "kind": "variant",
+      "props": {
+        "kind": "quiet",
+        "label": "暂时跳过"
+      }
     }
   ],
-  "slots": ["default"],
-  "events": ["click"],
+  "slots": [
+    "default"
+  ],
+  "events": [
+    "click"
+  ],
   "tokenBindings": {
     "background": "color.action",
     "border": "color.action",
@@ -129,7 +181,9 @@
     "glassFallbackBorder": "border.default",
     "glassOutline": "border.default",
     "glassSecondary": "color.on-surface",
-    "glassPrimaryTint": "button.glass-primary-tint"
+    "glassPrimaryTint": "button.glass-primary-tint",
+    "tracking": "tracking.label",
+    "actionMinInline": "size.action-min-inline"
   },
   "playground": {
     "presentation": "interactive"

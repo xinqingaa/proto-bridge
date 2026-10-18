@@ -279,7 +279,13 @@
     "size.plot": 160,
     "size.brand": 72,
     "size.ring": 112,
-    "color.glass-edge": "#ffffffa6"
+    "color.glass-edge": "#ffffffa6",
+    "tracking.display": 0,
+    "tracking.heading": 0,
+    "tracking.label": 0,
+    "tracking.caption": 0,
+    "size.action-min-inline": 0,
+    "effect.artwork-shadow": "none"
   },
   "modes": {
     "dark": {

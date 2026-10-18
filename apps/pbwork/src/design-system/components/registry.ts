@@ -33,7 +33,7 @@ export const componentRecords = [
   {
     id: "button",
     label: "Button",
-    description: "表单与决策区操作；类型为主要、次要或描边。",
+    description: "表单与决策区操作；中性、品牌强调、危险与轻量层级。",
     category: "action",
     view: "action/Button.vue",
     contract: "contracts/button.json",
@@ -48,6 +48,9 @@ export const componentRecords = [
           { label: "主要类型", value: "primary" },
           { label: "次要类型", value: "secondary" },
           { label: "描边类型", value: "outlined" },
+          { label: "品牌强调", value: "accent" },
+          { label: "危险操作", value: "danger" },
+          { label: "轻量操作", value: "quiet" },
         ],
       },
       { key: "size", label: "尺寸", control: "select", options: sizeOptions },
@@ -801,6 +804,15 @@ export const componentRecords = [
     example: {},
     controls: [
       {
+        key: "material",
+        label: "材质",
+        control: "select",
+        options: [
+          { value: "solid", label: "实色" },
+          { value: "glass", label: "玻璃" },
+        ],
+      },
+      {
         key: "label",
         label: "label",
         control: "text",
@@ -1027,6 +1039,7 @@ export const componentRecords = [
     contract: "contracts/heatmap.json",
     example: {},
     controls: [
+      { key: "readonly", label: "只读", control: "boolean" },
       {
         key: "label",
         label: "label",

@@ -60,6 +60,11 @@ const typographyStyle = computed(() => ({
       >
     </div>
     <div
+      v-else-if="tokenId.startsWith('tracking.')"
+      class="font-specimen"
+      :style="{letterSpacing: cssValue}"
+    >把时间留给重要的事 · Today</div>
+    <div
       v-else-if="valueType === 'family-list'"
       class="font-specimen"
       :style="{ fontFamily: cssValue }"
@@ -75,6 +80,9 @@ const typographyStyle = computed(() => ({
     </div>
     <div v-else-if="valueType === 'shadow'" class="shadow-stage">
       <div class="specimen-box" :style="{ boxShadow: cssValue }">表面层次</div>
+    </div>
+    <div v-else-if="tokenId === 'effect.artwork-shadow'" class="shadow-stage">
+      <div class="specimen-box" :style="{filter: cssValue}">物件投影</div>
     </div>
     <div v-else-if="valueType === 'filter'" class="pattern-stage">
       <div :style="{ backdropFilter: cssValue }">玻璃表面</div>

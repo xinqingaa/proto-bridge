@@ -1,7 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { runtimeThemeSources, resolveRuntimeTheme } from "@/design-system/theme/runtime-theme";
+import { validateThemePacks } from "@proto-bridge/core/v2";
+import {
+  runtimeThemeSources,
+  resolveRuntimeTheme,
+} from "@/design-system/theme/runtime-theme";
 
 describe("一刻主题矩阵", () => {
+  it("通过Core真实资产与对比度门禁，而不只检查解析表存在", () => {
+    expect(
+      validateThemePacks({
+        ...runtimeThemeSources,
+        prototypeBindings: [{ prototypeId: "yike", packId: "yike" }],
+      }).filter((item) => item.packId === "yike" && item.severity === "block"),
+    ).toEqual([]);
+  });
   it("解析三套主题的浅色与深色组合，并保留组件级语义映射", () => {
     const pack = runtimeThemeSources.packs.get("yike");
     expect(pack?.manifest.themes.map((item) => item.id)).toEqual([
@@ -19,8 +31,22 @@ describe("一刻主题矩阵", () => {
         expect(table.values["color.on-background"]).toBe(
           table.values["color.on-surface"],
         );
-        expect(table.values["tabbar.active"]).toBe(
+        for (const surface of ["surface-variant", "surface-selected"]) {
+          expect(table.values[`color.${surface}`]).toBe(
+            table.values["color.surface-recessed"],
+          );
+        }
+        expect(table.values["color.surface-raised"]).toBe(
+          table.values["color.surface"],
+        );
+        expect(table.values["color.action"]).toBe(
           table.values["color.on-surface"],
+        );
+        expect(table.values["color.on-action"]).toBe(
+          table.values["color.surface"],
+        );
+        expect(table.values["tabbar.active"]).toBe(
+          table.values["color.primary"],
         );
         expect(table.values["secondary-tabs.indicator"]).toBe(
           table.values["color.primary"],
@@ -28,4 +54,59 @@ describe("一刻主题矩阵", () => {
       }
     }
   });
+
+  it("六组合明确使用玻璃导航，浅深染色独立且三主题保持差异", () => {
+    const light = ["mechanical", "water", "sundial"].map(
+      (theme) => resolveRuntimeTheme("yike", theme, "light").values,
+    );
+    expect(
+      new Set(light.map((values) => values["color.glass-tint"])).size,
+    ).toBe(3);
+    for (const theme of ["mechanical", "water", "sundial"]) {
+      const day = resolveRuntimeTheme("yike", theme, "light").values;
+      const night = resolveRuntimeTheme("yike", theme, "dark").values;
+      expect(day["surface.treatment"]).toBe("glass");
+      expect(day["tabbar.surface-treatment"]).toBe("glass");
+      expect(night["color.glass-tint"]).not.toBe(day["color.glass-tint"]);
+      expect(day["surface.glass-backdrop"]).toContain("blur(");
+    }
+  });
+
+  it.each([
+    ["mechanical", 18, 12, 32, 700, 54, 700, 312],
+    ["water", 22, 14, 32, 300, 76, 200, 236],
+    ["sundial", 6, 4, 32, 400, 58, 400, 316],
+  ] as const)(
+    "保留 %s 的形状、标题与数字比例且浅深模式等价",
+    (
+      theme,
+      radius,
+      compactRadius,
+      titleSize,
+      titleWeight,
+      digitSize,
+      digitWeight,
+      plot,
+    ) => {
+      for (const mode of ["light", "dark"]) {
+        const values = resolveRuntimeTheme("yike", theme, mode).values;
+        expect(values["radius.surface"]).toBe(radius);
+        expect(values["radius.control-compact"]).toBe(compactRadius);
+        expect(values["typography.headline"]).toMatchObject({
+          size: titleSize,
+          weight: titleWeight,
+        });
+        expect(values["typography.numeric-display"]).toMatchObject({
+          size: digitSize,
+          weight: digitWeight,
+        });
+        expect(values["size.plot"]).toBe(plot);
+        expect(values["typography.numeric-display.family"]).toEqual(
+          resolveRuntimeTheme("pbwork-base", "default", mode).values[
+            "typography.numeric-display.family"
+          ],
+        );
+      }
+    },
+  );
 });

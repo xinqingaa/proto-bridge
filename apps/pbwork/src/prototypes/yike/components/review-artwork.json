@@ -1,0 +1,14 @@
+{
+  "width": 30,
+  "height": 148,
+  "viewBox": "0 0 30 148",
+  "blockMinutes": 25,
+  "blockGap": 3,
+  "tubeRadius": 15,
+  "lineWidth": 1.5,
+  "inkX": 8,
+  "inkWidth": 14,
+  "inkLine": 2,
+  "zero": 0,
+  "full": 1
+}

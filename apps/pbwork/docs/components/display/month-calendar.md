@@ -32,3 +32,8 @@ Props、Slots、Events、默认值与 Token 槽以 [MonthCalendar Contract](../.
 ## 展示与组合
 
 月份使用可读年月标题和 SVG 翻月按钮；七列保持 Flex 等分。today 由调用方提供确定日期，区别于选中与禁用，不读取系统当前日期。
+
+
+## 日期单元扩展
+
+`day` scoped slot 提供 `date`、`selected`、`today`、`disabled`，调用方可绘制业务标记；不在插槽内再放按钮或复制日期/键盘机制。`dayLabels` 按日期提供可访问说明，未提供时保留日期标签。默认插槽内容仍为日期数字。

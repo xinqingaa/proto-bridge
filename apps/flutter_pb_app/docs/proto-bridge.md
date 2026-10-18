@@ -12,7 +12,7 @@
 
 ## Token mapping
 
-新目录的 130 个可绑定主题键均在根目录 `proto-bridge.target.json` 声明为 pending；不可绑定 enum、字阶派生部件与实现常量不建立 Target 映射。`lib/theme/proto_bridge_tokens.dart` 仍是迁移前的可执行使用点；待本轮适配完成后，再由 resolver 同时验证“声明存在”和“当前 Dart API 可访问”。这份 Target 映射不等于恢复 MCP 完整 Catalog 读取；Agent 仍按当前任务读取必要的 Producer Contract、文档和源码。
+新目录的 148 个可绑定主题键均在根目录 `proto-bridge.target.json` 声明为 pending；不可绑定 enum、字阶派生部件与实现常量不建立 Target 映射。`lib/theme/proto_bridge_tokens.dart` 仍是迁移前的可执行使用点；待本轮适配完成后，再由 resolver 同时验证“声明存在”和“当前 Dart API 可访问”。这份 Target 映射不等于恢复 MCP 完整 Catalog 读取；Agent 仍按当前任务读取必要的 Producer Contract、文档和源码。
 
 `transparent` 与 `none` 是绑定字面量，不是 Foundation Token，也不得生成 `TS.*` accessor 或 Target token obligation。
 

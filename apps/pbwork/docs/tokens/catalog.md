@@ -1,6 +1,6 @@
 # 主题键目录
 
-共 148 项：123 个语义键与 25 个组件键；142 项可绑定，6 项 enum 不可绑定。字阶另派生 64 个不可绑定部件；37 项实现常量不属于 Catalog。
+共 154 项：129 个语义键与 25 个组件键；148 项可绑定，6 项 enum 不可绑定。字阶另派生 64 个不可绑定部件；37 项实现常量不属于 Catalog。
 
 权威源为 `src/design-system/theme/key-catalog.json` 和各组件 Contract 的 `componentTokens`，由 `loadThemeKeyCatalog()` 汇总；取值由主题包解析，本文不复制基础值。模型见[主题包解析模型](../../../../docs/architecture/theme-packs.md)，154 个旧键的去向保存在 `theme/legacy-migration.json` 并由等价测试覆盖。
 
@@ -58,6 +58,12 @@
 | `typography.numeric-display`            | typography | semantic  | 是     | 大号展示数字字阶，沿用展示标题的字重、字号与行高                                         |
 | `typography.numeric-title`              | typography | semantic  | 是     | 标题级数字字阶，沿用标题的字重、字号与行高                                               |
 | `typography.numeric-content`            | typography | semantic  | 是     | 正文级数字字阶，沿用正文的字重、字号与行高                                               |
+| `tracking.display` | length | semantic | 是 | 展示数字字距，独立于字体大小 |
+| `tracking.heading` | length | semantic | 是 | 页面与局部模式标题字距 |
+| `tracking.label` | length | semantic | 是 | 主次操作标签字距 |
+| `tracking.caption` | length | semantic | 是 | 说明与标注字距 |
+| `size.action-min-inline` | length | semantic | 是 | 主次操作最小行内尺寸，基础包为零，不强制通用控件宽度 |
+| `effect.artwork-shadow` | filter | semantic | 是 | 物件轮廓投影，消费于 filter，与玻璃 backdrop-filter 分离 |
 | `radius.mark`                           | length     | semantic  | 是     | 徽标、小标记                                                                             |
 | `radius.control-compact`                | length     | semantic  | 是     | 紧凑控件、标签                                                                           |
 | `radius.control`                        | length     | semantic  | 是     | 按钮、输入框、Tab                                                                        |

@@ -85,7 +85,14 @@ export function defaultTextColorForBg(
   return fallback;
 }
 
-export const BUTTON_KINDS = ["primary", "secondary", "outlined"] as const;
+export const BUTTON_KINDS = [
+  "primary",
+  "secondary",
+  "outlined",
+  "accent",
+  "danger",
+  "quiet",
+] as const;
 export type ButtonKind = (typeof BUTTON_KINDS)[number];
 
 const BUTTON_KIND_COLORS: Record<
@@ -106,6 +113,21 @@ const BUTTON_KIND_COLORS: Record<
     borderColor: "color.action-soft",
     textColor: "color.action",
   },
+  accent: {
+    bgColor: "color.primary",
+    borderColor: "color.primary",
+    textColor: "color.on-primary",
+  },
+  danger: {
+    bgColor: "transparent",
+    borderColor: "color.error",
+    textColor: "color.error",
+  },
+  quiet: {
+    bgColor: "transparent",
+    borderColor: "transparent",
+    textColor: "color.on-surface-muted",
+  },
   outlined: {
     bgColor: "transparent",
     borderColor: "color.outline",
@@ -114,7 +136,14 @@ const BUTTON_KIND_COLORS: Record<
 };
 
 export function resolveButtonKind(kind?: string): ButtonKind {
-  if (kind === "secondary" || kind === "outlined") return kind;
+  if (
+    kind === "secondary" ||
+    kind === "outlined" ||
+    kind === "accent" ||
+    kind === "danger" ||
+    kind === "quiet"
+  )
+    return kind;
   return "primary";
 }
 

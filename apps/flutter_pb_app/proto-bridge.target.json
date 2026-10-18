@@ -26,7 +26,7 @@
     },
     "button": {
       "status": "pending",
-      "reason": "PBWork 玻璃控件升级：材质、选中滑动与有限 API 已更新，Flutter 待按当前 Contract 与主题复核实现。"
+      "reason": "公共Button新增accent/danger/quiet有限操作层级及字距/最小宽度绑定；Flutter尚未按当前Contract适配。"
     },
     "card": {
       "status": "pending",
@@ -138,7 +138,7 @@
     },
     "segmented-control": {
       "status": "pending",
-      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
+      "reason": "公共单选控件新增 material=glass 及共享玻璃Token绑定；Flutter尚未适配，需按当前Contract复核。"
     },
     "stepper": {
       "status": "pending",
@@ -166,11 +166,11 @@
     },
     "heatmap": {
       "status": "pending",
-      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
+      "reason": "公共Heatmap新增readonly、dayLabels及只读plot/legend插槽；Flutter尚未适配该公开扩展。"
     },
     "month-calendar": {
       "status": "pending",
-      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
+      "reason": "公共月历新增day内容插槽与dayLabels，日期/键盘机制保持；Flutter尚未适配该公开扩展。"
     },
     "list-cell": {
       "status": "pending",
@@ -765,6 +765,30 @@
     "icon-button.glass-primary-tint": {
       "status": "pending",
       "reason": "PBWork 新增玻璃控件主题色，Flutter 尚待映射当前主题取值。"
+    },
+    "tracking.display": {
+      "status": "pending",
+      "reason": "Producer 新增通用字距、操作尺寸和图形投影角色；Flutter 尚未实现对应映射。"
+    },
+    "tracking.heading": {
+      "status": "pending",
+      "reason": "Producer 新增通用字距、操作尺寸和图形投影角色；Flutter 尚未实现对应映射。"
+    },
+    "tracking.label": {
+      "status": "pending",
+      "reason": "Producer 新增通用字距、操作尺寸和图形投影角色；Flutter 尚未实现对应映射。"
+    },
+    "tracking.caption": {
+      "status": "pending",
+      "reason": "Producer 新增通用字距、操作尺寸和图形投影角色；Flutter 尚未实现对应映射。"
+    },
+    "size.action-min-inline": {
+      "status": "pending",
+      "reason": "Producer 新增通用字距、操作尺寸和图形投影角色；Flutter 尚未实现对应映射。"
+    },
+    "effect.artwork-shadow": {
+      "status": "pending",
+      "reason": "Producer 新增通用字距、操作尺寸和图形投影角色；Flutter 尚未实现对应映射。"
     }
   },
   "queryExclusions": []

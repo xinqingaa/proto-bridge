@@ -13,6 +13,7 @@
 ## 行为要点
 
 - 只有未禁用的选项可以被选中；方向键、Home 与 End 支持跳过禁用项。
+- `material=glass` 使用共享玻璃材质，降低透明度或无模糊支持时回退实色；默认 `solid` 保持原有表现。
 - 选中项使用 roving tabindex；不拥有 viewport，data-no-swipe 防止父级横滑误触。
 
 ## States
@@ -21,6 +22,8 @@
 | --- | --- | --- |
 | `month` | 按月 | `content` |
 | `disabled` | 禁用 | `interaction` |
+| `glass` | 玻璃 | `content` |
+| `glass-disabled` | 玻璃禁用 | `interaction` |
 
 ## 用法与反例
 

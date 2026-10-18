@@ -8,7 +8,7 @@ export default defineScreen({
   prototypeId: "yike",
   label: "打卡",
   title: "打卡",
-  view: "yike/screens/checkin/CheckIn.vue",
+  view: "yike/screens/YikeRoot.vue",
   queryKeys: [],
   defaultVariantId: "default",
   shellFragments: [scope.ref("root")],

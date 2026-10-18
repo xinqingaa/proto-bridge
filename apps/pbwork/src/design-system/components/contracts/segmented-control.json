@@ -9,7 +9,8 @@
   "summary": "互斥的局部模式选择，不创建视图区或导航历史。",
   "behavior": [
     "只有未禁用的选项可以被选中；方向键、Home 与 End 支持跳过禁用项",
-    "选中项使用 roving tabindex；不拥有 viewport，data-no-swipe 防止父级横滑误触"
+    "选中项使用 roving tabindex；不拥有 viewport，data-no-swipe 防止父级横滑误触",
+    "material=glass 复用共享玻璃材质与透明度降级，保持原有单选和键盘机制。"
   ],
   "layout": {
     "summary": "互斥的局部模式选择，不创建视图区或导航历史。"
@@ -45,6 +46,10 @@
       },
       "disabled": {
         "type": "boolean"
+      },
+      "material": {
+        "type": "string",
+        "enum": ["solid", "glass"]
       }
     }
   },
@@ -65,7 +70,8 @@
       }
     ],
     "modelValue": "week",
-    "disabled": false
+    "disabled": false,
+    "material": "solid"
   },
   "states": [
     {
@@ -81,6 +87,23 @@
       "label": "禁用",
       "kind": "interaction",
       "props": {
+        "disabled": true
+      }
+    },
+    {
+      "id": "glass",
+      "label": "玻璃",
+      "kind": "content",
+      "props": {
+        "material": "glass"
+      }
+    },
+    {
+      "id": "glass-disabled",
+      "label": "玻璃禁用",
+      "kind": "interaction",
+      "props": {
+        "material": "glass",
         "disabled": true
       }
     }
@@ -104,7 +127,13 @@
     "inactiveText": "color.on-surface-muted",
     "labelFont": "typography.label",
     "selectedElevation": "elevation.surface",
-    "selectedSurface": "color.surface"
+    "selectedSurface": "color.surface",
+    "glassTint": "color.glass-tint",
+    "glassEdge": "border.glass",
+    "glassLight": "elevation.glass",
+    "glassBackdrop": "surface.glass-backdrop",
+    "glassFallback": "color.surface",
+    "glassFallbackBorder": "border.default"
   },
   "playground": {
     "presentation": "interactive"

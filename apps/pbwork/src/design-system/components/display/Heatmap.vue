@@ -9,11 +9,15 @@ const props = withDefaults(
     label?: string;
     days?: Array<{ date: string; value: number }>;
     modelValue?: string;
+    readonly?: boolean;
+    dayLabels?: Record<string, string>;
     inspectId?: string;
     pbKey?: string;
   }>(),
   {
     label: "每日完成记录",
+    readonly: false,
+    dayLabels: () => ({}),
     days: () =>
       Array.from({ length: 84 }, (_, index) => ({
         date: new Date(Date.UTC(2026, 4, 4 + index)).toISOString().slice(0, 10),
@@ -106,6 +110,12 @@ usePbInspect({
   >
     <figcaption>{{ label }}</figcaption>
     <p v-if="!weeks.length" role="status">暂无数据</p>
+    <slot
+      v-else-if="readonly && $slots.plot"
+      name="plot"
+      :weeks="weeks"
+      :max="max"
+    />
     <div v-else class="heatplot">
       <div class="weekday-axis" aria-hidden="true">
         <span class="month-label" /><span v-for="day in weekdays" :key="day">{{
@@ -117,13 +127,18 @@ usePbInspect({
           <span class="month-label" aria-hidden="true">{{
             monthLabel(index)
           }}</span>
-          <button
+          <component
+            :is="readonly ? 'span' : 'button'"
             v-for="day in week"
             :key="day.date"
-            type="button"
-            :aria-label="`${day.date}：${day.value === null ? '无记录' : day.value}`"
+            :type="readonly ? undefined : 'button'"
+            class="day"
+            :aria-label="
+              props.dayLabels[day.date] ??
+              `${day.date}：${day.value === null ? '无记录' : day.value}`
+            "
             :title="`${day.date}：${day.value === null ? '无记录' : day.value}`"
-            :aria-pressed="modelValue === day.date"
+            :aria-pressed="readonly ? undefined : modelValue === day.date"
             :class="{
               selected: modelValue === day.date,
               'is-missing': day.value === null,
@@ -131,7 +146,7 @@ usePbInspect({
             v-pb="
               part(
                 'day',
-                'button',
+                readonly ? 'image' : 'button',
                 {
                   background: tone(day.value),
                   radius: 'radius.mark',
@@ -142,21 +157,24 @@ usePbInspect({
                 `day-${day.date}`,
               )
             "
-            @click="emit('update:modelValue', day.date)"
+            @click="!readonly && emit('update:modelValue', day.date)"
           >
             <span class="sr">{{
               day.value === null ? "无记录" : day.value
             }}</span>
-          </button>
+          </component>
         </div>
       </div>
     </div>
-    <div class="legend" aria-label="强度图例">
-      <span>少</span><i class="zero" /><i class="low" /><i class="high" /><span
-        >多</span
-      ><span>描边为无记录</span>
-    </div>
+    <slot name="legend">
+      <div class="legend" aria-label="强度图例">
+        <span>少</span><i class="zero" /><i class="low" /><i
+          class="high"
+        /><span>多</span><span>描边为无记录</span>
+      </div>
+    </slot>
     <span
+      v-if="!readonly"
       v-pb="
         part('selection', 'text', {
           typography: 'typography.caption',
@@ -188,7 +206,7 @@ usePbInspect({
   flex-direction: column;
   gap: var(--pb-spacing-xs);
 }
-button {
+.day {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -200,7 +218,7 @@ button {
   cursor: pointer;
 }
 .selected,
-button:focus-visible {
+.day:focus-visible {
   outline: var(--pb-border-focus);
   outline-offset: calc(var(--pb-layout-zero) - var(--pb-spacing-xxs));
 }
@@ -273,7 +291,13 @@ button:focus-visible {
 </style>
 
 <style scoped>
-.week button.is-missing {
+.week .day.is-missing {
   border: var(--pb-border-hairline);
+}
+</style>
+
+<style scoped>
+span.day {
+  cursor: default;
 }
 </style>

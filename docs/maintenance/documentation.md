@@ -12,11 +12,11 @@
 
 ## Roadmap
 
-- 尚未实施的平台级产品演进统一进入 `docs/roadmap/`，不得混入描述当前行为的主体文档；业务原型的设计、实施方案与唯一进度统一归 `apps/pbwork/src/prototypes/{prototypeId}/docs/`，Roadmap 只按需链接入口，不复制业务计划；
+- 尚未实施的平台级产品演进统一进入 `docs/roadmap/`，不得混入描述当前行为的主体文档；业务原型的设计、实施方案、唯一进度与必要沿革统一归 `apps/pbwork/src/prototypes/{prototypeId}/docs/`，Roadmap 不维护业务原型入口、排期或完成状态；
 - Roadmap 必须声明当前基线、状态、目标投入、主线与探索项、依赖、退出标准和范围缩减顺序；
 - Roadmap 中的 MUST、Block、Schema 和 Tool 只表示目标设计，不因文档评审自动成为现行 Contract；
 - 能力落地时按所有权矩阵同步现行文档、Schema、实现和测试；未落地内容继续留在 Roadmap；
-- 已交付 Roadmap 可保留为规划记录，但当前行为仍由 Product、Architecture、Reference 和可执行 Schema 定义。
+- 已交付的平台升级在 `docs/history/` 保留关键投入、边界与验收要求，`docs/roadmap/README.md` 只保留归档入口；清理重复批次日志、临时交接和附属草案，版本细节由 Git 历史追溯。当前行为仍由 Product、Architecture、Reference 和可执行 Schema 定义。
 
 ## 所有权
 

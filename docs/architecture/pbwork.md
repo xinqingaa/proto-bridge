@@ -33,7 +33,7 @@ Workbench 组件统一从 `src/workbench/ui` 复用或封装。该层可以使�
 
 ## 设计基础与组件的共享预览边界
 
-全部 12 个设计基础分类、浅深主题页与 Registry 47 个组件使用 `src/workbench/preview/`。`PreviewComparison` 管单机/按需双机、局部会话与自然撑开的舞台、fit/100% 显示及预览/来源 Tab；设置侧栏只在预览可见，共同滚动在舞台顶部以紧凑开关呈现。`PreviewSurface` 管手机壳、局部主题、设备视口与 Overlay host。`FoundationSample` / `ThemeSample` 编排分类样板与主题事实，`ComponentDeviceSample` 承接原 Playground 的矩阵、导航/转场、长列表与触发演示，Button/BottomSheet 保留专用样板；不嵌套手机，不连接全局 Playground Store。原型扩展最小登记由 `preview/extensions/` 管理，显式元数据与路径校验后接入原导航和手机舞台，当前正式登记为空。人工规则见[预览工作流](../pbwork/workbench-preview.md)，平台投入范围见[关键升级第 6 步](../history/pbwork-platform-upgrade.md#第-6-步-设计基础与组件预览迁移)。
+全部 12 个设计基础分类、浅深主题页与 Registry 47 个组件使用 `src/workbench/preview/`。`PreviewComparison` 管单机/按需双机、局部会话与自然撑开的舞台、fit/100% 显示及预览/来源 Tab；设置侧栏只在预览可见，共同滚动在舞台顶部以紧凑开关呈现。`PreviewSurface` 管手机壳、局部主题、设备视口与 Overlay host。`FoundationSample` / `ThemeSample` 编排分类样板与主题事实，`ComponentDeviceSample` 承接原 Playground 的矩阵、导航/转场、长列表与触发演示，Button/BottomSheet 保留专用样板；不嵌套手机，不连接全局 Playground Store。原型扩展最小登记由 `preview/extensions/` 管理，显式元数据与路径校验后接入原导航和手机舞台，正式资源由各原型显式登记。人工规则见[预览工作流](../pbwork/workbench-preview.md)，平台投入范围见[关键升级第 6 步](../history/pbwork-platform-upgrade.md#第-6-步-设计基础与组件预览迁移)。
 
 预览主题包选项由主题 manifest 的 scope 与 Prototype Registry 的真实绑定生成，按 packId 去重，原型归属与渲染主题分开；复用基础包的原型不单独增加外观选项。每台设备有独立的 `ThemeTableKey`、CSS/主题属性、Vuetify Provider、演示状态、实例标识及浮层 host；控制面保持 Workbench 主题。完整已验证主题身份通过单一 prop 原子传入 Provider，避免同步监听器读到跨包的中间组合。预览只在 CSS 输出中把视口单位适配为设备容器单位，Core 表与 digest 不变。手机内容区保留滚动，舞台正常文档流随设备高度撑开、双机空间不足换行，手册不引入 iframe，不改变正式 Runtime/Capture 或业务偏好。
 

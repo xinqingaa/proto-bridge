@@ -10,7 +10,10 @@
   "behavior": [
     "以 UTC 日期补齐中间日期并按周一到周日排列，单次最多展示 366 天",
     "缺失日期不伪装为观测到的零值；日期与原始值用可访问名称说明",
-    "点击或键盘选择日期只发出受控值，颜色之外保留数值文本"
+    "点击或键盘选择日期只发出受控值，颜色之外保留数值文本",
+    "readonly=true 时日期为非交互标记，不发出选择事件、不显示选择提示；默认仍为交互模式。",
+    "plot 插槽仅在 readonly 模式生效，接收公共日期算法生成的 weeks 与 max；调用方负责图形、等价文本和 Token Evidence，不得添加日期选择机制。",
+    "dayLabels 提供日期的可访问业务说明，legend 插槽替换强度图例。"
   ],
   "layout": {
     "summary": "Monday-first seven-cell columns, chronological weeks in one contained horizontal scroll area; missing days occupy cells."
@@ -37,11 +40,23 @@
               "type": "number"
             }
           },
-          "required": ["date", "value"]
+          "required": [
+            "date",
+            "value"
+          ]
         }
       },
       "modelValue": {
         "type": "string"
+      },
+      "readonly": {
+        "type": "boolean"
+      },
+      "dayLabels": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
       }
     }
   },
@@ -385,7 +400,9 @@
         "value": 4
       }
     ],
-    "modelValue": "2026-07-12"
+    "modelValue": "2026-07-12",
+    "readonly": false,
+    "dayLabels": {}
   },
   "states": [
     {
@@ -403,10 +420,24 @@
       "props": {
         "modelValue": "2026-07-20"
       }
+    },
+    {
+      "id": "readonly",
+      "label": "只读记录",
+      "kind": "variant",
+      "props": {
+        "readonly": true,
+        "modelValue": ""
+      }
     }
   ],
-  "slots": [],
-  "events": ["update:modelValue"],
+  "slots": [
+    "plot",
+    "legend"
+  ],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "color": "color.on-surface",
     "muted": "color.on-surface-muted",

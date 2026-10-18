@@ -22,6 +22,7 @@
 | --- | --- | --- |
 | `empty` | 无数据 | `content` |
 | `selected` | 已选择 | `content` |
+| `readonly` | 只读记录 | `variant` |
 
 ## 用法与反例
 
@@ -32,3 +33,19 @@ Props、Slots、Events、默认值与 Token 槽以 [Heatmap Contract](../../../s
 ## 展示与组合
 
 提供星期、月份定位、强度图例及所选日期真实数值。按日期排列，缺失与零值保持区别；范围较长时横向滚动，不能为了填满宽度改变日期顺序。选中描边留在格子内部，横向滚动不裁掉格子边缘。
+
+## 只读与自定义绘图
+
+`readonly=true` 使用非交互日期标记，不发出 `update:modelValue`，不显示日期选择提示。适用于年度概况、只读历史，不为不能操作的日期建立按钮焦点。
+
+`dayLabels` 按日期提供业务说明；`legend` 插槽可替换默认强度图例。
+`plot` 插槽仅在只读模式生效，接收 `{ weeks, max }`。`weeks` 是组件用相同 UTC 算法生成的周列（包括边界补齐日期，缺失值为 null），调用方可绘制紧凑 SVG，仍须提供可访问说明、实际日期文本和本地 Token Evidence。交互模式不开放整个绘图区替换，日期按钮保持公共行为。
+
+```vue
+<Heatmap :days="records" readonly label="年度记录" model-value="">
+  <template #plot="{ weeks }"><AnnualPlot :weeks="weeks" /></template>
+  <template #legend><p>实心为完成，空心为缺失。</p></template>
+</Heatmap>
+```
+
+只读记录调用方必须显式传入 `days`；零历史传空数组，不使用组件预览数据代表真实历史。
