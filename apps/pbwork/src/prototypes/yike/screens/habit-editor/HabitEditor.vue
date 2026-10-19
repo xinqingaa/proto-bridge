@@ -5,6 +5,9 @@ import { vPb } from "@/authoring/pb-style";
 import PrototypeShell from "@/runtime/prototype/PrototypeShell.vue";
 import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
 import Button from "@/design-system/components/action/Button.vue";
+import YikeAction from "../../components/YikeAction.vue";
+import CheckIn from "../checkin/CheckIn.vue";
+import HabitDetail from "../habit-detail/HabitDetail.vue";
 import YikeHabitForm from "../../components/YikeHabitForm.vue";
 import {
   emptyHabitDraft,
@@ -70,6 +73,10 @@ async function save(value: YikeHabitDraft) {
     show-back
     @back="close"
   >
+    <template #app-bar><span /></template>
+    <div v-if="open && route.params.screenSlug === 'habit-editor'" class="editor-context" aria-hidden="true" inert>
+      <HabitDetail v-if="id && habit" /><CheckIn v-else />
+    </div>
     <BottomSheet
       :model-value="open"
       :title="title"
@@ -94,6 +101,7 @@ async function save(value: YikeHabitDraft) {
           v-if="!id || habit"
           v-model="draft"
           :submitting="saving"
+          :show-save="false"
           :validate-on-mount="route.query.variant === 'invalid-name'"
           :inspect-id="scope.id('form')"
           @save="save"
@@ -107,6 +115,23 @@ async function save(value: YikeHabitDraft) {
           />
         </template>
       </div>
+      <template v-if="!id || habit" #actions>
+        <YikeAction
+          type="submit"
+          :form="scope.id('form')"
+          label="保存"
+          block
+          :loading="saving"
+          :inspect-id="scope.id('form.save')"
+        />
+      </template>
     </BottomSheet>
   </PrototypeShell>
 </template>
+
+<style scoped>
+.editor-context {
+  block-size: var(--pb-layout-fill);
+  overflow: hidden;
+}
+</style>

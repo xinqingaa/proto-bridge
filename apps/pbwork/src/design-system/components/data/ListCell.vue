@@ -15,6 +15,7 @@ const props = withDefaults(
     navigation?: boolean;
     modelValue?: boolean | null;
     disabled?: boolean;
+    density?: "regular" | "compact";
     inspectId?: string;
     pbKey?: string;
   }>(),
@@ -51,7 +52,7 @@ usePbInspect({
     muted: "color.on-surface-muted",
     gap: "spacing.sm",
     typography: "typography.content",
-    padding: "spacing.md",
+    padding: props.density === "compact" ? "spacing.xs" : "spacing.md",
     border: "border.hairline",
     target: "size.touch",
     title: "typography.content",
@@ -73,7 +74,7 @@ usePbInspect({
       pbStyle({
         color: 'color.on-surface',
         background: 'color.surface',
-        padding: 'spacing.md',
+        padding: density === 'compact' ? 'spacing.xs' : 'spacing.md',
         gap: 'spacing.sm',
       })
     "
@@ -105,7 +106,7 @@ usePbInspect({
         >{{ description }}</span
       >
     </button>
-    <div v-else class="main">
+    <div v-else-if="modelValue === null" class="main">
       <span
         v-pb="
           part('title', 'text', {
@@ -138,11 +139,32 @@ usePbInspect({
     <SwitchControl
       v-if="modelValue !== null"
       :label="props.title"
+      label-position="start"
       :model-value="Boolean(modelValue)"
       :disabled="Boolean(disabled)"
       :inspect-id="`${inspectId ?? 'ds.list-cell'}.switch${pbKey ? '.' + pbKey : ''}`"
       @update:model-value="emit('update:modelValue', $event)"
-    />
+      ><template #label
+        ><span
+          v-pb="
+            part('title', 'text', {
+              typography: 'typography.content',
+              color: 'color.on-surface',
+            })
+          "
+          >{{ title }}</span
+        ><span
+          v-if="description"
+          v-pb="
+            part('description', 'text', {
+              typography: 'typography.caption',
+              color: 'color.on-surface-muted',
+            })
+          "
+          >{{ description }}</span
+        ></template
+      ></SwitchControl
+    >
     <Icon v-else-if="navigation" name="chevron-right" />
   </div>
 </template>
@@ -163,6 +185,7 @@ usePbInspect({
   overflow-wrap: anywhere;
 }
 .main:is(button) {
+  justify-content: center;
   text-align: start;
   min-height: var(--pb-size-touch);
   padding: var(--pb-layout-zero);

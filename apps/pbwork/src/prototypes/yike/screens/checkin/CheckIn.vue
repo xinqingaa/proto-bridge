@@ -77,8 +77,8 @@ watch(notice, (open) => {
 function toggle(habitId: string) {
   if (store.toggleCheckin(habitId)) {
     noticeText.value = checked(habitId, today.value)
-      ? "今天已打卡"
-      : "今天已取消打卡";
+      ? `「${store.data.habits.find((habit) => habit.id === habitId)?.name}」今天已打卡`
+      : `「${store.data.habits.find((habit) => habit.id === habitId)?.name}」今天已取消打卡`;
     notice.value = true;
   }
 }
@@ -105,7 +105,6 @@ function resetCorruptData() {
   >
     <header class="yike-page-head">
       <div>
-        <span class="yike-eyebrow">{{ today }}</span>
         <h1
           v-pb="
             scope.node('title', 'text', {
@@ -116,10 +115,68 @@ function resetCorruptData() {
             })
           "
         >
-          今天的习惯
+          打卡
         </h1>
+        <div
+          class="yike-tally"
+          v-pb="
+            scope.node('tally', 'summary', {
+              tokens: { typography: 'typography.content', gap: 'spacing.xs' },
+            })
+          "
+          aria-live="polite"
+        >
+          <span>今天</span
+          ><strong
+            v-pb="
+              scope.node('done-count', 'text', {
+                tokens: {
+                  typography: 'typography.content',
+                  color: 'color.on-surface',
+                },
+              })
+            "
+            >{{ doneCount }}</strong
+          ><span>/ {{ habits.length }}</span>
+          <span
+            v-pb="
+              scope.node('remaining', 'text', {
+                tokens: {
+                  typography: 'typography.caption',
+                  color: 'color.on-surface-muted',
+                },
+              })
+            "
+            >{{
+              !habits.length
+                ? "还没有习惯"
+                : doneCount === habits.length
+                  ? "全部完成"
+                  : `还剩 ${habits.length - doneCount} 个`
+            }}</span
+          >
+        </div>
       </div>
+      <button
+        class="yike-icon"
+        type="button"
+        aria-label="新建习惯"
+        @click="nav().editor()"
+        v-pb="
+          scope.node('create', 'button', {
+            tokens: { size: 'size.touch', color: 'color.primary' },
+          })
+        "
+      >
+        <Plus aria-hidden="true" />
+      </button>
     </header>
+    <p
+      v-if="habits.length && doneCount === habits.length"
+      class="yike-complete"
+    >
+      今天的习惯都完成了，明天见。
+    </p>
     <p
       v-if="store.storageIssue.value"
       class="yike-storage-warning"
@@ -139,65 +196,6 @@ function resetCorruptData() {
       </button>
       <button v-else type="button" @click="store.retrySave">重试保存</button>
     </p>
-    <div
-      class="yike-tally"
-      v-pb="
-        scope.node('tally', 'summary', {
-          tokens: { gap: 'spacing.sm' },
-        })
-      "
-      aria-live="polite"
-    >
-      <strong
-        v-pb="
-          scope.node('done-count', 'text', {
-            tokens: {
-              typography: 'typography.numeric-title',
-              color: 'color.on-surface',
-            },
-          })
-        "
-        >{{ doneCount
-        }}<small
-          v-pb="
-            scope.node('habit-count', 'text', {
-              tokens: {
-                typography: 'typography.body-sm',
-                color: 'color.on-surface',
-              },
-            })
-          "
-          >/{{ habits.length }}</small
-        ></strong
-      ><span
-        v-pb="
-          scope.node('remaining', 'text', {
-            tokens: {
-              typography: 'typography.content',
-              color: 'color.on-surface-muted',
-            },
-          })
-        "
-        >{{
-          habits.length === 0
-            ? "从一个小习惯开始"
-            : doneCount === habits.length
-              ? "今天的都完成了"
-              : `还剩 ${habits.length - doneCount} 个`
-        }}</span
-      ><button
-        type="button"
-        aria-label="新建习惯"
-        @click="nav().editor()"
-        v-pb="
-          scope.node('create', 'button', {
-            tokens: { size: 'size.touch', color: 'color.primary' },
-          })
-        "
-      >
-        <Plus aria-hidden="true" />
-      </button>
-    </div>
     <p v-if="habits.length === 0" class="yike-empty">还没有进行中的习惯</p>
     <Button
       v-if="habits.length === 0"
@@ -339,6 +337,12 @@ function resetCorruptData() {
   background: var(--pb-color-background);
   color: var(--pb-color-on-surface);
 }
+.yike-complete {
+  padding: var(--pb-spacing-sm-plus);
+  border-radius: var(--pb-radius-control-compact);
+  background: var(--pb-color-primary-soft);
+  font: var(--pb-typography-caption);
+}
 .yike-storage-warning,
 .yike-empty {
   color: var(--pb-color-on-surface-muted);
@@ -379,17 +383,19 @@ function resetCorruptData() {
   block-size: var(--pb-size-icon);
 }
 .yike-tally {
-  margin-block: var(--pb-spacing-md);
+  margin-block: var(--pb-spacing-xs) var(--pb-spacing-md);
+  justify-content: flex-start;
+  white-space: nowrap;
   gap: var(--pb-spacing-sm);
 }
 .yike-tally strong {
-  font: var(--pb-typography-numeric-title);
+  font: var(--pb-typography-content);
 }
 .yike-tally small {
   font: var(--pb-typography-body-sm);
 }
 .yike-tally span {
-  flex: var(--pb-layout-flex-fill);
+  flex: none;
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-content);
 }
@@ -405,7 +411,7 @@ function resetCorruptData() {
 .yike-habits {
   display: flex;
   flex-direction: column;
-  gap: var(--pb-spacing-md);
+  gap: var(--pb-spacing-sm-plus);
   padding: var(--pb-layout-zero);
   margin: var(--pb-layout-zero);
   list-style: none;

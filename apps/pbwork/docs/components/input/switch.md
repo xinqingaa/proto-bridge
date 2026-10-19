@@ -17,11 +17,13 @@
 - 用户激活后立即更新布尔 `modelValue`。
 - `color` 只接受 Bind 池 Token ID，禁止硬编码色值。
 - disabled 阻止激活并使用 `opacity.disabled`。
+- 关闭轨道显式使用 `color.outline`，滑块使用 `color.surface`；不依赖宿主继承色，玻璃面板内也保留可辨认的开关轮廓。
 
 ## States
 
 | id | label | kind |
 | --- | --- | --- |
+| `label-start` | 左侧标签 | `variant` |
 | `off` | 关闭 | `content` |
 | `disabled` | 禁用 | `interaction` |
 
@@ -30,3 +32,5 @@
 - 用于通知、自动同步等立即生效的开关设置。
 - 不用 Switch 模拟互斥选项、批量多选或需要显式提交的确认项。
 - Props、Slots、Events、默认值与 Token 槽以 [Switch Contract](../../../src/design-system/components/contracts/switch.json) 为准。
+
+`labelPosition="start"`调整内部Flex顺序，将标签放在开关前；输入、选中与键盘机制仍复用Vuetify，默认end保持原行为；配置行无需复制标签。

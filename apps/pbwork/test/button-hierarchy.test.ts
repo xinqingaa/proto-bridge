@@ -67,6 +67,7 @@ describe("公共按钮操作层级", () => {
     });
     expect(wrapper.findAllComponents(Button)).toHaveLength(1);
     expect(wrapper.findComponent(Button).props("kind")).toBe("accent");
+    expect(wrapper.findComponent(Button).props("shape")).toBe("pill");
     await wrapper.setProps({ kind: "danger" });
     expect(wrapper.findComponent(Button).props("kind")).toBe("danger");
     expect(wrapper.findComponent(Button).props("material")).toBe("glass");

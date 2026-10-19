@@ -6,6 +6,7 @@ export default defineConfig({
     "yike-composition.browser.ts",
     "yike-foundation.browser.ts",
     "yike-pages.browser.ts",
+    "yike-rework.browser.ts",
   ],
   use: {
     baseURL: `http://127.0.0.1:${port}`,

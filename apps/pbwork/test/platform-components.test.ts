@@ -282,18 +282,20 @@ it("repeated component parts preserve the owning key without duplicate local ide
     inspectId: "test.home.row",
     pbKey: "alpha",
     title: "A",
-    modelValue: true,
+    modelValue: null,
   });
   const second = render(ListCell, {
     inspectId: "test.home.row",
     pbKey: "beta",
     title: "B",
-    modelValue: true,
+    modelValue: null,
   });
   const titleA = first.get('[data-pb-id="test.home.row.title"]');
   const titleB = second.get('[data-pb-id="test.home.row.title"]');
   expect(titleA.attributes("data-pb-key")).toBe("alpha");
   expect(titleB.attributes("data-pb-key")).toBe("beta");
+  await first.setProps({modelValue:true});
+  await second.setProps({modelValue:true});
   expect(
     first.findComponent({ name: "SwitchControl" }).props("inspectId"),
   ).toBe("test.home.row.switch.alpha");

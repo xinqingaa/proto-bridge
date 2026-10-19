@@ -19,6 +19,10 @@ export function resolveLiveTokenBindings(
   componentId?: string,
 ): Record<string, string> {
   const result: Record<string, string> = { ...staticBindings };
+  if (componentId === "button" && props.shape === "pill")
+    result.radius = "radius.pill";
+  if (componentId === "list-cell" && props.density === "compact")
+    result.padding = "spacing.xs";
 
   if (typeof props.radius === "string" && props.radius.length > 0) {
     for (const [key, value] of Object.entries(result)) {

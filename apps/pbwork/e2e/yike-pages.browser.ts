@@ -110,7 +110,7 @@ test("D1–D7: six theme combinations use the real pages without horizontal over
           await shot(page, `${slug}-${face}-${mode}-bottom`);
           await expect(
             page.getByRole("button", {
-              name: slug === "checkin" ? "已归档习惯" : "重置数据",
+              name: slug === "checkin" ? "已归档习惯" : "重置所有数据",
               exact: true,
             }),
           ).toBeInViewport();
@@ -164,7 +164,7 @@ test("D4–D6: completed/empty/archive, weekly detail and validation keep clear 
     await shot(page, `checkin-${variant}`);
     if (variant === "completed")
       await expect(
-        page.getByText("今天的都完成了", { exact: true }),
+        page.getByText("今天的习惯都完成了，明天见。", { exact: true }),
       ).toBeVisible();
     if (variant === "archived") {
       await page
@@ -212,7 +212,7 @@ test("D7: history navigation, month selection, empty days and future dates refle
   const review = page.locator('[data-pb-id="yike.review.root"]');
   await expect(review).toContainText("50 分钟");
   await page.getByRole("button", { name: "上一期", exact: true }).click();
-  await expect(review).toContainText("2026-10-05 — 2026-10-11");
+  await expect(review).toContainText("10月5日 – 11日");
   await expect(review).toContainText("25 分钟");
   await shot(page, "review-previous");
   await page.getByRole("button", { name: "下一期", exact: true }).click();
@@ -230,7 +230,7 @@ test("D7: history navigation, month selection, empty days and future dates refle
   await expect(
     page.getByRole("button", { name: "下一期", exact: true }),
   ).toBeDisabled();
-  await expect(review).toContainText("2026-10-01 — 2026-10-31");
+  await expect(review).toContainText("2026 年 10 月");
   await shot(page, "review-month");
   await expect(page.locator('[data-date="2026-10-17"]')).toBeDisabled();
   for (const variant of ["only-checkins", "only-focus"]) {
@@ -238,8 +238,8 @@ test("D7: history navigation, month selection, empty days and future dates refle
     await shot(page, `review-${variant}`);
     await expect(review).toContainText(
       variant === "only-checkins"
-        ? "专注 0 次 · 打卡 4 次"
-        : "专注 1 次 · 打卡 0 次",
+        ? /专注次数\s*0 次\s*打卡\s*4 次/
+        : /专注次数\s*1 次\s*打卡\s*0 次/,
     );
   }
 });

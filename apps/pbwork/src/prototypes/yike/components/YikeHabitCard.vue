@@ -171,9 +171,8 @@ usePbInspect({
 .habit-content {
   display: flex;
   flex-direction: column;
-  gap: calc(var(--pb-spacing-sm-plus) + var(--pb-spacing-xxs));
-  padding: var(--pb-spacing-md) var(--pb-spacing-md)
-    calc(var(--pb-spacing-sm-plus) + var(--pb-spacing-xxs));
+  gap: var(--pb-spacing-xs);
+  padding: var(--pb-spacing-xs) var(--pb-spacing-md);
   border-radius: var(--pb-radius-surface);
 }
 button {

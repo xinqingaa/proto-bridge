@@ -8,7 +8,7 @@ test("C1-C3: shared timer, checkin undo, review and tab state", async ({
     "/prototype/yike/focus?variant=default&theme=water&mode=light",
   );
   const focus = page.locator('[data-pb-id="yike.focus.root"]');
-  await focus.getByRole("radio", { name: "正计时", exact: true }).click();
+  await focus.getByRole("tab", { name: "正计时", exact: true }).click();
   await focus.getByRole("button", { name: "开始计时", exact: true }).click();
   await page.clock.fastForward(65_000);
   await focus.getByRole("button", { name: "暂停", exact: true }).click();
@@ -20,7 +20,7 @@ test("C1-C3: shared timer, checkin undo, review and tab state", async ({
     .click();
   await page.getByRole("tab", { name: "回顾", exact: true }).click();
   const review = page.locator('[data-pb-id="yike.review.root"]');
-  await expect(review).toContainText("打卡 1 次");
+  await expect(review).toContainText(/打卡\s*1 次/);
   await page.getByRole("tab", { name: "专注", exact: true }).click();
   await expect(page).toHaveURL(/variant=stopwatch-paused/);
   await expect(
@@ -28,7 +28,7 @@ test("C1-C3: shared timer, checkin undo, review and tab state", async ({
   ).toBeVisible();
   await focus.getByRole("button", { name: "结束并记录", exact: true }).click();
   await page.getByRole("tab", { name: "回顾", exact: true }).click();
-  await expect(review).toContainText("专注 1 次");
+  await expect(review).toContainText(/专注次数\s*1 次/);
   await expect(review).toContainText("1 分钟");
   await page.getByRole("tab", { name: "打卡", exact: true }).click();
   await checkin
@@ -43,8 +43,8 @@ test("C1-C3: shared timer, checkin undo, review and tab state", async ({
     checkin.getByRole("button", { name: "取消打卡：喝够 8 杯水", exact: true }),
   ).toBeVisible();
   await page.getByRole("tab", { name: "回顾", exact: true }).click();
-  await expect(review).toContainText("专注 1 次");
-  await expect(review).toContainText("打卡 1 次");
+  await expect(review).toContainText(/专注次数\s*1 次/);
+  await expect(review).toContainText(/打卡\s*1 次/);
   await settleVisual(page);
   await page.screenshot({
     animations: "disabled",
@@ -63,20 +63,20 @@ test("C1-C3: direct paused fixture, mode confirmation and explicit due fixture",
   await expect(
     focus.getByRole("button", { name: "继续", exact: true }),
   ).toBeVisible();
-  await focus.getByRole("radio", { name: "倒计时", exact: true }).click();
+  await focus.getByRole("tab", { name: "倒计时", exact: true }).click();
   const sheet = page.locator('[data-pb-id="yike.focus.switch-sheet"]');
   await sheet.getByRole("button", { name: "取消", exact: true }).click();
   await expect(
-    focus.getByRole("radio", { name: "番茄钟", exact: true }),
-  ).toHaveAttribute("aria-checked", "true");
-  await focus.getByRole("radio", { name: "倒计时", exact: true }).click();
+    focus.getByRole("tab", { name: "番茄钟", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
+  await focus.getByRole("tab", { name: "倒计时", exact: true }).click();
   await sheet.getByRole("button", { name: "结束并切换", exact: true }).click();
   await expect(
     focus.getByRole("button", { name: "开始 5 分钟", exact: true }),
   ).toBeVisible();
   await page.getByRole("tab", { name: "回顾", exact: true }).click();
   await expect(page.locator('[data-pb-id="yike.review.root"]')).toContainText(
-    "专注 1 次",
+    /专注次数\s*1 次/,
   );
   await page.goto(
     "/prototype/yike/focus?variant=countdown-due&theme=mechanical&mode=light",
@@ -144,7 +144,7 @@ test("C1-C3: Runtime prepare/reset returns the actual default state", async ({
   await expect(focus).toContainText("25:00");
   await page.getByRole("tab", { name: "回顾", exact: true }).click();
   await expect(page.locator('[data-pb-id="yike.review.root"]')).toContainText(
-    "打卡 0 次",
+    /打卡\s*0 次/,
   );
 });
 
@@ -232,7 +232,7 @@ test("C3: same-route prepare/reset clears business facts, month selection and tr
     "/prototype/yike/settings?variant=default&theme=mechanical&mode=light",
   );
   await prepareCurrent(page, "yike.settings");
-  await page.getByRole("button", { name: "重置数据", exact: true }).click();
+  await page.getByRole("button", { name: "重置所有数据", exact: true }).click();
   expect((await runtimeRequest(page, { kind: "reset" })).ok).toBe(true);
   await expect(
     page.getByRole("button", { name: "确认重置", exact: true }),
@@ -269,7 +269,7 @@ test("C1/C3: habit create/cancel/edit/archive/restore/delete is one real cross-p
     animations: "disabled",
     path: "../../output/yike-c/habit-detail.png",
   });
-  await page.getByRole("button", { name: "编辑习惯", exact: true }).click();
+  await page.getByRole("button", { name: "编辑", exact: true }).click();
   await page
     .getByRole("textbox", { name: "习惯名称", exact: true })
     .fill("取消的修改");
@@ -278,7 +278,7 @@ test("C1/C3: habit create/cancel/edit/archive/restore/delete is one real cross-p
   await expect(
     page.getByRole("heading", { name: "读一本书", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "编辑习惯", exact: true }).click();
+  await page.getByRole("button", { name: "编辑", exact: true }).click();
   await expect(
     page.getByRole("textbox", { name: "习惯名称", exact: true }),
   ).toHaveValue("读一本书");
@@ -307,7 +307,7 @@ test("C1/C3: habit create/cancel/edit/archive/restore/delete is one real cross-p
   ).toBeVisible();
   await page.getByRole("tab", { name: "回顾", exact: true }).click();
   await expect(page.locator('[data-pb-id="yike.review.root"]')).toContainText(
-    "打卡 1 次",
+    /打卡\s*1 次/,
   );
   await page.getByRole("tab", { name: "打卡", exact: true }).click();
   await page.getByRole("button", { name: /读两本书 每天/ }).click();
@@ -321,11 +321,11 @@ test("C1/C3: habit create/cancel/edit/archive/restore/delete is one real cross-p
   await expect(page).toHaveURL(/\/checkin\?/);
   await page.getByRole("tab", { name: "回顾", exact: true }).click();
   await expect(page.locator('[data-pb-id="yike.review.root"]')).toContainText(
-    "打卡 0 次",
+    /打卡\s*0 次/,
   );
   await page.reload();
   await expect(page.locator('[data-pb-id="yike.review.root"]')).toContainText(
-    "打卡 0 次",
+    /打卡\s*0 次/,
   );
 });
 
@@ -359,7 +359,7 @@ test("C2/C3: settings theme/configuration, timer continuity, cancel and reset", 
     animations: "disabled",
     path: "../../output/yike-c/settings-dark.png",
   });
-  await page.getByRole("button", { name: "返回", exact: true }).click();
+  await page.getByRole("button", { name: "专注", exact: true }).click();
   await expect(page).toHaveURL(/\/focus\?/);
   await expect(focus).toContainText(/23:[0-5]\d/);
   await focus.getByRole("button", { name: "暂停", exact: true }).click();
@@ -367,14 +367,14 @@ test("C2/C3: settings theme/configuration, timer continuity, cancel and reset", 
   await focus.getByRole("button", { name: "开始专注", exact: true }).click();
   await expect(focus).toContainText("26:00");
   await focus.getByRole("button", { name: "设置", exact: true }).click();
-  await page.getByRole("button", { name: "重置数据", exact: true }).click();
+  await page.getByRole("button", { name: "重置所有数据", exact: true }).click();
   await page.getByRole("button", { name: "取消", exact: true }).click();
   await expect(
     page.locator(
       '[data-pb-id="yike.settings.configuration.row"][data-pb-key="pomodoro-pomodoroMinutes"]',
     ),
   ).toContainText("26 分钟");
-  await page.getByRole("button", { name: "重置数据", exact: true }).click();
+  await page.getByRole("button", { name: "重置所有数据", exact: true }).click();
   await page.getByRole("button", { name: "确认重置", exact: true }).click();
   await expect(page).toHaveURL(/\/focus\?.*theme=mechanical/);
   await expect(
@@ -384,7 +384,7 @@ test("C2/C3: settings theme/configuration, timer continuity, cancel and reset", 
   await expect(focus).toContainText("第 1 轮");
   await page.getByRole("tab", { name: "回顾", exact: true }).click();
   await expect(page.locator('[data-pb-id="yike.review.root"]')).toContainText(
-    "专注 0 次",
+    /专注次数\s*0 次/,
   );
 });
 
@@ -405,8 +405,8 @@ test("C3: countdown due retains its identity on tab return and reload; missing o
     page.getByRole("button", { name: "再计 1 分钟", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("radio", { name: "倒计时", exact: true }),
-  ).toHaveAttribute("aria-checked", "true");
+    page.getByRole("tab", { name: "倒计时", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
   await page.goto(
     "/prototype/yike/habit-detail?variant=missing&habit=missing-habit&theme=mechanical&mode=light",
   );
@@ -538,10 +538,10 @@ test("C3: local selections survive stack return; recovery can be dismissed and r
     "/prototype/yike/focus?variant=default&theme=mechanical&mode=light",
   );
   const focus = page.locator('[data-pb-id="yike.focus.root"]');
-  await focus.getByRole("radio", { name: "倒计时", exact: true }).click();
+  await focus.getByRole("tab", { name: "倒计时", exact: true }).click();
   await focus.getByRole("button", { name: "10分", exact: true }).click();
   await focus.getByRole("button", { name: "设置", exact: true }).click();
-  await page.getByRole("button", { name: "返回", exact: true }).click();
+  await page.getByRole("button", { name: "专注", exact: true }).click();
   await expect(
     focus.getByRole("button", { name: "开始 10 分钟", exact: true }),
   ).toBeVisible();
@@ -549,7 +549,7 @@ test("C3: local selections survive stack return; recovery can be dismissed and r
   await page.getByRole("radio", { name: "月", exact: true }).click();
   await page.getByRole("tab", { name: "打卡", exact: true }).click();
   await page.getByRole("button", { name: /喝够 8 杯水 每天/ }).click();
-  await page.getByRole("button", { name: "返回", exact: true }).click();
+  await page.getByRole("button", { name: "打卡", exact: true }).click();
   await page.getByRole("tab", { name: "回顾", exact: true }).click();
   await expect(
     page.getByRole("radio", { name: "月", exact: true }),

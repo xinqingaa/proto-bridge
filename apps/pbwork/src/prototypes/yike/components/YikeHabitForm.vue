@@ -12,13 +12,14 @@ import {
   reminderTimeError,
   type YikeHabitDraft,
 } from "./habit-form";
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   modelValue: YikeHabitDraft;
   inspectId: string;
   submitting?: boolean;
   saveError?: string;
   validateOnMount?: boolean;
-}>();
+  showSave?: boolean;
+}>(), { showSave: true });
 const emit = defineEmits<{
   "update:modelValue": [YikeHabitDraft];
   save: [YikeHabitDraft];
@@ -62,10 +63,11 @@ function save() {
 <template>
   <form
     class="habit-form"
+    :id="inspectId"
     :aria-busy="submitting || undefined"
     :data-pb-id="inspectId"
     data-pb-role="form"
-    data-pb-token-gap="spacing.lg"
+    data-pb-token-gap="spacing.md"
     data-pb-token-color="color.on-surface"
     @submit.prevent="save"
   >
@@ -116,20 +118,23 @@ function save() {
         </label>
       </div>
     </fieldset>
-    <SegmentedControl
-      label="频率"
-      material="glass"
-      :items="[
-        { id: 'daily', label: '每天' },
-        { id: 'weekly', label: '每周' },
-      ]"
-      :model-value="modelValue.frequency"
-      :disabled="Boolean(submitting)"
-      :inspect-id="`${inspectId}.frequency`"
-      @update:model-value="
-        update('frequency', $event === 'weekly' ? 'weekly' : 'daily')
-      "
-    />
+    <div class="frequency-field">
+      <span class="hint" :data-pb-id="`${inspectId}.frequency-label`" data-pb-role="text" data-pb-token-typography="typography.caption">频率</span>
+      <SegmentedControl
+        label="频率"
+        material="glass"
+        :items="[
+          { id: 'daily', label: '每天' },
+          { id: 'weekly', label: '每周' },
+        ]"
+        :model-value="modelValue.frequency"
+        :disabled="Boolean(submitting)"
+        :inspect-id="`${inspectId}.frequency`"
+        @update:model-value="
+          update('frequency', $event === 'weekly' ? 'weekly' : 'daily')
+        "
+      />
+    </div>
     <Stepper
       v-if="modelValue.frequency === 'weekly'"
       label="每周次数"
@@ -142,6 +147,7 @@ function save() {
     />
     <SwitchControl
       label="提醒"
+      label-position="start"
       :model-value="modelValue.reminder"
       :disabled="Boolean(submitting)"
       :inspect-id="`${inspectId}.reminder`"
@@ -174,6 +180,7 @@ function save() {
     </label>
     <p v-if="saveError" role="alert" class="save-error">{{ saveError }}</p>
     <YikeAction
+      v-if="showSave !== false"
       type="submit"
       label="保存"
       block
@@ -186,7 +193,12 @@ function save() {
 .habit-form {
   display: flex;
   flex-direction: column;
-  gap: var(--pb-spacing-lg);
+  gap: var(--pb-spacing-md);
+}
+.frequency-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-sm);
 }
 .icons {
   border: none;

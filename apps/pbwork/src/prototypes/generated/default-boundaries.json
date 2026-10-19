@@ -195,6 +195,10 @@
     {
       "screenId": "yike.launch",
       "pbId": "yike.launch.promise"
+    },
+    {
+      "screenId": "yike.launch",
+      "pbId": "yike.launch.privacy"
     }
   ],
   "yike.review": [

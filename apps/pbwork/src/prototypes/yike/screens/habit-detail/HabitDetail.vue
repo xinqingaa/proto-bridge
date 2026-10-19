@@ -3,8 +3,10 @@ import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { vPb } from "@/authoring/pb-style";
 import PrototypeShell from "@/runtime/prototype/PrototypeShell.vue";
+import AppBar from "@/design-system/components/navigation/AppBar.vue";
 import Button from "@/design-system/components/action/Button.vue";
 import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
+import YikeActionRows from "../../components/YikeActionRows.vue";
 import YikeHabitYear from "../../components/YikeHabitYear.vue";
 import YikeHabitGlyph from "../../components/YikeHabitGlyph.vue";
 import { shiftDay } from "@/design-system/components/_shared/calendar";
@@ -42,8 +44,21 @@ const yearCount = computed(
         item.date >= shiftDay(today.value, -364)! && item.date <= today.value,
     ).length,
 );
+const weekTarget = computed(() => {
+  if (!habit.value) return 0;
+  if (habit.value.frequency === "weekly") return habit.value.target;
+  const start = reviewPeriod(today.value, "week").start;
+  return Array.from({ length: 7 }, (_, index) =>
+    shiftDay(start, index)!,
+  ).filter(
+    (day) =>
+      day <= today.value &&
+      day >= habit.value!.createdOn &&
+      (!habit.value!.archivedOn || day < habit.value!.archivedOn),
+  ).length;
+});
 const metrics = computed(() => [
-  { id: "week", label: "本周", value: count("week") },
+  { id: "week", label: "本周", value: `${count("week")}/${weekTarget.value}` },
   { id: "month", label: "本月", value: count("month") },
   { id: "year-total", label: "最近一年", value: yearCount.value },
 ]);
@@ -77,6 +92,23 @@ function remove() {
     show-back
     @back="nav().back()"
   >
+    <template #app-bar
+      ><AppBar
+        title=""
+        show-back
+        back-label="打卡"
+        dense
+        background="transparent"
+        :inspect-id="scope.id('app-bar')"
+        @back="nav().back()"
+        ><template #append
+          ><Button
+            v-if="habit"
+            label="编辑"
+            kind="quiet"
+            :inspect-id="scope.id('edit')"
+            @click="nav().editor(habit.id)" /></template></AppBar
+    ></template>
     <div
       :key="store.presentation.revision"
       class="yike-stack"
@@ -125,12 +157,6 @@ function remove() {
           <p v-if="habit.archivedOn" role="status">
             已归档 · {{ habit.archivedOn }}
           </p>
-          <Button
-            label="编辑习惯"
-            kind="quiet"
-            :inspect-id="scope.id('edit')"
-            @click="nav().editor(habit.id)"
-          />
         </div>
         <dl class="habit-stats">
           <div
@@ -174,19 +200,36 @@ function remove() {
                     },
                   })
                 "
-                >次</span
+                >{{ habit.frequency === "daily" ? "天" : "次" }}</span
               >
             </dd>
           </div>
         </dl>
-        <p v-if="habit.frequency === 'weekly'" class="muted">
-          本周
-          {{
-            count("week") >= habit.target
-              ? "已达周目标，仍可继续打卡"
-              : `还差 ${habit.target - count("week")} 次达成周目标`
-          }}
-        </p>
+        <section v-if="habit.frequency === 'weekly'" class="section">
+          <h2>本周进度</h2>
+          <div
+            class="week-goal"
+            v-pb="
+              scope.node('week-goal', 'summary', {
+                tokens: { gap: 'spacing.sm', color: 'color.primary' },
+              })
+            "
+          >
+            <i
+              v-for="index in habit.target"
+              :key="index"
+              :class="{ 'is-done': index <= count('week') }"
+            />
+          </div>
+          <p class="muted">
+            本周
+            {{
+              count("week") >= habit.target
+                ? "已达周目标，仍可继续打卡"
+                : `还差 ${habit.target - count("week")} 次达成周目标`
+            }}
+          </p>
+        </section>
         <section class="section">
           <h2>最近一年</h2>
           <YikeHabitYear
@@ -203,20 +246,24 @@ function remove() {
         <p v-if="store.presentation.message" role="status">
           {{ store.presentation.message }}
         </p>
-        <div class="actions">
-          <Button
-            :label="habit.archivedOn ? '恢复习惯' : '归档习惯'"
-            kind="outlined"
-            :inspect-id="scope.id('archive')"
-            @click="archive"
-          />
-          <Button
-            label="删除习惯"
-            kind="danger"
-            :inspect-id="scope.id('delete')"
-            @click="deleting = true"
-          />
-        </div>
+        <YikeActionRows
+          :inspect-id="scope.id('actions')"
+          :items="[
+            {
+              id: 'archive',
+              inspectId: scope.id('archive'),
+              label: habit.archivedOn ? '恢复习惯' : '归档习惯',
+              description: '保留记录，从打卡页隐藏',
+            },
+            {
+              id: 'delete',
+              inspectId: scope.id('delete'),
+              label: '删除习惯',
+              danger: true,
+            },
+          ]"
+          @select="(id) => (id === 'archive' ? archive() : (deleting = true))"
+        />
       </template>
       <template v-else>
         <p
@@ -264,6 +311,24 @@ function remove() {
   </PrototypeShell>
 </template>
 <style scoped>
+.week-goal {
+  display: flex;
+  gap: var(--pb-spacing-sm);
+}
+.week-goal i {
+  inline-size: var(--pb-size-icon);
+  block-size: var(--pb-size-icon);
+  border: var(--pb-border-default);
+  border-radius: var(--pb-radius-pill);
+}
+.week-goal .is-done {
+  background: var(--pb-color-primary);
+  border-color: var(--pb-color-primary);
+}
+.yike-stack {
+  padding-block-start: var(--pb-spacing-sm);
+}
+
 .habit-heading {
   display: flex;
   align-items: center;

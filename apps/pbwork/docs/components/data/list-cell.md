@@ -19,6 +19,7 @@
 
 | id | label | kind |
 | --- | --- | --- |
+| `compact` | 紧凑行距 | `variant` |
 | `switch` | 开关单元 | `variant` |
 | `disabled` | 禁用 | `interaction` |
 
@@ -27,3 +28,5 @@
 放在列表容器内，leading 插槽或 icon 提供前置内容；modelValue 为 boolean 时使用开关，null 表示没有开关。开关与导航互斥，业务不要嵌套按钮。
 
 Props、Slots、Events、默认值与 Token 槽以 [ListCell Contract](../../../src/design-system/components/contracts/list-cell.json) 为准。
+
+`density="compact"`用于紧凑配置列表，ListCell内边距改为`spacing.xs`，保留`size.touch`热区；GroupedList将该公开选项传给行组件，默认regular不变。

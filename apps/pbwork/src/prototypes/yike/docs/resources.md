@@ -8,13 +8,14 @@
 
 当前范围按2026-10-19用户指令：已做好的适配全部保留，玻璃能力不再扩大；制作精力回到表盘、打孔卡和日期图形。更多玻璃区域只是候选，不阻塞资源主线。
 
-七项旧独立资源登记已清空，源码/资产/预览/夹具保留。后文的制作存量说明不代表组件大模块仍有独立入口，也不代表所有内容已接入页面。玻璃切换通过公共SegmentedControl的material能力展示，其余归位按执行进度接续。
+七项旧独立资源登记已清空，源码/资产/预览/夹具保留。后文的制作存量说明不代表组件大模块仍有独立入口，也不代表所有内容已接入页面。专注模式通过公共 PrimaryTabs 的具名分页展示，范围/频率选择使用 SegmentedControl 的 glass 材质。
 
 | 使用区域 | 承接 | 三主题适配范围 |
 | --- | --- | --- |
 | 根导航 | DS玻璃Tabbar，图标+文字+选中底 | 柿子/苔绿/靛蓝强调，独立玻璃染色与浅深模式 |
-| 模式/范围/频率 | SegmentedControl，公共material=glass | 共用单选/键盘/禁用；主题控制材质与字阶 |
-| 主次/危险/轻操作 | 优先Button现有glass；确需时扩展有限公开能力 | 主题染色与操作层级，不做平行按钮体系 |
+| 专注模式 | PrimaryTabs + 三个具名 FocusPanel | 共用滑动选中底、分页过渡、横滑和键盘；会话确认仍由业务层处理 |
+| 范围/频率 | SegmentedControl，公共 material=glass | 共用单选/键盘/禁用；主题控制材质与字阶 |
+| 主次/危险/轻操作 | Button 公开类型及 shape=pill | 主题染色与胶囊形；决策区使用强调/危险操作与 quiet，不复制按钮体系 |
 | 图标操作 | IconButton已有glass | 主题前景/焦点与材质 |
 | 分组/卡行/概况/当天记录 | GlassSurface与公共列表组合 | 三套边缘/圆角/高光，避免嵌套玻璃 |
 | 编辑/配置/确认 | 共享面板+必要玻璃能力 | 焦点/关闭/滚动机制共用，内容可读 |
@@ -69,16 +70,17 @@
 | --- | --- | --- | --- |
 | 品牌物件 / LaunchScreen、Dial | 启动、空态、设置缩略图 | DS LaunchScreen/BrandMark 的公开插槽 + 同一自有签名图形 | 三主题、浅深、静帧/reduced motion；不复制启动/导航机制 |
 | YikeDial / Dial.vue | 专注、设置预览、启动 | 原型本地内容；三个视觉分支共享时间语义，允许拆文件，不登记组件大模块 | 待开始/运行/暂停/休息/完成、0/60/>60 分钟；RingProgress 无法承接三种物件形状与反色/软影 |
-| 主次操作 / `.y-button` | 专注、编辑、确认内容 | 优先 DS Button 公开能力和合理变体；YikeAction已改为公共Button的配置包装，主操作用accent、次操作用outlined、危险用danger、轻操作用quiet，待页面接入 | 草稿品牌色、不同主题高度/字距、描边次要/危险/轻量动作；DS 主要操作绑定 color.action（中性色），不能把它视作缺一个 primary 覆盖，也不能换绑 DS 实例 |
+| 主次操作 / `.y-button` | 专注、编辑、确认内容 | 优先 DS Button 公开能力和合理变体；YikeAction已改为公共Button的配置包装，主操作用accent、危险用danger、轻操作用quiet，统一shape=pill；outlined仅用于适合描边的独立次操作 | 新增公共 shape=rounded/pill，默认外观不变；草稿品牌色、主题高度/字距与操作层级由公开能力承接；DS 主要操作绑定 color.action（中性色），不能把它视作缺一个 primary 覆盖，也不能换绑 DS 实例 |
 | 根导航 / TabBar.vue | 三个根页面 | 直接使用 DS 玻璃 Tabbar + 共享 prototypeNavigation / TabViewport；现有局部文件已改为公共Tabbar配置包装，正式壳已接入，页面体验待验收 | 用户已批准玻璃容器、图标+文字与选中底，替代草稿纯文字基线；不复制路由/保活机制 |
-| 局部模式 / `.y-modes`、`.y-segmented` | 专注、回顾、设置、编辑 | 统一优先DS SegmentedControl及公共glass材质；已有局部模式文件已改为DS调用，不继续扩展平行切换组件 | 当前选择、禁用/确认切模式、键盘；不得把无 viewport 的模式选择用一级 Tab 冒充 |
+| 专注模式 / `.y-modes` | 专注 | YikeFocusModes 组合 DS PrimaryTabs，三个具名 slot 分别承载 FocusPanel | 真实 viewport、选中轨迹、横滑、键盘和 reduced motion 共用；切换确认/取消回到原模式 |
+| 范围与频率 / `.y-segmented` | 回顾、设置、编辑 | DS SegmentedControl 公开 glass 材质 | 值选择不伪装成页面导航；方向键、禁用与焦点沿用公共能力 |
 | 轮次与计圈 / `.y-pips`、`.y-laps` | 专注 | 原型自有展示，不持有第二份会话 | 第1轮/当前轮/四轮、无圈/有圈/暂停；列表消费同一模型 |
 | 时长与提醒选择 | 专注、设置、编辑 | DS DurationPicker（时长）/ 原生 time 输入（提醒时刻）；设置值选择复用共享 BottomSheet/ActionSheet | 取消/确认、配置上下限、运行中修改后续配置；不能复制草稿 Sheet 的遮罩/手势 |
 | 打孔卡行 / CheckInScreen.vue、PunchButton.vue | 打卡 | 原型自有行与标记组件，名称与今日按钮分开；公共星期表头在列表层 | 四习惯、空/部分/全完成、今天/过去/未来、周目标；机械孔、水滴、首字印章；不套通用 ListCell 改成另一套卡布局 |
 | 习惯图标 / HabitGlyph | 打卡、详情、编辑 | 优先 DS Icon 的现有稳定资源；确有品牌形状则共用一份自有 artwork | 叶子/书/水杯/脚步/月亮/拉伸；编辑选择保留可读名称和焦点 |
-| 分组信息行 / `.y-list*` | 设置、详情 | DS GroupedList + ListCell 公开 props/slots | 普通/危险/选中/带说明；只在公开 API 无法承接时记具体变体 |
+| 分组信息行 / `.y-list*` | 设置、详情 | 设置使用 GroupedList + ListCell 的公开 density=compact；详情操作使用 YikeActionRows + 公共 Button | 名称/值/箭头同排；危险操作与说明不抢标题，说明通过 aria-describedby 关联 |
 | 名称、频率、次数、提醒 | 编辑 | DS TextField、玻璃 SegmentedControl、Stepper、Switch 公开组合；提醒时刻使用原生 time 输入 | 空白/超长校验、每日/每周1–7、提醒开/关、取消和重复提交；图标组为自有选择内容 |
-| 编辑承载 / HabitEditorScreen.vue | 新建/编辑 | DS FlowSheet/BottomSheet 公共机制，业务表单为内容 | 新建/编辑、键盘、滚动到字段和保存、关闭丢弃；禁止复制草稿 `position`/手势层 |
+| 编辑承载 / HabitEditorScreen.vue | 新建/编辑 | DS BottomSheet 公共机制；来源页作为 inert 底页，表单 body + actions 保存 footer | 仅一处标题/关闭；原生 form 属性提交同一表单，窄屏 body 滚动且保存可达；不复制 Overlay/手势层 |
 | 归档列表 | 打卡、详情 | DS BottomSheet + GroupedList/ListCell 内容 | 空/非空、恢复、关闭；恢复不产生打卡 |
 | 放弃/取消/删除/重置/恢复 | 专注、详情、设置 | DS ConfirmDialog / ActionSheet / BottomSheet 公开容器 + 业务内容 | 取消/确认、危险范围、焦点返回、冻结恢复、后台计时；机制不自造 |
 | 撤销与保存失败 | 打卡与全局 | 共享 Toast/TransientNotice 机制 + 业务撤销/重试状态 | 当前操作/替换/过期/换日、持续失败提示；提示只补充真实内容变化 |
@@ -96,9 +98,11 @@
 
 ## 已落地资源与剩余适配
 
-- `components/YikeDial.vue`：输入 minutes/total/digits/caption/tone；机械图形以60分钟为固定尺度，水位以会话比例裁切，零值不画扇面，整小时画完整圆，超过一小时按小时余量绘制并补充“另有/已满 N 小时”；数字仍显示实际时长。水位重复读数仅用于反色并 aria-hidden。静态图形与绘制色位于六份 `theme/assets/*.svg`，以 asset.brand-mark 固定包身份和摘要；受控几何位于 dial-artwork.json。
+- `components/YikeDial.vue`：输入 minutes/total/digits/caption/tone；机械图形以60分钟为固定尺度，水位以会话比例裁切，零值不画扇面，整小时画完整圆，超过一小时按小时余量绘制并补充“另有/已满 N 小时”；数字仍显示实际时长。水位重复读数用于水下前景并 aria-hidden；休息态使用 color.on-surface 以适配浅休息水色，普通态保留 color.on-inverse-surface，CSS 与 Evidence 同步。静态图形与绘制色位于六份 `theme/assets/*.svg`，以 asset.brand-mark 固定包身份和摘要；受控几何位于 dial-artwork.json。
 - `components/YikeTextNavigation.vue`：已改为DS Tabbar的目的地配置包装，使用图标和文字；正式壳已连接共享导航/TabViewport。
-- `components/YikeFocusModes.vue`：已改为DS SegmentedControl的模式配置包装，使用material=glass，共享单选、方向键与禁用行为，不拥有viewport；旧mode-artwork.json保留存量。
+- `components/YikeFocusModes.vue`：组合 DS PrimaryTabs 与番茄/正计时/倒计时具名页面，各页由 `screens/focus/FocusPanel.vue` 展示同一会话模型。滑动选择、分页过渡和横滑来自共享组件；旧 mode-artwork.json 仅保留存量。
+- `components/YikeFacePreview.vue`：缩略图复用 YikeDial，使用明确的 12:34 示例读数和对应剩余量，保留机械扇面、水位与日影。
+- `components/round-artwork.json`：集中三主题轮次几何；完成/当前/未来分别表达，不用同一种实心圆代替全部状态。
 - `components/YikeHabitCard.vue`：名称与今日按钮各发独立事件；过去/未来记录只读，未来不显示完成。七日数据由调用方提供，不生成历史。六种习惯图标共用 YikeHabitGlyph，来源为 Lucide 公开组件，尺寸/描边从主题读取。
 - 五个存量预览文件保留，preview-resources.ts 已清空七项独立登记，状态写入设备 session，支持复位与独立复制；普通 DS Button 仅用于演示工具，不登记业务变体。
 
@@ -107,8 +111,8 @@
 
 ### 操作与编辑组合
 
-- `YikeAction.vue`已改为DS Button配置包装，不再持有原生按钮样式或Spinner。公共Button的accent/danger/quiet表达品牌、危险与轻操作；次操作使用outlined及glass。等待/禁用/提交由公共Button承接，等待保留操作强调度。
-- `YikeHabitForm.vue` 组合 TextField、SegmentedControl、Stepper、SwitchControl 与六种业务图标；名称按可见字素计数（1–30），保存前去首尾空白。提醒时间使用原生 `input[type=time]`，跟随所选主题模式；现有 DurationPicker 表达时长，不能冒充时刻选择器。
+- `YikeAction.vue`已改为DS Button配置包装，不再持有原生按钮样式或Spinner。公共 Button 的 accent/danger/quiet 表达品牌、危险与轻操作，shape=pill 承接胶囊形；决策区的取消/次操作使用 quiet。等待/禁用/提交由公共 Button 承接，等待保留操作强调度。
+- `YikeHabitForm.vue` 组合 TextField、SegmentedControl、Stepper、SwitchControl 与六种业务图标；名称按可见字素计数（1–30），保存前去首尾空白。提醒时间使用原生 `input[type=time]`，跟随所选主题模式；现有 DurationPicker 表达时长，不能冒充时刻选择器。频率有独立可见标签，提醒用 SwitchControl 的 labelPosition=start；off 轨道绑定 color.outline、滑块绑定 color.surface。正式编辑页隐藏表单内保存，用 BottomSheet actions 提交相同 form；独立预览默认仍显示保存。
 - `CompositionPreview.vue` 使用共享 BottomSheet 与 Toast：新建/编辑、每周次数、提醒、保存失败、删除确认、设置时长/轮次和撤销。会话数据属于设备预览，编辑复制已保存值，取消不写回；不是业务持久化或正式页面完成证明。
 
 
@@ -132,7 +136,7 @@
 | --- | --- | --- |
 | 六组合主题 | theme/semantic.json、component.json、六份 SVG | 文字/操作配对、表面继承、三种字重与数字比例、圆角、字距、染色/边缘/高光/降级；逐项区分主动继承与漏配 |
 | 三表盘 | components/YikeDial.vue、dial-artwork.json | 0/60/>60、正计时、暂停/休息/完成，水位反色与波纹、日影软边/深色光晕；同一比例不替代三种真实物件尺寸 |
-| 导航与模式 | 公共 Tabbar、SegmentedControl；本地配置包装 | 图标/文字/选中底、玻璃、方向键/禁用；只保留公共导航与单选机制 |
+| 导航与模式 | 公共 Tabbar/TabViewport、PrimaryTabs、SegmentedControl；本地配置包装 | 根页 keepMounted/instant/无横滑；专注具名分页/连续轨迹/横滑；范围频率为单选；三者职责分开 |
 | 操作与图标控件 | YikeAction → Button；公共 IconButton | 强调/描边/危险/轻量、等待/禁用、文字适配和焦点；不通过私有样式修改 DS |
 | 打孔卡行 | YikeHabitCard → GlassSurface + 本地内容 | 共享玻璃只使用一层；名称与今日操作独立，三主题标记、未来只读、长名称、禁用；玻璃绑定由 DS 实例提供 |
 | 周图 | YikeWeekChart、review-artwork.json | 三形态、零值/500分钟尺度、选中/收起、未来禁用与可读日期 |
@@ -169,7 +173,7 @@
 | 阴影、滤镜、材质 | elevation.raised/overlay/glass、effect.artwork-shadow、surface.glass-backdrop | 三主题与浅深显式覆盖；单层玻璃和已有降级能力保留；不新增材质范围 |
 | 透明度 | 公共 opacity.*；绘图层次归资产与 dial/review/date artwork | 控件禁用/选中沿用 DS；日影暂停绘图透明度独立归 artwork，不混用禁用语义；水位高低由实际比例派生 |
 | 动效 | 基础 motion.*、公共单选/导航/Overlay机制 | 共享时长与 reduced motion；暂停冻结、完成静帧；不复制草稿装饰动画或导航实现 |
-| 固定绘图 | theme/assets/*.svg 与 dial/punch/review/date-artwork.json | 固定几何、遮罩与绘色集中可审；进度、日期、分钟数由真实输入派生，不成为 Token |
+| 固定绘图 | theme/assets/*.svg 与 dial/punch/review/date-artwork.json | 固定几何、遮罩与绘色集中可审（含 round-artwork.json）；进度、日期、分钟数由真实输入派生，不成为 Token |
 | 草稿专用 | 保留在 drafts/yike，不进入正式主题 | 手机壳/状态栏/展示页尺寸、工具按钮、随机示例数据不迁移 |
 
 统计图与打孔标记统一使用 color.primary。机械以孔/块表达，水位以水滴/杯体表达，日影以印章/方框/渐隐表达；浅深色与文字配对共用主题语义。与草稿独立水色、墨影色的差别是本批主动取舍；主表盘仍保留独立资产绘色。水位数字底片、公共玻璃导航、系统字体与规范触控尺寸也属于明确取舍，不列为待还原缺陷。

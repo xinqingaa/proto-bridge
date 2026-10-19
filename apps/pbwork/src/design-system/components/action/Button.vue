@@ -29,6 +29,7 @@ const props = defineProps<{
   kind?: ButtonKind;
   material?: "solid" | "glass";
   size?: ComponentSize;
+  shape?: "rounded" | "pill";
   loading?: boolean;
   block?: boolean;
   disabled?: boolean;
@@ -51,7 +52,7 @@ const isUnavailable = computed(
 );
 
 const buttonStyle = computed(() => ({
-  ...radiusStyle("md"),
+  ...radiusStyle(props.shape === "pill" ? "full" : "md"),
   ...controlSizeStyle(resolvedSize.value),
   ...elevationStyle("none"),
   "--pb-btn-bg": colorTokenCss(colors.value.bgColor),
@@ -69,6 +70,7 @@ usePbInspect({
     kind: resolvedKind.value,
     material: props.material ?? "solid",
     size: size.value ?? "md",
+    shape: props.shape ?? "rounded",
     loading: loading.value ?? false,
     block: block.value ?? false,
     disabled: disabled.value ?? false,
@@ -90,7 +92,7 @@ usePbInspect({
       background: colors.value.bgColor,
       border: colors.value.borderColor,
       onBackground: colors.value.textColor,
-      radius: "radius.control",
+      radius: props.shape === "pill" ? "radius.pill" : "radius.control",
       elevation: "none",
       height: sizeToken(s),
       paddingX: controlPaddingToken(s),
@@ -113,6 +115,7 @@ usePbInspect({
       colors.value.borderColor,
       colors.value.textColor,
       "radius.control",
+      "radius.pill",
       sizeToken(s),
       controlPaddingToken(s),
       "typography.label",

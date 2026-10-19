@@ -14,6 +14,7 @@ const props = withDefaults(
     tone?: "idle" | "run" | "paused" | "break" | "done";
     inspectId: string;
     countingUp?: boolean;
+    compact?: boolean;
   }>(),
   { tone: "idle" },
 );
@@ -103,7 +104,7 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
 <template>
   <svg
     class="yike-dial"
-    :class="[`is-${face}`, `is-${tone}`]"
+    :class="[`is-${face}`, `is-${tone}`, { 'is-compact': compact }]"
     :viewBox="geometry.viewBox"
     role="img"
     :aria-label="`${captionText} ${digits}`"
@@ -111,6 +112,7 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
     data-pb-role="image"
     data-pb-token-artwork="asset.brand-mark"
     data-pb-token-width="size.plot"
+    :data-pb-token-compact-inset="compact ? 'spacing.lg' : undefined"
     data-pb-token-color="color.on-surface"
     data-pb-token-filter="effect.artwork-shadow"
   >
@@ -259,7 +261,9 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
       :clip-path="`url(#${clipId}-water)`"
       aria-hidden="true"
       class="submerged"
-      data-pb-token-color="color.on-inverse-surface"
+      :data-pb-token-color="
+        tone === 'break' ? 'color.on-surface' : 'color.on-inverse-surface'
+      "
     >
       <text
         class="digits"
@@ -289,6 +293,12 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
   block-size: auto;
   overflow: visible;
   color: var(--pb-color-on-surface);
+}
+.yike-dial.is-compact {
+  inline-size: calc(
+    var(--pb-size-plot) - var(--pb-spacing-lg) - var(--pb-spacing-lg) -
+      var(--pb-spacing-lg)
+  );
 }
 .grip {
   fill: var(--pb-color-surface);
@@ -323,6 +333,10 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
 .submerged .digits,
 .submerged .caption {
   fill: var(--pb-color-on-inverse-surface);
+}
+.is-break .submerged .digits,
+.is-break .submerged .caption {
+  fill: var(--pb-color-on-surface);
 }
 .shadow-mask {
   mask-type: alpha;

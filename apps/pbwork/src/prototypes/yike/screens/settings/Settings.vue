@@ -13,7 +13,9 @@ import {
   concreteThemeMode,
   useSystemThemeMode,
 } from "@/runtime/theme-pack-preference";
-import { themeAssetUrl } from "@/design-system/theme/sources";
+import AppBar from "@/design-system/components/navigation/AppBar.vue";
+import YikeActionRows from "../../components/YikeActionRows.vue";
+import YikeFacePreview from "../../components/YikeFacePreview.vue";
 import { useYikeRuntime } from "../../runtime";
 import { yikeNavigation } from "../../navigation";
 import type { YikeFace } from "../../model";
@@ -100,7 +102,7 @@ watch(
 const groups = computed(() => [
   {
     id: "pomodoro",
-    title: "计时与记录",
+    title: "番茄",
     items: [
       ...Object.entries(labels).map(([id, title]) => ({
         id,
@@ -116,7 +118,7 @@ const groups = computed(() => [
         id: "record-threshold",
         title: "短时记录确认阈值",
         value: thresholdLabel(preference.value.shortRecordThresholdSeconds),
-        description: "少于阈值先确认，达到阈值直接记录",
+        description: "",
         icon: "",
       },
       {
@@ -126,7 +128,7 @@ const groups = computed(() => [
         value: "",
         icon: "",
         navigation: false,
-        description: "到点显示提示音反馈，不发送系统通知",
+        description: "",
       },
     ],
   },
@@ -168,6 +170,16 @@ async function reset() {
     show-back
     @back="nav().back('focus')"
   >
+    <template #app-bar
+      ><AppBar
+        title=""
+        show-back
+        back-label="专注"
+        background="transparent"
+        dense
+        :inspect-id="scope.id('app-bar')"
+        @back="nav().back('focus')"
+    /></template>
     <div
       :key="store.presentation.revision"
       class="yike-stack"
@@ -177,9 +189,9 @@ async function reset() {
         })
       "
     >
+      <h1>设置</h1>
       <section class="section">
-        <h1>选一件桌上的物件</h1>
-        <p class="muted">表盘与浅深模式分别选择，立即应用到所有页面。</p>
+        <h2>表盘</h2>
         <div class="faces" role="group" aria-label="表盘">
           <button
             v-for="face in faces"
@@ -199,30 +211,38 @@ async function reset() {
             "
             @click="nav().theme(face.id, preference.mode)"
           >
-            <img
-              :src="themeAssetUrl('yike', `assets/${face.id}-${mode}.svg`)"
-              alt=""
+            <YikeFacePreview
+              :face="face.id"
+              :mode="mode"
+              :inspect-id="scope.id(`preview.${face.id}`)"
             />
             <span>{{ face.label }}</span>
           </button>
         </div>
+        <p class="muted">
+          表盘决定整个一刻的配色和签名图形，打卡页的打孔卡布局不变。
+        </p>
       </section>
-      <SegmentedControl
-        :model-value="preference.mode"
-        :items="[
-          { id: 'light', label: '浅色' },
-          { id: 'dark', label: '深色' },
-          { id: 'system', label: '跟随系统' },
-        ]"
-        label="外观模式"
-        material="glass"
-        :inspect-id="scope.id('mode')"
-        @update:model-value="
-          (value) =>
-            nav().theme(preference.face, value as 'light' | 'dark' | 'system')
-        "
-      />
+      <section class="section">
+        <h2>外观</h2>
+        <SegmentedControl
+          :model-value="preference.mode"
+          :items="[
+            { id: 'light', label: '浅色' },
+            { id: 'dark', label: '深色' },
+            { id: 'system', label: '跟随系统' },
+          ]"
+          label="外观模式"
+          material="glass"
+          :inspect-id="scope.id('mode')"
+          @update:model-value="
+            (value) =>
+              nav().theme(preference.face, value as 'light' | 'dark' | 'system')
+          "
+        />
+      </section>
       <GroupedList
+        density="compact"
         :groups="groups"
         :inspect-id="scope.id('configuration')"
         @select="chooseSetting"
@@ -237,15 +257,19 @@ async function reset() {
       <p v-if="store.storageIssue.value" role="alert">
         暂未保存到本机，当前操作仍可继续。
       </p>
-      <p class="muted">
-        数据仅保存在这台设备。提醒只保存并显示时间，不发送通知。
-      </p>
-      <Button
-        label="重置数据"
-        kind="danger"
-        :inspect-id="scope.id('reset')"
-        @click="resetOpen = true"
+      <YikeActionRows
+        :inspect-id="scope.id('danger-actions')"
+        :items="[
+          {
+            id: 'reset',
+            inspectId: scope.id('reset'),
+            label: '重置所有数据',
+            danger: true,
+          },
+        ]"
+        @select="resetOpen = true"
       />
+      <p class="muted">一刻只在这台设备上保存数据。</p>
     </div>
     <BottomSheet
       v-model="thresholdOpen"
@@ -368,6 +392,20 @@ async function reset() {
   </PrototypeShell>
 </template>
 <style scoped>
+.yike-stack {
+  gap: var(--pb-spacing-md);
+  padding-block-start: var(--pb-layout-zero);
+}
+.yike-stack .section {
+  gap: var(--pb-spacing-sm);
+}
+.yike-stack .muted {
+  line-height: var(--pb-typography-body-line-height);
+}
+.yike-stack h2 {
+  font: var(--pb-typography-caption-strong);
+  color: var(--pb-color-on-surface-muted);
+}
 .threshold-options {
   display: flex;
   flex-wrap: wrap;
@@ -397,7 +435,10 @@ async function reset() {
   background: var(--pb-color-primary-soft);
   color: var(--pb-color-primary);
 }
-.faces img {
+.face-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   inline-size: var(--pb-size-brand);
   max-inline-size: var(--pb-layout-fill);
   block-size: var(--pb-size-brand);

@@ -14,6 +14,7 @@ export default defineScreen({
     fragment("object", { required: true }),
     fragment("name", { required: true }),
     fragment("promise", { required: true }),
+    fragment("privacy", { required: true }),
   ],
   variants: [{ id: "default", label: "品牌静帧" }],
   actions: [],

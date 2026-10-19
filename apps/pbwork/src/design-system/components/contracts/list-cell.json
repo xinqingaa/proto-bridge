@@ -37,10 +37,20 @@
         "type": "boolean"
       },
       "modelValue": {
-        "type": ["boolean", "null"]
+        "type": [
+          "boolean",
+          "null"
+        ]
       },
       "disabled": {
         "type": "boolean"
+      },
+      "density": {
+        "type": "string",
+        "enum": [
+          "regular",
+          "compact"
+        ]
       }
     }
   },
@@ -50,7 +60,8 @@
     "value": "每天",
     "icon": "bell",
     "navigation": true,
-    "disabled": false
+    "disabled": false,
+    "density": "regular"
   },
   "states": [
     {
@@ -70,10 +81,23 @@
       "props": {
         "disabled": true
       }
+    },
+    {
+      "id": "compact",
+      "label": "紧凑行距",
+      "kind": "variant",
+      "props": {
+        "density": "compact"
+      }
     }
   ],
-  "slots": ["leading"],
-  "events": ["select", "update:modelValue"],
+  "slots": [
+    "leading"
+  ],
+  "events": [
+    "select",
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "surface": "color.surface",
     "color": "color.on-surface",

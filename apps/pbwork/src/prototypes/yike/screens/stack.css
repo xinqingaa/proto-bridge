@@ -15,6 +15,9 @@
 .yike-stack p {
   margin: var(--pb-layout-zero);
 }
+.yike-stack > * {
+  flex: none;
+}
 .yike-stack h1 {
   font: var(--pb-typography-title-lg);
 }

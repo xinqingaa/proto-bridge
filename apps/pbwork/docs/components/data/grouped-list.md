@@ -19,6 +19,7 @@
 
 | id | label | kind |
 | --- | --- | --- |
+| `compact` | 紧凑行距 | `variant` |
 | `empty` | 无分组 | `content` |
 | `single` | 单分组 | `content` |
 
@@ -27,3 +28,5 @@
 提供稳定 group.id / item.id 并处理 select / toggle；组件不拥有业务存储或纵滚。长内容复用共享滚动壳，不创建第二套刷新、分页或手势。
 
 Props、Slots、Events、默认值与 Token 槽以 [GroupedList Contract](../../../src/design-system/components/contracts/grouped-list.json) 为准。
+
+`density="compact"`用于紧凑配置列表，ListCell内边距改为`spacing.xs`，保留`size.touch`热区；GroupedList将该公开选项传给行组件，默认regular不变。

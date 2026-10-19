@@ -42,6 +42,7 @@
 
 | id | label | kind |
 | --- | --- | --- |
+| `pill` | 胶囊 | `variant` |
 | `loading` | 加载 | `interaction` |
 | `disabled` | 禁用 | `interaction` |
 | `glass` | 玻璃材质 | `variant` |
@@ -63,3 +64,5 @@
 `material="glass"` 是可选材质，默认 `solid` 保持原有外观；与操作类型、尺寸、加载和禁用状态独立。适用于悬浮操作和丰富背景上的按钮。复用 GlassMaterial，前景独立合成保持清晰；降低透明度或不支持滤镜时回退实色，主要操作仍保留强调度。玻璃加载、禁用状态在同一手机预览中展示。
 
 品牌强调使用color.primary/on-primary，危险使用color.error，轻量使用color.on-surface-muted。字距来自tracking.label，accent最小宽度来自size.action-min-inline；调用方不得换绑颜色。玻璃accent保留足够的品牌染色和对应前景，danger保留危险轮廓；quiet通常使用实色材质并让背景透明。
+
+`shape="rounded"`保留默认控件圆角；`shape="pill"`用于胶囊操作，绑定`radius.pill`。形状与kind、size和material独立，加载及禁用行为相同。

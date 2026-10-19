@@ -40,8 +40,19 @@
               }
             }
           },
-          "required": ["id", "title", "items"]
+          "required": [
+            "id",
+            "title",
+            "items"
+          ]
         }
+      },
+      "density": {
+        "type": "string",
+        "enum": [
+          "regular",
+          "compact"
+        ]
       }
     }
   },
@@ -71,7 +82,8 @@
           }
         ]
       }
-    ]
+    ],
+    "density": "regular"
   },
   "states": [
     {
@@ -101,10 +113,21 @@
           }
         ]
       }
+    },
+    {
+      "id": "compact",
+      "label": "紧凑行距",
+      "kind": "variant",
+      "props": {
+        "density": "compact"
+      }
     }
   ],
   "slots": [],
-  "events": ["select", "toggle"],
+  "events": [
+    "select",
+    "toggle"
+  ],
   "tokenBindings": {
     "color": "color.on-surface",
     "muted": "color.on-surface-muted",

@@ -26,7 +26,7 @@
     },
     "button": {
       "status": "pending",
-      "reason": "公共Button新增accent/danger/quiet有限操作层级及字距/最小宽度绑定；Flutter尚未按当前Contract适配。"
+      "reason": "公共Button新增shape=rounded/pill公开形状与动态radius绑定；Flutter尚待同步。"
     },
     "card": {
       "status": "pending",
@@ -114,7 +114,7 @@
     },
     "switch": {
       "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "reason": "Switch新增labelPosition=start/end公开布局，关闭轨道使用color.outline、滑块使用color.surface；Flutter待同步。"
     },
     "tab-viewport": {
       "status": "pending",
@@ -174,11 +174,11 @@
     },
     "list-cell": {
       "status": "pending",
-      "reason": "PBWork 平台升级新增通用组件；本轮未实现 Flutter，需按 Producer Contract 与主题表适配。"
+      "reason": "公共配置列表新增regular/compact公开density；紧凑行使用spacing.xs内边距并保留size.touch，Flutter待同步。"
     },
     "grouped-list": {
       "status": "pending",
-      "reason": "PBWork 平台升级新增通用组件；本轮未实现 Flutter，需按 Producer Contract 与主题表适配。"
+      "reason": "公共配置列表新增regular/compact公开density；紧凑行使用spacing.xs内边距并保留size.touch，Flutter待同步。"
     },
     "action-sheet": {
       "status": "pending",

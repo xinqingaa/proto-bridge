@@ -39,6 +39,15 @@ export const componentRecords = [
     contract: "contracts/button.json",
     example: {},
     controls: [
+      {
+        key: "shape",
+        label: "形状",
+        control: "select",
+        options: [
+          { label: "圆角", value: "rounded" },
+          { label: "胶囊", value: "pill" },
+        ],
+      },
       { key: "label", label: "文案", control: "text" },
       {
         key: "kind",
@@ -292,6 +301,15 @@ export const componentRecords = [
     contract: "contracts/switch.json",
     example: {},
     controls: [
+      {
+        key: "labelPosition",
+        label: "标签位置",
+        control: "select",
+        options: [
+          { label: "前置", value: "start" },
+          { label: "后置", value: "end" },
+        ],
+      },
       { key: "label", label: "开关文案", control: "text" },
       { key: "modelValue", label: "已开启", control: "boolean" },
       {
@@ -1121,6 +1139,15 @@ export const componentRecords = [
     example: {},
     controls: [
       {
+        key: "density",
+        label: "密度",
+        control: "select",
+        options: [
+          { label: "常规", value: "regular" },
+          { label: "紧凑", value: "compact" },
+        ],
+      },
+      {
         key: "title",
         label: "title",
         control: "text",
@@ -1165,7 +1192,17 @@ export const componentRecords = [
     view: "data/GroupedList.vue",
     contract: "contracts/grouped-list.json",
     example: {},
-    controls: [],
+    controls: [
+      {
+        key: "density",
+        label: "密度",
+        control: "select",
+        options: [
+          { label: "常规", value: "regular" },
+          { label: "紧凑", value: "compact" },
+        ],
+      },
+    ],
   },
   {
     id: "action-sheet",

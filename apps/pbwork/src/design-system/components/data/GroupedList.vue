@@ -21,6 +21,7 @@ const props = withDefaults(
         disabled?: boolean;
       }>;
     }>;
+    density?: "regular" | "compact";
     inspectId?: string;
     pbKey?: string;
   }>(),
@@ -110,6 +111,7 @@ usePbInspect({
           v-for="item in group.items"
           :key="item.id"
           v-bind="item"
+          :density="density ?? 'regular'"
           :inspect-id="`${inspectId ?? 'ds.grouped-list'}.row`"
           :pb-key="`${group.id}-${item.id}`"
           @select="emit('select', { groupId: group.id, itemId: item.id })"

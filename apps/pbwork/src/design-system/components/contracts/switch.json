@@ -27,15 +27,25 @@
       },
       "disabled": {
         "type": "boolean"
+      },
+      "labelPosition": {
+        "type": "string",
+        "enum": [
+          "start",
+          "end"
+        ]
       }
     },
-    "required": ["label"]
+    "required": [
+      "label"
+    ]
   },
   "defaultProps": {
     "label": "接收进度通知",
     "modelValue": true,
     "color": "color.primary",
-    "disabled": false
+    "disabled": false,
+    "labelPosition": "end"
   },
   "states": [
     {
@@ -53,13 +63,25 @@
       "props": {
         "disabled": true
       }
+    },
+    {
+      "id": "label-start",
+      "label": "左侧标签",
+      "kind": "variant",
+      "props": {
+        "labelPosition": "start"
+      }
     }
   ],
-  "slots": [],
-  "events": ["update:modelValue"],
+  "slots": [
+    "label"
+  ],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "active": "color.primary",
-    "track": "color.surface-variant",
+    "track": "color.outline",
     "thumb": "color.surface",
     "text": "color.on-surface",
     "target": "size.touch",

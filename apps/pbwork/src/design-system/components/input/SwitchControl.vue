@@ -8,6 +8,7 @@ import {
 
 const props = defineProps<{
   label: string;
+  labelPosition?: "start" | "end";
   modelValue?: boolean;
   /** Active track Token-ref. */
   color?: string;
@@ -34,6 +35,7 @@ usePbInspect({
   instanceId: inspectId,
   componentId: "switch",
   getProps: () => ({
+    labelPosition: props.labelPosition ?? "end",
     label: label.value,
     modelValue: modelValue.value ?? false,
     color: active.value,
@@ -42,7 +44,7 @@ usePbInspect({
   }),
   getTokens: () => [
     active.value,
-    "color.surface-variant",
+    "color.outline",
     "color.surface",
     "size.touch",
     "typography.content",
@@ -50,7 +52,7 @@ usePbInspect({
   ],
   getTokenBindings: () => ({
     active: active.value,
-    track: "color.surface-variant",
+    track: "color.outline",
     thumb: "color.surface",
     text: "color.on-surface",
     target: "size.touch",
@@ -69,11 +71,15 @@ usePbInspect({
     hide-details
     inset
     :label="label"
+    :class="{ 'label-start': labelPosition === 'start' }"
     :model-value="modelValue ?? false"
     :disabled="disabled ?? false"
     :style="switchStyle"
     @update:model-value="$emit('update:modelValue', Boolean($event))"
-  />
+    ><template #label
+      ><slot name="label">{{ label }}</slot></template
+    ></v-switch
+  >
 </template>
 
 <style scoped>
@@ -86,11 +92,27 @@ usePbInspect({
 .pb-switch :deep(.v-input__control) {
   flex: var(--pb-layout-flex-fill);
 }
+.pb-switch.label-start {
+  inline-size: var(--pb-layout-fill);
+}
+.pb-switch.label-start :deep(.v-selection-control) {
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  inline-size: var(--pb-layout-fill);
+}
+.pb-switch.label-start :deep(.v-label) {
+  flex: var(--pb-layout-flex-fill);
+  margin-inline: var(--pb-layout-zero);
+}
 .pb-switch.v-input--disabled {
   opacity: var(--pb-opacity-disabled);
 }
 .pb-switch :deep(.v-switch__track) {
   opacity: var(--pb-opacity-visible);
+  background: var(--pb-color-outline);
+}
+.pb-switch :deep(.v-switch__thumb) {
+  color: var(--pb-color-surface);
 }
 .pb-switch :deep(.v-selection-control--dirty .v-switch__track) {
   background: var(--pb-switch-active, var(--pb-color-primary)) !important;

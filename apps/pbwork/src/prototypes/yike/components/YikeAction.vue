@@ -27,6 +27,7 @@ defineEmits<{ click: [] }>();
           : (kind ?? 'accent')
     "
     :material="kind === 'primary' || kind === 'quiet' ? 'solid' : 'glass'"
+    shape="pill"
     size="lg"
     :disabled="Boolean(disabled)"
     :loading="Boolean(loading)"

@@ -1,0 +1,491 @@
+<script setup lang="ts">
+import { computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { vPb } from "@/authoring/pb-style";
+import { useClock } from "@/runtime/useClock";
+import { useYikeStore } from "../../model";
+import { useYikeSession } from "../../session";
+import { elapsedMs, type YikeTimerMode } from "../../timer-engine";
+import { yikeNavigation } from "../../navigation";
+import YikeDial from "../../components/YikeDial.vue";
+import YikeAction from "../../components/YikeAction.vue";
+import roundArtwork from "../../components/round-artwork.json";
+import { scope } from "./screen";
+const props = defineProps<{ mode: YikeTimerMode }>();
+const emit = defineEmits<{ custom: []; abandon: [] }>();
+const mode = computed(() => props.mode);
+const route = useRoute(),
+  router = useRouter();
+const store = useYikeStore(),
+  commands = useYikeSession(),
+  now = useClock();
+const face = computed(() => store.data.preferences.face);
+const countdownMinutes = commands.countdownMinutes;
+const session = computed(() =>
+  store.data.session?.mode === mode.value ? store.data.session : null,
+);
+const recoveryOpen = computed(() => store.recoveryNeeded.value);
+const openCustom = () => emit("custom");
+const confirmAbandon = computed({
+  get: () => false,
+  set: (value: boolean) => {
+    if (value) emit("abandon");
+  },
+});
+const status = computed(() =>
+  session.value?.status === "due"
+    ? "finished"
+    : (session.value?.status ?? "idle"),
+);
+const elapsed = computed(() =>
+  session.value ? elapsedMs(session.value, now.value.getTime()) : 0,
+);
+const total = computed(
+  () =>
+    session.value?.targetMs ??
+    (mode.value === "pomodoro"
+      ? store.data.preferences.pomodoroMinutes * 60_000
+      : mode.value === "countdown"
+        ? countdownMinutes.value * 60_000
+        : 0),
+);
+const remaining = computed(() => Math.max(0, total.value - elapsed.value));
+const display = computed(() => {
+  const milliseconds =
+    mode.value === "stopwatch"
+      ? elapsed.value
+      : status.value === "idle"
+        ? total.value
+        : remaining.value;
+  const seconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+});
+const isBreak = computed(() =>
+  Boolean(session.value?.phase && session.value.phase !== "focus"),
+);
+const fullRound = computed(
+  () =>
+    mode.value === "pomodoro" &&
+    !isBreak.value &&
+    status.value === "finished" &&
+    elapsed.value >= total.value,
+);
+const caption = computed(() =>
+  isBreak.value
+    ? status.value === "finished"
+      ? "休息结束"
+      : status.value === "paused"
+        ? "休息已暂停"
+        : session.value?.phase === "long-break"
+          ? "长休息"
+          : "短休息"
+    : status.value === "finished"
+      ? mode.value === "countdown"
+        ? "到点了"
+        : "本轮完成"
+      : status.value === "paused"
+        ? "已暂停"
+        : status.value === "running"
+          ? mode.value === "stopwatch"
+            ? "已计时"
+            : "剩余"
+          : mode.value === "countdown"
+            ? "设置时长"
+            : "准备开始",
+);
+
+const completedLaps = computed(() =>
+  (session.value?.laps ?? [])
+    .map((total, index, all) => ({
+      index: index + 1,
+      total,
+      duration: total - (all[index - 1] ?? 0),
+    }))
+    .reverse(),
+);
+const roundLabel = computed(() =>
+  isBreak.value
+    ? session.value?.phase === "long-break"
+      ? `${store.data.completedRounds} 轮全部完成 · 好好休息`
+      : `第 ${store.data.completedRounds} 轮已完成 · 休息一下`
+    : fullRound.value
+      ? `第 ${store.data.completedRounds} 轮已完成`
+      : `第 ${store.data.completedRounds + 1} 轮${status.value === "idle" ? "" : "专注"}`,
+);
+function syncVariant() {
+  if (route.params.screenSlug === "focus")
+    void yikeNavigation(router, route, store).variant();
+}
+function toggle() {
+  commands.toggle();
+  syncVariant();
+}
+function finish() {
+  commands.finish();
+  syncVariant();
+}
+function lap() {
+  commands.lap();
+}
+function skipBreak() {
+  commands.skipBreak();
+  syncVariant();
+}
+function lapLabel(ms: number) {
+  const seconds = Math.floor(ms / 1000);
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+function appendMinute() {
+  commands.append();
+  syncVariant();
+}
+</script>
+<template>
+  <main class="yike-focus-main" :data-face="face">
+    <div class="yike-stage">
+      <YikeDial
+        :face="face"
+        :compact="mode !== 'pomodoro'"
+        :minutes="(mode === 'stopwatch' ? elapsed : remaining) / 60_000"
+        :total="total / 60_000"
+        :digits="display"
+        :caption="caption"
+        :tone="
+          isBreak
+            ? 'break'
+            : status === 'running'
+              ? 'run'
+              : status === 'paused'
+                ? 'paused'
+                : status === 'finished'
+                  ? 'done'
+                  : 'idle'
+        "
+        :counting-up="mode === 'stopwatch'"
+        inspect-id="yike.focus.timer"
+      />
+      <div
+        v-if="mode === 'pomodoro'"
+        class="yike-round"
+        v-pb="
+          scope.node('round', 'summary', {
+            tokens: {
+              typography: 'typography.content',
+              gap: 'spacing.sm-plus',
+            },
+          })
+        "
+      >
+        <span>{{ roundLabel }}</span>
+        <span class="yike-pips" aria-hidden="true">
+          <svg
+            v-for="round in store.data.preferences.longBreakEvery"
+            :key="round"
+            :viewBox="roundArtwork.viewBox"
+            :class="{
+              'is-done': round <= store.data.completedRounds,
+              'is-current':
+                status !== 'idle' &&
+                !fullRound &&
+                !isBreak &&
+                round === store.data.completedRounds + 1,
+            }"
+            v-pb="
+              scope.node('round-marker', 'image', {
+                key: `round-${round}`,
+                tokens: { width: 'size.icon-inline', color: 'color.primary' },
+              })
+            "
+          >
+            <path :d="roundArtwork[face]" />
+          </svg>
+        </span>
+      </div>
+    </div>
+    <div
+      v-if="mode === 'countdown' && status === 'idle'"
+      class="yike-presets"
+      aria-label="倒计时时长"
+    >
+      <button
+        v-for="minutes in [3, 5, 10, 20]"
+        :key="minutes"
+        type="button"
+        :class="{ 'is-active': countdownMinutes === minutes }"
+        :aria-pressed="countdownMinutes === minutes"
+        v-pb="
+          scope.node('preset', 'button', {
+            key: `minutes-${minutes}`,
+            tokens: {
+              typography: 'typography.content',
+              color:
+                countdownMinutes === minutes
+                  ? 'color.primary'
+                  : 'color.on-surface-muted',
+              radius: 'radius.pill',
+            },
+          })
+        "
+        @click="countdownMinutes = minutes"
+      >
+        {{ minutes }}<small>分</small>
+      </button>
+      <button
+        type="button"
+        v-pb="
+          scope.node('custom', 'button', {
+            tokens: {
+              typography: 'typography.content',
+              color: 'color.primary',
+              size: 'size.touch',
+            },
+          })
+        "
+        @click="openCustom"
+      >
+        自定义
+      </button>
+    </div>
+    <ol
+      v-if="mode === 'stopwatch' && session"
+      class="yike-laps"
+      aria-label="计圈记录"
+      v-pb="
+        scope.node('laps', 'list', {
+          tokens: {
+            typography: 'typography.numeric-content',
+            color: 'color.on-surface',
+          },
+        })
+      "
+    >
+      <li class="is-current">
+        <span>第 {{ (session.laps?.length ?? 0) + 1 }} 圈</span
+        ><b>{{ lapLabel(elapsed - (session.laps?.at(-1) ?? 0)) }}</b
+        ><em>{{ status === "paused" ? "已暂停" : "进行中" }}</em>
+      </li>
+      <li v-for="lap in completedLaps" :key="lap.index">
+        <span>第 {{ lap.index }} 圈</span><b>{{ lapLabel(lap.duration) }}</b
+        ><em>累计 {{ lapLabel(lap.total) }}</em>
+      </li>
+    </ol>
+    <div class="yike-actions">
+      <div class="yike-primary-row">
+        <YikeAction
+          v-if="mode === 'stopwatch' && status === 'running'"
+          label="计圈"
+          kind="secondary"
+          inspect-id="yike.focus.lap"
+          @click="lap"
+        />
+        <YikeAction
+          inspect-id="yike.focus.primary-action"
+          :label="
+            status === 'running'
+              ? '暂停'
+              : status === 'paused'
+                ? '继续'
+                : status === 'finished'
+                  ? fullRound
+                    ? session?.breakAfter === 'long-break'
+                      ? '开始长休息'
+                      : '开始休息'
+                    : isBreak
+                      ? '准备下一轮'
+                      : '完成'
+                  : mode === 'stopwatch'
+                    ? '开始计时'
+                    : mode === 'countdown'
+                      ? `开始 ${countdownMinutes} 分钟`
+                      : '开始专注'
+          "
+          @click="status === 'finished' ? finish() : toggle()"
+        />
+      </div>
+      <div class="yike-secondary-actions">
+        <p
+          v-if="status === 'idle' && mode === 'pomodoro'"
+          class="yike-hint"
+          v-pb="
+            scope.node('configuration-hint', 'text', {
+              tokens: {
+                typography: 'typography.caption',
+                color: 'color.on-surface-muted',
+              },
+            })
+          "
+        >
+          专注 {{ store.data.preferences.pomodoroMinutes }} 分钟 · 短休
+          {{ store.data.preferences.shortBreakMinutes }} 分钟
+        </p>
+        <p v-if="status === 'finished'" class="yike-total" role="status">
+          {{
+            store.data.preferences.sound ? "到点了 · 提示音已开启" : "到点了"
+          }}
+        </p>
+        <YikeAction
+          v-if="
+            store.recoveryAvailable.value &&
+            !recoveryOpen &&
+            status === 'paused'
+          "
+          label="查看恢复选项"
+          kind="quiet"
+          inspect-id="yike.focus.recovery-open"
+          @click="store.recoveryNeeded.value = true"
+        />
+        <YikeAction
+          v-if="session?.status === 'due'"
+          label="再计 1 分钟"
+          kind="secondary"
+          inspect-id="yike.focus.append"
+          @click="appendMinute"
+        />
+        <YikeAction
+          v-if="status === 'paused' && !isBreak"
+          label="结束并记录"
+          kind="quiet"
+          inspect-id="yike.focus.finish"
+          @click="finish"
+        />
+        <YikeAction
+          v-if="!isBreak && (status === 'running' || status === 'paused')"
+          :label="mode === 'pomodoro' ? '放弃本轮' : '取消计时'"
+          kind="quiet"
+          inspect-id="yike.focus.abandon"
+          @click="confirmAbandon = true"
+        />
+        <YikeAction
+          v-if="fullRound || isBreak"
+          label="跳过休息"
+          kind="quiet"
+          inspect-id="yike.focus.skip-break"
+          @click="skipBreak"
+        />
+      </div>
+    </div>
+  </main>
+</template>
+<style scoped>
+.yike-focus-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-block-size: var(--pb-layout-fill);
+  gap: var(--pb-spacing-sm);
+  padding-block: var(--pb-spacing-sm-plus) var(--pb-spacing-sm);
+}
+.yike-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: none;
+  gap: var(--pb-spacing-sm-plus);
+}
+.yike-round {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pb-spacing-sm-plus);
+  font: var(--pb-typography-content);
+  color: var(--pb-color-on-surface-muted);
+}
+.yike-pips {
+  display: flex;
+  gap: var(--pb-spacing-xs);
+}
+.yike-pips svg {
+  inline-size: var(--pb-size-icon-inline);
+  block-size: var(--pb-size-icon-inline);
+  overflow: visible;
+}
+.yike-pips path {
+  fill: var(--pb-color-outline);
+  stroke: transparent;
+  stroke-width: var(--pb-border-width);
+}
+.yike-pips .is-done path {
+  fill: var(--pb-color-primary);
+}
+.yike-pips .is-current path {
+  fill: var(--pb-color-background);
+  stroke: var(--pb-color-primary);
+}
+[data-face="water"] .yike-pips .is-current path,
+[data-face="sundial"] .yike-pips .is-current path {
+  fill: var(--pb-color-primary-soft);
+}
+.yike-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--pb-spacing-xs);
+  margin-block-start: auto;
+  padding-block-start: var(--pb-spacing-sm-plus);
+  inline-size: var(--pb-layout-fill);
+}
+.yike-primary-row {
+  display: flex;
+  justify-content: center;
+  gap: var(--pb-spacing-sm);
+  inline-size: var(--pb-layout-fill);
+}
+.yike-secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pb-spacing-xs);
+  min-block-size: var(--pb-size-control-large);
+}
+.yike-hint,
+.yike-total {
+  margin: var(--pb-layout-zero);
+  padding-block: var(--pb-spacing-sm-plus);
+  font: var(--pb-typography-caption);
+  color: var(--pb-color-on-surface-muted);
+}
+.yike-presets {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--pb-spacing-xs);
+}
+.yike-presets button {
+  min-block-size: var(--pb-size-touch);
+  padding-inline: var(--pb-spacing-sm);
+  border: var(--pb-border-default);
+  border-radius: var(--pb-radius-pill);
+  font: var(--pb-typography-content);
+  color: var(--pb-color-on-surface-muted);
+}
+.yike-presets button.is-active {
+  background: var(--pb-color-action);
+  color: var(--pb-color-on-action);
+}
+.yike-laps {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: var(--pb-layout-zero);
+  padding: var(--pb-layout-zero);
+  inline-size: var(--pb-layout-fill);
+  font: var(--pb-typography-numeric-content);
+}
+.yike-laps li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--pb-spacing-sm);
+  padding-block: var(--pb-spacing-sm);
+  border-block-end: var(--pb-border-hairline);
+}
+.yike-laps em {
+  font: var(--pb-typography-caption);
+  color: var(--pb-color-on-surface-muted);
+  font-style: normal;
+}
+.yike-laps .is-current b {
+  color: var(--pb-color-primary);
+}
+</style>

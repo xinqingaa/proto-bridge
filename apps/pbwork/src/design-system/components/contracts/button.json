@@ -65,6 +65,13 @@
           "solid",
           "glass"
         ]
+      },
+      "shape": {
+        "type": "string",
+        "enum": [
+          "rounded",
+          "pill"
+        ]
       }
     },
     "required": [
@@ -78,7 +85,8 @@
     "loading": false,
     "block": false,
     "disabled": false,
-    "material": "solid"
+    "material": "solid",
+    "shape": "rounded"
   },
   "states": [
     {
@@ -148,6 +156,14 @@
       "props": {
         "kind": "quiet",
         "label": "暂时跳过"
+      }
+    },
+    {
+      "id": "pill",
+      "label": "胶囊",
+      "kind": "variant",
+      "props": {
+        "shape": "pill"
       }
     }
   ],

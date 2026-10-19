@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { createVuetify } from "vuetify";
+import { VWindow, VWindowItem } from "vuetify/components";
 import { mount } from "@vue/test-utils";
 import { reactive, shallowRef, defineComponent, h } from "vue";
 import {
@@ -139,14 +141,15 @@ describe("一刻正式资源", () => {
       props: { device, table: table.value, states: [] },
       global: {
         provide: { [ThemeTableKey as symbol]: table },
+        plugins: [createVuetify({ components: { VWindow, VWindowItem } })],
         stubs: { Button: true },
       },
     });
-    await wrapper.get('[data-value="stopwatch"]').trigger("click");
+    await wrapper.get('[data-selection-key="stopwatch"]').trigger("click");
     expect(device.demo.session?.mode).toBe("stopwatch");
     expect(wrapper.get('[role="status"]').text()).toContain("正计时");
     const copy = createPreviewDevice("B", device.selection, device.demo);
-    await wrapper.get('[data-value="countdown"]').trigger("click");
+    await wrapper.get('[data-selection-key="countdown"]').trigger("click");
     expect(copy.demo.session?.mode).toBe("stopwatch");
     expect(device.demo.session?.mode).toBe("countdown");
     wrapper.unmount();

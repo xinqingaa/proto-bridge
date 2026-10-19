@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import SegmentedControl from "@/design-system/components/input/SegmentedControl.vue";
+import PrimaryTabs from "@/design-system/components/navigation/PrimaryTabs.vue";
 export type YikeFocusMode = "pomodoro" | "stopwatch" | "countdown";
 defineProps<{
   modelValue: YikeFocusMode;
@@ -9,9 +9,9 @@ defineProps<{
 }>();
 const emit = defineEmits<{ "update:modelValue": [YikeFocusMode] }>();
 const modes = [
-  { id: "pomodoro", label: "番茄钟" },
-  { id: "stopwatch", label: "正计时" },
-  { id: "countdown", label: "倒计时" },
+  { value: "pomodoro", label: "番茄钟" },
+  { value: "stopwatch", label: "正计时" },
+  { value: "countdown", label: "倒计时" },
 ];
 function choose(value: string) {
   if (value === "pomodoro" || value === "stopwatch" || value === "countdown")
@@ -19,13 +19,18 @@ function choose(value: string) {
 }
 </script>
 <template>
-  <SegmentedControl
-    material="glass"
-    label="计时模式"
-    :items="modes"
+  <PrimaryTabs
     :model-value="modelValue"
-    :disabled="Boolean(disabled)"
+    :items="modes"
     :inspect-id="inspectId"
+    :grow="true"
+    :fill="true"
+    :inert="Boolean(disabled)"
+    :aria-disabled="Boolean(disabled)"
     @update:model-value="choose"
-  />
+  >
+    <template v-for="item in modes" :key="item.value" #[item.value]
+      ><slot :name="item.value"
+    /></template>
+  </PrimaryTabs>
 </template>
