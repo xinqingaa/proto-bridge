@@ -148,10 +148,10 @@ test("stepper, duration and calendar retain their controlled interaction after r
   await page.goto("/workbench/components/duration-picker");
   const hours = page
     .locator("[data-primary-preview]")
-    .getByRole("listbox", { name: "小时" });
+    .getByRole("listbox", { name: "第一列" });
   await hours.focus();
   await hours.press("ArrowDown");
-  await expect(hours).toHaveAttribute("aria-activedescendant", /-hour-2$/);
+  await expect(hours).toHaveAttribute("aria-activedescendant", /-first-2$/);
   await page.goto("/workbench/components/month-calendar");
   const calendar = page.locator("[data-primary-preview]");
   await calendar.getByRole("button", { name: "下个月" }).click();

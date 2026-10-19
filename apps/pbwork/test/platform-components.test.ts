@@ -3,7 +3,7 @@ import { nextTick, shallowRef, type Component } from "vue";
 import { afterEach, describe, expect, it } from "vitest";
 import SegmentedControl from "@/design-system/components/input/SegmentedControl.vue";
 import Stepper from "@/design-system/components/input/Stepper.vue";
-import DurationPicker from "@/design-system/components/input/DurationPicker.vue";
+import WheelPicker from "@/design-system/components/input/WheelPicker.vue";
 import RingProgress from "@/design-system/components/display/RingProgress.vue";
 import Metric from "@/design-system/components/display/Metric.vue";
 import Heatmap from "@/design-system/components/display/Heatmap.vue";
@@ -154,20 +154,40 @@ it("stepper clamps edits and suppresses disabled/boundary actions", async () => 
   await wrapper.findAll("button")[0]!.trigger("click");
   expect(wrapper.emitted("update:modelValue")).toHaveLength(emitted);
 });
-it("duration keyboard edits total minutes and responds to external values", async () => {
-  const wrapper = render(DurationPicker, { modelValue: 90, minuteStep: 15 });
-  await wrapper
-    .get('[aria-label="分钟"]')
-    .trigger("keydown", { key: "ArrowDown" });
-  expect(wrapper.emitted("update:modelValue")?.[0]).toEqual([105]);
-  await wrapper.setProps({ modelValue: 125 });
-  expect(
-    wrapper.get('[aria-label="小时"]').attributes("aria-activedescendant"),
-  ).toContain("hour-2");
-  await wrapper.setProps({ disabled: true });
-  await wrapper.get('[aria-label="小时"]').trigger("keydown", { key: "End" });
-  expect(wrapper.emitted("update:modelValue")).toHaveLength(1);
-});
+it.each([1, 2, 3])(
+  "generic wheel supports %i independent columns and external values",
+  async (count) => {
+    const columns = Array.from({ length: count }, (_, index) => ({
+      id: `column-${index}`,
+      label: `列 ${index + 1}`,
+      options: [
+        { value: "a", label: "甲" },
+        { value: "b", label: "乙" },
+        { value: "c", label: "丙" },
+      ],
+    }));
+    const wrapper = render(WheelPicker, {
+      columns,
+      modelValue: Array(count).fill("a"),
+    });
+    expect(wrapper.findAll('[role="listbox"]')).toHaveLength(count);
+    await wrapper
+      .findAll('[role="listbox"]')
+      [count - 1]!.trigger("keydown", { key: "End" });
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual([
+      [...Array(count - 1).fill("a"), "c"],
+    ]);
+    await wrapper.setProps({ modelValue: Array(count).fill("b") });
+    expect(
+      wrapper.findAll('[aria-selected="true"]').map((option) => option.text()),
+    ).toEqual(Array(count).fill("乙"));
+    await wrapper.setProps({ disabled: true });
+    await wrapper
+      .findAll('[role="listbox"]')[0]!
+      .trigger("keydown", { key: "Home" });
+    expect(wrapper.emitted("update:modelValue")).toHaveLength(1);
+  },
+);
 it("ring exposes clamped actual progress, including invalid maximum", () => {
   expect(
     render(RingProgress, { value: 150, max: 100 }).attributes("aria-valuenow"),
@@ -294,8 +314,8 @@ it("repeated component parts preserve the owning key without duplicate local ide
   const titleB = second.get('[data-pb-id="test.home.row.title"]');
   expect(titleA.attributes("data-pb-key")).toBe("alpha");
   expect(titleB.attributes("data-pb-key")).toBe("beta");
-  await first.setProps({modelValue:true});
-  await second.setProps({modelValue:true});
+  await first.setProps({ modelValue: true });
+  await second.setProps({ modelValue: true });
   expect(
     first.findComponent({ name: "SwitchControl" }).props("inspectId"),
   ).toBe("test.home.row.switch.alpha");

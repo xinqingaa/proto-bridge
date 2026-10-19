@@ -129,6 +129,7 @@ usePbInspect({
 </template>
 <style scoped>
 .stepper {
+  justify-content: center;
   align-items: center;
   gap: var(--pb-spacing-xs);
   display: inline-flex;

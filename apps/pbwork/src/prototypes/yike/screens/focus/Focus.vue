@@ -12,9 +12,10 @@ import FocusPanel from "./FocusPanel.vue";
 const modeNames: YikeTimerMode[] = ["pomodoro", "stopwatch", "countdown"];
 import YikeFocusModes from "../../components/YikeFocusModes.vue";
 import YikeAction from "../../components/YikeAction.vue";
+import Button from "@/design-system/components/action/Button.vue";
 import ConfirmDialog from "@/design-system/components/feedback/ConfirmDialog.vue";
 import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
-import DurationPicker from "@/design-system/components/input/DurationPicker.vue";
+import DurationPicker from "../../components/YikeDurationPicker.vue";
 import { useYikeStore } from "../../model";
 import { durationLabel } from "../../statistics";
 import { elapsedMs, type YikeTimerMode } from "../../timer-engine";
@@ -51,9 +52,9 @@ function saveCustom() {
   if (
     !Number.isInteger(customMinutes.value) ||
     customMinutes.value < 1 ||
-    customMinutes.value > 180
+    customMinutes.value > 1439
   ) {
-    customError.value = "请选择 1–180 分钟";
+    customError.value = "请选择 1 分钟至 23 小时 59 分钟";
     return;
   }
   countdownMinutes.value = customMinutes.value;
@@ -189,21 +190,22 @@ function abandon() {
           v-model="customMinutes"
           label="倒计时时长"
           :minute-step="1"
+          :min="1"
+          :max="1439"
           inspect-id="yike.focus.custom-duration"
         />
         <p v-if="customError" role="alert">{{ customError }}</p>
-        <YikeAction
+      </div>
+      <template #actions>
+        <Button
           label="确认时长"
+          kind="accent"
+          shape="pill"
+          size="lg"
           inspect-id="yike.focus.custom-save"
           @click="saveCustom"
         />
-        <YikeAction
-          label="取消"
-          kind="quiet"
-          inspect-id="yike.focus.custom-cancel"
-          @click="customOpen = false"
-        />
-      </div>
+      </template>
     </BottomSheet>
     <BottomSheet
       material="glass"
@@ -219,23 +221,34 @@ function abandon() {
       <p>
         先结束当前阶段再切换。短于设置阈值时会再次确认是否记录，休息不计入专注。
       </p>
-      <YikeAction
-        label="结束并切换"
-        inspect-id="yike.focus.switch-record"
-        @click="resolveMode('record')"
-      />
-      <YikeAction
-        label="放弃并切换"
-        kind="danger"
-        inspect-id="yike.focus.switch-discard"
-        @click="resolveMode('discard')"
-      />
-      <YikeAction
-        label="取消"
-        kind="quiet"
-        inspect-id="yike.focus.switch-cancel"
-        @click="resolveMode('cancel')"
-      />
+      <template #actions>
+        <div class="yike-modal-actions">
+          <Button
+            label="结束并切换"
+            kind="accent"
+            shape="pill"
+            size="lg"
+            inspect-id="yike.focus.switch-record"
+            @click="resolveMode('record')"
+          />
+          <Button
+            label="放弃并切换"
+            kind="danger"
+            shape="pill"
+            size="lg"
+            inspect-id="yike.focus.switch-discard"
+            @click="resolveMode('discard')"
+          />
+          <Button
+            label="取消"
+            kind="secondary"
+            shape="pill"
+            size="lg"
+            inspect-id="yike.focus.switch-cancel"
+            @click="resolveMode('cancel')"
+          />
+        </div>
+      </template>
     </BottomSheet>
     <BottomSheet
       material="glass"
@@ -244,20 +257,22 @@ function abandon() {
       inspect-id="yike.focus.abandon-sheet"
     >
       <p>本次专注不会生成新记录。倒计时已完成部分会保留。</p>
-      <div class="yike-confirm-actions">
-        <YikeAction
+      <template #actions>
+        <Button
           label="继续保留"
-          kind="quiet"
+          kind="secondary"
+          shape="pill"
           inspect-id="yike.focus.abandon-cancel"
           @click="confirmAbandon = false"
         />
-        <YikeAction
+        <Button
           label="确认放弃"
           kind="danger"
+          shape="pill"
           inspect-id="yike.focus.abandon-confirm"
           @click="abandon"
         />
-      </div>
+      </template>
     </BottomSheet>
     <BottomSheet
       material="glass"
@@ -266,35 +281,44 @@ function abandon() {
       inspect-id="yike.focus.recovery-sheet"
     >
       <p>已恢复到最后保存的进度，关闭期间没有计时。</p>
-      <div class="yike-confirm-actions">
-        <YikeAction
-          label="继续计时"
-          inspect-id="yike.focus.recovery-resume"
-          @click="
-            toggle();
-            recoveryOpen = false;
-          "
-        />
-        <YikeAction
-          :label="isBreak ? '跳过休息' : '结束并记录'"
-          kind="quiet"
-          inspect-id="yike.focus.recovery-finish"
-          @click="
-            finish();
-            recoveryOpen = false;
-          "
-        />
-      </div>
-      <YikeAction
-        v-if="!isBreak"
-        label="放弃本次"
-        kind="quiet"
-        inspect-id="yike.focus.recovery-abandon"
-        @click="
-          recoveryOpen = false;
-          confirmAbandon = true;
-        "
-      />
+      <template #actions>
+        <div class="yike-modal-actions">
+          <Button
+            label="继续计时"
+            kind="accent"
+            shape="pill"
+            size="lg"
+            inspect-id="yike.focus.recovery-resume"
+            @click="
+              toggle();
+              recoveryOpen = false;
+            "
+          />
+          <Button
+            :label="isBreak ? '跳过休息' : '结束并记录'"
+            kind="secondary"
+            shape="pill"
+            size="lg"
+            inspect-id="yike.focus.recovery-finish"
+            @click="
+              finish();
+              recoveryOpen = false;
+            "
+          />
+          <Button
+            v-if="!isBreak"
+            label="放弃本次"
+            kind="quiet"
+            shape="pill"
+            size="lg"
+            inspect-id="yike.focus.recovery-abandon"
+            @click="
+              recoveryOpen = false;
+              confirmAbandon = true;
+            "
+          />
+        </div>
+      </template>
     </BottomSheet>
   </div>
 </template>
@@ -304,7 +328,7 @@ function abandon() {
   display: flex;
   min-block-size: var(--pb-layout-fill);
   block-size: var(--pb-layout-fill);
-  overflow: auto;
+  overflow: hidden;
   flex-direction: column;
   padding: var(--pb-spacing-lg) var(--pb-spacing-lg) var(--pb-spacing-xs);
   background: var(--pb-color-background);
@@ -314,13 +338,14 @@ function abandon() {
   font: var(--pb-typography-numeric-content);
   padding-inline-start: var(--pb-spacing-lg);
 }
-.yike-confirm-actions,
+.yike-modal-actions,
 .yike-sheet-content {
   display: flex;
   flex-direction: column;
   gap: var(--pb-spacing-sm);
 }
 .yike-focus-head {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;

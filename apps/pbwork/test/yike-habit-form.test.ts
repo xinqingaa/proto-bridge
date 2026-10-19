@@ -10,6 +10,7 @@ import {
   habitNameError,
   reminderTimeError,
 } from "@/prototypes/yike/components/habit-form";
+import WheelPicker from "@/design-system/components/input/WheelPicker.vue";
 import YikeHabitForm from "@/prototypes/yike/components/YikeHabitForm.vue";
 import CompositionPreview from "@/prototypes/yike/previews/CompositionPreview.vue";
 import { createPreviewDevice } from "@/workbench/preview/model";
@@ -19,10 +20,11 @@ const global = {
   stubs: {
     TextField: true,
     SegmentedControl: true,
-    Stepper: true,
     SwitchControl: true,
     Spinner: true,
-    BottomSheet: { template: "<section><slot /></section>" },
+    BottomSheet: {
+      template: '<section><slot /><slot name="actions" /></section>',
+    },
     GroupedList: true,
     Toast: true,
     Button: true,
@@ -59,9 +61,12 @@ describe("习惯资源的输入和会话边界", () => {
     await wrapper.setProps({
       modelValue: { ...emptyHabitDraft(), name: "  读书  ", reminder: true },
     });
-    expect(wrapper.get('input[type="time"]').attributes("style")).toContain(
-      "color-scheme: dark",
-    );
+    const clock = wrapper.findComponent(WheelPicker);
+    expect(clock.props("modelValue")).toEqual([21, 0]);
+    await clock.vm.$emit("update:modelValue", [0, 0]);
+    expect(wrapper.emitted("update:modelValue")?.at(-1)?.[0]).toMatchObject({
+      reminderTime: "00:00",
+    });
     await wrapper.get("form").trigger("submit");
     expect(wrapper.emitted("save")?.[0]?.[0]).toMatchObject({
       name: "读书",

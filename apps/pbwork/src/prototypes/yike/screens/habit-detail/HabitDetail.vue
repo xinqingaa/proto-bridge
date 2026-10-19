@@ -294,19 +294,23 @@ function remove() {
     >
       <div class="yike-decision">
         <p>「{{ habit?.name }}」及其全部打卡记录都会删除，无法恢复。</p>
+      </div>
+      <template #actions>
         <Button
           label="取消"
-          kind="quiet"
+          kind="secondary"
+          shape="pill"
           :inspect-id="scope.id('delete-cancel')"
           @click="deleting = false"
         />
         <Button
           label="确认删除"
           kind="danger"
+          shape="pill"
           :inspect-id="scope.id('delete-confirm')"
           @click="remove"
         />
-      </div>
+      </template>
     </BottomSheet>
   </PrototypeShell>
 </template>

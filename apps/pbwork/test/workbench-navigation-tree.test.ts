@@ -23,6 +23,18 @@ describe("workbench navigation tree", () => {
     expect(labels[4]).toBe("Tab Viewport");
     expect(labels[5]).toBe("页面转场");
   });
+  it("keeps flow screens out of the sidebar without removing their Runtime identity", () => {
+    const yike = buildPrototypeTree("all").find((node) => node.id === "yike")!;
+    expect(yike.children?.some((node) => node.id === "yike.habit-editor")).toBe(
+      false,
+    );
+    const sidebar = buildWorkbenchNavigationTree()
+      .find((node) => node.id === "prototypes")!
+      .children!.find((node) => node.id === "prototype-yike")!;
+    expect(
+      sidebar.children?.some((node) => node.id === "screen-yike.habit-editor"),
+    ).toBe(false);
+  });
   it("builds nested resource counts without lifecycle rows", () => {
     const tree = buildWorkbenchNavigationTree();
     const prototypes = tree.find((node) => node.id === "prototypes")!;

@@ -186,7 +186,6 @@ usePbInspect({
   flex: none;
   width: var(--pb-layout-fill);
   min-width: var(--pb-layout-zero);
-  padding-top: var(--pb-safe-top, var(--pb-layout-zero));
   color: var(--pb-color-on-surface);
 }
 .app-bar-material {

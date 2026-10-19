@@ -104,14 +104,17 @@
     "muted": "color.on-surface-muted",
     "gap": "spacing.sm",
     "typography": "typography.content",
-    "padding": "spacing.md",
     "border": "border.hairline",
     "target": "size.touch",
     "title": "typography.content",
     "detail": "typography.caption",
     "focus": "border.focus",
     "disabledOpacity": "opacity.disabled",
-    "focusOffset": "spacing.xxs"
+    "focusOffset": "spacing.xxs",
+    "paddingTop": "spacing.md",
+    "paddingBottom": "spacing.md",
+    "paddingLeft": "spacing.md",
+    "paddingRight": "spacing.md"
   },
   "playground": {
     "presentation": "interactive"

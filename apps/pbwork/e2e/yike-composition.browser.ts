@@ -57,7 +57,16 @@ for (const theme of ["mechanical", "water", "sundial"])
       ).toBe(true);
       await editor.getByRole("button", { name: "关闭", exact: true }).click();
       await a.getByRole("button", { name: "提醒状态", exact: true }).click();
-      await expect(editor.locator('input[type="time"]')).toHaveValue("22:30");
+      await expect(
+        editor
+          .getByRole("listbox", { name: "小时", exact: true })
+          .getByRole("option", { selected: true }),
+      ).toHaveText("22");
+      await expect(
+        editor
+          .getByRole("listbox", { name: "分钟", exact: true })
+          .getByRole("option", { selected: true }),
+      ).toHaveText("30");
       await editor
         .getByRole("button", { name: "保存", exact: true })
         .scrollIntoViewIfNeeded();
@@ -73,8 +82,11 @@ for (const theme of ["mechanical", "water", "sundial"])
       await a.getByText("长休间隔", { exact: true }).click();
       const setting = a.locator('[data-pb-id="preview.A.setting"]');
       await expect(setting).toBeVisible();
-      await setting.getByRole("button", { name: "增加", exact: false }).click();
+      await setting
+        .getByRole("listbox", { name: "长休间隔", exact: true })
+        .press("ArrowDown");
       await setting.getByRole("button", { name: "确认", exact: true }).click();
+      await expect(setting).toBeHidden();
       await expect(a.getByText("每 5 轮", { exact: true })).toBeVisible();
       await a.getByRole("button", { name: "删除确认", exact: true }).click();
       const confirm = a.locator('[data-pb-id="preview.A.confirm"]');
@@ -127,7 +139,7 @@ test("窄屏缩短可用高度时表单仍可键盘操作、滚动保存并复�
   );
   await editor.getByRole("radio", { name: "每周", exact: true }).click();
   await expect(
-    editor.getByRole("button", { name: "增加每周次数", exact: true }),
+    editor.getByRole("listbox", { name: "每周次数", exact: true }),
   ).toBeVisible();
   const save = editor.getByRole("button", { name: "保存", exact: true });
   await save.scrollIntoViewIfNeeded();

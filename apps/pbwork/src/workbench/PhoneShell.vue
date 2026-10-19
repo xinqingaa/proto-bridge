@@ -14,18 +14,24 @@ const props = withDefaults(
      */
     chrome?: "overlay" | "inset";
     time?: string;
+    /** Runtime uses the same inset owner without drawing a second device frame. */
+    frameless?: boolean;
   }>(),
   {
     width: 390,
     height: 844,
     dark: false,
+    frameless: false,
     chrome: "inset",
   },
 );
 
 const screenStyle = computed(() => ({
-  width: `${props.width}px`,
-  height: `${props.height}px`,
+  ...(props.frameless
+    ? {}
+    : { width: `${props.width}px`, height: `${props.height}px` }),
+  "--phone-safe-top": `max(${SAFE_TOP}px, env(safe-area-inset-top, 0px))`,
+  "--phone-safe-bottom": `max(${SAFE_BOTTOM}px, env(safe-area-inset-bottom, 0px))`,
 }));
 
 const statusTime = computed(() => props.time ?? "09:41");
@@ -34,18 +40,18 @@ const statusTime = computed(() => props.time ?? "09:41");
 <template>
   <div
     class="phone-shell"
-    :class="[`is-${chrome}`, { 'is-dark': dark }]"
+    :class="[`is-${chrome}`, { 'is-dark': dark, 'is-frameless': frameless }]"
     :style="screenStyle"
     data-testid="phone-shell"
   >
     <div class="phone-screen" data-pb-phone-screen>
       <div
         class="status-bar"
-        :style="{ height: `${SAFE_TOP}px` }"
+        :style="{ height: 'var(--phone-safe-top)' }"
         aria-hidden="true"
       >
-        <span class="status-time">{{ statusTime }}</span>
-        <span class="status-trailing">
+        <span v-if="!frameless" class="status-time">{{ statusTime }}</span>
+        <span v-if="!frameless" class="status-trailing">
           <svg
             width="58"
             height="14"
@@ -88,10 +94,10 @@ const statusTime = computed(() => props.time ?? "09:41");
       </div>
       <div
         class="home-bar"
-        :style="{ height: `${SAFE_BOTTOM}px` }"
+        :style="{ height: 'var(--phone-safe-bottom)' }"
         aria-hidden="true"
       >
-        <span class="home-indicator" />
+        <span v-if="!frameless" class="home-indicator" />
       </div>
     </div>
   </div>
@@ -110,7 +116,20 @@ const statusTime = computed(() => props.time ?? "09:41");
     0 28px 56px rgba(0, 0, 0, 0.18);
 }
 
-.phone-shell.is-dark {
+.phone-shell.is-frameless {
+  width: 100%;
+  height: 100dvh;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--pb-color-background);
+}
+.phone-shell.is-frameless .status-bar {
+  padding: 0;
+}
+.phone-shell.is-frameless .phone-body {
+  overflow: clip;
+}
+.phone-shell.is-dark:not(.is-frameless) {
   background: #101113;
 }
 

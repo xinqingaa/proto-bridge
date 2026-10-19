@@ -26,6 +26,16 @@ export default defineScreen({
         scope.ref("threshold-save"),
       ],
     },
+    {
+      id: "threshold-custom",
+      label: "自定义阈值时长",
+      shellPolicy: "replace",
+      requiredFragments: [
+        scope.ref("threshold-sheet"),
+        scope.ref("threshold-duration"),
+        scope.ref("threshold-save"),
+      ],
+    },
     ...[
       {
         id: "configuration-open",

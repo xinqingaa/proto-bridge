@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, inject } from "vue";
-import { ThemeTableKey } from "@/design-system/theme/runtime-theme";
+import { computed, ref } from "vue";
 import TextField from "@/design-system/components/input/TextField.vue";
 import SegmentedControl from "@/design-system/components/input/SegmentedControl.vue";
-import Stepper from "@/design-system/components/input/Stepper.vue";
+import YikeOptionPicker from "./YikeOptionPicker.vue";
+import WheelPicker from "@/design-system/components/input/WheelPicker.vue";
 import SwitchControl from "@/design-system/components/input/SwitchControl.vue";
 import YikeHabitGlyph, { type YikeHabitIcon } from "./YikeHabitGlyph.vue";
 import YikeAction from "./YikeAction.vue";
@@ -12,22 +12,52 @@ import {
   reminderTimeError,
   type YikeHabitDraft,
 } from "./habit-form";
-const props = withDefaults(defineProps<{
-  modelValue: YikeHabitDraft;
-  inspectId: string;
-  submitting?: boolean;
-  saveError?: string;
-  validateOnMount?: boolean;
-  showSave?: boolean;
-}>(), { showSave: true });
+const props = withDefaults(
+  defineProps<{
+    modelValue: YikeHabitDraft;
+    inspectId: string;
+    submitting?: boolean;
+    saveError?: string;
+    validateOnMount?: boolean;
+    showSave?: boolean;
+  }>(),
+  { showSave: true },
+);
 const emit = defineEmits<{
   "update:modelValue": [YikeHabitDraft];
   save: [YikeHabitDraft];
 }>();
-const themeTable = inject(ThemeTableKey);
-const inputScheme = computed(() =>
-  themeTable?.value.identity.mode === "dark" ? "dark" : "light",
+const clockColumns = [
+  {
+    id: "hour",
+    label: "小时",
+    unit: "时",
+    numeric: true,
+    options: Array.from({ length: 24 }, (_, value) => ({
+      value,
+      label: String(value).padStart(2, "0"),
+    })),
+  },
+  {
+    id: "minute",
+    label: "分钟",
+    unit: "分",
+    numeric: true,
+    options: Array.from({ length: 60 }, (_, value) => ({
+      value,
+      label: String(value).padStart(2, "0"),
+    })),
+  },
+];
+const clockValue = computed(() =>
+  props.modelValue.reminderTime.split(":").map(Number),
 );
+function updateClock(values: Array<string | number>) {
+  update(
+    "reminderTime",
+    values.map((value) => String(value).padStart(2, "0")).join(":"),
+  );
+}
 const attempted = ref(Boolean(props.validateOnMount));
 const nameError = computed(() =>
   attempted.value ? habitNameError(props.modelValue.name) : "",
@@ -119,7 +149,13 @@ function save() {
       </div>
     </fieldset>
     <div class="frequency-field">
-      <span class="hint" :data-pb-id="`${inspectId}.frequency-label`" data-pb-role="text" data-pb-token-typography="typography.caption">频率</span>
+      <span
+        class="hint"
+        :data-pb-id="`${inspectId}.frequency-label`"
+        data-pb-role="text"
+        data-pb-token-typography="typography.caption"
+        >频率</span
+      >
       <SegmentedControl
         label="频率"
         material="glass"
@@ -135,15 +171,19 @@ function save() {
         "
       />
     </div>
-    <Stepper
+    <YikeOptionPicker
       v-if="modelValue.frequency === 'weekly'"
       label="每周次数"
-      :min="1"
-      :max="7"
       :model-value="modelValue.target"
+      :options="
+        Array.from({ length: 7 }, (_, i) => ({
+          value: i + 1,
+          label: `每周 ${i + 1} 次`,
+        }))
+      "
       :disabled="Boolean(submitting)"
       :inspect-id="`${inspectId}.target`"
-      @update:model-value="update('target', $event)"
+      @update:model-value="update('target', Number($event))"
     />
     <SwitchControl
       label="提醒"
@@ -153,31 +193,23 @@ function save() {
       :inspect-id="`${inspectId}.reminder`"
       @update:model-value="update('reminder', $event)"
     />
-    <label v-if="modelValue.reminder" class="time-field"
-      >本地时间
-      <input
-        type="time"
-        :style="{ colorScheme: inputScheme }"
-        :value="modelValue.reminderTime"
+    <div v-if="modelValue.reminder" class="time-field">
+      <span>本地时间</span>
+      <WheelPicker
+        label="提醒时间"
+        :columns="clockColumns"
+        :model-value="clockValue"
         :disabled="Boolean(submitting)"
+        :inspect-id="`${inspectId}.time`"
         :aria-invalid="Boolean(timeError)"
         :aria-describedby="timeError ? `${inspectId}.time-error` : undefined"
-        :data-pb-id="`${inspectId}.time`"
-        data-pb-role="field"
-        data-pb-token-typography="typography.content"
-        data-pb-token-background="color.surface"
-        data-pb-token-color="color.on-surface"
-        data-pb-token-border="border.default"
-        data-pb-token-radius="radius.control"
-        @input="
-          update('reminderTime', ($event.target as HTMLInputElement).value)
-        "
+        @update:model-value="updateClock"
       />
       <small v-if="timeError" :id="`${inspectId}.time-error`">{{
         timeError
       }}</small>
       <span class="hint">仅保存并显示，不发送系统通知。</span>
-    </label>
+    </div>
     <p v-if="saveError" role="alert" class="save-error">{{ saveError }}</p>
     <YikeAction
       v-if="showSave !== false"
@@ -241,8 +273,7 @@ legend,
   background: var(--pb-color-primary-soft);
   border-color: var(--pb-color-primary);
 }
-.icon-options label:has(input:focus-visible),
-.time-field input:focus-visible {
+.icon-options label:has(input:focus-visible) {
   outline: var(--pb-border-focus);
   outline-offset: var(--pb-spacing-xxs);
 }
@@ -250,15 +281,6 @@ legend,
   display: flex;
   flex-direction: column;
   gap: var(--pb-spacing-sm);
-}
-.time-field input {
-  min-block-size: var(--pb-size-control-large);
-  padding: var(--pb-spacing-sm) var(--pb-spacing-md);
-  background: var(--pb-color-surface);
-  color: var(--pb-color-on-surface);
-  border: var(--pb-border-default);
-  border-radius: var(--pb-radius-control);
-  font: var(--pb-typography-content);
 }
 .hint {
   font: var(--pb-typography-caption);

@@ -41,6 +41,7 @@ const props = defineProps<{
 // Every mounted sample owns its mutable session; no Pinia Playground singleton.
 const session = reactive({
   overrides: {} as Record<string, unknown>,
+  wheelExhibitValues: {} as Record<string, unknown>,
   scenarioId: props.device.demo.scenarioId,
   tabComparisonValues: { adaptive: "", equal: "" } as Record<string, string>,
   triggeredPreviewOpen: props.device.demo.open,
@@ -172,6 +173,7 @@ const typeScenarioIds: Record<string, string[]> = {
   chip: ["status", "warning"],
   "text-field": ["empty", "contact"],
   textarea: ["note", "description"],
+  "duration-picker": ["single", "default", "triple"],
 };
 const isWideExhibit = computed(() =>
   [
@@ -540,6 +542,13 @@ function exhibitBind(
     inspectId: `preview.${props.device.id}.${props.componentId}.${scope}.${id}`,
   };
   if (props.componentId === "button" && scope === "type") next.block = false;
+  if (props.componentId === "duration-picker") {
+    const key = `${scope}.${id}`;
+    next.modelValue = session.wheelExhibitValues[key] ?? next.modelValue;
+    next["onUpdate:modelValue"] = (value: unknown) => {
+      session.wheelExhibitValues[key] = value;
+    };
+  }
   return enrichBind(next);
 }
 function triggerPreviewBind() {

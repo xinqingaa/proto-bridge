@@ -276,6 +276,8 @@ export type ScreenRecord = {
   prototypeId: string;
   screenId: string;
   screenSlug: string;
+  /** Flow screens remain addressable and capturable, entered through product controls. */
+  navigation?: "page" | "flow";
   label: string;
   title?: string;
   path: string;

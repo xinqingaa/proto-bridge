@@ -37,17 +37,11 @@ const slots = useSlots();
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  min-height: var(--pb-layout-viewport-height);
-  max-height: var(--pb-layout-viewport-height);
+  min-height: var(--pb-layout-fill);
+  max-height: var(--pb-layout-fill);
   overflow: hidden;
   background: var(--pb-color-background);
   color: var(--pb-color-on-background);
-}
-.prototype-shell.has-custom-header {
-  padding-top: var(--pb-safe-top, var(--pb-layout-zero));
-}
-.prototype-shell.without-navigation {
-  padding-bottom: var(--pb-safe-bottom, var(--pb-layout-zero));
 }
 main {
   flex: var(--pb-layout-flex-fill);

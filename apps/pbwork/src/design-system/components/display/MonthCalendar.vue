@@ -240,6 +240,8 @@ header {
   align-items: center;
   justify-content: center;
   flex: var(--pb-layout-flex-fill);
+  box-sizing: border-box;
+  padding: var(--pb-spacing-xs);
   min-width: var(--pb-layout-zero);
   min-height: var(--pb-size-touch);
 }

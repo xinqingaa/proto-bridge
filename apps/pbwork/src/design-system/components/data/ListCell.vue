@@ -52,7 +52,10 @@ usePbInspect({
     muted: "color.on-surface-muted",
     gap: "spacing.sm",
     typography: "typography.content",
-    padding: props.density === "compact" ? "spacing.xs" : "spacing.md",
+    paddingTop: props.density === "compact" ? "spacing.xs" : "spacing.md",
+    paddingBottom: props.density === "compact" ? "spacing.xs" : "spacing.md",
+    paddingLeft: "spacing.md",
+    paddingRight: "spacing.md",
     border: "border.hairline",
     target: "size.touch",
     title: "typography.content",
@@ -74,7 +77,10 @@ usePbInspect({
       pbStyle({
         color: 'color.on-surface',
         background: 'color.surface',
-        padding: density === 'compact' ? 'spacing.xs' : 'spacing.md',
+        padding: [
+          density === 'compact' ? 'spacing.xs' : 'spacing.md',
+          'spacing.md',
+        ],
         gap: 'spacing.sm',
       })
     "

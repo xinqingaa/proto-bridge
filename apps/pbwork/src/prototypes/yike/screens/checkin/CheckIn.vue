@@ -5,6 +5,7 @@ import { useRoute, useRouter } from "vue-router";
 import { vPb } from "@/authoring/pb-style";
 import { yikeNavigation } from "../../navigation";
 import { useYikeScroll } from "../../runtime";
+import YikeActionRows from "../../components/YikeActionRows.vue";
 import YikeHabitCard from "../../components/YikeHabitCard.vue";
 import { scope } from "./screen";
 import { useYikeStore } from "../../model";
@@ -151,7 +152,7 @@ function resetCorruptData() {
               !habits.length
                 ? "还没有习惯"
                 : doneCount === habits.length
-                  ? "全部完成"
+                  ? "今天都完成了"
                   : `还剩 ${habits.length - doneCount} 个`
             }}</span
           >
@@ -171,12 +172,6 @@ function resetCorruptData() {
         <Plus aria-hidden="true" />
       </button>
     </header>
-    <p
-      v-if="habits.length && doneCount === habits.length"
-      class="yike-complete"
-    >
-      今天的习惯都完成了，明天见。
-    </p>
     <p
       v-if="store.storageIssue.value"
       class="yike-storage-warning"
@@ -253,12 +248,22 @@ function resetCorruptData() {
         @toggle-today="toggle"
       />
     </div>
-    <Button
-      label="已归档习惯"
-      kind="quiet"
-      inspect-id="yike.checkin.archived"
-      @click="archivedOpen = true"
-    />
+    <div class="yike-archive-entry">
+      <YikeActionRows
+        inspect-id="yike.checkin.archive-actions"
+        :items="[
+          {
+            id: 'archived',
+            inspectId: 'yike.checkin.archived',
+            label: '已归档习惯',
+            description: archived.length
+              ? `${archived.length} 个习惯 · 查看与恢复`
+              : '查看与恢复',
+          },
+        ]"
+        @select="archivedOpen = true"
+      />
+    </div>
     <BottomSheet
       v-model="archivedOpen"
       title="已归档习惯"
@@ -302,25 +307,32 @@ function resetCorruptData() {
       <p>
         无法恢复本机数据。重置将清除会话、历史和用户习惯，恢复默认配置与四个预置习惯。
       </p>
-      <div class="yike-storage-warning">
+      <template #actions>
         <Button
           label="取消"
           kind="secondary"
+          shape="pill"
           inspect-id="yike.checkin.reset-cancel"
           @click="showReset = false"
         />
         <Button
           label="重置数据"
           kind="danger"
+          shape="pill"
           inspect-id="yike.checkin.reset-confirm"
           @click="resetCorruptData"
         />
-      </div>
+      </template>
     </BottomSheet>
   </div>
 </template>
 
 <style scoped>
+.yike-archive-entry {
+  margin-block-start: var(--pb-spacing-lg);
+  padding-block-start: var(--pb-spacing-sm);
+  border-block-start: var(--pb-border-hairline);
+}
 .yike-archive-row {
   display: flex;
   align-items: center;

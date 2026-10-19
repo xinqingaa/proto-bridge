@@ -10,7 +10,7 @@
   "components": {
     "app-bar": {
       "status": "pending",
-      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
+      "reason": "安全区统一由 PhoneShell 提供，AppBar 不再预留顶部安全区；Flutter 待复核外壳组合。"
     },
     "avatar": {
       "status": "pending",
@@ -62,7 +62,7 @@
     },
     "flow-sheet": {
       "status": "pending",
-      "reason": "公共面板新增solid/glass有限材质能力、共享玻璃降级及绑定；Flutter尚未按当前Contract适配。"
+      "reason": "新增首步 header-start 入口、固定操作区与返回焦点；Flutter 待按当前 Contract 适配。"
     },
     "icon": {
       "status": "pending",
@@ -122,7 +122,7 @@
     },
     "tabbar": {
       "status": "pending",
-      "reason": "PBWork 玻璃控件升级：材质、选中滑动与有限 API 已更新，Flutter 待按当前 Contract 与主题复核实现。"
+      "reason": "安全区统一由 PhoneShell 提供，底栏不再重复预留底部安全区；Flutter 待复核外壳组合。"
     },
     "text-field": {
       "status": "pending",
@@ -146,7 +146,7 @@
     },
     "duration-picker": {
       "status": "pending",
-      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
+      "reason": "共享 WheelPicker 已泛化为一至三列，columns/options/modelValue 由调用方配置；旧组件标识保持兼容。Flutter 待按当前 Contract 适配。"
     },
     "ring-progress": {
       "status": "pending",
@@ -174,7 +174,7 @@
     },
     "list-cell": {
       "status": "pending",
-      "reason": "公共配置列表新增regular/compact公开density；紧凑行使用spacing.xs内边距并保留size.touch，Flutter待同步。"
+      "reason": "紧凑密度保留标准水平内边距，四侧 padding Evidence 独立声明；Flutter 待按当前 Contract 复核。"
     },
     "grouped-list": {
       "status": "pending",

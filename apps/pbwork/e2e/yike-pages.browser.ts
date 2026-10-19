@@ -53,7 +53,7 @@ async function shot(page: Page, name: string) {
     animations: "disabled",
   });
   expect(
-    (await page.locator(".runtime-app").boundingBox())?.y,
+    (await page.locator("[data-pb-phone-screen]").boundingBox())?.y,
     `${name}: outer viewport must not scroll with focus`,
   ).toBe(0);
 }
@@ -129,10 +129,13 @@ test("D3: custom countdown validates, cancels without mutation, and starts its c
   await page.getByRole("button", { name: "自定义", exact: true }).click();
   const sheet = page.locator('[data-pb-id="yike.focus.custom-sheet"]');
   await sheet.getByRole("listbox", { name: "分钟", exact: true }).press("Home");
-  await sheet.getByRole("button", { name: "确认时长", exact: true }).click();
-  await expect(sheet.getByRole("alert")).toHaveText("请选择 1–180 分钟");
+  await expect(
+    sheet
+      .getByRole("listbox", { name: "分钟", exact: true })
+      .getByRole("option", { name: "00", exact: true }),
+  ).toHaveCount(0);
   await shot(page, "focus-custom-validation");
-  await sheet.getByRole("button", { name: "取消", exact: true }).click();
+  await sheet.getByRole("button", { name: "关闭", exact: true }).click();
   await settle(page);
   await expect(
     page.getByRole("button", { name: "自定义", exact: true }),
@@ -143,7 +146,7 @@ test("D3: custom countdown validates, cancels without mutation, and starts its c
   await page.getByRole("button", { name: "自定义", exact: true }).click();
   const minutes = sheet.getByRole("listbox", { name: "分钟", exact: true });
   await minutes.press("Home");
-  for (let i = 0; i < 7; i++) await minutes.press("ArrowDown");
+  for (let i = 0; i < 6; i++) await minutes.press("ArrowDown");
   await sheet.getByRole("button", { name: "确认时长", exact: true }).click();
   await settle(page);
   await page.getByRole("button", { name: "开始 7 分钟", exact: true }).click();
@@ -164,7 +167,7 @@ test("D4–D6: completed/empty/archive, weekly detail and validation keep clear 
     await shot(page, `checkin-${variant}`);
     if (variant === "completed")
       await expect(
-        page.getByText("今天的习惯都完成了，明天见。", { exact: true }),
+        page.getByText("今天都完成了", { exact: true }),
       ).toBeVisible();
     if (variant === "archived") {
       await page
@@ -311,19 +314,30 @@ test("short records use a configurable confirmation threshold without losing the
   await page.clock.install({ time: clock });
   await page.setViewportSize({ width: 390, height: 844 });
   await open(page, "settings", "record-threshold");
-  for (const seconds of [5, 10, 60, 180, 300, 600])
-    await expect(
-      page.locator(`[data-pb-id="yike.settings.threshold-${seconds}"]`),
-    ).toBeVisible();
-  await page.locator('[data-pb-id="yike.settings.threshold-custom"]').click();
-  await page.getByRole("spinbutton").fill("7");
+  const sheet = page.locator('[data-pb-id="yike.settings.threshold-sheet"]');
+  const wheel = sheet.getByRole("listbox");
+  await expect(wheel.getByRole("option")).toHaveText([
+    "5 秒",
+    "10 秒",
+    "1 分钟",
+    "3 分钟",
+    "5 分钟",
+    "10 分钟",
+  ]);
+  await sheet.getByRole("button", { name: "自定义时长", exact: true }).click();
+  const minutes = sheet.getByRole("listbox", {
+    name: "分钟",
+    exact: true,
+  });
+  await minutes.press("Home");
+  for (let i = 0; i < 6; i++) await minutes.press("ArrowDown");
   await shot(page, "record-threshold-custom");
-  await page.locator('[data-pb-id="yike.settings.threshold-save"]').click();
+  await sheet.getByRole("button", { name: "确认", exact: true }).click();
   await expect(
-    page.getByText("短时记录确认阈值已设为 7 秒。", { exact: true }),
+    page.getByText("短时记录确认阈值已设为 7 分钟。", { exact: true }),
   ).toBeVisible();
   await open(page, "settings", "record-threshold");
-  await page.locator('[data-pb-id="yike.settings.threshold-cancel"]').click();
+  await sheet.getByRole("button", { name: "关闭", exact: true }).click();
   await open(page, "focus", "short-record", "water", "dark");
   await expect(
     page.getByRole("button", { name: "仍然记录", exact: true }),

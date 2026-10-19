@@ -6,17 +6,17 @@
     "policy": "fixed",
     "defaultRole": "field"
   },
-  "summary": "小时与分钟双滚轮，值为总分钟数。",
+  "summary": "一至三列通用滚轮；每列的选项、单位和显示文本由调用方提供。",
   "behavior": [
-    "范围为 0 至 23 小时 59 分钟，分钟按 minuteStep 向下对齐",
-    "使用原生纵滚与 scroll snap，不复制横滑或拖动仲裁；点击、上下键与 Home/End 等价",
-    "外部更新会同步滚轮位置；禁用时阻止滚动提交与点击提交"
+    "columns 提供一至三列独立选项，modelValue 按列顺序回传选中值；不包含时长、时刻或范围换算逻辑",
+    "使用原生纵滚与 scroll snap；点击、上下键与 Home/End 等价，禁用时阻止提交",
+    "外部更新同步各列位置；各列使用稳定 id，单位与中央选中行对齐"
   ],
   "layout": {
-    "summary": "Two equal vertical columns, each showing three snap rows; selected row centered, contained vertical scroll, no horizontal swipe ownership."
+    "summary": "One to three equal-width columns with centered selection bands and independent native vertical snapping."
   },
   "visualAnatomy": {
-    "summary": "两个滚轮共用中央选择带，单位对齐选中行，上下以遮罩衰减；不把滚动条作为装饰。"
+    "summary": "等宽列、中央选择带与单位；数字与文本支持各自字形。"
   },
   "propsSchema": {
     "type": "object",
@@ -25,38 +25,150 @@
       "label": {
         "type": "string"
       },
-      "modelValue": {
-        "type": "number"
+      "columns": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 3,
+        "items": {
+          "type": "object",
+          "required": [
+            "id",
+            "label",
+            "options"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            },
+            "unit": {
+              "type": "string"
+            },
+            "numeric": {
+              "type": "boolean"
+            },
+            "options": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": [
+                  "value",
+                  "label"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "value": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ]
+                  },
+                  "label": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
       },
-      "minuteStep": {
-        "type": "integer",
-        "enum": [
-          1,
-          5,
-          15,
-          30
-        ]
+      "modelValue": {
+        "type": "array",
+        "maxItems": 3,
+        "items": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        }
       },
       "disabled": {
         "type": "boolean"
       }
-    }
+    },
+    "required": [
+      "columns"
+    ]
   },
   "defaultProps": {
-    "label": "提醒间隔",
-    "modelValue": 90,
-    "minuteStep": 5,
+    "label": "双列选择",
+    "columns": [
+      {
+        "id": "first",
+        "label": "第一列",
+        "unit": "项",
+        "numeric": true,
+        "options": [
+          {
+            "value": 0,
+            "label": "0"
+          },
+          {
+            "value": 1,
+            "label": "1"
+          },
+          {
+            "value": 2,
+            "label": "2"
+          },
+          {
+            "value": 3,
+            "label": "3"
+          }
+        ]
+      },
+      {
+        "id": "second",
+        "label": "第二列",
+        "unit": "项",
+        "numeric": true,
+        "options": [
+          {
+            "value": 0,
+            "label": "0"
+          },
+          {
+            "value": 1,
+            "label": "1"
+          },
+          {
+            "value": 2,
+            "label": "2"
+          },
+          {
+            "value": 3,
+            "label": "3"
+          },
+          {
+            "value": 4,
+            "label": "4"
+          },
+          {
+            "value": 5,
+            "label": "5"
+          }
+        ]
+      }
+    ],
+    "modelValue": [
+      1,
+      2
+    ],
     "disabled": false
   },
   "states": [
-    {
-      "id": "short",
-      "label": "短时长",
-      "kind": "content",
-      "props": {
-        "modelValue": 15
-      }
-    },
     {
       "id": "disabled",
       "label": "禁用",
@@ -75,8 +187,8 @@
     "muted": "color.on-surface-muted",
     "gap": "spacing.sm",
     "typography": "typography.content",
-    "selection": "color.surface-selected",
-    "track": "color.surface-recessed",
+    "selection": "color.surface",
+    "track": "color.surface",
     "radius": "radius.control",
     "padding": "spacing.xs",
     "focus": "border.focus",
@@ -88,7 +200,8 @@
     "surfaceRadius": "radius.surface",
     "selectionRadius": "radius.control-compact",
     "unit": "typography.caption",
-    "selectedFont": "typography.numeric-title"
+    "selectedFont": "typography.numeric-title",
+    "textSelectedFont": "typography.subtitle"
   },
   "playground": {
     "presentation": "interactive"

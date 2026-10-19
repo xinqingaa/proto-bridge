@@ -126,7 +126,7 @@ test("platform inputs and calendar remain controlled through keyboard and wheel"
   await expect(root.getByRole("spinbutton")).toHaveValue("4");
   await page.goto("/workbench/components/duration-picker");
   root = page.locator('[data-pb-component="ds.duration-picker"]').first();
-  const hour = root.getByRole("listbox", { name: "小时" });
+  const hour = root.getByRole("listbox", { name: "第一列" });
   await hour.focus();
   await page.keyboard.press("ArrowDown");
   await expect(

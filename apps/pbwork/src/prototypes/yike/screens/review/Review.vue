@@ -90,6 +90,13 @@ function move(offset: number) {
   anchor.value = shiftReviewPeriod(period.value.start, range.value, offset);
   selected.value = "";
 }
+const isCurrentPeriod = computed(
+  () => period.value.start === reviewPeriod(today.value, range.value).start,
+);
+function returnToToday() {
+  anchor.value = today.value;
+  selected.value = "";
+}
 function chooseMonth(month: string) {
   const date = `${month}-01`;
   if (date > today.value || date < reviewPeriod(earliest.value, "month").start)
@@ -156,7 +163,7 @@ function chooseMonth(month: string) {
           >{{
             range === "month"
               ? `${period.start.slice(0, 4)} 年 ${Number(period.start.slice(5, 7))} 月`
-              : `${Number(period.start.slice(5, 7))}月${Number(period.start.slice(8))}日 – ${period.start.slice(0, 7) === period.end.slice(0, 7) ? '' : `${Number(period.end.slice(5, 7))}月`}${Number(period.end.slice(8))}日`
+              : `${Number(period.start.slice(5, 7))}月${Number(period.start.slice(8))}日 – ${period.start.slice(0, 7) === period.end.slice(0, 7) ? "" : `${Number(period.end.slice(5, 7))}月`}${Number(period.end.slice(8))}日`
           }}</span
         >
         <IconButton
@@ -168,6 +175,15 @@ function chooseMonth(month: string) {
           @click="move(1)"
         />
       </div>
+    </div>
+    <div v-if="!isCurrentPeriod" class="return-current">
+      <Button
+        :label="range === 'week' ? '回到本周' : '回到本月'"
+        kind="quiet"
+        shape="pill"
+        inspect-id="yike.review.today"
+        @click="returnToToday"
+      />
     </div>
     <dl
       class="summary"
@@ -396,6 +412,10 @@ h1,
 h2 {
   margin: var(--pb-layout-zero);
 }
+.return-current {
+  display: flex;
+  justify-content: flex-end;
+}
 .period {
   display: flex;
   align-items: center;
@@ -452,7 +472,9 @@ h2 {
   gap: var(--pb-spacing-xs);
 }
 .range-switch {
-  inline-size: calc(var(--pb-size-control-large) + var(--pb-size-control-large));
+  inline-size: calc(
+    var(--pb-size-control-large) + var(--pb-size-control-large)
+  );
   flex: none;
 }
 .review-empty {

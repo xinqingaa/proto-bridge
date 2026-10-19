@@ -9,6 +9,7 @@ import {
 import { buildCanonicalRuntimeUrl, resolveRuntimeRoute } from "@/runtime/url";
 import {
   writeThemePackPreference,
+  readThemePackPreference,
   useThemePackPreference,
   useSystemThemeMode,
   concreteThemeMode,
@@ -119,6 +120,15 @@ const selectedThemeId = computed(() =>
     ? systemMode.value
     : (sessionThemeId.value ??
       (resolved.value.ok ? resolved.value.theme.id : pack.value.defaultMode)),
+);
+watch(
+  savedPreference,
+  (saved) => {
+    if (!saved) return;
+    sessionThemeName.value = saved.theme;
+    sessionThemeId.value = concreteThemeMode(saved.mode, systemMode.value);
+  },
+  { flush: "sync" },
 );
 const isDark = computed(() => selectedThemeId.value === "dark");
 function adoptCanvasTheme(mode: string, theme = selectedThemeName.value) {
@@ -445,10 +455,20 @@ function applyRuntimeNavigation(
     return;
   }
 
+  // Route messages can arrive before the cross-frame storage event. Read the
+  // current preference here so a back intent cannot restore a stale cached mode.
+  const currentPreference = readThemePackPreference(props.prototypeId);
+  const validPreference =
+    currentPreference &&
+    pack.value.themes.some((theme) => theme.id === currentPreference.theme) &&
+    (currentPreference.mode === "system" ||
+      pack.value.modes.includes(currentPreference.mode))
+      ? currentPreference
+      : null;
   const synced = resolveThemeSync({
     intent: navigation,
     url: { theme: check.themeName, mode: check.theme.id as "light" | "dark" },
-    preference: savedPreference.value,
+    preference: validPreference,
     forced: false,
     themeExplicit: parsed.searchParams.has("theme"),
     modeExplicit: parsed.searchParams.has("mode"),
@@ -690,13 +710,23 @@ onBeforeRouteLeave(() => {
 onBeforeMount(() => {
   if (resolved.value.ok) {
     const current = resolved.value;
+    // Route messages can arrive before the cross-frame storage event. Read the
+    // current preference here so a back intent cannot restore a stale cached mode.
+    const currentPreference = readThemePackPreference(props.prototypeId);
+    const validPreference =
+      currentPreference &&
+      pack.value.themes.some((theme) => theme.id === currentPreference.theme) &&
+      (currentPreference.mode === "system" ||
+        pack.value.modes.includes(currentPreference.mode))
+        ? currentPreference
+        : null;
     const synced = resolveThemeSync({
       intent: "replace",
       url: {
         theme: current.themeName,
         mode: current.theme.id as "light" | "dark",
       },
-      preference: savedPreference.value,
+      preference: validPreference,
       forced: false,
       themeExplicit: typeof route.query.theme === "string",
       modeExplicit: typeof route.query.mode === "string",

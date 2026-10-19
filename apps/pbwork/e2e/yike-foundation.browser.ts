@@ -650,6 +650,6 @@ test("C3: management default, dark, long form and confirmation visual risks", as
     animations: "disabled",
     path: "../../output/yike-c/settings-dark-config.png",
   });
-  await page.getByRole("button", { name: "取消", exact: true }).click();
+  await page.getByRole("button", { name: "关闭", exact: true }).click();
   await expect(page.getByRole("button", { name: /长休间隔/ })).toBeFocused();
 });

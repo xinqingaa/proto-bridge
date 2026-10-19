@@ -2,12 +2,7 @@
 import { computed, provide, useId } from "vue";
 import type { ThemeIdentity } from "@proto-bridge/core/v2";
 import PhoneShell from "@/workbench/PhoneShell.vue";
-import {
-  DEFAULT_DEVICE_ID,
-  getDevicePreset,
-  SAFE_TOP,
-  SAFE_BOTTOM,
-} from "@/workbench/canvas/devices";
+import { DEFAULT_DEVICE_ID, getDevicePreset } from "@/workbench/canvas/devices";
 import {
   ThemeTableKey,
   useRuntimeTheme,
@@ -48,7 +43,7 @@ const hostId = `preview-host-${useId().replace(/[^a-zA-Z0-9_-]/g, "-")}`;
           :width="device.width"
           :height="device.height"
           :dark="identity.mode === 'dark'"
-          chrome="overlay"
+          chrome="inset"
           time="09:41"
         >
           <div
@@ -62,10 +57,6 @@ const hostId = `preview-host-${useId().replace(/[^a-zA-Z0-9_-]/g, "-")}`;
                   :id="hostId"
                   class="preview-viewport"
                   data-preview-viewport
-                  :style="{
-                    '--preview-safe-top': `${SAFE_TOP}px`,
-                    '--preview-safe-bottom': `${SAFE_BOTTOM}px`,
-                  }"
                 >
                   <div
                     class="preview-scroll"
@@ -119,10 +110,7 @@ const hostId = `preview-host-${useId().replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 }
 .preview-scroll {
   position: absolute;
-  inset: var(--preview-safe-top) 0 var(--preview-safe-bottom);
-  /* This host already reserves the safe area; child controls must not reserve it again. */
-  --pb-safe-top: 0px;
-  --pb-safe-bottom: 0px;
+  inset: 0;
   overflow: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;

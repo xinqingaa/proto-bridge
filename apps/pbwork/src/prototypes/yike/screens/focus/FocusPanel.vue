@@ -7,6 +7,7 @@ import { useYikeStore } from "../../model";
 import { useYikeSession } from "../../session";
 import { elapsedMs, type YikeTimerMode } from "../../timer-engine";
 import { yikeNavigation } from "../../navigation";
+import ScrollableDataList from "@/design-system/components/data/ScrollableDataList.vue";
 import YikeDial from "../../components/YikeDial.vue";
 import YikeAction from "../../components/YikeAction.vue";
 import roundArtwork from "../../components/round-artwork.json";
@@ -141,9 +142,14 @@ function appendMinute() {
 }
 </script>
 <template>
-  <main class="yike-focus-main" :data-face="face">
+  <main
+    class="yike-focus-main"
+    :class="{ 'is-stopwatch': mode === 'stopwatch' }"
+    :data-face="face"
+  >
     <div class="yike-stage">
       <YikeDial
+        class="yike-focus-dial"
         :face="face"
         :compact="mode !== 'pomodoro'"
         :minutes="(mode === 'stopwatch' ? elapsed : remaining) / 60_000"
@@ -246,29 +252,36 @@ function appendMinute() {
         自定义
       </button>
     </div>
-    <ol
+    <ScrollableDataList
       v-if="mode === 'stopwatch' && session"
-      class="yike-laps"
-      aria-label="计圈记录"
-      v-pb="
-        scope.node('laps', 'list', {
-          tokens: {
-            typography: 'typography.numeric-content',
-            color: 'color.on-surface',
-          },
-        })
-      "
+      class="yike-lap-scroll"
+      inspect-id="yike.focus.lap-scroll"
+      tabindex="0"
+      aria-label="滚动计圈记录"
     >
-      <li class="is-current">
-        <span>第 {{ (session.laps?.length ?? 0) + 1 }} 圈</span
-        ><b>{{ lapLabel(elapsed - (session.laps?.at(-1) ?? 0)) }}</b
-        ><em>{{ status === "paused" ? "已暂停" : "进行中" }}</em>
-      </li>
-      <li v-for="lap in completedLaps" :key="lap.index">
-        <span>第 {{ lap.index }} 圈</span><b>{{ lapLabel(lap.duration) }}</b
-        ><em>累计 {{ lapLabel(lap.total) }}</em>
-      </li>
-    </ol>
+      <ol
+        class="yike-laps"
+        aria-label="计圈记录"
+        v-pb="
+          scope.node('laps', 'list', {
+            tokens: {
+              typography: 'typography.numeric-content',
+              color: 'color.on-surface',
+            },
+          })
+        "
+      >
+        <li class="is-current">
+          <span>第 {{ (session.laps?.length ?? 0) + 1 }} 圈</span
+          ><b>{{ lapLabel(elapsed - (session.laps?.at(-1) ?? 0)) }}</b
+          ><em>{{ status === "paused" ? "已暂停" : "进行中" }}</em>
+        </li>
+        <li v-for="lap in completedLaps" :key="lap.index">
+          <span>第 {{ lap.index }} 圈</span><b>{{ lapLabel(lap.duration) }}</b
+          ><em>累计 {{ lapLabel(lap.total) }}</em>
+        </li>
+      </ol>
+    </ScrollableDataList>
     <div class="yike-actions">
       <div class="yike-primary-row">
         <YikeAction
@@ -371,7 +384,10 @@ function appendMinute() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-block-size: var(--pb-layout-fill);
+  box-sizing: border-box;
+  min-block-size: var(--pb-layout-zero);
+  block-size: var(--pb-layout-fill);
+  overflow-y: auto;
   gap: var(--pb-spacing-sm);
   padding-block: var(--pb-spacing-sm-plus) var(--pb-spacing-sm);
 }
@@ -379,8 +395,25 @@ function appendMinute() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex: none;
+  min-block-size: var(--pb-layout-zero);
+  flex: var(--pb-layout-zero) var(--pb-layout-flex-grow) auto;
   gap: var(--pb-spacing-sm-plus);
+}
+.yike-focus-dial {
+  min-block-size: var(--pb-layout-zero);
+}
+.is-stopwatch .yike-stage {
+  inline-size: var(--pb-layout-fill);
+  min-block-size: var(--pb-layout-zero);
+  block-size: calc(
+    var(--pb-size-plot) - var(--pb-spacing-lg) - var(--pb-spacing-lg) -
+      var(--pb-spacing-lg)
+  );
+  flex-shrink: var(--pb-layout-flex-grow);
+}
+.is-stopwatch .yike-focus-dial {
+  block-size: var(--pb-layout-fill);
+  max-block-size: var(--pb-layout-fill);
 }
 .yike-round {
   display: flex;
@@ -416,6 +449,7 @@ function appendMinute() {
   fill: var(--pb-color-primary-soft);
 }
 .yike-actions {
+  flex: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -470,15 +504,32 @@ function appendMinute() {
   margin: var(--pb-layout-zero);
   padding: var(--pb-layout-zero);
   inline-size: var(--pb-layout-fill);
-  font: var(--pb-typography-numeric-content);
+  font: var(--pb-typography-content);
+  font-variant-numeric: tabular-nums;
+}
+.yike-lap-scroll {
+  flex: var(--pb-layout-flex-fill);
+  min-block-size: calc(var(--pb-size-control) + var(--pb-size-control));
+  inline-size: var(--pb-layout-fill);
 }
 .yike-laps li {
+  flex: none;
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
   gap: var(--pb-spacing-sm);
   padding-block: var(--pb-spacing-sm);
   border-block-end: var(--pb-border-hairline);
+}
+.yike-laps li > span {
+  flex: none;
+  inline-size: var(--pb-size-avatar-large);
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-body-sm);
+}
+.yike-laps b {
+  flex: var(--pb-layout-flex-fill);
+  min-inline-size: var(--pb-layout-zero);
+  font: var(--pb-typography-numeric-content);
 }
 .yike-laps em {
   font: var(--pb-typography-caption);

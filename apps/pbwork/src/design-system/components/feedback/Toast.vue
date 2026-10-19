@@ -99,12 +99,7 @@ watch(modelValue, async (value) => {
       data-pb-shell="toast"
     >
       <span>{{ message }}</span>
-      <button
-        v-if="actionLabel"
-        type="button"
-        :disabled="used"
-        @click="undo"
-      >
+      <button v-if="actionLabel" type="button" :disabled="used" @click="undo">
         {{ actionLabel }}
       </button>
     </div>
@@ -154,7 +149,7 @@ button:disabled {
 .pb-toast.v-snackbar > .v-overlay__content {
   position: absolute !important;
   right: var(--pb-spacing-sm) !important;
-  bottom: max(var(--pb-spacing-sm), var(--pb-safe-bottom, var(--pb-layout-zero))) !important;
+  bottom: var(--pb-spacing-sm) !important;
   left: var(--pb-spacing-sm) !important;
   width: auto !important;
 }

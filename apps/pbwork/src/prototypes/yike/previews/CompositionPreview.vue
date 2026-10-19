@@ -5,8 +5,8 @@ import Button from "@/design-system/components/action/Button.vue";
 import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
 import Toast from "@/design-system/components/feedback/Toast.vue";
 import GroupedList from "@/design-system/components/data/GroupedList.vue";
-import DurationPicker from "@/design-system/components/input/DurationPicker.vue";
-import Stepper from "@/design-system/components/input/Stepper.vue";
+import DurationPicker from "../components/YikeDurationPicker.vue";
+import YikeOptionPicker from "../components/YikeOptionPicker.vue";
 import YikeAction from "../components/YikeAction.vue";
 import YikeHabitForm from "../components/YikeHabitForm.vue";
 import { emptyHabitDraft, type YikeHabitDraft } from "../components/habit-form";
@@ -285,29 +285,38 @@ function reset() {
       :inspect-id="`preview.${device.id}.setting`"
     >
       <div class="decision">
-        <Stepper
+        <YikeOptionPicker
           v-if="session.settingKey === 'rounds'"
-          v-model="settingDraft"
+          :model-value="settingDraft"
+          @update:model-value="settingDraft = Number($event)"
           label="长休间隔"
-          :min="2"
-          :max="8"
+          :options="
+            Array.from({ length: 7 }, (_, i) => ({
+              value: i + 2,
+              label: `每 ${i + 2} 轮`,
+            }))
+          "
           :inspect-id="`preview.${device.id}.rounds`"
         /><DurationPicker
           v-else
           v-model="settingDraft"
           label="时长"
           :minute-step="1"
+          :min="1"
+          :max="session.settingKey === 'focus' ? 180 : 60"
           :inspect-id="`preview.${device.id}.duration`"
         />
         <p v-if="session.settingError" role="alert">
           {{ session.settingError }}
         </p>
+      </div>
+      <template #actions>
         <YikeAction
           label="确认"
           :inspect-id="`preview.${device.id}.setting-save`"
           @click="saveSetting"
         />
-      </div>
+      </template>
     </BottomSheet>
     <Toast
       v-model="notice"

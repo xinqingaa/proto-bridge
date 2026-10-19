@@ -166,11 +166,6 @@ usePbInspect({
   width: var(--pb-layout-fill);
   min-width: var(--pb-layout-zero);
   padding: var(--pb-spacing-sm) var(--pb-spacing-md);
-  padding-bottom: max(
-    var(--pb-spacing-sm),
-    var(--pb-safe-bottom, var(--pb-layout-zero)),
-    env(safe-area-inset-bottom, var(--pb-layout-zero))
-  );
   background: transparent;
   z-index: var(--pb-layer-content);
 }

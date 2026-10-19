@@ -52,6 +52,25 @@ describe("日期驱动的回顾周图", () => {
     expect(wrapper.get('[role="status"]').text()).toBe("日期无效");
     wrapper.unmount();
   });
+  it("formats fractional minutes without changing plotted values", () => {
+    const wrapper = mount(YikeWeekChart, {
+      props: {
+        ...props,
+        days: [
+          { date: "2026-10-12", minutes: 19 / 60 },
+          { date: "2026-10-13", minutes: 65 / 60 },
+        ],
+      },
+    });
+    expect(
+      wrapper
+        .findAll(".value")
+        .slice(0, 2)
+        .map((el) => el.text()),
+    ).toEqual(["19秒", "1.1"]);
+    expect(wrapper.text()).not.toContain("666666");
+    wrapper.unmount();
+  });
   it("水位裁切与日影渐隐保留真实高度和独立SVG引用", async () => {
     const wrapper = mount(YikeWeekChart, {
       props: { ...props, face: "water" },

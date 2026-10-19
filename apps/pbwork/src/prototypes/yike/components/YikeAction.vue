@@ -31,6 +31,7 @@ defineEmits<{ click: [] }>();
     size="lg"
     :disabled="Boolean(disabled)"
     :loading="Boolean(loading)"
+    :ripple="false"
     :block="Boolean(block)"
     @click="$emit('click')"
   />

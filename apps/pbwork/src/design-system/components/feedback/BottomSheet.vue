@@ -170,6 +170,9 @@ watch(modelValue, async (value) => {
 
 <style scoped>
 .pb-sheet {
+  display: flex;
+  flex-direction: column;
+  max-block-size: var(--pb-layout-fill);
   overflow: hidden;
   border-radius: var(--pb-radius-surface) var(--pb-radius-surface)
     var(--pb-layout-zero) var(--pb-layout-zero);
@@ -205,18 +208,24 @@ watch(modelValue, async (value) => {
   outline: var(--pb-border-focus);
 }
 .pb-sheet-body {
+  flex: auto;
+  min-block-size: var(--pb-layout-zero);
   overflow-y: auto;
   padding: var(--pb-spacing-md);
-  padding-bottom: var(--pb-spacing-2xl);
+  padding-bottom: var(--pb-spacing-md);
   color: inherit;
   font: var(--pb-typography-content);
 }
 .pb-sheet-actions {
+  flex: none;
   display: flex;
   align-items: center;
   gap: var(--pb-spacing-sm);
   padding: var(--pb-spacing-sm-plus) var(--pb-spacing-md) var(--pb-spacing-md);
   border-top: var(--pb-border-hairline);
+}
+.pb-sheet > :not(.pb-sheet-body) {
+  flex: none;
 }
 .pb-sheet-actions > * {
   flex: var(--pb-layout-flex-fill);
@@ -263,6 +272,6 @@ watch(modelValue, async (value) => {
   > .pb-sheet
   > .pb-sheet-body {
   padding: var(--pb-spacing-md) !important;
-  padding-bottom: var(--pb-spacing-2xl) !important;
+  padding-bottom: var(--pb-spacing-md) !important;
 }
 </style>

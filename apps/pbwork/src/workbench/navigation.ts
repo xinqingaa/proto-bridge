@@ -290,10 +290,14 @@ export function buildPrototypeTree(
     label: prototype.label,
     to: `/workbench/prototypes/${prototype.id}`,
     count: loadPrototypeScreens().filter(
-      (screen) => screen.prototypeId === prototype.id,
+      (screen) =>
+        screen.prototypeId === prototype.id && screen.navigation !== "flow",
     ).length,
     children: loadPrototypeScreens()
-      .filter((screen) => screen.prototypeId === prototype.id)
+      .filter(
+        (screen) =>
+          screen.prototypeId === prototype.id && screen.navigation !== "flow",
+      )
       .map((screen) => ({
         id: screen.screenId,
         label: screen.label,
@@ -333,7 +337,8 @@ export function buildWorkbenchNavigationTree(
   const prototypeItems: WorkbenchNavigationTreeNode[] = prototypes.map(
     (prototype) => {
       const prototypeScreens = screens.filter(
-        (screen) => screen.prototypeId === prototype.id,
+        (screen) =>
+          screen.prototypeId === prototype.id && screen.navigation !== "flow",
       );
       return {
         id: `prototype-${prototype.id}`,

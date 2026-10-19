@@ -920,51 +920,15 @@ export const componentRecords = [
   },
   {
     id: "duration-picker",
-    label: "DurationPicker",
-    description: "小时与分钟双滚轮，值为总分钟数。",
+    label: "WheelPicker",
+    description: "一至三列滚轮；选项、单位和值由调用方定义。",
     category: "input",
-    view: "input/DurationPicker.vue",
+    view: "input/WheelPicker.vue",
     contract: "contracts/duration-picker.json",
     example: {},
     controls: [
-      {
-        key: "label",
-        label: "label",
-        control: "text",
-      },
-      {
-        key: "modelValue",
-        label: "modelValue",
-        control: "number",
-      },
-      {
-        key: "minuteStep",
-        label: "minuteStep",
-        control: "number",
-        options: [
-          {
-            label: "1",
-            value: 1,
-          },
-          {
-            label: "5",
-            value: 5,
-          },
-          {
-            label: "15",
-            value: 15,
-          },
-          {
-            label: "30",
-            value: 30,
-          },
-        ],
-      },
-      {
-        key: "disabled",
-        label: "disabled",
-        control: "boolean",
-      },
+      { key: "label", label: "标签", control: "text" },
+      { key: "disabled", label: "禁用", control: "boolean" },
     ],
   },
   {

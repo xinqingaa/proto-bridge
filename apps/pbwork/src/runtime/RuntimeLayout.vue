@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PhoneShell from "@/workbench/PhoneShell.vue";
 import {
   computed,
   provide,
@@ -483,69 +484,85 @@ watch(
 </script>
 
 <template>
-  <v-app
-    :theme="runtimeTheme"
-    class="runtime-app"
-    :class="{ 'is-embedded': isEmbedded }"
+  <PhoneShell
+    frameless
+    chrome="inset"
+    :dark="effectiveThemeId === 'dark'"
     :style="themeStyle"
-    v-bind="activeTheme.attributes.value"
-    data-testid="runtime-root"
   >
-    <v-defaults-provider :defaults="runtimeDefaults">
-      <v-main class="runtime-main">
-        <ScreenTransition
-          v-if="resolved.ok && screenComponent && !loadError && loadedView"
-          :screen-key="loadedView"
-          :navigation="screenTransitionIntent"
-        >
-          <component :is="screenComponent" />
-        </ScreenTransition>
-        <section
-          v-else-if="resolved.ok && !loadError"
-          class="runtime-loading"
-          aria-busy="true"
-        />
-        <section
-          v-else
-          class="runtime-error"
-          role="alert"
-          aria-live="assertive"
-        >
-          <p class="runtime-kicker">PBWork Runtime</p>
-          <h1>无法打开原型</h1>
-          <p>
-            {{
-              loadError ?? (!resolved.ok ? resolved.message : "UNKNOWN_SCREEN")
-            }}
-          </p>
-        </section>
-      </v-main>
-    </v-defaults-provider>
+    <v-app
+      :theme="runtimeTheme"
+      class="runtime-app"
+      :class="{ 'is-embedded': isEmbedded }"
+      :style="themeStyle"
+      v-bind="activeTheme.attributes.value"
+      data-testid="runtime-root"
+    >
+      <v-defaults-provider :defaults="runtimeDefaults">
+        <v-main class="runtime-main">
+          <ScreenTransition
+            v-if="resolved.ok && screenComponent && !loadError && loadedView"
+            :screen-key="loadedView"
+            :navigation="screenTransitionIntent"
+          >
+            <component :is="screenComponent" />
+          </ScreenTransition>
+          <section
+            v-else-if="resolved.ok && !loadError"
+            class="runtime-loading"
+            aria-busy="true"
+          />
+          <section
+            v-else
+            class="runtime-error"
+            role="alert"
+            aria-live="assertive"
+          >
+            <p class="runtime-kicker">PBWork Runtime</p>
+            <h1>无法打开原型</h1>
+            <p>
+              {{
+                loadError ??
+                (!resolved.ok ? resolved.message : "UNKNOWN_SCREEN")
+              }}
+            </p>
+          </section>
+        </v-main>
+      </v-defaults-provider>
 
-    <InspectHost
-      v-if="isEmbedded && bridgeContext"
-      ref="inspectHost"
-      :enabled="inspectEnabled"
-      :comment-enabled="commentEnabled"
-      :bridge-context="bridgeContext"
-      :post="postToParent"
-    />
-  </v-app>
+      <InspectHost
+        v-if="isEmbedded && bridgeContext"
+        ref="inspectHost"
+        :enabled="inspectEnabled"
+        :comment-enabled="commentEnabled"
+        :bridge-context="bridgeContext"
+        :post="postToParent"
+      />
+    </v-app>
+  </PhoneShell>
 </template>
 
 <style scoped>
 .runtime-main {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: 0;
   height: 100%;
 }
 
 .runtime-app {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
   background: rgb(var(--v-theme-background));
 }
 
-.runtime-app.is-embedded :deep(.v-main) {
+.runtime-app :deep(.v-application__wrap) {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+.runtime-app :deep(.v-main) {
   --v-layout-top: 0px !important;
   --v-layout-bottom: 0px !important;
   --v-layout-left: 0px !important;

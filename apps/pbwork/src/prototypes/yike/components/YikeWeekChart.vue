@@ -124,7 +124,13 @@ function select(date: string) {
                 ? 'color.on-surface'
                 : 'color.on-surface-muted'
             "
-            >{{ bar.minutes > 0 ? bar.minutes : bar.future ? "—" : "0" }}</span
+            >{{
+              bar.future
+                ? "—"
+                : bar.minutes > 0 && bar.minutes < 1
+                  ? `${Math.round(bar.minutes * 60)}秒`
+                  : `${Number(bar.minutes.toFixed(1))}`
+            }}</span
           >
           <svg
             :viewBox="artwork.viewBox"
@@ -260,6 +266,9 @@ svg {
   margin: var(--pb-layout-zero);
 }
 .value {
+  max-inline-size: var(--pb-layout-fill);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
   min-block-size: var(--pb-spacing-md);
 }
 .is-today .day,

@@ -14,7 +14,10 @@ defineProps<{ face: YikeFace }>();
           class="brand-object"
           v-pb="
             scope.node('object', 'image', {
-              tokens: { width: 'size.action-min-inline', color: 'color.primary' },
+              tokens: {
+                width: 'size.action-min-inline',
+                color: 'color.primary',
+              },
             })
           "
           role="img"
@@ -84,9 +87,7 @@ defineProps<{ face: YikeFace }>();
 }
 .brand-privacy {
   position: absolute;
-  inset-block-end: calc(
-    var(--pb-safe-bottom, var(--pb-layout-zero)) + var(--pb-spacing-lg)
-  );
+  inset-block-end: calc(var(--pb-spacing-lg));
   inset-inline: var(--pb-spacing-lg);
   margin: var(--pb-layout-zero);
   font: var(--pb-typography-caption);

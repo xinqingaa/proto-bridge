@@ -3,6 +3,7 @@ export const scope = screenScope("yike", "habit-editor");
 export default defineScreen({
   prototypeId: "yike",
   slug: "habit-editor",
+  navigation: "flow",
   label: "新建或编辑习惯",
   title: "新建或编辑习惯",
   view: "yike/screens/habit-editor/HabitEditor.vue",

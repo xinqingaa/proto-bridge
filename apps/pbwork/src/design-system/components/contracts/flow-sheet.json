@@ -12,7 +12,8 @@
     "swipe 开启时允许横向切步，当前步骤以整页宽度平移进入视口，拖拽时跟手、松手后完成切页",
     "右上角使用带可访问名称的 X 图标关闭整张 Sheet；step > 0 时左上角提供返回上一屏",
     "关闭只更新 modelValue，返回只更新 step，不替业务流程决定提交、取消或路由",
-    "material=solid保留实色表面，glass复用共享玻璃材质及实色降级；材质不改变关闭、焦点、滚动或步骤机制。"
+    "material=solid保留实色表面，glass复用共享玻璃材质及实色降级；材质不改变关闭、焦点、滚动或步骤机制。",
+    "第一步可通过 header-start 提供业务图标入口；后续步骤由共享返回按钮占用左侧；操作区固定，主体可滚动，关闭后恢复打开控件焦点。"
   ],
   "layout": {
     "summary": "Sheet 内部只有一个裁剪视口；各步骤等宽横排，当前 step 以整页宽度平移进入视口。"
@@ -92,7 +93,8 @@
   ],
   "slots": [
     "default",
-    "actions"
+    "actions",
+    "header-start"
   ],
   "events": [
     "update:modelValue",

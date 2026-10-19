@@ -1,9 +1,17 @@
 <script setup lang="ts">
 import GlassMaterial from "../_shared/GlassMaterial.vue";
 import "../_shared/overlay-material.css";
-import { computed, toRefs, watch, type CSSProperties } from "vue";
+import {
+  computed,
+  nextTick,
+  ref,
+  toRefs,
+  watch,
+  type CSSProperties,
+} from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { usePointerSwipe } from "@/design-system/components/_shared/usePointerSwipe";
+import { useOverlayReturnFocus } from "../_shared/useOverlayReturnFocus";
 import SheetHeader from "@/design-system/components/_shared/SheetHeader.vue";
 
 const props = withDefaults(
@@ -32,6 +40,10 @@ const emit = defineEmits<{
 }>();
 
 const sheetRef = usePbInspectRef();
+const bodyRef = ref<HTMLElement | null>(null);
+const restoreTriggerFocus = useOverlayReturnFocus(() =>
+  Boolean(props.modelValue),
+);
 const { title, modelValue, step, stepCount, inspectId, attach, swipe } =
   toRefs(props);
 
@@ -60,7 +72,7 @@ const trackStyle = computed<CSSProperties>(() => ({
   transform: `translateX(calc(var(--pb-layout-translate-full-negative) * ${safeStep.value} + ${swipeGesture.dragOffset.value}px))`,
 }));
 
-usePbInspect({
+const { resync } = usePbInspect({
   element: sheetRef,
   pbId: "ds.flow-sheet",
   instanceId: inspectId,
@@ -71,6 +83,7 @@ usePbInspect({
     modelValue: modelValue.value ?? false,
     step: safeStep.value,
     stepCount: stepCount.value,
+    swipe: swipe.value,
     inspectId: inspectId.value,
   }),
   getState: () => ({
@@ -133,6 +146,22 @@ usePbInspect({
   ],
 });
 
+watch(modelValue, async (open) => {
+  if (!open) return;
+  await nextTick();
+  resync();
+});
+
+watch(safeStep, async () => {
+  if (!props.modelValue) return;
+  await nextTick();
+  bodyRef.value
+    ?.querySelector<HTMLElement>(
+      ':scope > :not([inert]) [role="listbox"], :scope > :not([inert]) button',
+    )
+    ?.focus({ preventScroll: true });
+});
+
 watch(stepCount, (count) => {
   if (step.value >= count) emit("update:step", Math.max(0, count - 1));
 });
@@ -145,6 +174,8 @@ watch(stepCount, (count) => {
     scrim
     :attach="attachTarget"
     absolute
+    @after-enter="resync"
+    @after-leave="restoreTriggerFocus"
     @update:model-value="$emit('update:modelValue', Boolean($event))"
   >
     <v-card
@@ -166,7 +197,11 @@ watch(stepCount, (count) => {
         :inspect-id="inspectId ?? 'ds.flow-sheet'"
         @back="emit('update:step', Math.max(0, safeStep - 1))"
         @close="emit('update:modelValue', false)"
-      />
+      >
+        <template v-if="safeStep === 0" #start
+          ><slot name="header-start"
+        /></template>
+      </SheetHeader>
       <div class="pb-flow-sheet-dots" aria-hidden="true">
         <span
           v-for="index in stepCount"
@@ -191,6 +226,7 @@ watch(stepCount, (count) => {
         @click.capture="swipeGesture.onClickCapture"
       >
         <div
+          ref="bodyRef"
           class="pb-flow-sheet-track"
           :class="{ 'is-dragging': swipeGesture.dragging.value }"
           :style="trackStyle"
@@ -207,6 +243,10 @@ watch(stepCount, (count) => {
 
 <style scoped>
 .pb-flow-sheet {
+  display: flex;
+  flex-direction: column;
+  max-block-size: var(--pb-layout-fill);
+  overflow: hidden;
   border-radius: var(--pb-radius-surface) var(--pb-radius-surface)
     var(--pb-layout-zero) var(--pb-layout-zero);
   background: var(--pb-color-surface);
@@ -230,7 +270,10 @@ watch(stepCount, (count) => {
   background: var(--pb-color-primary);
 }
 .pb-flow-sheet-body {
-  overflow: hidden;
+  flex: auto;
+  min-block-size: var(--pb-layout-zero);
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: var(--pb-layout-zero);
   touch-action: pan-y;
 }
@@ -251,18 +294,21 @@ watch(stepCount, (count) => {
 }
 .pb-flow-sheet-track > :deep(*) {
   flex: none;
-  min-width: var(--pb-layout-fill);
-  max-height: var(--pb-layout-sheet-max-height);
+  min-width: var(--pb-layout-zero);
+  width: var(--pb-layout-fill);
   overflow: auto;
   padding: var(--pb-spacing-md);
   box-sizing: border-box;
   font: var(--pb-typography-content);
 }
+.pb-flow-sheet > :not(.pb-flow-sheet-body) {
+  flex: none;
+}
 .pb-flow-sheet-actions {
   display: flex;
   align-items: center;
   gap: var(--pb-spacing-sm);
-  padding: var(--pb-spacing-sm-plus) var(--pb-spacing-md) var(--pb-spacing-2xl);
+  padding: var(--pb-spacing-sm-plus) var(--pb-spacing-md) var(--pb-spacing-md);
   border-top: var(--pb-border-hairline);
 }
 .pb-flow-sheet-actions > * {
@@ -304,7 +350,8 @@ watch(stepCount, (count) => {
   > .pb-flow-sheet
   > .pb-flow-sheet-body {
   min-width: var(--pb-layout-zero);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: var(--pb-layout-zero) !important;
 }
 </style>

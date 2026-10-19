@@ -15,31 +15,34 @@ defineEmits<{
 
 <template>
   <div class="pb-sheet-top">
-  <div class="pb-sheet-grip" aria-hidden="true" />
-  <header class="pb-sheet-header">
-    <div class="pb-sheet-header-side pb-sheet-header-start">
-      <IconButton
-        v-if="props.showBack"
-        ariaLabel="返回"
-        icon="chevron-left"
-        size="sm"
-        v-bind="props.inspectId ? { inspectId: `${props.inspectId}.back` } : {}"
-        @click="$emit('back')"
-      />
-    </div>
-    <h2 class="pb-sheet-header-title">{{ props.title }}</h2>
-    <div class="pb-sheet-header-side pb-sheet-header-end">
-      <IconButton
-        ariaLabel="关闭"
-        icon="x"
-        size="sm"
-        v-bind="
-          props.inspectId ? { inspectId: `${props.inspectId}.close` } : {}
-        "
-        @click="$emit('close')"
-      />
-    </div>
-  </header>
+    <div class="pb-sheet-grip" aria-hidden="true" />
+    <header class="pb-sheet-header">
+      <div class="pb-sheet-header-side pb-sheet-header-start">
+        <IconButton
+          v-if="props.showBack"
+          ariaLabel="返回"
+          icon="chevron-left"
+          size="sm"
+          v-bind="
+            props.inspectId ? { inspectId: `${props.inspectId}.back` } : {}
+          "
+          @click="$emit('back')"
+        />
+        <slot v-else name="start" />
+      </div>
+      <h2 class="pb-sheet-header-title">{{ props.title }}</h2>
+      <div class="pb-sheet-header-side pb-sheet-header-end">
+        <IconButton
+          ariaLabel="关闭"
+          icon="x"
+          size="sm"
+          v-bind="
+            props.inspectId ? { inspectId: `${props.inspectId}.close` } : {}
+          "
+          @click="$emit('close')"
+        />
+      </div>
+    </header>
   </div>
 </template>
 

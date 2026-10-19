@@ -96,24 +96,268 @@ export const platformScenarios = {
   "duration-picker": [
     {
       id: "default",
-      label: "默认示例",
-      description: "小时与分钟双滚轮，值为总分钟数。",
+      label: "双列",
+      description: "一至三列通用滚轮；每列的选项、单位和显示文本由调用方提供。",
       props: {
-        label: "提醒间隔",
-        modelValue: 90,
-        minuteStep: 5,
+        label: "双列选择",
+        columns: [
+          {
+            id: "first",
+            label: "第一列",
+            unit: "项",
+            numeric: true,
+            options: [
+              {
+                value: 0,
+                label: "0",
+              },
+              {
+                value: 1,
+                label: "1",
+              },
+              {
+                value: 2,
+                label: "2",
+              },
+              {
+                value: 3,
+                label: "3",
+              },
+            ],
+          },
+          {
+            id: "second",
+            label: "第二列",
+            unit: "项",
+            numeric: true,
+            options: [
+              {
+                value: 0,
+                label: "0",
+              },
+              {
+                value: 1,
+                label: "1",
+              },
+              {
+                value: 2,
+                label: "2",
+              },
+              {
+                value: 3,
+                label: "3",
+              },
+              {
+                value: 4,
+                label: "4",
+              },
+              {
+                value: 5,
+                label: "5",
+              },
+            ],
+          },
+        ],
+        modelValue: [1, 2],
         disabled: false,
       },
     },
     {
-      id: "short",
-      label: "短时长",
-      description: "范围为 0 至 23 小时 59 分钟，分钟按 minuteStep 向下对齐",
+      id: "single",
+      label: "单列",
+      description: "一至三列通用滚轮；每列的选项、单位和显示文本由调用方提供。",
       props: {
-        label: "提醒间隔",
-        modelValue: 15,
-        minuteStep: 5,
+        label: "单列选择",
+        columns: [
+          {
+            id: "option",
+            label: "选项",
+            options: [
+              {
+                value: "a",
+                label: "选项一",
+              },
+              {
+                value: "b",
+                label: "选项二",
+              },
+              {
+                value: "c",
+                label: "选项三",
+              },
+            ],
+          },
+        ],
+        modelValue: ["b"],
         disabled: false,
+      },
+    },
+    {
+      id: "triple",
+      label: "三列",
+      description: "一至三列通用滚轮；每列的选项、单位和显示文本由调用方提供。",
+      props: {
+        label: "三列选择",
+        columns: [
+          {
+            id: "first",
+            label: "第一列",
+            unit: "项",
+            numeric: true,
+            options: [
+              {
+                value: 0,
+                label: "0",
+              },
+              {
+                value: 1,
+                label: "1",
+              },
+              {
+                value: 2,
+                label: "2",
+              },
+              {
+                value: 3,
+                label: "3",
+              },
+            ],
+          },
+          {
+            id: "second",
+            label: "第二列",
+            unit: "项",
+            numeric: true,
+            options: [
+              {
+                value: 0,
+                label: "0",
+              },
+              {
+                value: 1,
+                label: "1",
+              },
+              {
+                value: 2,
+                label: "2",
+              },
+              {
+                value: 3,
+                label: "3",
+              },
+              {
+                value: 4,
+                label: "4",
+              },
+              {
+                value: 5,
+                label: "5",
+              },
+            ],
+          },
+          {
+            id: "third",
+            label: "第三列",
+            unit: "项",
+            numeric: true,
+            options: [
+              {
+                value: 0,
+                label: "0",
+              },
+              {
+                value: 1,
+                label: "1",
+              },
+              {
+                value: 2,
+                label: "2",
+              },
+              {
+                value: 3,
+                label: "3",
+              },
+              {
+                value: 4,
+                label: "4",
+              },
+              {
+                value: 5,
+                label: "5",
+              },
+            ],
+          },
+        ],
+        modelValue: [1, 2, 3],
+        disabled: false,
+      },
+    },
+    {
+      id: "disabled",
+      label: "禁用",
+      description: "一至三列通用滚轮；每列的选项、单位和显示文本由调用方提供。",
+      props: {
+        label: "双列选择",
+        columns: [
+          {
+            id: "first",
+            label: "第一列",
+            unit: "项",
+            numeric: true,
+            options: [
+              {
+                value: 0,
+                label: "0",
+              },
+              {
+                value: 1,
+                label: "1",
+              },
+              {
+                value: 2,
+                label: "2",
+              },
+              {
+                value: 3,
+                label: "3",
+              },
+            ],
+          },
+          {
+            id: "second",
+            label: "第二列",
+            unit: "项",
+            numeric: true,
+            options: [
+              {
+                value: 0,
+                label: "0",
+              },
+              {
+                value: 1,
+                label: "1",
+              },
+              {
+                value: 2,
+                label: "2",
+              },
+              {
+                value: 3,
+                label: "3",
+              },
+              {
+                value: 4,
+                label: "4",
+              },
+              {
+                value: 5,
+                label: "5",
+              },
+            ],
+          },
+        ],
+        modelValue: [1, 2],
+        disabled: true,
       },
     },
   ],
