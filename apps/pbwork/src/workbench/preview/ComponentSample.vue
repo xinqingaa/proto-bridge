@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, watch } from "vue";
 import PbButton from "@/design-system/components/action/Button.vue";
-import { BUTTON_KINDS, type ButtonKind } from "@/design-system/components/_shared/colorTokens";
+import {
+  BUTTON_KINDS,
+  type ButtonKind,
+} from "@/design-system/components/_shared/colorTokens";
 import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
 import { componentScenarios } from "@/design-system/components/scenarios";
 import { loadComponentContract } from "@/design-system/loaders";
@@ -69,6 +72,8 @@ function openScenario(id: string) {
   const detent = scenario?.props?.detent;
   demo.value.detent =
     detent === "medium" || detent === "expanded" ? detent : "content";
+  demo.value.material =
+    scenario?.props?.material === "glass" ? "glass" : "solid";
   demo.value.open = true;
 }
 </script>
@@ -189,6 +194,8 @@ function openScenario(id: string) {
           :data-preview-state="state.id"
           @click="
             demo.open = Boolean(state.props?.modelValue);
+            demo.material =
+              state.props?.material === 'glass' ? 'glass' : 'solid';
             demo.detent =
               state.props?.detent === 'medium'
                 ? 'medium'
@@ -200,6 +207,7 @@ function openScenario(id: string) {
       </section>
       <BottomSheet
         v-model="demo.open"
+        :material="demo.material === 'glass' ? 'glass' : 'solid'"
         v-model:detent="demo.detent"
         :title="title"
         :attach="attach"

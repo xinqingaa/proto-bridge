@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import GlassMaterial from "../_shared/GlassMaterial.vue";
+import "../_shared/overlay-material.css";
 import { computed, nextTick, toRefs, watch } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { useOverlayReturnFocus } from "@/design-system/components/_shared/useOverlayReturnFocus";
@@ -6,6 +8,7 @@ import SheetHeader from "@/design-system/components/_shared/SheetHeader.vue";
 
 const props = defineProps<{
   title: string;
+  material?: "solid" | "glass";
   modelValue?: boolean;
   /** CSS selector for overlay host; Runtime defaults to .runtime-app */
   attach?: string;
@@ -21,7 +24,9 @@ const emit = defineEmits<{
 
 const sheetRef = usePbInspectRef();
 const { title, modelValue, attach, inspectId } = toRefs(props);
-const restoreTriggerFocus = useOverlayReturnFocus(() => Boolean(props.modelValue));
+const restoreTriggerFocus = useOverlayReturnFocus(() =>
+  Boolean(props.modelValue),
+);
 
 const currentDetent = computed(() => props.detent ?? "content");
 const detentLabels = { content: "适应内容", medium: "半屏", expanded: "展开" };
@@ -38,6 +43,7 @@ const { resync } = usePbInspect({
   instanceId: inspectId,
   componentId: "bottom-sheet",
   getProps: () => ({
+    material: props.material ?? "solid",
     title: title.value,
     modelValue: modelValue.value ?? false,
     inspectId: inspectId.value,
@@ -46,6 +52,13 @@ const { resync } = usePbInspect({
   }),
   getState: () => ({ open: Boolean(modelValue.value) }),
   getTokenBindings: () => ({
+    glassTint: "color.glass-tint",
+    glassEdge: "border.glass",
+    glassLight: "elevation.glass",
+    glassBackdrop: "surface.glass-backdrop",
+    glassFallback: "color.surface",
+    glassFallbackBorder: "border.default",
+
     surface: "color.surface",
     border: "color.border",
     radius: "radius.surface",
@@ -65,6 +78,13 @@ const { resync } = usePbInspect({
     easing: "motion.easing-gentle",
   }),
   getTokens: () => [
+    "color.glass-tint",
+    "border.glass",
+    "elevation.glass",
+    "surface.glass-backdrop",
+    "color.surface",
+    "border.default",
+
     "color.surface",
     "color.border",
     "radius.surface",
@@ -106,15 +126,17 @@ watch(modelValue, async (value) => {
     <v-card
       ref="sheetRef"
       class="pb-sheet sheet"
+      :class="{ 'pb-overlay-glass': material === 'glass' }"
       :data-detent="currentDetent"
       data-pb-id="ds.bottom-sheet"
       data-pb-role="sheet"
       data-pb-shell="sheet"
       role="dialog"
       aria-modal="true"
-      color="surface"
+      :color="material === 'glass' ? undefined : 'surface'"
       variant="flat"
     >
+      <GlassMaterial v-if="material === 'glass'" />
       <SheetHeader
         :title="title"
         :inspect-id="inspectId ?? 'ds.bottom-sheet'"

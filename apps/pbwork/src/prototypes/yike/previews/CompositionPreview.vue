@@ -235,6 +235,7 @@ function reset() {
     </div>
     <p role="status">{{ session.result || "选择一个资源，操作后可复位。" }}</p>
     <BottomSheet
+      material="glass"
       v-model="editor"
       :title="String(session.editorKind ?? '新建习惯')"
       :attach="attach"
@@ -250,6 +251,7 @@ function reset() {
       />
     </BottomSheet>
     <BottomSheet
+      material="glass"
       v-model="confirm"
       title="删除这个习惯？"
       :attach="attach"
@@ -276,6 +278,7 @@ function reset() {
       </div>
     </BottomSheet>
     <BottomSheet
+      material="glass"
       v-model="setting"
       title="番茄配置"
       :attach="attach"

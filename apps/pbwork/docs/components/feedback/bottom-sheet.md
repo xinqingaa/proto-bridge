@@ -21,11 +21,14 @@
 - 选项列表：选中行右侧 `check` Icon，标签用 `typography.label`；选项 `DataList` 默认不分隔线。
 - 内容区默认隐藏滚动条，仍可滚动。
 
+材质默认 `solid`；`material=glass` 使用共享 GlassMaterial 的染色、边缘、高光和模糊，降低透明度、强制颜色或不支持滤镜时降级为实色。材质不改变焦点、关闭、滚动或导航，内容区不要再套一层玻璃。
+
 ## States
 
 | id | label | kind |
 | --- | --- | --- |
 | `open` | 打开 | `content` |
+| `glass` | 玻璃面板 | `variant` |
 | `closed` | 关闭 | `content` |
 | `medium` | 半屏 | `variant` |
 | `expanded` | 展开 | `variant` |

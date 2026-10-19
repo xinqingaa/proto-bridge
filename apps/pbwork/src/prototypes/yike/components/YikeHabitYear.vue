@@ -26,8 +26,9 @@ const days = computed(() => weeks.value.flat());
 const states = computed(
   () => new Map(days.value.map((day) => [day.date, day.state])),
 );
+const firstDay = computed(() => shiftDay(props.today, -364));
 const records = computed(() => {
-  const first = shiftDay(props.today, -364);
+  const first = firstDay.value;
   return days.value
     .filter((day) => first && day.date >= first && day.date <= props.today)
     .map((day) => ({ date: day.date, value: day.state === "done" ? 1 : 0 }));
@@ -107,7 +108,7 @@ const viewBox = computed(
       </template>
       <template #legend>
         <div class="axis">
-          <span>{{ days[0]?.date }}</span
+          <span>{{ firstDay }}</span
           ><span>{{ today }} · {{ total }} 次</span>
         </div>
         <p class="legend">

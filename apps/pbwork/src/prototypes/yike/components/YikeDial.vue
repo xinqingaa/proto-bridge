@@ -63,13 +63,31 @@ function point(fraction: number, radius: number) {
     y: g.cy - radius * Math.cos(angle),
   };
 }
-function sector(fraction: number) {
+function sector(fraction: number, start = artwork.zero) {
   const g = geometry.value;
+  const from = point(start, g.radius);
   const end = point(fraction, g.radius);
-  return `M${g.cx} ${g.cy}L${g.cx} ${g.cy - g.radius}A${g.radius} ${g.radius} 0 ${fraction > artwork.half ? 1 : 0} 1 ${end.x} ${end.y}Z`;
+  return `M${g.cx} ${g.cy}L${from.x} ${from.y}A${g.radius} ${g.radius} 0 ${fraction - start > artwork.half ? 1 : 0} 1 ${end.x} ${end.y}Z`;
 }
 const wedge = computed(() => sector(dialRatio.value));
-const shadow = computed(() => sector(ratio.value));
+const shadowParts = computed(() => {
+  const fade = Math.min(
+    ratio.value,
+    artwork.sundial.fadeDegrees / artwork.circleDegrees,
+  );
+  const core = Math.max(artwork.zero, ratio.value - fade);
+  return [
+    { path: sector(core), opacity: artwork.full },
+    ...Array.from({ length: artwork.sundial.fadeSteps }, (_, index) => ({
+      path: sector(
+        core + (fade * (index + artwork.full)) / artwork.sundial.fadeSteps,
+        core + (fade * index) / artwork.sundial.fadeSteps,
+      ),
+      opacity:
+        artwork.full - (index + artwork.half) / artwork.sundial.fadeSteps,
+    })),
+  ];
+});
 const grip = computed(() =>
   point(
     dialRatio.value,
@@ -94,6 +112,7 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
     data-pb-token-artwork="asset.brand-mark"
     data-pb-token-width="size.plot"
     data-pb-token-color="color.on-surface"
+    data-pb-token-filter="effect.artwork-shadow"
   >
     <defs>
       <clipPath :id="`${clipId}-vessel`">
@@ -110,15 +129,23 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
       <filter :id="`${clipId}-blur`">
         <feGaussianBlur :stdDeviation="artwork.sundial.shadowBlur" />
       </filter>
-      <clipPath :id="`${clipId}-shadow`">
-        <circle
-          v-if="ratio === artwork.full"
-          :cx="geometry.cx"
-          :cy="geometry.cy"
-          :r="geometry.radius"
+      <mask
+        :id="`${clipId}-shadow`"
+        class="shadow-mask"
+        maskUnits="userSpaceOnUse"
+        :x="artwork.zero"
+        :y="artwork.zero"
+        :width="geometry.width"
+        :height="geometry.height"
+      >
+        <path
+          v-for="(part, index) in shadowParts"
+          :key="index"
+          :d="part.path"
+          :opacity="part.opacity"
+          fill="currentColor"
         />
-        <path v-else :d="shadow" />
-      </clipPath>
+      </mask>
       <clipPath :id="`${clipId}-sector`">
         <circle
           v-if="dialRatio === artwork.full"
@@ -168,6 +195,7 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
         <image
           v-if="ratio > artwork.zero && tone !== 'paused'"
           :href="`${image}#wave`"
+          preserveAspectRatio="none"
           :y="waterTop"
           :width="geometry.width"
           :height="artwork.water.waveHeight"
@@ -180,7 +208,12 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
         v-if="ratio > artwork.zero"
         class="shadow"
         :filter="`url(#${clipId}-blur)`"
-        :clip-path="`url(#${clipId}-shadow)`"
+        :mask="`url(#${clipId}-shadow)`"
+        :opacity="
+          tone === 'paused' || tone === 'break'
+            ? artwork.sundial.subduedOpacity
+            : artwork.full
+        "
       >
         <image
           :href="`${image}#shadow`"
@@ -194,7 +227,10 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
       :data-pb-id="`${inspectId}.digits`"
       data-pb-role="text"
       data-pb-token-typography="typography.numeric-display"
-      data-pb-token-color="color.on-surface"
+      :data-pb-token-color="
+        tone === 'done' ? 'color.primary' : 'color.on-surface'
+      "
+      data-pb-token-tracking="tracking.display"
       :x="geometry.cx"
       :y="geometry.readoutY"
       text-anchor="middle"
@@ -208,7 +244,10 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
       :data-pb-token-typography="
         face === 'mechanical' ? 'typography.micro' : 'typography.body-sm'
       "
-      data-pb-token-color="color.on-surface-muted"
+      :data-pb-token-color="
+        tone === 'paused' ? 'color.primary' : 'color.on-surface-muted'
+      "
+      data-pb-token-tracking="tracking.caption"
       :x="geometry.cx"
       :y="geometry.captionY"
       text-anchor="middle"
@@ -285,9 +324,8 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
 .submerged .caption {
   fill: var(--pb-color-on-inverse-surface);
 }
-.is-paused .shadow,
-.is-break .shadow {
-  opacity: var(--pb-opacity-disabled);
+.shadow-mask {
+  mask-type: alpha;
 }
 </style>
 

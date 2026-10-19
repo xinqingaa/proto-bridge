@@ -115,6 +115,7 @@ function save() {
     </fieldset>
     <SegmentedControl
       label="频率"
+      material="glass"
       :items="[
         { id: 'daily', label: '每天' },
         { id: 'weekly', label: '每周' },

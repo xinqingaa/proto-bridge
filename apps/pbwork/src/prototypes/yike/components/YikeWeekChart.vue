@@ -101,17 +101,31 @@ function select(date: string) {
           :aria-label="`${bar.date}，${bar.future ? '未来日期' : `${bar.minutes} 分钟`}`"
           :aria-pressed="!bar.future && modelValue === bar.date"
           :aria-current="bar.date === today ? 'date' : undefined"
-          :data-pb-id="`${inspectId}.${bar.date}`"
-          :data-pb-key="bar.date"
+          :data-pb-id="`${inspectId}.day`"
+          :data-pb-key="`day-${bar.date}`"
           data-pb-role="button"
           data-pb-token-typography="typography.caption"
-          data-pb-token-color="color.on-surface-muted"
+          data-pb-token-color="color.primary"
           data-pb-token-focus="border.focus"
           @click="select(bar.date)"
         >
-          <span class="value">{{
-            bar.minutes > 0 ? bar.minutes : bar.future ? "—" : "0"
-          }}</span>
+          <span
+            class="value"
+            :data-pb-id="`${inspectId}.value`"
+            :data-pb-key="`day-${bar.date}`"
+            data-pb-role="text"
+            :data-pb-token-typography="
+              modelValue === bar.date
+                ? 'typography.caption-strong'
+                : 'typography.caption'
+            "
+            :data-pb-token-color="
+              modelValue === bar.date
+                ? 'color.on-surface'
+                : 'color.on-surface-muted'
+            "
+            >{{ bar.minutes > 0 ? bar.minutes : bar.future ? "—" : "0" }}</span
+          >
           <svg
             :viewBox="artwork.viewBox"
             :width="artwork.width"
@@ -127,7 +141,11 @@ function select(date: string) {
                 :y2="artwork.zero"
               >
                 <stop :offset="artwork.zero" stop-color="currentColor" />
-                <stop :offset="artwork.full" stop-color="currentColor" :stop-opacity="artwork.zero" />
+                <stop
+                  :offset="artwork.full"
+                  stop-color="currentColor"
+                  :stop-opacity="artwork.zero"
+                />
               </linearGradient>
               <clipPath :id="`${gradientId}-${bar.date}-tube`">
                 <rect
@@ -180,7 +198,25 @@ function select(date: string) {
               />
             </template>
           </svg>
-          <span class="day">{{ bar.label }}</span>
+          <span
+            class="day"
+            :data-pb-id="`${inspectId}.label`"
+            :data-pb-key="`day-${bar.date}`"
+            data-pb-role="text"
+            :data-pb-token-typography="
+              modelValue === bar.date || bar.date === today
+                ? 'typography.caption-strong'
+                : 'typography.caption'
+            "
+            :data-pb-token-color="
+              modelValue === bar.date
+                ? 'color.on-surface'
+                : bar.date === today
+                  ? 'color.primary'
+                  : 'color.on-surface-muted'
+            "
+            >{{ bar.label }}</span
+          >
         </button>
       </div>
     </template>
@@ -231,6 +267,9 @@ svg {
 .is-selected .value {
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-caption-strong);
+}
+.is-today:not(.is-selected) .day {
+  color: var(--pb-color-primary);
 }
 .is-dimmed svg,
 button:disabled svg {

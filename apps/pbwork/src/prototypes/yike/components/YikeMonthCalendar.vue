@@ -6,6 +6,17 @@ import {
   parseDay,
 } from "@/design-system/components/_shared/calendar";
 import artwork from "./date-artwork.json";
+import {
+  compositeOver,
+  contrastRatio,
+  parseThemeColor,
+} from "@proto-bridge/core/v2";
+import { useToken } from "@/design-system/theme/runtime-theme";
+import { pbStyle } from "@/authoring/pb-style";
+const primary = useToken("color.primary");
+const background = useToken("color.background");
+const ink = useToken("color.on-surface");
+const inverse = useToken("color.on-primary");
 const props = defineProps<{
   inspectId: string;
   face: "mechanical" | "water" | "sundial";
@@ -44,6 +55,22 @@ const max = computed(() =>
 const minutes = (date: string) => values.value.get(date) ?? 0;
 const level = (date: string) =>
   date > props.today ? 0 : minutes(date) / max.value;
+function numberColor(date: string, selected: boolean) {
+  if (selected) return "color.on-primary";
+  if (minutes(date) === 0) return "color.on-surface-muted";
+  if (props.face === "water") return "color.on-surface";
+  const fill = parseThemeColor(String(primary.value))!;
+  const paper = parseThemeColor(String(background.value))!;
+  const normal = parseThemeColor(String(ink.value))!;
+  const reversed = parseThemeColor(String(inverse.value))!;
+  const intensity = level(date);
+  // Flat marks composite with the page. Water digits instead have an opaque
+  // reading plate, so a rising fill never splits their contrast background.
+  const surface = compositeOver({ ...fill, a: fill.a * intensity }, paper);
+  return contrastRatio(reversed, surface) > contrastRatio(normal, surface)
+    ? "color.on-primary"
+    : "color.on-surface";
+}
 const select = (date: string) =>
   emit("update:modelValue", props.modelValue === date ? "" : date);
 const disabledDates = computed(() =>
@@ -75,8 +102,15 @@ const dayLabels = computed(() =>
     @update:model-value="select"
     @update:month="emit('update:month', $event)"
   >
-    <template #day="{ date }"
-      ><span class="date-artwork" :class="{ 'is-empty': minutes(date) === 0 }">
+    <template #day="{ date, selected }"
+      ><span
+        class="date-artwork"
+        :class="{
+          'is-empty': minutes(date) === 0,
+          'is-selected': selected,
+          'is-water': face === 'water',
+        }"
+      >
         <svg
           :viewBox="artwork.cell.viewBox"
           :width="artwork.cell.size"
@@ -135,7 +169,21 @@ const dayLabels = computed(() =>
             />
           </template>
         </svg>
-        <span class="number">{{ Number(date.slice(-2)) }}</span>
+        <span
+          class="number"
+          :data-pb-id="`${inspectId}.number`"
+          :data-pb-key="`day-${date}`"
+          data-pb-role="text"
+          data-pb-token-typography="typography.caption"
+          :data-pb-token-color="numberColor(date, selected)"
+          :data-pb-token-background="
+            face === 'water' && minutes(date) > 0 && !selected
+              ? 'color.surface'
+              : undefined
+          "
+          :style="pbStyle({ color: numberColor(date, selected) })"
+          >{{ Number(date.slice(-2)) }}</span
+        >
       </span></template
     >
   </MonthCalendar>
@@ -159,8 +207,19 @@ svg {
   color: var(--pb-color-on-surface);
   font: var(--pb-typography-caption);
 }
+.is-water:not(.is-empty):not(.is-selected) .number {
+  background: var(--pb-color-surface);
+  padding-inline: var(--pb-spacing-xxs);
+  border-radius: var(--pb-radius-pill);
+}
 .is-empty .number {
   color: var(--pb-color-on-surface-muted);
+}
+.is-selected .number {
+  color: var(--pb-color-on-primary);
+}
+.is-selected svg {
+  visibility: hidden;
 }
 .vessel {
   fill: transparent;

@@ -106,6 +106,7 @@ describe("Heatmap只读展示", () => {
     ).toBe("future");
     expect(wrapper.findAll("button")).toHaveLength(0);
     expect(wrapper.text()).toContain("最近365天完成 1 次");
+    expect(wrapper.get(".axis span").text()).toBe("2023-03-03");
     wrapper.unmount();
   });
 });

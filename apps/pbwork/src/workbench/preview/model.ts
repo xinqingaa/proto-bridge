@@ -15,6 +15,7 @@ export type PreviewContext = {
   kind: "foundation" | "prototype" | "sample";
 };
 export type PreviewDemo = {
+  material?: "solid" | "glass";
   extensionId?: string;
   session?: Record<string, unknown>;
   busy: boolean;

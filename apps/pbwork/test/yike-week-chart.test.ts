@@ -19,7 +19,7 @@ describe("日期驱动的回顾周图", () => {
     const wrapper = mount(YikeWeekChart, { props });
     expect(wrapper.findAll("button")).toHaveLength(7);
     expect(wrapper.findAll("button")[0]!.attributes("data-pb-key")).toBe(
-      "2026-10-12",
+      "day-2026-10-12",
     );
     expect(wrapper.get(".scale").text()).toContain("500 分钟");
     expect(wrapper.findAll("button")[0]!.findAll("svg > rect")).toHaveLength(4);
@@ -36,6 +36,15 @@ describe("日期驱动的回顾周图", () => {
     await wrapper.findAll("button")[0]!.trigger("click");
     expect(wrapper.emitted("update:modelValue")).toEqual([["2026-10-12"]]);
     await wrapper.setProps({ modelValue: "2026-10-12" });
+    expect(
+      wrapper
+        .findAll("button")[0]!
+        .get(".value")
+        .attributes("data-pb-token-color"),
+    ).toBe("color.on-surface");
+    expect(wrapper.findAll("button")[0]!.attributes("data-pb-id")).toBe(
+      "test.week.day",
+    );
     await wrapper.findAll("button")[0]!.trigger("click");
     expect(wrapper.emitted("update:modelValue")?.[1]).toEqual([""]);
     await wrapper.setProps({ weekStart: "2026-02-30" });

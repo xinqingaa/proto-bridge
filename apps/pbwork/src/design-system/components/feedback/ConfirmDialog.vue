@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import GlassMaterial from "../_shared/GlassMaterial.vue";
+import "../_shared/overlay-material.css";
 import { themeConstantNumber } from "@/design-system/theme/constants";
 
 import { computed, nextTick, toRefs, watch } from "vue";
@@ -6,19 +8,23 @@ import Button from "@/design-system/components/action/Button.vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 const DIALOG_MAX_WIDTH = themeConstantNumber("layout.dialog-max-width");
 
-const props = defineProps<{
-  modelValue?: boolean;
-  title: string;
-  message?: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
-  showCancel?: boolean;
-  contained?: boolean;
-  /** CSS selector for overlay host; Runtime defaults to .runtime-app */
-  attach?: string;
-  /** Page-unique inspect / comment anchor; falls back to `ds.confirm`. */
-  inspectId?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    modelValue?: boolean;
+    title: string;
+    material?: "solid" | "glass";
+    message?: string;
+    confirmLabel?: string;
+    cancelLabel?: string;
+    showCancel?: boolean;
+    contained?: boolean;
+    /** CSS selector for overlay host; Runtime defaults to .runtime-app */
+    attach?: string;
+    /** Page-unique inspect / comment anchor; falls back to `ds.confirm`. */
+    inspectId?: string;
+  }>(),
+  { showCancel: true, contained: true },
+);
 
 defineEmits<{
   "update:modelValue": [boolean];
@@ -46,6 +52,7 @@ const { resync } = usePbInspect({
   instanceId: inspectId,
   componentId: "confirm",
   getProps: () => ({
+    material: props.material ?? "solid",
     modelValue: modelValue.value ?? false,
     title: title.value,
     message: message.value ?? "",
@@ -56,6 +63,13 @@ const { resync } = usePbInspect({
     inspectId: inspectId.value,
   }),
   getTokens: () => [
+    "color.glass-tint",
+    "border.glass",
+    "elevation.glass",
+    "surface.glass-backdrop",
+    "color.surface",
+    "border.default",
+
     "color.scrim",
     "color.surface-raised",
     "color.border",
@@ -66,6 +80,13 @@ const { resync } = usePbInspect({
     "typography.content",
   ],
   getTokenBindings: () => ({
+    glassTint: "color.glass-tint",
+    glassEdge: "border.glass",
+    glassLight: "elevation.glass",
+    glassBackdrop: "surface.glass-backdrop",
+    glassFallback: "color.surface",
+    glassFallbackBorder: "border.default",
+
     scrim: "color.scrim",
     surface: "color.surface-raised",
     border: "color.border",
@@ -97,6 +118,7 @@ watch(modelValue, async (value) => {
       <v-card
         ref="rootRef"
         class="pb-dialog dialog"
+        :class="{ 'pb-overlay-glass': material === 'glass' }"
         data-pb-id="ds.confirm"
         data-pb-role="dialog"
         data-pb-shell="dialog"
@@ -104,8 +126,9 @@ watch(modelValue, async (value) => {
         aria-modal="true"
         :aria-label="title"
         variant="flat"
-        color="surface"
+        :color="material === 'glass' ? undefined : 'surface'"
       >
+        <GlassMaterial v-if="material === 'glass'" />
         <v-card-title>{{ title }}</v-card-title>
         <v-card-text>{{ message ?? "请确认是否继续。" }}</v-card-text>
         <footer class="pb-dialog-actions">
@@ -138,10 +161,11 @@ watch(modelValue, async (value) => {
 .pb-dialog {
   border-radius: var(--pb-radius-overlay) !important;
   border: var(--pb-border-hairline);
-  /* surface-raised is not a Vuetify semantic; keep Token var for raised panel. */
-  background: var(--pb-color-surface-raised) !important;
   color: var(--pb-color-on-surface);
   box-shadow: var(--pb-elevation-overlay);
+}
+.pb-dialog:not(.pb-overlay-glass) {
+  background: var(--pb-color-surface-raised) !important;
 }
 .pb-dialog :deep(.v-card-title) {
   color: inherit;

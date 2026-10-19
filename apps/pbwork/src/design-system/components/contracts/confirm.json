@@ -11,7 +11,8 @@
     "默认关闭；Playground 与产品页通过触发打开",
     "确认会先发出 confirm，再关闭自身；调用方决定后续业务动作与导航",
     "决策区走 Button 类型：一颗时主要类型占满；两颗时左侧次要类型、右侧主要类型，等分撑满容器且文案尽量等长",
-    "不替代 BottomSheet / FlowSheet 的流程承载"
+    "不替代 BottomSheet / FlowSheet 的流程承载",
+    "material=solid保留实色表面，glass复用共享玻璃材质及实色降级；材质不改变关闭、焦点、滚动或步骤机制。"
   ],
   "layout": {
     "summary": "对话框在视口内居中并受 dialog-max-width 约束；正文与操作区保持稳定纵向次序。"
@@ -42,9 +43,18 @@
       },
       "contained": {
         "type": "boolean"
+      },
+      "material": {
+        "type": "string",
+        "enum": [
+          "solid",
+          "glass"
+        ]
       }
     },
-    "required": ["title"]
+    "required": [
+      "title"
+    ]
   },
   "defaultProps": {
     "modelValue": false,
@@ -53,7 +63,8 @@
     "confirmLabel": "确认",
     "cancelLabel": "取消",
     "showCancel": true,
-    "contained": true
+    "contained": true,
+    "material": "solid"
   },
   "states": [
     {
@@ -63,10 +74,24 @@
       "props": {
         "modelValue": true
       }
+    },
+    {
+      "id": "glass",
+      "label": "玻璃面板",
+      "kind": "variant",
+      "props": {
+        "modelValue": true,
+        "material": "glass"
+      }
     }
   ],
-  "slots": ["default"],
-  "events": ["update:modelValue", "confirm"],
+  "slots": [
+    "default"
+  ],
+  "events": [
+    "update:modelValue",
+    "confirm"
+  ],
   "tokenBindings": {
     "scrim": "color.scrim",
     "surface": "color.surface-raised",
@@ -75,7 +100,13 @@
     "radius": "radius.overlay",
     "elevation": "elevation.overlay",
     "title": "typography.title",
-    "body": "typography.content"
+    "body": "typography.content",
+    "glassTint": "color.glass-tint",
+    "glassEdge": "border.glass",
+    "glassLight": "elevation.glass",
+    "glassBackdrop": "surface.glass-backdrop",
+    "glassFallback": "color.surface",
+    "glassFallbackBorder": "border.default"
   },
   "playground": {
     "presentation": "trigger"

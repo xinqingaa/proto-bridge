@@ -118,14 +118,14 @@ function tab(slug: string) { return prototypeNavigation(router, route, "yike").t
           <li v-for="(value, index) in session.laps" :key="index">第 {{ index + 1 }} 圈 · {{ lapLabel(value - (session.laps[index - 1] ?? 0)) }} · 累计 {{ lapLabel(value) }}</li>
         </ol>
       </main>
-      <BottomSheet v-model="confirmAbandon" title="放弃这次专注？" inspect-id="yike.focus.abandon-sheet">
+      <BottomSheet material="glass" v-model="confirmAbandon" title="放弃这次专注？" inspect-id="yike.focus.abandon-sheet">
         <p>本次专注不会生成新记录。倒计时已完成部分会保留。</p>
         <div class="yike-confirm-actions">
           <YikeAction label="继续保留" kind="secondary" inspect-id="yike.focus.abandon-cancel" @click="confirmAbandon = false" />
           <YikeAction label="确认放弃" kind="danger" inspect-id="yike.focus.abandon-confirm" @click="abandon" />
         </div>
       </BottomSheet>
-      <BottomSheet v-model="recoveryOpen" title="上次的计时已暂停" inspect-id="yike.focus.recovery-sheet">
+      <BottomSheet material="glass" v-model="recoveryOpen" title="上次的计时已暂停" inspect-id="yike.focus.recovery-sheet">
         <p>已恢复到最后保存的进度，关闭期间没有计时。</p>
         <div class="yike-confirm-actions">
           <YikeAction label="继续计时" inspect-id="yike.focus.recovery-resume" @click="toggle(); recoveryOpen = false" />

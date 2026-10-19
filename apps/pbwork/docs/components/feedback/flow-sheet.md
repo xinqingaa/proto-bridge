@@ -20,12 +20,15 @@
 - 返回只更新 `step`；关闭只更新 `modelValue`。页面不得再自造返回或关闭。
 - 操作区一颗按钮时使用主要类型并占满；两颗时左侧次要、右侧主要，等分撑满。
 
+材质默认 `solid`；`material=glass` 使用共享 GlassMaterial 及实色降级，不改变焦点、关闭、滚动或导航。ActionSheet 将材质传给公共 BottomSheet shell，内容不再叠套玻璃。
+
 ## States
 
 | id | label | kind |
 | --- | --- | --- |
 | `step-one` | 第一步 | `content` |
 | `step-two` | 第二步 | `content` |
+| `glass` | 玻璃面板 | `variant` |
 
 ## 用法与反例
 

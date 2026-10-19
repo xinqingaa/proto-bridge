@@ -70,6 +70,14 @@ describe("一刻正式资源", () => {
     expect(
       wrapper.findAll("clipPath").at(-1)!.get("path").attributes("d"),
     ).toBe(arc);
+    await wrapper.setProps({ tone: "paused" });
+    expect(wrapper.get(".caption").attributes("data-pb-token-color")).toBe(
+      "color.primary",
+    );
+    await wrapper.setProps({ tone: "done" });
+    expect(wrapper.get(".digits").attributes("data-pb-token-color")).toBe(
+      "color.primary",
+    );
     await wrapper.setProps({ minutes: 60 });
     expect(wrapper.findAll("clipPath").at(-1)!.find("circle").exists()).toBe(
       true,

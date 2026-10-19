@@ -22,7 +22,7 @@
     },
     "bottom-sheet": {
       "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "reason": "公共面板新增solid/glass有限材质能力、共享玻璃降级及绑定；Flutter尚未按当前Contract适配。"
     },
     "button": {
       "status": "pending",
@@ -42,7 +42,7 @@
     },
     "confirm": {
       "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "reason": "公共面板新增solid/glass有限材质能力、共享玻璃降级及绑定；Flutter尚未按当前Contract适配。"
     },
     "data-list": {
       "status": "pending",
@@ -62,7 +62,7 @@
     },
     "flow-sheet": {
       "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "reason": "公共面板新增solid/glass有限材质能力、共享玻璃降级及绑定；Flutter尚未按当前Contract适配。"
     },
     "icon": {
       "status": "pending",
@@ -182,7 +182,7 @@
     },
     "action-sheet": {
       "status": "pending",
-      "reason": "PBWork 平台升级新增通用组件；本轮未实现 Flutter，需按 Producer Contract 与主题表适配。"
+      "reason": "公共面板新增solid/glass有限材质能力、共享玻璃降级及绑定；Flutter尚未按当前Contract适配。"
     },
     "brand-mark": {
       "status": "pending",

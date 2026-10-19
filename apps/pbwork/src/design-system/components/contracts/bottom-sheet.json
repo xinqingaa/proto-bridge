@@ -10,7 +10,8 @@
   "behavior": [
     "打开时挂载 scrim、dialog 语义和顶部关闭 Icon Button",
     "modelValue 关闭后恢复下层交互；决策按钮放在 actions 槽，一颗主要类型占满，两颗时左次要右主要并等分撑满",
-    "默认 content 保持既有内容高度；可声明 medium/expanded 档位并由父级接收 update:detent，档位不接管拖动手势。"
+    "默认 content 保持既有内容高度；可声明 medium/expanded 档位并由父级接收 update:detent，档位不接管拖动手势。",
+    "material=solid保留实色表面，glass复用共享玻璃材质及实色降级；材质不改变关闭、焦点、滚动或步骤机制。"
   ],
   "layout": {
     "summary": "Sheet 从视口底部抬起，内容高度受上限约束；标题区与内容区由同一滚动边界承载。"
@@ -30,24 +31,42 @@
       },
       "detent": {
         "type": "string",
-        "enum": ["content", "medium", "expanded"]
+        "enum": [
+          "content",
+          "medium",
+          "expanded"
+        ]
       },
       "detents": {
         "type": "array",
         "items": {
           "type": "string",
-          "enum": ["content", "medium", "expanded"]
+          "enum": [
+            "content",
+            "medium",
+            "expanded"
+          ]
         },
         "uniqueItems": true
+      },
+      "material": {
+        "type": "string",
+        "enum": [
+          "solid",
+          "glass"
+        ]
       }
     },
-    "required": ["title"]
+    "required": [
+      "title"
+    ]
   },
   "defaultProps": {
     "title": "操作面板",
     "modelValue": false,
     "detent": "content",
-    "detents": []
+    "detents": [],
+    "material": "solid"
   },
   "states": [
     {
@@ -73,7 +92,11 @@
       "props": {
         "modelValue": true,
         "detent": "medium",
-        "detents": ["content", "medium", "expanded"]
+        "detents": [
+          "content",
+          "medium",
+          "expanded"
+        ]
       }
     },
     {
@@ -83,12 +106,31 @@
       "props": {
         "modelValue": true,
         "detent": "expanded",
-        "detents": ["content", "medium", "expanded"]
+        "detents": [
+          "content",
+          "medium",
+          "expanded"
+        ]
+      }
+    },
+    {
+      "id": "glass",
+      "label": "玻璃面板",
+      "kind": "variant",
+      "props": {
+        "modelValue": true,
+        "material": "glass"
       }
     }
   ],
-  "slots": ["default", "actions"],
-  "events": ["update:modelValue", "update:detent"],
+  "slots": [
+    "default",
+    "actions"
+  ],
+  "events": [
+    "update:modelValue",
+    "update:detent"
+  ],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",
@@ -106,7 +148,13 @@
     "detentPadding": "spacing.xs",
     "detentBorder": "border.hairline",
     "detentSelected": "color.surface-selected",
-    "detentFocus": "border.focus"
+    "detentFocus": "border.focus",
+    "glassTint": "color.glass-tint",
+    "glassEdge": "border.glass",
+    "glassLight": "elevation.glass",
+    "glassBackdrop": "surface.glass-backdrop",
+    "glassFallback": "color.surface",
+    "glassFallbackBorder": "border.default"
   },
   "playground": {
     "presentation": "trigger"

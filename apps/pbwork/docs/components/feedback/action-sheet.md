@@ -15,11 +15,14 @@ BottomSheet 内的动作列表组合，危险操作显式区分。
 - Overlay、焦点、scrim 和关闭复用 BottomSheet；本组件 section 只拥有动作内容，shell 单独登记。
 - 选择可用动作先发出稳定 id，再关闭；取消和 scrim 关闭不触发 select。
 
+材质默认 `solid`；`material=glass` 使用共享 GlassMaterial 及实色降级，不改变焦点、关闭、滚动或导航。ActionSheet 将材质传给公共 BottomSheet shell，内容不再叠套玻璃。
+
 ## States
 
 | id | label | kind |
 | --- | --- | --- |
 | `open` | 打开 | `content` |
+| `glass` | 玻璃动作面板 | `variant` |
 | `disabled` | 不可用操作 | `interaction` |
 
 ## 用法与反例

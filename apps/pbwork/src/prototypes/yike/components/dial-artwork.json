@@ -35,7 +35,10 @@
     "readoutY": 353,
     "captionY": 384,
     "shadowBlur": 3,
-    "shadowViewHeight": 316
+    "shadowViewHeight": 316,
+    "fadeDegrees": 16,
+    "fadeSteps": 16,
+    "subduedOpacity": 0.5
   },
   "circleDegrees": 360,
   "halfDegrees": 180,

@@ -19,11 +19,14 @@
 - 只有确认时（如 `showCancel=false`）使用主要类型并占满。
 - 调用方决定确认后的业务动作、异步处理和导航。
 
+材质默认 `solid`；`material=glass` 使用共享 GlassMaterial 及实色降级，不改变焦点、关闭、滚动或导航。ActionSheet 将材质传给公共 BottomSheet shell，内容不再叠套玻璃。
+
 ## States
 
 | id | label | kind |
 | --- | --- | --- |
 | `open` | 打开 | `content` |
+| `glass` | 玻璃面板 | `variant` |
 
 ## 用法与反例
 

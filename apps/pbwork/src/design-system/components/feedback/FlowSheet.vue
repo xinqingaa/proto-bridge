@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import GlassMaterial from "../_shared/GlassMaterial.vue";
+import "../_shared/overlay-material.css";
 import { computed, toRefs, watch, type CSSProperties } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import { usePointerSwipe } from "@/design-system/components/_shared/usePointerSwipe";
@@ -7,6 +9,7 @@ import SheetHeader from "@/design-system/components/_shared/SheetHeader.vue";
 const props = withDefaults(
   defineProps<{
     title: string;
+    material?: "solid" | "glass";
     modelValue?: boolean;
     step?: number;
     stepCount?: number;
@@ -63,6 +66,7 @@ usePbInspect({
   instanceId: inspectId,
   componentId: "flow-sheet",
   getProps: () => ({
+    material: props.material ?? "solid",
     title: title.value,
     modelValue: modelValue.value ?? false,
     step: safeStep.value,
@@ -74,6 +78,13 @@ usePbInspect({
     step: safeStep.value,
   }),
   getTokenBindings: () => ({
+    glassTint: "color.glass-tint",
+    glassEdge: "border.glass",
+    glassLight: "elevation.glass",
+    glassBackdrop: "surface.glass-backdrop",
+    glassFallback: "color.surface",
+    glassFallbackBorder: "border.default",
+
     surface: "color.surface",
     border: "color.border",
     description: "color.on-surface-muted",
@@ -92,6 +103,13 @@ usePbInspect({
     easing: "motion.easing-gentle",
   }),
   getTokens: () => [
+    "color.glass-tint",
+    "border.glass",
+    "elevation.glass",
+    "surface.glass-backdrop",
+    "color.surface",
+    "border.default",
+
     "color.surface",
     "color.border",
     "color.on-surface-muted",
@@ -132,14 +150,16 @@ watch(stepCount, (count) => {
     <v-card
       ref="sheetRef"
       class="pb-flow-sheet sheet"
+      :class="{ 'pb-overlay-glass': material === 'glass' }"
       data-pb-id="ds.flow-sheet"
       data-pb-role="sheet"
       data-pb-shell="sheet"
       role="dialog"
       aria-modal="true"
-      color="surface"
+      :color="material === 'glass' ? undefined : 'surface'"
       variant="flat"
     >
+      <GlassMaterial v-if="material === 'glass'" />
       <SheetHeader
         :title="title"
         :show-back="showBack"

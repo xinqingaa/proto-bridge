@@ -8,6 +8,7 @@ import Button from "../action/Button.vue";
 const props = withDefaults(
   defineProps<{
     title?: string;
+    material?: "solid" | "glass";
     modelValue?: boolean;
     items?: Array<{
       id: string;
@@ -22,6 +23,7 @@ const props = withDefaults(
   }>(),
   {
     title: "记录操作",
+    material: "solid",
     modelValue: false,
     items: () => [
       { id: "edit", label: "编辑记录" },
@@ -78,6 +80,7 @@ const { resync } = usePbInspect({
 <template>
   <BottomSheet
     :title="props.title"
+    :material="props.material"
     :model-value="props.modelValue"
     :attach="attach ?? '.runtime-app'"
     :inspect-id="`${inspectId ?? 'ds.action-sheet'}.shell`"

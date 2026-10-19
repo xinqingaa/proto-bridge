@@ -9,7 +9,8 @@
   "summary": "BottomSheet 内的动作列表组合，危险操作显式区分。",
   "behavior": [
     "Overlay、焦点、scrim 和关闭复用 BottomSheet；本组件 section 只拥有动作内容，shell 单独登记",
-    "选择可用动作先发出稳定 id，再关闭；取消和 scrim 关闭不触发 select"
+    "选择可用动作先发出稳定 id，再关闭；取消和 scrim 关闭不触发 select",
+    "material透传BottomSheet，玻璃Evidence归shell，不在动作内容重复绑定。"
   ],
   "layout": {
     "summary": "Shared BottomSheet owns modal boundary; section contains vertical command buttons and actions slot contains separate cancel button."
@@ -46,11 +47,21 @@
               "type": "boolean"
             }
           },
-          "required": ["id", "label"]
+          "required": [
+            "id",
+            "label"
+          ]
         }
       },
       "cancelLabel": {
         "type": "string"
+      },
+      "material": {
+        "type": "string",
+        "enum": [
+          "solid",
+          "glass"
+        ]
       }
     }
   },
@@ -72,7 +83,8 @@
         "destructive": true
       }
     ],
-    "cancelLabel": "取消"
+    "cancelLabel": "取消",
+    "material": "solid"
   },
   "states": [
     {
@@ -97,10 +109,22 @@
           }
         ]
       }
+    },
+    {
+      "id": "glass",
+      "label": "玻璃动作面板",
+      "kind": "variant",
+      "props": {
+        "modelValue": true,
+        "material": "glass"
+      }
     }
   ],
   "slots": [],
-  "events": ["update:modelValue", "select"],
+  "events": [
+    "update:modelValue",
+    "select"
+  ],
   "tokenBindings": {
     "color": "color.on-surface",
     "gap": "spacing.sm",

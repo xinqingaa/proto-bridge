@@ -187,7 +187,7 @@ describe("legacy-migration 覆盖性", () => {
     }
   });
 
-  it("目录中未被旧键映射到的键恰为 17 个新增键", () => {
+  it("目录中未被旧键映射到的键与明确新增的主题能力一致", () => {
     const targeted = new Set(
       [...entriesOfTier("semantic"), ...entriesOfTier("component")].flatMap(
         ([, entry]) => entry.targets,
@@ -207,6 +207,12 @@ describe("legacy-migration 覆盖性", () => {
         "color.glass-edge",
         "color.glass-tint",
         "elevation.glass",
+        "size.action-min-inline",
+        "effect.artwork-shadow",
+        "tracking.caption",
+        "tracking.display",
+        "tracking.heading",
+        "tracking.label",
         "size.brand",
         "size.plot",
         "size.ring",

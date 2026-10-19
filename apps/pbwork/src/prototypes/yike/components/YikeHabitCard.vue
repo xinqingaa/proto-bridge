@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import GlassSurface from "@/design-system/components/display/GlassSurface.vue";
 import Icon from "@/design-system/components/action/Icon.vue";
 import YikeHabitGlyph, { type YikeHabitIcon } from "./YikeHabitGlyph.vue";
 import artwork from "./punch-artwork.json";
@@ -24,110 +25,146 @@ const stamp = computed(() => Array.from(props.habit.name.trim())[0] ?? "印");
     :data-pb-id="inspectId"
     data-pb-role="card"
     :data-pb-key="habit.id"
-    data-pb-token-background="color.surface"
     data-pb-token-radius="radius.surface"
     data-pb-token-padding="spacing.md"
   >
-    <button
-      type="button"
-      class="habit-name"
-      :data-pb-id="`${inspectId}.open`"
-      data-pb-role="button"
-      :data-pb-key="habit.id"
-      data-pb-token-color="color.on-surface"
-      data-pb-token-typography="typography.title-sm"
-      @click="emit('open', habit.id)"
-    >
-      <YikeHabitGlyph :icon="habit.icon" />
-      <span
-        ><strong>{{ habit.name }}</strong
-        ><small>{{ habit.meta }}</small></span
-      >
-      <Icon name="chevron-right" size="sm" tone="muted" />
-    </button>
-    <div class="week" :aria-label="`${habit.name}本周记录`">
-      <span
-        v-for="day in days"
-        :key="day.date"
-        class="day"
-        :class="{
-          'is-on': day.completed && day.date <= today,
-          'is-today': day.date === today,
-          'is-future': day.date > today,
-        }"
-        :aria-label="`${day.date}：${day.date > today ? '未来' : day.completed ? '已完成' : '未完成'}`"
-        :data-pb-id="`${inspectId}.day`"
-        data-pb-role="status"
-        :data-pb-key="`day-${day.date}`"
-        data-pb-token-color="color.primary"
-        data-pb-token-outline="color.outline"
-      >
-        <svg :viewBox="artwork.viewBox" aria-hidden="true">
-          <path v-if="face === 'sundial'" class="hole" :d="artwork.stamp" />
-          <path
-            v-else-if="face === 'water' && day.completed && day.date <= today"
-            class="drop"
-            :d="artwork.drop"
-          />
-          <circle
-            v-else
-            class="hole"
-            :cx="artwork.cx"
-            :cy="artwork.cy"
-            :r="artwork.radius"
-          />
-          <circle
-            v-if="face === 'sundial' && day.completed && day.date <= today"
-            class="stamp-dot"
-            :cx="artwork.cx"
-            :cy="artwork.cy"
-            :r="artwork.stampRadius"
-          />
-        </svg>
-      </span>
-      <button
-        type="button"
-        class="today"
-        :class="{ 'is-done': doneToday }"
-        :disabled="disabled"
-        :aria-pressed="doneToday"
-        :aria-label="`${habit.name}今天${doneToday ? '取消打卡' : '打卡'}`"
-        :data-pb-id="`${inspectId}.today`"
-        data-pb-role="button"
-        :data-pb-key="habit.id"
-        data-pb-token-color="color.primary"
-        data-pb-token-border="border.default"
-        data-pb-token-size="size.touch"
-        @click="emit('toggleToday', habit.id)"
-      >
-        <Icon
-          v-if="face === 'mechanical' && doneToday"
-          name="check"
-          size="sm"
-        />
-        <svg
-          v-else-if="face === 'water'"
-          :viewBox="artwork.viewBox"
-          aria-hidden="true"
+    <GlassSurface :inspect-id="`${inspectId}.surface`" :pb-key="habit.id">
+      <div class="habit-content">
+        <button
+          type="button"
+          class="habit-name"
+          :data-pb-id="`${inspectId}.open`"
+          data-pb-role="button"
+          :data-pb-key="habit.id"
+          data-pb-token-color="color.on-surface"
+          @click="emit('open', habit.id)"
         >
-          <path :d="artwork.drop" />
-        </svg>
-        <span v-else-if="face === 'sundial'" aria-hidden="true">{{
-          stamp
-        }}</span>
-      </button>
-    </div>
+          <YikeHabitGlyph :icon="habit.icon" />
+          <span
+            ><strong
+              :data-pb-id="`${inspectId}.title`"
+              :data-pb-key="habit.id"
+              data-pb-role="text"
+              data-pb-token-typography="typography.subtitle"
+              data-pb-token-color="color.on-surface"
+              >{{ habit.name }}</strong
+            ><small
+              :data-pb-id="`${inspectId}.meta`"
+              :data-pb-key="habit.id"
+              data-pb-role="text"
+              data-pb-token-typography="typography.caption"
+              data-pb-token-color="color.on-surface-muted"
+              >{{ habit.meta }}</small
+            ></span
+          >
+          <Icon name="chevron-right" size="sm" tone="muted" />
+        </button>
+        <div class="week" :aria-label="`${habit.name}本周记录`">
+          <span
+            v-for="day in days"
+            :key="day.date"
+            class="day"
+            :class="{
+              'is-on': day.completed && day.date <= today,
+              'is-today': day.date === today,
+              'is-future': day.date > today,
+            }"
+            :aria-label="`${day.date}：${day.date > today ? '未来' : day.completed ? '已完成' : '未完成'}`"
+            :data-pb-id="`${inspectId}.day`"
+            data-pb-role="status"
+            :data-pb-key="`day-${day.date}`"
+            :data-pb-token-color="
+              day.completed && day.date <= today
+                ? face === 'mechanical' && day.date !== today
+                  ? 'color.on-surface'
+                  : 'color.primary'
+                : day.date === today
+                  ? 'color.primary'
+                  : 'color.outline'
+            "
+            data-pb-token-outline="color.outline"
+          >
+            <svg :viewBox="artwork.viewBox" aria-hidden="true">
+              <path v-if="face === 'sundial'" class="hole" :d="artwork.stamp" />
+              <path
+                v-else-if="
+                  face === 'water' && day.completed && day.date <= today
+                "
+                class="drop"
+                :d="artwork.drop"
+              />
+              <circle
+                v-else
+                class="hole"
+                :cx="artwork.cx"
+                :cy="artwork.cy"
+                :r="artwork.radius"
+              />
+              <circle
+                v-if="face === 'sundial' && day.completed && day.date <= today"
+                class="stamp-dot"
+                :cx="artwork.cx"
+                :cy="artwork.cy"
+                :r="artwork.stampRadius"
+              />
+            </svg>
+          </span>
+          <button
+            type="button"
+            class="today"
+            :class="{ 'is-done': doneToday }"
+            :disabled="disabled"
+            :aria-pressed="doneToday"
+            :aria-label="`${habit.name}今天${doneToday ? '取消打卡' : '打卡'}`"
+            :data-pb-id="`${inspectId}.today`"
+            data-pb-role="button"
+            :data-pb-key="habit.id"
+            :data-pb-token-color="
+              face === 'mechanical' && doneToday
+                ? 'color.on-primary'
+                : 'color.primary'
+            "
+            :data-pb-token-background="
+              face === 'mechanical' && doneToday
+                ? 'color.primary'
+                : 'transparent'
+            "
+            data-pb-token-border="border.default"
+            data-pb-token-size="size.touch"
+            @click="emit('toggleToday', habit.id)"
+          >
+            <Icon
+              v-if="face === 'mechanical' && doneToday"
+              name="check"
+              size="sm"
+            />
+            <svg
+              v-else-if="face === 'water'"
+              :viewBox="artwork.viewBox"
+              aria-hidden="true"
+            >
+              <path :d="artwork.drop" />
+            </svg>
+            <span v-else-if="face === 'sundial'" aria-hidden="true">{{
+              stamp
+            }}</span>
+          </button>
+        </div>
+      </div>
+    </GlassSurface>
   </article>
 </template>
 <style scoped>
 .habit-card {
+  border-radius: var(--pb-radius-surface);
+}
+.habit-content {
   display: flex;
   flex-direction: column;
   gap: calc(var(--pb-spacing-sm-plus) + var(--pb-spacing-xxs));
   padding: var(--pb-spacing-md) var(--pb-spacing-md)
     calc(var(--pb-spacing-sm-plus) + var(--pb-spacing-xxs));
   border-radius: var(--pb-radius-surface);
-  background: var(--pb-color-surface);
 }
 button {
   border: none;

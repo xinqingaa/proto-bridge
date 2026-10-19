@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { validateThemePacks } from "@proto-bridge/core/v2";
 import {
+  createRuntimeThemeRegistry,
   runtimeThemeSources,
   resolveRuntimeTheme,
 } from "@/design-system/theme/runtime-theme";
+
+import { themeAssetUrl } from "@/design-system/theme/sources";
 
 describe("一刻主题矩阵", () => {
   it("通过Core真实资产与对比度门禁，而不只检查解析表存在", () => {
@@ -109,4 +112,45 @@ describe("一刻主题矩阵", () => {
       }
     },
   );
+});
+
+// Guard against unresolved CSS variables that a parse-only theme test cannot see.
+it("签名资源消费的主题变量在六组合中均有真实值", () => {
+  const sources = import.meta.glob("../src/prototypes/yike/components/*.vue", {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  }) as Record<string, string>;
+  const registry = createRuntimeThemeRegistry(
+    runtimeThemeSources,
+    themeAssetUrl,
+  );
+  for (const theme of ["mechanical", "water", "sundial"]) {
+    for (const mode of ["light", "dark"]) {
+      const css = registry.cssVars(registry.resolve("yike", theme, mode));
+      for (const [file, source] of Object.entries(sources)) {
+        for (const match of source.matchAll(/var\((--pb-[a-z0-9-]+)/g)) {
+          expect(
+            css[match[1]!],
+            `${file}: ${theme}/${mode} ${match[1]}`,
+          ).toBeDefined();
+        }
+      }
+    }
+  }
+});
+
+it("布局节奏、公共动效与禁用透明度主动继承基础包", () => {
+  for (const theme of ["mechanical", "water", "sundial"]) {
+    for (const mode of ["light", "dark"]) {
+      const base = resolveRuntimeTheme("pbwork-base", "default", mode).values;
+      const own = resolveRuntimeTheme("yike", theme, mode).values;
+      const keys = Object.keys(base).filter((key) =>
+        /^(spacing\.|motion\.|opacity\.)/.test(key),
+      );
+      expect(keys.length).toBeGreaterThan(10);
+      for (const key of keys)
+        expect(own[key], `${theme}/${mode}: ${key}`).toEqual(base[key]);
+    }
+  }
 });

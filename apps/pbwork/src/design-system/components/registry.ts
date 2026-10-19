@@ -733,6 +733,16 @@ export const componentRecords = [
     contract: "contracts/confirm.json",
     example: {},
     controls: [
+      {
+        key: "material",
+        label: "材质",
+        control: "select",
+        options: [
+          { label: "实色", value: "solid" },
+          { label: "玻璃", value: "glass" },
+        ],
+      },
+
       { key: "modelValue", label: "已打开", control: "boolean" },
       { key: "title", label: "标题", control: "text" },
       { key: "message", label: "说明", control: "text" },
@@ -750,6 +760,16 @@ export const componentRecords = [
     contract: "contracts/bottom-sheet.json",
     example: {},
     controls: [
+      {
+        key: "material",
+        label: "材质",
+        control: "select",
+        options: [
+          { label: "实色", value: "solid" },
+          { label: "玻璃", value: "glass" },
+        ],
+      },
+
       { key: "title", label: "标题", control: "text" },
       { key: "modelValue", label: "打开", control: "boolean" },
       {
@@ -773,6 +793,16 @@ export const componentRecords = [
     contract: "contracts/flow-sheet.json",
     example: {},
     controls: [
+      {
+        key: "material",
+        label: "材质",
+        control: "select",
+        options: [
+          { label: "实色", value: "solid" },
+          { label: "玻璃", value: "glass" },
+        ],
+      },
+
       { key: "title", label: "标题", control: "text" },
       { key: "modelValue", label: "打开", control: "boolean" },
       { key: "step", label: "当前步骤", control: "number" },
@@ -1144,6 +1174,16 @@ export const componentRecords = [
     contract: "contracts/action-sheet.json",
     example: {},
     controls: [
+      {
+        key: "material",
+        label: "材质",
+        control: "select",
+        options: [
+          { label: "实色", value: "solid" },
+          { label: "玻璃", value: "glass" },
+        ],
+      },
+
       {
         key: "title",
         label: "title",

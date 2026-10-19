@@ -60,3 +60,90 @@ describe("公共月历的日期展示扩展", () => {
     wrapper.unmount();
   });
 });
+
+describe("一刻月历组合", () => {
+  it("选中日期显式使用选中前景，空记录也可选择并再次收起，未来日期不可选", async () => {
+    const { default: YikeMonthCalendar } =
+      await import("@/prototypes/yike/components/YikeMonthCalendar.vue");
+    const wrapper = mount(YikeMonthCalendar, {
+      props: {
+        inspectId: "review.month",
+        face: "water",
+        month: "2024-02",
+        today: "2024-02-28",
+        days: [
+          { date: "2024-02-28", minutes: 25 },
+          { date: "2024-02-29", minutes: 500 },
+        ],
+        modelValue: "2024-02-27",
+      },
+      global,
+    });
+    const selected = wrapper.get('[data-date="2024-02-27"]');
+    expect(selected.get(".number").attributes("data-pb-token-color")).toBe(
+      "color.on-primary",
+    );
+    expect(selected.get(".date-artwork").classes()).toContain("is-selected");
+    await selected.trigger("click");
+    expect(wrapper.emitted("update:modelValue")).toEqual([[""]]);
+    await wrapper.get('[data-date="2024-02-28"]').trigger("click");
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual([
+      "2024-02-28",
+    ]);
+    const future = wrapper.get('[data-date="2024-02-29"]');
+    expect(future.attributes("disabled")).toBeDefined();
+    expect(future.attributes("aria-label")).toContain("未来日期");
+    await future.trigger("click");
+    expect(wrapper.emitted("update:modelValue")).toHaveLength(2);
+    expect(
+      wrapper.get('[data-date="2024-02-28"] rect').attributes("height"),
+    ).toBe(wrapper.get('[data-date="2024-02-28"] rect').attributes("width"));
+    await wrapper.setProps({ today: "invalid" });
+    expect(wrapper.findAll("[data-date]")).toHaveLength(0);
+    wrapper.unmount();
+  });
+});
+
+it.each(
+  ["mechanical", "water", "sundial"].flatMap((theme) =>
+    ["light", "dark"].map((mode) => [theme, mode]),
+  ),
+)("一刻%s/%s的最大量和半量日期保持可读前景", async (theme, mode) => {
+  const { default: Calendar } =
+    await import("@/prototypes/yike/components/YikeMonthCalendar.vue");
+  const wrapper = mount(Calendar, {
+    props: {
+      inspectId: "review.month",
+      face: theme as "mechanical" | "water" | "sundial",
+      month: "2026-10",
+      today: "2026-10-16",
+      days: [
+        { date: "2026-10-15", minutes: 125 },
+        { date: "2026-10-14", minutes: 62.5 },
+      ],
+    },
+    global: {
+      provide: {
+        [ThemeTableKey as symbol]: shallowRef(
+          resolveRuntimeTheme("yike", theme!, mode!),
+        ),
+      },
+      stubs: { Icon: true },
+    },
+  });
+  expect(
+    wrapper
+      .get('[data-date="2026-10-15"] .number')
+      .attributes("data-pb-token-color"),
+  ).toBe(theme === "water" ? "color.on-surface" : "color.on-primary");
+  if (theme === "water") {
+    for (const date of ["2026-10-14", "2026-10-15"]) {
+      expect(
+        wrapper
+          .get(`[data-date="${date}"] .number`)
+          .attributes("data-pb-token-background"),
+      ).toBe("color.surface");
+    }
+  }
+  wrapper.unmount();
+});

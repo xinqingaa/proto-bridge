@@ -11,7 +11,8 @@
     "step 是受控的零基索引，切换后通过 update:step 回传当前步骤",
     "swipe 开启时允许横向切步，当前步骤以整页宽度平移进入视口，拖拽时跟手、松手后完成切页",
     "右上角使用带可访问名称的 X 图标关闭整张 Sheet；step > 0 时左上角提供返回上一屏",
-    "关闭只更新 modelValue，返回只更新 step，不替业务流程决定提交、取消或路由"
+    "关闭只更新 modelValue，返回只更新 step，不替业务流程决定提交、取消或路由",
+    "material=solid保留实色表面，glass复用共享玻璃材质及实色降级；材质不改变关闭、焦点、滚动或步骤机制。"
   ],
   "layout": {
     "summary": "Sheet 内部只有一个裁剪视口；各步骤等宽横排，当前 step 以整页宽度平移进入视口。"
@@ -37,16 +38,26 @@
       },
       "swipe": {
         "type": "boolean"
+      },
+      "material": {
+        "type": "string",
+        "enum": [
+          "solid",
+          "glass"
+        ]
       }
     },
-    "required": ["title"]
+    "required": [
+      "title"
+    ]
   },
   "defaultProps": {
     "title": "分步面板",
     "modelValue": false,
     "step": 0,
     "stepCount": 3,
-    "swipe": true
+    "swipe": true,
+    "material": "solid"
   },
   "states": [
     {
@@ -68,10 +79,25 @@
         "step": 1,
         "stepCount": 3
       }
+    },
+    {
+      "id": "glass",
+      "label": "玻璃面板",
+      "kind": "variant",
+      "props": {
+        "modelValue": true,
+        "material": "glass"
+      }
     }
   ],
-  "slots": ["default", "actions"],
-  "events": ["update:modelValue", "update:step"],
+  "slots": [
+    "default",
+    "actions"
+  ],
+  "events": [
+    "update:modelValue",
+    "update:step"
+  ],
   "tokenBindings": {
     "surface": "color.surface",
     "border": "color.border",
@@ -88,7 +114,13 @@
     "dotGap": "flow-sheet.gap",
     "dotSize": "size.marker",
     "duration": "flow-sheet.duration",
-    "easing": "motion.easing-gentle"
+    "easing": "motion.easing-gentle",
+    "glassTint": "color.glass-tint",
+    "glassEdge": "border.glass",
+    "glassLight": "elevation.glass",
+    "glassBackdrop": "surface.glass-backdrop",
+    "glassFallback": "color.surface",
+    "glassFallbackBorder": "border.default"
   },
   "playground": {
     "presentation": "trigger"

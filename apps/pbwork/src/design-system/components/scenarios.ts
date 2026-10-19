@@ -518,6 +518,12 @@ const scenarios: Record<string, ComponentScenario[]> = {
       description: "承载一组与当前上下文相关的操作。",
       props: { title: "更多操作", modelValue: true },
     },
+    {
+      id: "glass",
+      label: "玻璃面板",
+      description: "共享玻璃与实色降级，关闭和焦点机制保持一致。",
+      props: { title: "玻璃面板", modelValue: true, material: "glass" },
+    },
   ],
   "flow-sheet": [
     {
@@ -531,6 +537,12 @@ const scenarios: Record<string, ComponentScenario[]> = {
       label: "执行中",
       description: "滑到中间步骤，展示进度页。",
       props: { title: "非正式采集", modelValue: true, step: 1, stepCount: 4 },
+    },
+    {
+      id: "glass",
+      label: "玻璃面板",
+      description: "共享玻璃与实色降级，关闭和焦点机制保持一致。",
+      props: { title: "玻璃面板", modelValue: true, material: "glass" },
     },
   ],
   "search-bar": [
@@ -598,6 +610,12 @@ const scenarios: Record<string, ComponentScenario[]> = {
         showCancel: false,
         modelValue: true,
       },
+    },
+    {
+      id: "glass",
+      label: "玻璃面板",
+      description: "共享玻璃与实色降级，关闭和焦点机制保持一致。",
+      props: { title: "玻璃面板", modelValue: true, material: "glass" },
     },
   ],
   toast: [

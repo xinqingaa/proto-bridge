@@ -1,0 +1,10 @@
+/* One glass layer for modal hosts; geometry and interaction stay with the host. */
+.pb-overlay-glass {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.pb-overlay-glass > :not(.glass-material) {
+  position: relative;
+  z-index: var(--pb-layer-content);
+}
