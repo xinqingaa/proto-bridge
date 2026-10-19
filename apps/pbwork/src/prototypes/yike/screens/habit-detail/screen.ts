@@ -5,7 +5,7 @@ export default defineScreen({
   slug: "habit-detail",
   label: "习惯详情",
   title: "习惯详情",
-  view: "yike/screens/habit-detail/HabitDetail.vue",
+  view: "yike/screens/YikeRoot.vue",
   queryKeys: ["habit"],
   defaultVariantId: "default",
   shellFragments: [scope.ref("root")],

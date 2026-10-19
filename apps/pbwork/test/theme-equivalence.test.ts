@@ -199,6 +199,11 @@ describe("legacy-migration 覆盖性", () => {
     expect(untouched).toEqual(
       [
         "button.glass-primary-tint",
+        "opacity.data-low",
+        "opacity.data-medium",
+        "opacity.data-high",
+        "segmented-control.compact-height",
+        "segmented-control.compact-selection-height",
         "icon-button.glass-primary-tint",
         "tabbar.selection-tint",
         "primary-tabs.selection-tint",

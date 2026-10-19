@@ -5,10 +5,10 @@
   "semantic": {
     "policy": "decorative"
   },
-  "summary": "Lucide 常用图标；按稳定 name 渲染，尺寸与颜色走 Token。",
+  "summary": "PBWork 自绘 SVG 图标；按稳定 name 渲染，尺寸与颜色走 Token。",
   "behavior": [
     "不是按钮；可点操作使用 icon-button",
-    "name 仅允许 DS 策展清单内的 Lucide 稳定 id",
+    "name 仅允许 DS 策展清单内的 PBWork 稳定 id",
     "无 label 时按装饰图标处理（aria-hidden）"
   ],
   "propsSchema": {
@@ -51,7 +51,8 @@
           "footprints",
           "person-standing",
           "sparkles",
-          "x"
+          "x",
+          "calendar-current"
         ]
       },
       "size": {
@@ -323,6 +324,14 @@
       "props": {
         "name": "x"
       }
+    },
+    {
+      "id": "calendar-current",
+      "label": "calendar-current",
+      "kind": "variant",
+      "props": {
+        "name": "calendar-current"
+      }
     }
   ],
   "slots": [],
@@ -370,7 +379,8 @@
       "footprints",
       "person-standing",
       "sparkles",
-      "x"
+      "x",
+      "calendar-current"
     ],
     "artwork": "_shared/glyph-artwork.json"
   }

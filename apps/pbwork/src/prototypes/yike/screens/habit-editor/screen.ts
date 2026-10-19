@@ -6,7 +6,7 @@ export default defineScreen({
   navigation: "flow",
   label: "新建或编辑习惯",
   title: "新建或编辑习惯",
-  view: "yike/screens/habit-editor/HabitEditor.vue",
+  view: "yike/screens/YikeRoot.vue",
   queryKeys: ["habit"],
   defaultVariantId: "default",
   shellFragments: [scope.ref("panel")],

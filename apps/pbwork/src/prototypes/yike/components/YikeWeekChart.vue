@@ -40,7 +40,7 @@ const bars = computed(() => {
 });
 const scale = computed(() =>
   Math.max(
-    artwork.blockMinutes,
+    artwork.minimumScaleMinutes,
     Math.ceil(
       Math.max(0, ...bars.value.map((day) => day.minutes)) /
         artwork.blockMinutes,
@@ -85,7 +85,7 @@ function select(date: string) {
     <p v-if="!bars.length" role="status">日期无效</p>
     <template v-else>
       <p class="scale">
-        每格 {{ artwork.blockMinutes }} 分钟 · 满量程 {{ scale }} 分钟
+        每块 {{ artwork.blockMinutes }} 分钟 · 量程 {{ scale }} 分钟
       </p>
       <div class="columns">
         <button

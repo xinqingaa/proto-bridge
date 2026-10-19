@@ -11,8 +11,12 @@ import {
   contrastRatio,
   parseThemeColor,
 } from "@proto-bridge/core/v2";
-import { useToken } from "@/design-system/theme/runtime-theme";
+import { reviewIntensity } from "./review-intensity";
+import { useToken, useTokenNumber } from "@/design-system/theme/runtime-theme";
 import { pbStyle } from "@/authoring/pb-style";
+const intensityLow = useTokenNumber("opacity.data-low");
+const intensityMedium = useTokenNumber("opacity.data-medium");
+const intensityHigh = useTokenNumber("opacity.data-high");
 const primary = useToken("color.primary");
 const background = useToken("color.background");
 const ink = useToken("color.on-surface");
@@ -45,33 +49,35 @@ const values = computed(
         ]),
     ),
 );
-const max = computed(() =>
-  Math.max(
-    1,
-    ...weeks.value
-      .flat()
-      .map((date) => (date ? (values.value.get(date) ?? 0) : 0)),
-  ),
-);
 const minutes = (date: string) => values.value.get(date) ?? 0;
+const band = (date: string) =>
+  date > props.today ? "none" : reviewIntensity(minutes(date));
+const intensityToken = (date: string) =>
+  band(date) === "none" ? undefined : `opacity.data-${band(date)}`;
 const level = (date: string) =>
-  date > props.today ? 0 : minutes(date) / max.value;
-function numberColor(date: string, selected: boolean) {
-  if (selected) return "color.on-primary";
+  ({
+    none: 0,
+    low: intensityLow.value,
+    medium: intensityMedium.value,
+    high: intensityHigh.value,
+  })[band(date)];
+function numberColor(date: string) {
   if (minutes(date) === 0) return "color.on-surface-muted";
-  if (props.face === "water") return "color.on-surface";
   const fill = parseThemeColor(String(primary.value))!;
   const paper = parseThemeColor(String(background.value))!;
   const normal = parseThemeColor(String(ink.value))!;
   const reversed = parseThemeColor(String(inverse.value))!;
   const intensity = level(date);
-  // Flat marks composite with the page. Water digits instead have an opaque
-  // reading plate, so a rising fill never splits their contrast background.
+  // Read the actual band composite; submerged water digits share its fill.
   const surface = compositeOver({ ...fill, a: fill.a * intensity }, paper);
   return contrastRatio(reversed, surface) > contrastRatio(normal, surface)
     ? "color.on-primary"
     : "color.on-surface";
 }
+const waterY = (date: string) =>
+  artwork.cell.edge + artwork.cell.side * (1 - level(date));
+const aboveWaterColor = (date: string) =>
+  minutes(date) > 0 ? "color.on-surface" : "color.on-surface-muted";
 const select = (date: string) =>
   emit("update:modelValue", props.modelValue === date ? "" : date);
 const disabledDates = computed(() =>
@@ -86,13 +92,14 @@ const dayLabels = computed(() =>
       .filter((date): date is string => Boolean(date))
       .map((date) => [
         date,
-        `${date}，${date > props.today ? "未来日期" : `${minutes(date)} 分钟`}`,
+        `${date}${date === props.today ? "，今天" : ""}，${date > props.today ? "未来日期" : `${minutes(date)} 分钟`}`,
       ]),
   ),
 );
 </script>
 <template>
   <MonthCalendar
+    day-appearance="custom"
     :show-header="showHeader ?? true"
     :month="parseDay(today) ? month : ''"
     :today="today"
@@ -104,13 +111,15 @@ const dayLabels = computed(() =>
     @update:model-value="select"
     @update:month="emit('update:month', $event)"
   >
-    <template #day="{ date, selected }"
+    <template #day="{ date, selected, today: isToday }"
       ><span
         class="date-artwork"
+        :data-intensity="band(date)"
         :class="{
           'is-empty': minutes(date) === 0,
           'is-selected': selected,
           'is-water': face === 'water',
+          'is-today': isToday,
         }"
       >
         <svg
@@ -118,8 +127,32 @@ const dayLabels = computed(() =>
           :width="artwork.cell.size"
           :height="artwork.cell.size"
           aria-hidden="true"
+          :data-pb-id="`${inspectId}.mark`"
+          :data-pb-key="`day-${date}`"
+          data-pb-role="image"
+          data-pb-token-color="color.primary"
+          :data-pb-token-opacity="intensityToken(date)"
         >
           <defs>
+            <filter
+              v-if="face === 'sundial'"
+              :id="`${id}-shadow-${date}`"
+              filterUnits="userSpaceOnUse"
+              :x="artwork.shadow.region.x"
+              :y="artwork.shadow.region.y"
+              :width="artwork.shadow.region.side"
+              :height="artwork.shadow.region.side"
+            >
+              <feGaussianBlur :stdDeviation="artwork.shadow[band(date)]" />
+            </filter>
+            <clipPath :id="`${id}-water-${date}`">
+              <rect
+                :x="artwork.cell.edge"
+                :y="waterY(date)"
+                :width="artwork.cell.side"
+                :height="artwork.cell.side * level(date)"
+              />
+            </clipPath>
             <clipPath :id="`${id}-${date}`">
               <circle
                 :cx="artwork.cell.cx"
@@ -146,10 +179,11 @@ const dayLabels = computed(() =>
             />
             <rect
               :x="artwork.cell.edge"
-              :y="artwork.cell.edge + artwork.cell.side * (1 - level(date))"
+              :y="waterY(date)"
               :width="artwork.cell.side"
               :height="artwork.cell.side * level(date)"
               fill="currentColor"
+              :fill-opacity="level(date)"
               :clip-path="`url(#${id}-${date})`"
             />
           </template>
@@ -166,28 +200,93 @@ const dayLabels = computed(() =>
               :cx="artwork.cell.cx"
               :cy="artwork.cell.cy"
               :r="artwork.cell.inkRadius"
+              class="sun-shadow"
+              :filter="`url(#${id}-shadow-${date})`"
               fill="currentColor"
               :fill-opacity="level(date)"
             />
           </template>
-        </svg>
-        <span
-          class="number"
-          :data-pb-id="`${inspectId}.number`"
-          :data-pb-key="`day-${date}`"
-          data-pb-role="text"
-          data-pb-token-typography="typography.caption"
-          :data-pb-token-color="numberColor(date, selected)"
-          :data-pb-token-background="
-            face === 'water' && minutes(date) > 0 && !selected
-              ? 'color.surface'
-              : undefined
-          "
-          :style="pbStyle({ color: numberColor(date, selected) })"
-          >{{ Number(date.slice(-2)) }}</span
-        >
-      </span></template
-    >
+          <template v-if="selected">
+            <rect
+              v-if="face === 'sundial'"
+              class="selection"
+              :x="artwork.cell.edge"
+              :y="artwork.cell.edge"
+              :width="artwork.cell.side"
+              :height="artwork.cell.side"
+              :rx="artwork.cell.corner"
+            />
+            <circle
+              v-else
+              class="selection"
+              :cx="artwork.cell.cx"
+              :cy="artwork.cell.cy"
+              :r="artwork.cell.radius"
+            />
+          </template>
+          <text
+            class="number"
+            :x="artwork.cell.cx"
+            :y="artwork.cell.cy"
+            text-anchor="middle"
+            dominant-baseline="central"
+            :data-pb-id="`${inspectId}.number`"
+            :data-pb-key="`day-${date}`"
+            data-pb-role="text"
+            :data-pb-token-typography="
+              isToday ? 'typography.caption-strong' : 'typography.caption'
+            "
+            :data-pb-token-color="
+              face === 'water' ? aboveWaterColor(date) : numberColor(date)
+            "
+            :style="
+              pbStyle({
+                color:
+                  face === 'water' ? aboveWaterColor(date) : numberColor(date),
+              })
+            "
+          >
+            {{ Number(date.slice(-2)) }}
+          </text>
+          <text
+            v-if="face === 'water' && minutes(date) > 0"
+            class="submerged-number"
+            :x="artwork.cell.cx"
+            :y="artwork.cell.cy"
+            text-anchor="middle"
+            dominant-baseline="central"
+            :clip-path="`url(#${id}-water-${date})`"
+            :data-pb-id="`${inspectId}.submerged-number`"
+            :data-pb-key="`day-${date}`"
+            data-pb-role="text"
+            :data-pb-token-color="numberColor(date)"
+            :data-pb-token-typography="
+              isToday ? 'typography.caption-strong' : 'typography.caption'
+            "
+            :style="pbStyle({ color: numberColor(date) })"
+          >
+            {{ Number(date.slice(-2)) }}
+          </text>
+          <svg
+            v-if="isToday"
+            class="today-mark"
+            :data-face="face"
+            :x="artwork.today.x"
+            :y="artwork.today.y"
+            :width="artwork.today.size"
+            :height="artwork.today.size"
+            :viewBox="artwork.today.viewBox"
+            :data-pb-id="`${inspectId}.today-mark`"
+            :data-pb-key="`day-${date}`"
+            data-pb-role="image"
+            data-pb-token-color="color.primary"
+            data-pb-token-background="color.background"
+            :stroke-width="artwork.today.strokeWidth"
+          >
+            <path class="today-pointer" :d="artwork.today.paths[face]" />
+          </svg>
+        </svg> </span
+    ></template>
   </MonthCalendar>
 </template>
 <style scoped>
@@ -200,28 +299,28 @@ const dayLabels = computed(() =>
   min-block-size: var(--pb-size-touch);
   color: var(--pb-color-primary);
 }
-svg {
+.date-artwork > svg {
   position: absolute;
   max-inline-size: var(--pb-layout-fill);
 }
-.number {
-  position: relative;
-  color: var(--pb-color-on-surface);
+.number,
+.submerged-number {
+  fill: currentColor;
   font: var(--pb-typography-caption);
 }
-.is-water:not(.is-empty):not(.is-selected) .number {
-  background: var(--pb-color-surface);
-  padding-inline: var(--pb-spacing-xxs);
-  border-radius: var(--pb-radius-pill);
+.is-today .number,
+.is-today .submerged-number {
+  font: var(--pb-typography-caption-strong);
 }
-.is-empty .number {
-  color: var(--pb-color-on-surface-muted);
+.today-pointer {
+  fill: var(--pb-color-primary);
+  stroke: var(--pb-color-background);
+  stroke-linejoin: round;
 }
-.is-selected .number {
-  color: var(--pb-color-on-primary);
-}
-.is-selected svg {
-  visibility: hidden;
+.selection {
+  fill: none;
+  stroke: var(--pb-color-primary);
+  stroke-width: var(--pb-border-width-strong);
 }
 .vessel {
   fill: transparent;

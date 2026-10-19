@@ -133,6 +133,19 @@ export function createYikeDemo(variant: string, now: Date) {
       intervals: [{ date: day, durationSeconds: 1500 }],
     });
   }
+  if (variant === "intensity-levels") {
+    data.initializedOn = shiftDay(day, -3)!;
+    for (const [index, minutes] of [25, 60, 120].entries()) {
+      const date = shiftDay(day, index - 3)!;
+      data.focusRecords.push({
+        id: `intensity-${date}`,
+        mode: "pomodoro",
+        startedAt: `${date}T02:00:00.000Z`,
+        durationSeconds: minutes * 60,
+        intervals: [{ date, durationSeconds: minutes * 60 }],
+      });
+    }
+  }
   if (variant === "empty") data.habits = [];
   if (variant === "habit-records" || variant === "weekly") {
     data.initializedOn = shiftDay(day, -90)!;

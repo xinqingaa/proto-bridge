@@ -12,7 +12,8 @@
     "一周从周一开始，前后月切换正确跨年；禁用日期不可选",
     "方向键和 Home/End 在当前月可用日期间移动焦点，Enter/Space 选择",
     "day 插槽只替换日期单元内容，暴露 date/selected/today/disabled；日期计算、焦点、禁用与键盘由组件管理。dayLabels提供每日期的可访问说明。",
-    "showHeader=false时隐藏整个月份标题及翻月按钮，由外部受控周期导航承担切月和边界；日期、星期、键盘与禁用机制不变。"
+    "showHeader=false时隐藏整个月份标题及翻月按钮，由外部受控周期导航承担切月和边界；日期、星期、键盘与禁用机制不变。",
+    "dayAppearance=custom时保留日期触控、禁用与键盘焦点，取消内层padding与默认今天/选中底色，由day插槽绘制日期状态；行间距使用spacing.xxs。"
   ],
   "layout": {
     "summary": "Header with previous/month/next; weekday row then seven equal cells per row using normal flow; no internal scroll owner."
@@ -50,6 +51,13 @@
       },
       "showHeader": {
         "type": "boolean"
+      },
+      "dayAppearance": {
+        "type": "string",
+        "enum": [
+          "default",
+          "custom"
+        ]
       }
     }
   },
@@ -57,9 +65,12 @@
     "label": "选择日期",
     "month": "2026-07",
     "modelValue": "2026-07-28",
-    "disabledDates": ["2026-07-15"],
+    "disabledDates": [
+      "2026-07-15"
+    ],
     "today": "2026-07-16",
-    "showHeader": true
+    "showHeader": true,
+    "dayAppearance": "default"
   },
   "states": [
     {
@@ -86,10 +97,23 @@
       "props": {
         "showHeader": false
       }
+    },
+    {
+      "id": "custom-days",
+      "label": "自定义日期外观",
+      "kind": "variant",
+      "props": {
+        "dayAppearance": "custom"
+      }
     }
   ],
-  "slots": ["day"],
-  "events": ["update:modelValue", "update:month"],
+  "slots": [
+    "day"
+  ],
+  "events": [
+    "update:modelValue",
+    "update:month"
+  ],
   "tokenBindings": {
     "color": "color.on-surface",
     "muted": "color.on-surface-muted",
@@ -113,7 +137,8 @@
     "number": "typography.numeric-content",
     "todayWidth": "border.width",
     "todayColor": "color.primary",
-    "dayRadius": "radius.pill"
+    "dayRadius": "radius.pill",
+    "customRowGap": "spacing.xxs"
   },
   "playground": {
     "presentation": "interactive"

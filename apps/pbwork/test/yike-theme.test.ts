@@ -146,7 +146,7 @@ it("布局节奏、公共动效与禁用透明度主动继承基础包", () => {
       const base = resolveRuntimeTheme("pbwork-base", "default", mode).values;
       const own = resolveRuntimeTheme("yike", theme, mode).values;
       const keys = Object.keys(base).filter((key) =>
-        /^(spacing\.|motion\.|opacity\.)/.test(key),
+        /^(spacing\.|motion\.|opacity\.)/.test(key) && !key.startsWith("opacity.data-"),
       );
       expect(keys.length).toBeGreaterThan(10);
       for (const key of keys)

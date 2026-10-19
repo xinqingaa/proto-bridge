@@ -10,5 +10,6 @@
   "inkWidth": 14,
   "inkLine": 2,
   "zero": 0,
-  "full": 1
+  "full": 1,
+  "minimumScaleMinutes": 125
 }

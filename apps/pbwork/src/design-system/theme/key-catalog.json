@@ -1168,6 +1168,33 @@
       "modeVariant": true,
       "label": "图形投影",
       "description": "独立物件与插画的轮廓投影，不用于背景玻璃滤镜"
+    },
+    {
+      "id": "opacity.data-low",
+      "tier": "semantic",
+      "valueType": "number",
+      "bindable": true,
+      "modeVariant": true,
+      "label": "数据低量强度",
+      "description": "离散数据强度的低量填充透明度；零数据另行表达，不按当前最大值连续归一化"
+    },
+    {
+      "id": "opacity.data-medium",
+      "tier": "semantic",
+      "valueType": "number",
+      "bindable": true,
+      "modeVariant": true,
+      "label": "数据中量强度",
+      "description": "离散数据强度的中量填充透明度；零数据另行表达，不按当前最大值连续归一化"
+    },
+    {
+      "id": "opacity.data-high",
+      "tier": "semantic",
+      "valueType": "number",
+      "bindable": true,
+      "modeVariant": true,
+      "label": "数据高量强度",
+      "description": "离散数据强度的高量填充透明度；零数据另行表达，不按当前最大值连续归一化"
     }
   ],
   "contrastPairs": [

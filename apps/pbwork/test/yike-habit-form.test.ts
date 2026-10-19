@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
+import { createVuetify } from "vuetify";
 import { shallowRef, reactive } from "vue";
 import {
   ThemeTableKey,
@@ -16,8 +17,10 @@ import CompositionPreview from "@/prototypes/yike/previews/CompositionPreview.vu
 import { createPreviewDevice } from "@/workbench/preview/model";
 const table = shallowRef(resolveRuntimeTheme("yike", "water", "dark"));
 const global = {
+  plugins: [createVuetify()],
   provide: { [ThemeTableKey as symbol]: table },
   stubs: {
+    VExpandTransition: { template: "<slot />" },
     TextField: true,
     SegmentedControl: true,
     SwitchControl: true,

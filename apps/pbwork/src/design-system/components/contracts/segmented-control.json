@@ -10,7 +10,8 @@
   "behavior": [
     "只有未禁用的选项可以被选中；方向键、Home 与 End 支持跳过禁用项",
     "选中项使用 roving tabindex；不拥有 viewport，data-no-swipe 防止父级横滑误触",
-    "material=glass 复用共享玻璃材质与透明度降级，保持原有单选和键盘机制。"
+    "material=glass 复用共享玻璃材质与透明度降级，保持原有单选和键盘机制。",
+    "density=compact将可见轨道及选中底板压低，按钮点击范围仍至少size.touch；不改变单选、禁用、焦点和键盘机制。"
   ],
   "layout": {
     "summary": "互斥的局部模式选择，不创建视图区或导航历史。"
@@ -38,7 +39,10 @@
               "type": "string"
             }
           },
-          "required": ["id", "label"]
+          "required": [
+            "id",
+            "label"
+          ]
         }
       },
       "modelValue": {
@@ -49,7 +53,17 @@
       },
       "material": {
         "type": "string",
-        "enum": ["solid", "glass"]
+        "enum": [
+          "solid",
+          "glass"
+        ]
+      },
+      "density": {
+        "type": "string",
+        "enum": [
+          "regular",
+          "compact"
+        ]
       }
     }
   },
@@ -71,7 +85,8 @@
     ],
     "modelValue": "week",
     "disabled": false,
-    "material": "solid"
+    "material": "solid",
+    "density": "regular"
   },
   "states": [
     {
@@ -106,10 +121,21 @@
         "material": "glass",
         "disabled": true
       }
+    },
+    {
+      "id": "compact",
+      "label": "紧凑",
+      "kind": "variant",
+      "props": {
+        "density": "compact",
+        "material": "glass"
+      }
     }
   ],
   "slots": [],
-  "events": ["update:modelValue"],
+  "events": [
+    "update:modelValue"
+  ],
   "tokenBindings": {
     "color": "color.on-surface",
     "gap": "spacing.sm",
@@ -133,9 +159,28 @@
     "glassLight": "elevation.glass",
     "glassBackdrop": "surface.glass-backdrop",
     "glassFallback": "color.surface",
-    "glassFallbackBorder": "border.default"
+    "glassFallbackBorder": "border.default",
+    "compactHeight": "segmented-control.compact-height",
+    "compactSelectionHeight": "segmented-control.compact-selection-height",
+    "compactFont": "typography.body-sm",
+    "duration": "motion.duration-short",
+    "easing": "motion.easing-standard"
   },
   "playground": {
     "presentation": "interactive"
+  },
+  "componentTokens": {
+    "compact-height": {
+      "valueType": "length",
+      "default": 36,
+      "modeVariant": false,
+      "bindable": true
+    },
+    "compact-selection-height": {
+      "valueType": "length",
+      "default": 30,
+      "modeVariant": false,
+      "bindable": true
+    }
   }
 }

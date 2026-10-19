@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useReducedMotion } from "@/runtime/useReducedMotion";
+const reducedMotion = useReducedMotion();
 import { computed, ref } from "vue";
 import TextField from "@/design-system/components/input/TextField.vue";
 import SegmentedControl from "@/design-system/components/input/SegmentedControl.vue";
@@ -171,20 +173,23 @@ function save() {
         "
       />
     </div>
-    <YikeOptionPicker
-      v-if="modelValue.frequency === 'weekly'"
-      label="每周次数"
-      :model-value="modelValue.target"
-      :options="
-        Array.from({ length: 7 }, (_, i) => ({
-          value: i + 1,
-          label: `每周 ${i + 1} 次`,
-        }))
-      "
-      :disabled="Boolean(submitting)"
-      :inspect-id="`${inspectId}.target`"
-      @update:model-value="update('target', Number($event))"
-    />
+    <v-expand-transition :disabled="reducedMotion">
+      <YikeOptionPicker
+        class="target-field"
+        v-if="modelValue.frequency === 'weekly'"
+        label="每周次数"
+        :model-value="modelValue.target"
+        :options="
+          Array.from({ length: 7 }, (_, i) => ({
+            value: i + 1,
+            label: `每周 ${i + 1} 次`,
+          }))
+        "
+        :disabled="Boolean(submitting)"
+        :inspect-id="`${inspectId}.target`"
+        @update:model-value="update('target', Number($event))"
+      />
+    </v-expand-transition>
     <SwitchControl
       label="提醒"
       label-position="start"
@@ -193,23 +198,25 @@ function save() {
       :inspect-id="`${inspectId}.reminder`"
       @update:model-value="update('reminder', $event)"
     />
-    <div v-if="modelValue.reminder" class="time-field">
-      <span>本地时间</span>
-      <WheelPicker
-        label="提醒时间"
-        :columns="clockColumns"
-        :model-value="clockValue"
-        :disabled="Boolean(submitting)"
-        :inspect-id="`${inspectId}.time`"
-        :aria-invalid="Boolean(timeError)"
-        :aria-describedby="timeError ? `${inspectId}.time-error` : undefined"
-        @update:model-value="updateClock"
-      />
-      <small v-if="timeError" :id="`${inspectId}.time-error`">{{
-        timeError
-      }}</small>
-      <span class="hint">仅保存并显示，不发送系统通知。</span>
-    </div>
+    <v-expand-transition :disabled="reducedMotion">
+      <div v-if="modelValue.reminder" class="time-field">
+        <span>本地时间</span>
+        <WheelPicker
+          label="提醒时间"
+          :columns="clockColumns"
+          :model-value="clockValue"
+          :disabled="Boolean(submitting)"
+          :inspect-id="`${inspectId}.time`"
+          :aria-invalid="Boolean(timeError)"
+          :aria-describedby="timeError ? `${inspectId}.time-error` : undefined"
+          @update:model-value="updateClock"
+        />
+        <small v-if="timeError" :id="`${inspectId}.time-error`">{{
+          timeError
+        }}</small>
+        <span class="hint">仅保存并显示，不发送系统通知。</span>
+      </div>
+    </v-expand-transition>
     <p v-if="saveError" role="alert" class="save-error">{{ saveError }}</p>
     <YikeAction
       v-if="showSave !== false"
@@ -290,4 +297,8 @@ small {
   color: var(--pb-color-error);
   font: var(--pb-typography-caption);
 }
+</style>
+
+<style scoped>
+.target-field, .time-field { transition-duration: var(--pb-motion-duration-medium); transition-timing-function: var(--pb-motion-easing-standard); }
 </style>

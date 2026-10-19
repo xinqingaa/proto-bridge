@@ -852,6 +852,15 @@ export const componentRecords = [
     example: {},
     controls: [
       {
+        key: "density",
+        label: "密度",
+        control: "select",
+        options: [
+          { value: "regular", label: "常规" },
+          { value: "compact", label: "紧凑" },
+        ],
+      },
+      {
         key: "material",
         label: "材质",
         control: "select",
@@ -1075,6 +1084,15 @@ export const componentRecords = [
     example: {},
     controls: [
       { key: "showHeader", label: "显示月份导航", control: "boolean" },
+      {
+        key: "dayAppearance",
+        label: "日期外观",
+        control: "select",
+        options: [
+          { label: "默认", value: "default" },
+          { label: "自绘日期", value: "custom" },
+        ],
+      },
       { key: "today", label: "今日日期", control: "text" },
       {
         key: "label",

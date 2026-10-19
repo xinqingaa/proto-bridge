@@ -66,7 +66,7 @@
     },
     "icon": {
       "status": "pending",
-      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
+      "reason": "共享 PBWork SVG 清单新增 calendar-current（回到当前日期周期），Contract 与资产已同步；Flutter 图标映射尚待适配。"
     },
     "icon-button": {
       "status": "pending",
@@ -138,7 +138,7 @@
     },
     "segmented-control": {
       "status": "pending",
-      "reason": "公共单选控件新增 material=glass 及共享玻璃Token绑定；Flutter尚未适配，需按当前Contract复核。"
+      "reason": "公共单选新增glass材质和density=compact，36px可见轨道/30px选中底板与至少44px点击范围分离；Flutter尚未适配。"
     },
     "stepper": {
       "status": "pending",
@@ -170,7 +170,7 @@
     },
     "month-calendar": {
       "status": "pending",
-      "reason": "公共月历新增day插槽、dayLabels及showHeader外部周期导航组合；Flutter尚未适配这些公开扩展。"
+      "reason": "公共月历新增day插槽、dayLabels、showHeader外部周期导航及dayAppearance=custom自绘状态/紧凑布局；Flutter尚未适配这些公开扩展。"
     },
     "list-cell": {
       "status": "pending",
@@ -789,6 +789,26 @@
     "effect.artwork-shadow": {
       "status": "pending",
       "reason": "Producer 新增通用字距、操作尺寸和图形投影角色；Flutter 尚未实现对应映射。"
+    },
+    "opacity.data-low": {
+      "status": "pending",
+      "reason": "新增三档数据强度/紧凑选择控件取值，Flutter尚未同步。"
+    },
+    "opacity.data-medium": {
+      "status": "pending",
+      "reason": "新增三档数据强度/紧凑选择控件取值，Flutter尚未同步。"
+    },
+    "opacity.data-high": {
+      "status": "pending",
+      "reason": "新增三档数据强度/紧凑选择控件取值，Flutter尚未同步。"
+    },
+    "segmented-control.compact-height": {
+      "status": "pending",
+      "reason": "新增三档数据强度/紧凑选择控件取值，Flutter尚未同步。"
+    },
+    "segmented-control.compact-selection-height": {
+      "status": "pending",
+      "reason": "新增三档数据强度/紧凑选择控件取值，Flutter尚未同步。"
     }
   },
   "queryExclusions": []

@@ -151,7 +151,7 @@ function appendMinute() {
       <YikeDial
         class="yike-focus-dial"
         :face="face"
-        :compact="mode !== 'pomodoro'"
+        :compact="mode === 'countdown'"
         :minutes="(mode === 'stopwatch' ? elapsed : remaining) / 60_000"
         :total="total / 60_000"
         :digits="display"
@@ -282,6 +282,11 @@ function appendMinute() {
         </li>
       </ol>
     </ScrollableDataList>
+    <div
+      v-else-if="mode === 'stopwatch'"
+      class="yike-lap-placeholder"
+      aria-hidden="true"
+    />
     <div class="yike-actions">
       <div class="yike-primary-row">
         <YikeAction
@@ -402,17 +407,19 @@ function appendMinute() {
 .yike-focus-dial {
   min-block-size: var(--pb-layout-zero);
 }
+.is-stopwatch {
+  overflow: hidden;
+  gap: var(--pb-spacing-xs);
+  padding-block: var(--pb-spacing-xs) var(--pb-layout-zero);
+}
 .is-stopwatch .yike-stage {
   inline-size: var(--pb-layout-fill);
-  min-block-size: var(--pb-layout-zero);
-  block-size: calc(
-    var(--pb-size-plot) - var(--pb-spacing-lg) - var(--pb-spacing-lg) -
-      var(--pb-spacing-lg)
-  );
-  flex-shrink: var(--pb-layout-flex-grow);
+  flex: var(--pb-layout-flex-fill);
+  justify-content: center;
 }
 .is-stopwatch .yike-focus-dial {
-  block-size: var(--pb-layout-fill);
+  flex: none;
+  block-size: auto;
   max-block-size: var(--pb-layout-fill);
 }
 .yike-round {
@@ -507,9 +514,19 @@ function appendMinute() {
   font: var(--pb-typography-content);
   font-variant-numeric: tabular-nums;
 }
-.yike-lap-scroll {
-  flex: var(--pb-layout-flex-fill);
-  min-block-size: calc(var(--pb-size-control) + var(--pb-size-control));
+.yike-lap-scroll,
+.yike-lap-placeholder {
+  flex: none;
+  block-size: clamp(
+    var(--pb-size-touch),
+    calc(
+      var(--pb-layout-fill) - var(--pb-size-plot) -
+        var(--pb-size-control-large) - var(--pb-size-control-large) -
+        var(--pb-spacing-lg)
+    ),
+    calc(var(--pb-size-control) + var(--pb-size-control))
+  );
+  min-block-size: var(--pb-layout-zero);
   inline-size: var(--pb-layout-fill);
 }
 .yike-laps li {

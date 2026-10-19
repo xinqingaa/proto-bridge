@@ -37,6 +37,7 @@
 | `alert-circle` | alert-circle | `variant` |
 | `clock` | clock | `variant` |
 | `refresh-cw` | refresh-cw | `variant` |
+| `calendar-current` | calendar-current | `variant` |
 | `clipboard-check` | clipboard-check | `variant` |
 | `shield-check` | shield-check | `variant` |
 | `folder-open` | folder-open | `variant` |
@@ -60,3 +61,5 @@
 - Props、Slots、Events、默认值与 Token 槽以 [Icon Contract](../../../src/design-system/components/contracts/icon.json) 为准。
 
 预览中的图标可选择 SVG 或透明 PNG 下载，PNG 倍率以当前主题 `size.icon` 为基准；运行时 Icon 保持纯图形职责。SVG artwork 的视框、路径与笔画定义为统一资产，不从页面随意注入。
+
+`calendar-current` 用日历与中心定位靶心表达回到当前日期所在周期；不要用刷新图标表示日期导航。

@@ -19,6 +19,7 @@ export const PB_ICON_NAMES = [
   "alert-circle",
   "clock",
   "refresh-cw",
+  "calendar-current",
   "clipboard-check",
   "shield-check",
   "folder-open",

@@ -50,3 +50,42 @@ describe("公共单选的玻璃材质", () => {
       });
     }
 });
+
+it.each([
+  ["pbwork-base", "default", "light"],
+  ["pbwork-base", "default", "dark"],
+  ["pbwork-sample", "garden", "light"],
+  ["pbwork-sample", "garden", "dark"],
+] as const)(
+  "%s/%s/%s compact keeps radio and keyboard semantics",
+  async (pack, theme, mode) => {
+    const wrapper = mount(SegmentedControl, {
+      props: {
+        density: "compact",
+        material: "glass",
+        items: [
+          { id: "week", label: "周" },
+          { id: "month", label: "月" },
+        ],
+        modelValue: "week",
+      },
+      global: {
+        provide: {
+          [ThemeTableKey as symbol]: shallowRef(
+            resolveRuntimeTheme(pack, theme, mode),
+          ),
+        },
+      },
+    });
+    expect(wrapper.classes()).toContain("is-compact");
+    expect(wrapper.find(".compact-track .glass-material").exists()).toBe(true);
+    await wrapper
+      .get('[data-value="week"]')
+      .trigger("keydown", { key: "ArrowRight" });
+    expect(wrapper.emitted("update:modelValue")).toEqual([["month"]]);
+    await wrapper.setProps({ disabled: true });
+    await wrapper.get('[data-value="month"]').trigger("click");
+    expect(wrapper.emitted("update:modelValue")).toHaveLength(1);
+    wrapper.unmount();
+  },
+);

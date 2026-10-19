@@ -9,9 +9,18 @@
     "color.action-soft": "{color.surface-recessed}",
     "color.disabled": "{color.on-surface-muted}",
     "surface.treatment": "glass",
-    "size.action-min-inline": 200
+    "size.action-min-inline": 200,
+    "opacity.data-low": 0.3,
+    "opacity.data-medium": 0.65,
+    "opacity.data-high": 1
   },
-  "modes": {},
+  "modes": {
+    "dark": {
+      "opacity.data-low": 0.35,
+      "opacity.data-medium": 0.7,
+      "opacity.data-high": 1
+    }
+  },
   "themes": {
     "mechanical": {
       "values": {

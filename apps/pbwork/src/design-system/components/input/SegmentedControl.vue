@@ -8,6 +8,7 @@ import { useComponentParts } from "../_shared/componentParts";
 const props = withDefaults(
   defineProps<{
     material?: "solid" | "glass";
+    density?: "regular" | "compact";
     label?: string;
     items?: Array<{ id: string; label: string; disabled?: boolean }>;
     modelValue?: string;
@@ -17,6 +18,7 @@ const props = withDefaults(
   }>(),
   {
     material: "solid",
+    density: "regular",
     label: "统计范围",
     items: () => [
       { id: "week", label: "周" },
@@ -86,6 +88,11 @@ usePbInspect({
   pbKey: () => props.pbKey,
   getProps: () => ({ ...props }),
   getTokenBindings: () => ({
+    compactHeight: "segmented-control.compact-height",
+    compactSelectionHeight: "segmented-control.compact-selection-height",
+    compactFont: "typography.body-sm",
+    duration: "motion.duration-short",
+    easing: "motion.easing-standard",
     glassTint: "color.glass-tint",
     glassEdge: "border.glass",
     glassLight: "elevation.glass",
@@ -117,7 +124,10 @@ usePbInspect({
   <div
     ref="rootRef"
     class="segments"
-    :class="{ 'is-glass': material === 'glass' }"
+    :class="{
+      'is-glass': material === 'glass',
+      'is-compact': density === 'compact',
+    }"
     role="radiogroup"
     data-pb-role="filter"
     data-no-swipe
@@ -125,7 +135,10 @@ usePbInspect({
     :aria-disabled="disabled"
     @keydown="key"
   >
-    <GlassMaterial v-if="material === 'glass'" />
+    <span v-if="density === 'compact'" class="compact-track" aria-hidden="true"
+      ><GlassMaterial v-if="material === 'glass'"
+    /></span>
+    <GlassMaterial v-else-if="material === 'glass'" />
     <button
       v-for="item in items"
       :key="item.id"
@@ -140,13 +153,17 @@ usePbInspect({
         part(
           'option',
           'button',
-          { typography: 'typography.content', color: 'color.on-surface' },
+          {
+            typography:
+              density === 'compact' ? 'typography.body-sm' : 'typography.label',
+            color: 'color.on-surface',
+          },
           item.id,
         )
       "
       @click="choose(item.id)"
     >
-      {{ item.label }}
+      <span class="option-label">{{ item.label }}</span>
     </button>
   </div>
 </template>
@@ -188,5 +205,57 @@ button:disabled,
 input:disabled {
   opacity: var(--pb-opacity-disabled);
   cursor: default;
+}
+</style>
+
+<style scoped>
+.segments.is-compact {
+  min-block-size: var(--pb-size-touch);
+  padding: var(--pb-layout-zero) var(--pb-spacing-xs);
+  background: transparent;
+}
+.compact-track {
+  position: absolute;
+  inset-inline: var(--pb-layout-zero);
+  inset-block: var(--pb-layout-zero);
+  margin-block: auto;
+  block-size: var(--pb-segmented-control-compact-height);
+  border-radius: var(--pb-radius-control-compact);
+  background: var(--pb-color-surface-recessed);
+}
+.is-glass .compact-track {
+  background: transparent;
+}
+.is-compact button {
+  padding: var(--pb-layout-zero) var(--pb-spacing-sm);
+  background: transparent;
+  box-shadow: none;
+  font: var(--pb-typography-body-sm);
+}
+.is-compact button::before {
+  content: "";
+  position: absolute;
+  inset-inline: var(--pb-layout-zero);
+  inset-block: var(--pb-layout-zero);
+  block-size: var(--pb-segmented-control-compact-selection-height);
+  margin-block: auto;
+  border-radius: calc(var(--pb-radius-control-compact) - var(--pb-spacing-xxs));
+  background: transparent;
+  transition:
+    background-color var(--pb-motion-duration-short)
+      var(--pb-motion-easing-standard),
+    box-shadow var(--pb-motion-duration-short) var(--pb-motion-easing-standard);
+}
+.is-compact button.selected::before {
+  background: var(--pb-color-surface);
+  box-shadow: var(--pb-elevation-surface);
+}
+.option-label {
+  position: relative;
+}
+@media (prefers-reduced-motion: reduce) {
+  .is-compact button::before {
+    transition: none;
+  }
 }
 </style>

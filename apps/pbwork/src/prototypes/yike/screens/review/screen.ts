@@ -27,6 +27,7 @@ export default defineScreen({
       { id: "only-focus", label: "仅专注" },
       { id: "with-records", label: "专注与打卡" },
       { id: "month", label: "本月回顾" },
+      { id: "intensity-levels", label: "三档专注量" },
       { id: "history", label: "可翻阅历史周期" },
     ].map((variant) => ({
       ...variant,

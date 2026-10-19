@@ -69,6 +69,14 @@ function checked(habitId: string, date: string) {
 function weekProgress(habitId: string) {
   return weekDays.value.filter((day) => checked(habitId, day.key)).length;
 }
+const messageOpen = computed({
+  get: () =>
+    route.params.screenSlug === "checkin" &&
+    Boolean(store.presentation.message),
+  set: (open: boolean) => {
+    if (!open) store.presentation.message = "";
+  },
+});
 const notice = ref(false);
 const noticeText = ref("");
 watch(notice, (open) => {
@@ -76,6 +84,7 @@ watch(notice, (open) => {
 });
 
 function toggle(habitId: string) {
+  store.presentation.message = "";
   if (store.toggleCheckin(habitId)) {
     noticeText.value = checked(habitId, today.value)
       ? `「${store.data.habits.find((habit) => habit.id === habitId)?.name}」今天已打卡`
@@ -83,6 +92,18 @@ function toggle(habitId: string) {
     notice.value = true;
   }
 }
+watch(
+  () => store.presentation.message,
+  (message) => {
+    if (message) notice.value = false;
+  },
+);
+watch(
+  () => route.params.screenSlug,
+  (slug) => {
+    if (slug !== "checkin") notice.value = false;
+  },
+);
 function undo() {
   noticeText.value = store.undoLastCheckin()
     ? "已撤销本次打卡变化"
@@ -199,9 +220,6 @@ function resetCorruptData() {
       inspect-id="yike.checkin.empty-create"
       @click="nav().editor()"
     />
-    <p v-if="store.presentation.message" role="status">
-      {{ store.presentation.message }}
-    </p>
     <div
       v-if="habits.length"
       class="yike-week-head"
@@ -224,7 +242,9 @@ function resetCorruptData() {
       >
       <span class="today-label">今天</span>
     </div>
-    <div
+    <TransitionGroup
+      name="habit-list"
+      tag="div"
       class="yike-habits"
       v-pb="scope.node('habit-list', 'list', { tokens: { gap: 'spacing.md' } })"
     >
@@ -247,7 +267,7 @@ function resetCorruptData() {
         @open="(id) => nav().habit(id)"
         @toggle-today="toggle"
       />
-    </div>
+    </TransitionGroup>
     <div class="yike-archive-entry">
       <YikeActionRows
         inspect-id="yike.checkin.archive-actions"
@@ -293,6 +313,13 @@ function resetCorruptData() {
       </div>
     </BottomSheet>
     <Toast
+      attach="#yike-notices"
+      v-model="messageOpen"
+      :message="store.presentation.message"
+      inspect-id="yike.checkin.saved"
+    />
+    <Toast
+      attach="#yike-notices"
       v-model="notice"
       :message="noticeText"
       action-label="撤销"
@@ -449,5 +476,24 @@ function resetCorruptData() {
 .yike-week-head .is-today {
   color: var(--pb-color-primary);
   font: var(--pb-typography-caption-strong);
+}
+</style>
+
+<style scoped>
+.habit-list-move,
+.habit-list-enter-active {
+  transition:
+    transform var(--pb-motion-duration-medium) var(--pb-motion-easing-standard),
+    opacity var(--pb-motion-duration-medium) var(--pb-motion-easing-standard);
+}
+.habit-list-enter-from {
+  opacity: var(--pb-opacity-hidden);
+  transform: translateY(var(--pb-spacing-sm));
+}
+@media (prefers-reduced-motion: reduce) {
+  .habit-list-move,
+  .habit-list-enter-active {
+    transition: none;
+  }
 }
 </style>

@@ -1,6 +1,6 @@
 # 主题键目录
 
-共 154 项：129 个语义键与 25 个组件键；148 项可绑定，6 项 enum 不可绑定。字阶另派生 64 个不可绑定部件；37 项实现常量不属于 Catalog。
+共 159 项：132 个语义键与 27 个组件键；153 项可绑定，6 项 enum 不可绑定。字阶另派生 64 个不可绑定部件；37 项实现常量不属于 Catalog。
 
 权威源为 `src/design-system/theme/key-catalog.json` 和各组件 Contract 的 `componentTokens`，由 `loadThemeKeyCatalog()` 汇总；取值由主题包解析，本文不复制基础值。模型见[主题包解析模型](../../../../docs/architecture/theme-packs.md)，154 个旧键的去向保存在 `theme/legacy-migration.json` 并由等价测试覆盖。
 
@@ -172,3 +172,16 @@
 | `primary-tabs.selection-tint`    | color | component | 是     | 页内导航选中玻璃底色 |
 | `button.glass-primary-tint`      | color | component | 是     | 主要按钮玻璃底色     |
 | `icon-button.glass-primary-tint` | color | component | 是     | 主要图标按钮玻璃底色 |
+
+数据强度新增 `opacity.data-low`、`opacity.data-medium`、`opacity.data-high`：可绑定、随明暗模式变化的语义 number，用于离散三级数据填充；零值单独表达。`segmented-control.compact-height`、`segmented-control.compact-selection-height` 是组件 length 键，分别控制紧凑轨道/选中底板，不缩小触控范围。
+
+
+## 数据强度与紧凑选择
+
+| 键 | 类型 | 层级 | 可绑定 | 来源/说明 |
+| --- | --- | --- | --- | --- |
+| `opacity.data-low` | number | semantic | 是 | 离散数据低档填充强度 |
+| `opacity.data-medium` | number | semantic | 是 | 离散数据中档填充强度 |
+| `opacity.data-high` | number | semantic | 是 | 离散数据高档填充强度 |
+| `segmented-control.compact-height` | length | component | 是 | 紧凑选择轨道的可见高度 |
+| `segmented-control.compact-selection-height` | length | component | 是 | 紧凑选择底板的可见高度 |

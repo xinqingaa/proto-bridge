@@ -5,12 +5,14 @@ import { vPb } from "@/authoring/pb-style";
 import PrototypeShell from "@/runtime/prototype/PrototypeShell.vue";
 import AppBar from "@/design-system/components/navigation/AppBar.vue";
 import Button from "@/design-system/components/action/Button.vue";
+import Toast from "@/design-system/components/feedback/Toast.vue";
 import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
 import YikeActionRows from "../../components/YikeActionRows.vue";
 import YikeHabitYear from "../../components/YikeHabitYear.vue";
 import YikeHabitGlyph from "../../components/YikeHabitGlyph.vue";
 import { shiftDay } from "@/design-system/components/_shared/calendar";
-import { useYikeRuntime } from "../../runtime";
+import { useYikeStore } from "../../model";
+import { useClock } from "@/runtime/useClock";
 import { yikeNavigation } from "../../navigation";
 import { reviewPeriod } from "../../statistics";
 import { scope } from "./screen";
@@ -18,7 +20,8 @@ import "../stack.css";
 
 const route = useRoute(),
   router = useRouter();
-const { store, clock } = useYikeRuntime();
+const store = useYikeStore();
+const clock = useClock();
 const nav = () => yikeNavigation(router, route, store);
 const habit = computed(() =>
   store.data.habits.find(
@@ -62,6 +65,14 @@ const metrics = computed(() => [
   { id: "month", label: "本月", value: count("month") },
   { id: "year-total", label: "最近一年", value: yearCount.value },
 ]);
+const messageOpen = computed({
+  get: () =>
+    route.params.screenSlug === "habit-detail" &&
+    Boolean(store.presentation.message),
+  set: (open: boolean) => {
+    if (!open) store.presentation.message = "";
+  },
+});
 const deleting = ref(false);
 watch(
   () => store.presentation.revision,
@@ -243,9 +254,6 @@ function remove() {
             :archived="habit.archivedOn ? [{ from: habit.archivedOn }] : []"
           />
         </section>
-        <p v-if="store.presentation.message" role="status">
-          {{ store.presentation.message }}
-        </p>
         <YikeActionRows
           :inspect-id="scope.id('actions')"
           :items="[
@@ -286,6 +294,12 @@ function remove() {
         />
       </template>
     </div>
+    <Toast
+      attach="#yike-notices"
+      v-model="messageOpen"
+      :message="store.presentation.message"
+      :inspect-id="scope.id('saved')"
+    />
     <BottomSheet
       v-model="deleting"
       title="删除这个习惯？"

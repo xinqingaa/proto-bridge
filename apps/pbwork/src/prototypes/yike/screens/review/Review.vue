@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, toRefs } from "vue";
+import { useReducedMotion } from "@/runtime/useReducedMotion";
+const reducedMotion = useReducedMotion();
+import { computed, ref, toRefs, watch, onMounted, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { vPb } from "@/authoring/pb-style";
 import { useClock } from "@/runtime/useClock";
@@ -36,19 +38,6 @@ const period = computed(() => reviewPeriod(anchor.value, range.value));
 const summary = computed(() =>
   reviewSummary(store.data, period.value.start, period.value.end),
 );
-const earliest = computed(
-  () =>
-    [
-      store.data.initializedOn,
-      ...store.data.focusRecords.flatMap((record) =>
-        record.intervals.map((interval) => interval.date),
-      ),
-      ...store.data.checkins.map((item) => item.date),
-    ].sort()[0] ?? today.value,
-);
-const canPrevious = computed(
-  () => period.value.start > reviewPeriod(earliest.value, range.value).start,
-);
 const canNext = computed(
   () => period.value.start < reviewPeriod(today.value, range.value).start,
 );
@@ -80,13 +69,13 @@ const modeLabels = {
 };
 function chooseRange(value: string) {
   if (value !== "week" && value !== "month") return;
-  anchor.value = selected.value || period.value.start;
+  anchor.value =
+    selected.value || (isCurrentPeriod.value ? today.value : anchor.value);
   range.value = value;
   selected.value = "";
 }
 function move(offset: number) {
-  if ((offset < 0 && !canPrevious.value) || (offset > 0 && !canNext.value))
-    return;
+  if (offset > 0 && !canNext.value) return;
   anchor.value = shiftReviewPeriod(period.value.start, range.value, offset);
   selected.value = "";
 }
@@ -99,11 +88,25 @@ function returnToToday() {
 }
 function chooseMonth(month: string) {
   const date = `${month}-01`;
-  if (date > today.value || date < reviewPeriod(earliest.value, "month").start)
-    return;
+  if (date > today.value) return;
   anchor.value = date;
   selected.value = "";
 }
+// Animate only intrinsic layout changes; geometry comes from the actual content.
+const chartContent = ref<HTMLElement | null>(null);
+const chartHeight = ref(0);
+let chartObserver: ResizeObserver | undefined;
+onMounted(() => {
+  chartObserver = new ResizeObserver(([entry]) => {
+    if (entry) chartHeight.value = entry.target.getBoundingClientRect().height;
+  });
+  if (chartContent.value) chartObserver.observe(chartContent.value);
+});
+watch(chartContent, (element, previous) => {
+  if (previous) chartObserver?.unobserve(previous);
+  if (element) chartObserver?.observe(element);
+});
+onBeforeUnmount(() => chartObserver?.disconnect());
 </script>
 <template>
   <div
@@ -128,10 +131,20 @@ function chooseMonth(month: string) {
       >
         回顾
       </h1>
+      <IconButton
+        :ariaLabel="range === 'week' ? '回到本周' : '回到本月'"
+        icon="calendar-current"
+        variant="text"
+        size="sm"
+        :disabled="isCurrentPeriod"
+        inspect-id="yike.review.today"
+        @click="returnToToday"
+      />
     </header>
     <div class="period-controls">
       <SegmentedControl
         class="range-switch"
+        density="compact"
         :model-value="range"
         :items="[
           { id: 'week', label: '周' },
@@ -146,12 +159,13 @@ function chooseMonth(month: string) {
         <IconButton
           ariaLabel="上一期"
           icon="chevron-left"
+          variant="text"
           size="sm"
-          :disabled="!canPrevious"
           inspect-id="yike.review.previous"
           @click="move(-1)"
         />
         <span
+          aria-live="polite"
           v-pb="
             scope.node('period', 'text', {
               tokens: {
@@ -169,21 +183,13 @@ function chooseMonth(month: string) {
         <IconButton
           ariaLabel="下一期"
           icon="chevron-right"
+          variant="text"
           size="sm"
           :disabled="!canNext"
           inspect-id="yike.review.next"
           @click="move(1)"
         />
       </div>
-    </div>
-    <div v-if="!isCurrentPeriod" class="return-current">
-      <Button
-        :label="range === 'week' ? '回到本周' : '回到本月'"
-        kind="quiet"
-        shape="pill"
-        inspect-id="yike.review.today"
-        @click="returnToToday"
-      />
     </div>
     <dl
       class="summary"
@@ -232,111 +238,144 @@ function chooseMonth(month: string) {
       </div>
     </dl>
     <div
-      v-if="range === 'week' && summary.seconds === 0"
-      class="review-empty"
-      v-pb="
-        scope.node('chart', 'section', {
-          tokens: { gap: 'spacing.md', color: 'color.on-surface-muted' },
-        })
-      "
+      class="chart-stage"
+      :style="chartHeight ? { blockSize: `${chartHeight}px` } : undefined"
     >
-      <div class="empty-object">
-        <YikeDial
+      <div
+        ref="chartContent"
+        :key="`${range}-${period.start}`"
+        class="chart-content"
+      >
+        <div
+          v-if="
+            range === 'week' &&
+            summary.seconds === 0 &&
+            summary.checkinCount === 0
+          "
+          class="review-empty"
+          v-pb="
+            scope.node('chart', 'section', {
+              tokens: { gap: 'spacing.md', color: 'color.on-surface-muted' },
+            })
+          "
+        >
+          <div class="empty-object">
+            <YikeDial
+              :face="face"
+              :minutes="0"
+              :total="25"
+              digits=""
+              caption=""
+              inspect-id="yike.review.empty-object"
+            />
+          </div>
+          <h2>
+            {{
+              summary.checkinCount ? "习惯已经留下记录" : "这一周还没有专注记录"
+            }}
+          </h2>
+          <Button
+            label="去专注"
+            kind="accent"
+            shape="pill"
+            inspect-id="yike.review.go-focus"
+            @click="yikeNavigation(router, route, store).tab('focus')"
+          />
+        </div>
+        <YikeWeekChart
+          v-else-if="range === 'week'"
           :face="face"
-          :minutes="0"
-          :total="25"
-          digits=""
-          caption=""
-          inspect-id="yike.review.empty-object"
+          :week-start="period.start"
+          :today="today"
+          :days="summary.days"
+          v-model="selected"
+          inspect-id="yike.review.chart"
         />
+        <YikeMonthCalendar
+          v-else
+          :show-header="false"
+          :face="face"
+          :month="period.start.slice(0, 7)"
+          :today="today"
+          :days="summary.days"
+          v-model="selected"
+          inspect-id="yike.review.chart"
+          @update:month="chooseMonth"
+        />
+        <p
+          v-if="
+            range === 'month' &&
+            summary.seconds === 0 &&
+            summary.checkinCount === 0
+          "
+          class="empty-month"
+          role="status"
+          v-pb="
+            scope.node('empty-month', 'text', {
+              tokens: {
+                typography: 'typography.caption',
+                color: 'color.on-surface-muted',
+              },
+            })
+          "
+        >
+          这个月还没有记录
+        </p>
       </div>
-      <h2>
-        {{ summary.checkinCount ? "习惯已经留下记录" : "这一周还没有专注记录" }}
-      </h2>
-      <p>
-        {{
-          summary.checkinCount
-            ? `这段时间完成了 ${summary.checkinCount} 次打卡，专注记录会显示在这里。`
-            : "完成或提前结束的专注会出现在这里；放弃的不会。"
-        }}
-      </p>
-      <Button
-        label="去专注"
-        kind="accent"
-        shape="pill"
-        inspect-id="yike.review.go-focus"
-        @click="yikeNavigation(router, route, store).tab('focus')"
-      />
     </div>
-    <YikeWeekChart
-      v-else-if="range === 'week'"
-      :face="face"
-      :week-start="period.start"
-      :today="today"
-      :days="summary.days"
-      v-model="selected"
-      inspect-id="yike.review.chart"
-    />
-    <YikeMonthCalendar
-      v-else
-      :show-header="false"
-      :face="face"
-      :month="period.start.slice(0, 7)"
-      :today="today"
-      :days="summary.days"
-      v-model="selected"
-      inspect-id="yike.review.chart"
-      @update:month="chooseMonth"
-    />
-    <GlassSurface
-      v-if="selected"
-      inspect-id="yike.review.day-detail"
-      class="day-detail"
-    >
-      <h2>{{ selected }}</h2>
-      <p v-if="!selectedRecords.length && !selectedHabits.length">
-        这一天还没有记录。
-      </p>
-      <ul v-else>
-        <li
-          v-for="record in selectedRecords"
-          :key="record.id"
-          v-pb="
-            scope.node('record', 'text', {
-              key: record.id,
-              tokens: {
-                typography: 'typography.content',
-                color: 'color.on-surface',
-              },
-            })
-          "
-        >
-          {{
-            new Date(record.startedAt).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          }}
-          · {{ modeLabels[record.mode] }} · {{ durationLabel(record.seconds) }}
-        </li>
-        <li
-          v-for="habit in selectedHabits"
-          :key="habit.id"
-          v-pb="
-            scope.node('habit', 'text', {
-              key: habit.id,
-              tokens: {
-                typography: 'typography.content',
-                color: 'color.on-surface',
-              },
-            })
-          "
-        >
-          已完成 · {{ habit.name }}
-        </li>
-      </ul>
-    </GlassSurface>
-    <section v-else-if="summary.seconds > 0" class="distribution">
+    <v-expand-transition :disabled="reducedMotion">
+      <GlassSurface
+        v-if="selected"
+        inspect-id="yike.review.day-detail"
+        class="day-detail"
+      >
+        <h2>{{ selected }}</h2>
+        <p v-if="!selectedRecords.length && !selectedHabits.length">
+          这一天还没有记录。
+        </p>
+        <ul v-else>
+          <li
+            v-for="record in selectedRecords"
+            :key="record.id"
+            v-pb="
+              scope.node('record', 'text', {
+                key: record.id,
+                tokens: {
+                  typography: 'typography.content',
+                  color: 'color.on-surface',
+                },
+              })
+            "
+          >
+            {{
+              new Date(record.startedAt).toLocaleTimeString("zh-CN", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hourCycle: "h23",
+              })
+            }}
+            · {{ modeLabels[record.mode] }} ·
+            {{ durationLabel(record.seconds) }}
+          </li>
+          <li
+            v-for="habit in selectedHabits"
+            :key="habit.id"
+            v-pb="
+              scope.node('habit', 'text', {
+                key: habit.id,
+                tokens: {
+                  typography: 'typography.content',
+                  color: 'color.on-surface',
+                },
+              })
+            "
+          >
+            已完成 · {{ habit.name }}
+          </li>
+        </ul>
+      </GlassSurface>
+    </v-expand-transition>
+    <section v-if="summary.seconds > 0" class="distribution">
       <h2>按类型</h2>
       <p
         v-for="(seconds, mode) in summary.byMode"
@@ -352,18 +391,16 @@ function chooseMonth(month: string) {
         "
       >
         <span>{{ modeLabels[mode] }}</span
-        ><span class="type-track"
-          ><i
-            :style="{
-              flexGrow: seconds,
-              flexBasis: 'var(--pb-layout-zero)',
-            }" /><i
-            class="type-rest"
-            :style="{
-              flexGrow: summary.seconds - seconds,
-              flexBasis: 'var(--pb-layout-zero)',
-            }" /></span
         ><b
+          v-pb="
+            scope.node('type-value', 'text', {
+              key: mode,
+              tokens: {
+                typography: 'typography.caption',
+                color: 'color.on-surface-muted',
+              },
+            })
+          "
           >{{
             store.data.focusRecords.filter(
               (record) =>
@@ -377,6 +414,35 @@ function chooseMonth(month: string) {
           }}
           次 · {{ durationLabel(seconds) }}</b
         >
+        <span
+          class="type-track"
+          role="progressbar"
+          :aria-label="modeLabels[mode]"
+          :aria-valuenow="seconds"
+          :aria-valuemin="0"
+          :aria-valuemax="summary.seconds"
+          v-pb="
+            scope.node('type-track', 'chart', {
+              key: mode,
+              tokens: {
+                color: 'color.primary',
+                background: 'color.surface-variant',
+                size: 'size.marker',
+                radius: 'radius.pill',
+              },
+            })
+          "
+          ><i
+            :style="{
+              flexGrow: seconds,
+              flexBasis: 'var(--pb-layout-zero)',
+            }" /><i
+            class="type-rest"
+            :style="{
+              flexGrow: summary.seconds - seconds,
+              flexBasis: 'var(--pb-layout-zero)',
+            }"
+        /></span>
       </p>
     </section>
   </div>
@@ -385,7 +451,7 @@ function chooseMonth(month: string) {
 .yike-review {
   display: flex;
   flex-direction: column;
-  gap: var(--pb-spacing-lg);
+  gap: var(--pb-spacing-md);
   padding: var(--pb-spacing-lg);
   min-block-size: var(--pb-layout-fill);
   block-size: var(--pb-layout-fill);
@@ -427,6 +493,8 @@ h2 {
   text-align: center;
 }
 .day-detail {
+  transition-duration: var(--pb-motion-duration-medium);
+  transition-timing-function: var(--pb-motion-easing-standard);
   display: flex;
   flex-direction: column;
   gap: var(--pb-spacing-sm);
@@ -468,7 +536,6 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
   gap: var(--pb-spacing-xs);
 }
 .range-switch {
@@ -496,15 +563,18 @@ h2 {
 }
 .distribution p {
   display: flex;
-  align-items: center;
-  gap: var(--pb-spacing-sm);
+  align-items: baseline;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--pb-spacing-xs);
 }
 .distribution b {
   font: var(--pb-typography-caption);
 }
 .type-track {
   display: flex;
-  flex: var(--pb-layout-flex-fill);
+  flex: none;
+  inline-size: var(--pb-layout-fill);
   block-size: var(--pb-size-marker);
   border-radius: var(--pb-radius-pill);
   overflow: hidden;
@@ -523,6 +593,61 @@ ul {
 .distribution {
   display: flex;
   flex-direction: column;
-  gap: var(--pb-spacing-sm);
+  gap: var(--pb-spacing-md);
+}
+</style>
+
+<style scoped>
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.period {
+  min-inline-size: var(--pb-layout-zero);
+  flex: var(--pb-layout-flex-fill);
+  gap: var(--pb-layout-zero);
+}
+.period span {
+  flex: var(--pb-layout-flex-fill);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.chart-stage {
+  flex: none;
+  overflow: hidden;
+  transition: block-size var(--pb-motion-duration-medium)
+    var(--pb-motion-easing-standard);
+}
+.empty-month {
+  margin-block-start: var(--pb-spacing-sm);
+  font: var(--pb-typography-caption);
+  color: var(--pb-color-on-surface-muted);
+  text-align: center;
+}
+.chart-content {
+  display: flow-root;
+  animation: review-appear var(--pb-motion-duration-medium)
+    var(--pb-motion-easing-standard);
+}
+@keyframes review-appear {
+  from {
+    opacity: var(--pb-opacity-hidden);
+  }
+  to {
+    opacity: var(--pb-opacity-visible);
+  }
+}
+.distribution b {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chart-stage {
+    transition: none;
+  }
+  .chart-content {
+    animation: none;
+  }
 }
 </style>

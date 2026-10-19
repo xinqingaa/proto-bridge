@@ -80,13 +80,13 @@
 | 习惯图标 / HabitGlyph | 打卡、详情、编辑 | 优先 DS Icon 的现有稳定资源；确有品牌形状则共用一份自有 artwork | 叶子/书/水杯/脚步/月亮/拉伸；编辑选择保留可读名称和焦点 |
 | 分组信息行 / `.y-list*` | 设置、详情 | 设置使用 GroupedList + ListCell 的公开 density=compact；详情操作使用 YikeActionRows + 公共 Button | 名称/值/箭头同排；危险操作与说明不抢标题，说明通过 aria-describedby 关联 |
 | 名称、频率、次数、提醒 | 编辑 | DS TextField、玻璃 SegmentedControl、Stepper、Switch 公开组合；提醒时刻使用原生 time 输入 | 空白/超长校验、每日/每周1–7、提醒开/关、取消和重复提交；图标组为自有选择内容 |
-| 编辑承载 / HabitEditorScreen.vue | 新建/编辑 | DS BottomSheet 公共机制；来源页作为 inert 底页，表单 body + actions 保存 footer | 仅一处标题/关闭；原生 form 属性提交同一表单，窄屏 body 滚动且保存可达；不复制 Overlay/手势层 |
+| 编辑承载 / HabitEditorScreen.vue | 新建/编辑 | DS BottomSheet 公共机制；真实来源实例保留在共享YikeRoot视图，由公共Overlay隔离背景交互，表单 body + actions 保存 footer | 仅一处标题/关闭；原生 form 属性提交同一表单，窄屏 body 滚动且保存可达；不复制 Overlay/手势层 |
 | 归档列表 | 打卡、详情 | DS BottomSheet + GroupedList/ListCell 内容 | 空/非空、恢复、关闭；恢复不产生打卡 |
 | 放弃/取消/删除/重置/恢复 | 专注、详情、设置 | DS ConfirmDialog / ActionSheet / BottomSheet 公开容器 + 业务内容 | 取消/确认、危险范围、焦点返回、冻结恢复、后台计时；机制不自造 |
 | 撤销与保存失败 | 打卡与全局 | 共享 Toast/TransientNotice 机制 + 业务撤销/重试状态 | 当前操作/替换/过期/换日、持续失败提示；提示只补充真实内容变化 |
 | 周/月总结、记录行 | 回顾、详情 | 回顾使用GlassSurface及业务文字；详情三项概况为本地语义dl组合，数字统一numeric-title | DS Metric仅提供numeric-display且无公开紧凑尺寸，水位76字阶不适合窄屏三列；不覆盖DS私有样式、不改DS实例绑定，局部组合逐项显式Evidence。零/非零、跨日/追加后的同一记录、仅打卡遵循真实统计 |
 | 周图 / `.y-chart*` | 回顾 | 先核对 DS MiniBars；三主题的块柱/试管/墨线不能公开表达时用自有图形 | 0/选中/今天/未来、分钟尺度与日期一致；不复制只改颜色的通用柱图当作全部风格 |
-| 月历 / ReviewScreen.vue | 回顾 | 先核对 DS MonthCalendar；水杯/印点等单元用公开 slot 或自有图形 | 月份边界/前后翻页/今天/选中/未来禁用；回顾通过公开showHeader=false只保留外层受控周期导航，共享日历计算，不自造手势 |
+| 月历 / ReviewScreen.vue | 回顾 | 先核对 DS MonthCalendar；水杯/印点等单元用公开 slot 或自有图形 | 月份边界/前后翻页/今天/选中/未来禁用；回顾通过公开showHeader=false只保留外层受控周期导航，dayAppearance=custom由业务提供紧凑圆形/水杯/方印及今天/选中标记，共享日历计算、禁用与键盘，不自造手势 |
 | 年度图 / HabitDetailScreen.vue | 详情 | 先核对 DS Heatmap 真实日期 API；主题符号通过合法扩展或自有绘制 | 零历史、创建前、已归档、未来与真实完成日期；不复制草稿随机热力样例 |
 
 ## 预览与正式证据边界
@@ -179,3 +179,30 @@
 统计图与打孔标记统一使用 color.primary。机械以孔/块表达，水位以水滴/杯体表达，日影以印章/方框/渐隐表达；浅深色与文字配对共用主题语义。与草稿独立水色、墨影色的差别是本批主动取舍；主表盘仍保留独立资产绘色。水位数字底片、公共玻璃导航、系统字体与规范触控尺寸也属于明确取舍，不列为待还原缺陷。
 
 A2 的提取/映射、B1 的六组合主题和 B2 的专属资源检查不代替 D 阶段的页面布局/真实业务验收，也不代替 E 阶段固定 Evidence 与 Flutter Target 同步。
+
+
+### 回顾与习惯体验优化承接（2026-10-19）
+
+机械月历恢复圆形，受控几何仍归date-artwork；三主题今日指针SVG与原图形边缘的选中描边独立于数据填充。周图最低125分钟量程，超出时按25分钟块扩展，量程文字显式展示。类型轨道独立成行且同宽，业务文字、数值和图形各有语义节点。
+
+新建/编辑、详情与根页共享YikeRoot的view身份；真正栈页切换继续使用公共ScreenTransition，编辑只打开持续挂载的BottomSheet，来源实例不替换。成功/撤销仍使用公共Toast，通过公开attach挂到导航上方的本地空宿主；不改Overlay、导航或焦点机制。局部内容伸缩用公共展开过渡，周期图表高度由真实ResizeObserver测量后过渡；均尊重减少动态效果。不增加Token或原型资源展台。
+
+
+### 周/月按钮与日期三档（2026-10-19）
+
+公共SegmentedControl通过有限density=compact压缩可见轨道/选中底板，点击范围仍至少44；高度由组件键承接，文字与主题圆角不通过业务私有样式覆盖。回顾采用该公开能力，表单等其它现有实例保持默认密度。三主题使用同一代码与规则，圆形柿色/圆形杯壁水面/方印靛蓝高斯影子保留各自图形。
+
+opacity.data-low/medium/high是通用可绑定数据强度语义键，具体浅深取值由主题包持有；业务日分钟数按30/90分界，数据档位与零值区分。日期mark显式记录图形、颜色和强度Evidence，数字独立记录可读前景；选中轮廓不改变填充。intensity-levels Variant提供25/60/120分钟三档确定性数据，只用于显式演示，不污染首次零历史。
+
+
+### 今日标记与沉浸式日期（2026-10-19）
+
+- 右上角复用IconButton，选择共享自绘calendar-current图标；其Contract、策展清单、手册和Target pending同步，点击/焦点/禁用机制沿用DS。
+- 月历今日指针是YikeMonthCalendar既有自有日期图形的一部分，不新增交互组件。机械切角短针、水位水滴、日影斜楔均为单个纯图形path，定位在日期上缘中央，尖端朝下；路径、位置、尺寸统一归date-artwork.json。显式image节点以primary填充、background轮廓分隔，日期按钮label包含「今天」。
+- 水位移除数字底板，清晰数字与浸入数字使用同一基线，后者只在水面裁切内显现；两层均绑定文字颜色与字体，容器ARIA日期标签提供一次完整读数。水高/浓度沿用三档，文字颜色按合成背景选择。
+- 日影仅对影子应用SVG feGaussianBlur，低/中/高标准差为受控资产量1.5/3/4.5；数字与选中轮廓位于滤镜外。它们是日期资产的固定绘图参数，与路径/视框一起集中维护，不增加业务CSS或Token键。
+
+
+### 正计时主体占比（2026-10-19）
+
+FocusPanel的正计时使用完整YikeDial，不启用compact，主视觉区按主题源资产的真实比例与可用高度居中显示。计圈槽与待开始的装饰占位同尺寸；真实记录仍复用ScrollableDataList。外围间距、绘图宽度与计圈槽界限仅消费既有spacing/size/layout Token，不新增主题键、组件扩展或资产。独立交付节点为原timer、lap-scroll与primary-action。

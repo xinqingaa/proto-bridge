@@ -1,6 +1,48 @@
 {
-  "cell": {"viewBox":"0 0 44 44","size":38,"cx":22,"cy":22,"radius":19,"inkRadius":12,"edge":3,"side":38,"corner":3},
-  "year": {"cell":4,"gap":1.5,"pitch":5.5,"rows":7,"circleRadius":2,"squareRadius":0.4,"emptyRadius":1,"minimumColumns":1},
-  "zero":0,
-  "full":1
+  "cell": {
+    "viewBox": "0 0 44 44",
+    "size": 44,
+    "cx": 22,
+    "cy": 22,
+    "radius": 19,
+    "inkRadius": 16,
+    "edge": 3,
+    "side": 38,
+    "corner": 3
+  },
+  "year": {
+    "cell": 4,
+    "gap": 1.5,
+    "pitch": 5.5,
+    "rows": 7,
+    "circleRadius": 2,
+    "squareRadius": 0.4,
+    "emptyRadius": 1,
+    "minimumColumns": 1
+  },
+  "zero": 0,
+  "full": 1,
+  "shadow": {
+    "none": 0,
+    "low": 1.5,
+    "medium": 3,
+    "high": 4.5,
+    "region": {
+      "x": -16,
+      "y": -16,
+      "side": 76
+    }
+  },
+  "today": {
+    "viewBox": "0 0 12 12",
+    "x": 16,
+    "y": 0,
+    "size": 12,
+    "strokeWidth": 1.2,
+    "paths": {
+      "mechanical": "M1 1 6 3 11 1 6 11Z",
+      "water": "M6 11C4.7 8.8 1 6.4 1 4a5 4 0 0 1 10 0c0 2.4-3.7 4.8-5 7Z",
+      "sundial": "M2 1h9L6 11Z"
+    }
+  }
 }

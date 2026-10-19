@@ -27,6 +27,7 @@ describe("公共月历的日期展示扩展", () => {
         props: {
           month: "2024-02",
           showHeader: false,
+          dayAppearance: "custom",
           modelValue: "2024-02-27",
           disabledDates: ["2024-02-29"],
         },
@@ -40,6 +41,7 @@ describe("公共月历的日期展示扩展", () => {
         },
       });
       expect(wrapper.find("header").exists()).toBe(false);
+      expect(wrapper.classes()).toContain("custom-days");
       expect(wrapper.findAll("[data-date]")).toHaveLength(29);
       expect(
         wrapper.get('[data-date="2024-02-29"]').attributes("disabled"),
@@ -102,7 +104,7 @@ describe("公共月历的日期展示扩展", () => {
 });
 
 describe("一刻月历组合", () => {
-  it("选中日期显式使用选中前景，空记录也可选择并再次收起，未来日期不可选", async () => {
+  it("选中日期保留数据前景，空记录也可选择并再次收起，未来日期不可选", async () => {
     const { default: YikeMonthCalendar } =
       await import("@/prototypes/yike/components/YikeMonthCalendar.vue");
     const wrapper = mount(YikeMonthCalendar, {
@@ -121,7 +123,7 @@ describe("一刻月历组合", () => {
     });
     const selected = wrapper.get('[data-date="2024-02-27"]');
     expect(selected.get(".number").attributes("data-pb-token-color")).toBe(
-      "color.on-primary",
+      "color.on-surface-muted",
     );
     expect(selected.get(".date-artwork").classes()).toContain("is-selected");
     await selected.trigger("click");
@@ -137,7 +139,9 @@ describe("一刻月历组合", () => {
     expect(wrapper.emitted("update:modelValue")).toHaveLength(2);
     expect(
       wrapper.get('[data-date="2024-02-28"] rect').attributes("height"),
-    ).toBe(wrapper.get('[data-date="2024-02-28"] rect').attributes("width"));
+    ).not.toBe(
+      wrapper.get('[data-date="2024-02-28"] rect').attributes("width"),
+    );
     await wrapper.setProps({ today: "invalid" });
     expect(wrapper.findAll("[data-date]")).toHaveLength(0);
     wrapper.unmount();
@@ -182,8 +186,130 @@ it.each(
         wrapper
           .get(`[data-date="${date}"] .number`)
           .attributes("data-pb-token-background"),
-      ).toBe("color.surface");
+      ).toBeUndefined();
+      expect(
+        wrapper
+          .get(`[data-date="${date}"] .submerged-number`)
+          .attributes("clip-path"),
+      ).toContain("water-");
     }
   }
+  wrapper.unmount();
+});
+
+it.each(["mechanical", "water", "sundial"] as const)(
+  "%s: three stable minute bands do not renormalize after a large record",
+  async (face) => {
+    const { default: Calendar } =
+      await import("@/prototypes/yike/components/YikeMonthCalendar.vue");
+    const wrapper = mount(Calendar, {
+      props: {
+        inspectId: "review.tiers",
+        face,
+        month: "2026-10",
+        today: "2026-10-19",
+        days: [
+          { date: "2026-10-16", minutes: 25 },
+          { date: "2026-10-17", minutes: 60 },
+          { date: "2026-10-18", minutes: 120 },
+        ],
+      },
+      global,
+    });
+    for (const [date, band] of [
+      ["16", "low"],
+      ["17", "medium"],
+      ["18", "high"],
+    ]) {
+      const cell = wrapper.get(`[data-date="2026-10-${date}"]`);
+      expect(cell.get(".date-artwork").attributes("data-intensity")).toBe(band);
+      expect(cell.get("svg").attributes("data-pb-token-opacity")).toBe(
+        `opacity.data-${band}`,
+      );
+    }
+    const before = wrapper.get('[data-date="2026-10-16"] svg').html();
+    await wrapper.setProps({
+      days: [
+        { date: "2026-10-16", minutes: 25 },
+        { date: "2026-10-19", minutes: 1000 },
+      ],
+      modelValue: "2026-10-16",
+    });
+    expect(
+      wrapper
+        .get('[data-date="2026-10-16"] .date-artwork')
+        .attributes("data-intensity"),
+    ).toBe("low");
+    expect(wrapper.find('[data-date="2026-10-16"] .selection').exists()).toBe(
+      true,
+    );
+    expect(before).toContain('fill-opacity="0.3"');
+    expect(wrapper.get('[data-date="2026-10-16"] svg').html()).toContain(
+      'fill-opacity="0.3"',
+    );
+    wrapper.unmount();
+  },
+);
+
+it.each(["mechanical", "water", "sundial"] as const)(
+  "%s has a theme-specific today glyph independent from selection",
+  async (face) => {
+    const { default: Calendar } =
+      await import("@/prototypes/yike/components/YikeMonthCalendar.vue");
+    const wrapper = mount(Calendar, {
+      props: {
+        inspectId: "review.today",
+        face,
+        month: "2026-10",
+        today: "2026-10-19",
+        modelValue: "2026-10-18",
+        days: [],
+      },
+      global,
+    });
+    expect(wrapper.findAll(".today-mark")).toHaveLength(1);
+    expect(wrapper.get(".today-mark").attributes("data-face")).toBe(face);
+    expect(
+      wrapper.get('[data-date="2026-10-19"]').attributes("aria-label"),
+    ).toContain("今天");
+    expect(wrapper.find('[data-date="2026-10-19"] .selection').exists()).toBe(
+      false,
+    );
+    expect(wrapper.find('[data-date="2026-10-18"] .today-mark').exists()).toBe(
+      false,
+    );
+    wrapper.unmount();
+  },
+);
+it("sundial shadows deepen through increasing Gaussian blur while numbers remain outside the filter", async () => {
+  const { default: Calendar } =
+    await import("@/prototypes/yike/components/YikeMonthCalendar.vue");
+  const wrapper = mount(Calendar, {
+    props: {
+      inspectId: "review.shadow",
+      face: "sundial",
+      month: "2026-10",
+      today: "2026-10-19",
+      days: [
+        { date: "2026-10-16", minutes: 25 },
+        { date: "2026-10-17", minutes: 60 },
+        { date: "2026-10-18", minutes: 120 },
+      ],
+    },
+    global,
+  });
+  const blur = [16, 17, 18].map((day) =>
+    Number(
+      wrapper
+        .get(`[data-date="2026-10-${day}"] feGaussianBlur`)
+        .attributes("stdDeviation"),
+    ),
+  );
+  expect(blur[0]).toBeGreaterThan(0);
+  expect(blur[1]).toBeGreaterThan(blur[0]!);
+  expect(blur[2]).toBeGreaterThan(blur[1]!);
+  expect(
+    wrapper.get('[data-date="2026-10-18"] .number').attributes("filter"),
+  ).toBeUndefined();
   wrapper.unmount();
 });

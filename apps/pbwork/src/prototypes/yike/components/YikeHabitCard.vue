@@ -289,3 +289,28 @@ small {
   cursor: default;
 }
 </style>
+
+<style scoped>
+.today,
+.hole,
+.drop,
+.stamp-dot {
+  transition:
+    background-color var(--pb-motion-duration-short)
+      var(--pb-motion-easing-standard),
+    color var(--pb-motion-duration-short) var(--pb-motion-easing-standard),
+    fill var(--pb-motion-duration-short) var(--pb-motion-easing-standard),
+    stroke var(--pb-motion-duration-short) var(--pb-motion-easing-standard);
+}
+.today:active:not(:disabled) {
+  transform: scale(var(--pb-motion-press-scale));
+}
+@media (prefers-reduced-motion: reduce) {
+  .today,
+  .hole,
+  .drop,
+  .stamp-dot {
+    transition: none;
+  }
+}
+</style>

@@ -285,7 +285,10 @@
     "tracking.label": 0,
     "tracking.caption": 0,
     "size.action-min-inline": 0,
-    "effect.artwork-shadow": "none"
+    "effect.artwork-shadow": "none",
+    "opacity.data-low": 0.3,
+    "opacity.data-medium": 0.65,
+    "opacity.data-high": 1
   },
   "modes": {
     "dark": {

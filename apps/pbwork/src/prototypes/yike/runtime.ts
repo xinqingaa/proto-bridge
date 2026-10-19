@@ -57,7 +57,10 @@ export function useYikeRuntime() {
       session.mode.value = "countdown";
     if (route.query.variant === "switch-confirm")
       session.pendingMode.value = "countdown";
-    if (route.params.screenSlug === "review" && route.query.variant === "month")
+    if (
+      route.params.screenSlug === "review" &&
+      ["month", "intensity-levels"].includes(String(route.query.variant))
+    )
       store.presentation.review.range = "month";
     store.presentation.preparing = false;
   }

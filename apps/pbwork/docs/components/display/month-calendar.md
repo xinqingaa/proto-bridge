@@ -24,6 +24,7 @@
 | `next-month` | 八月 | `content` |
 | `empty-selection` | 未选择 | `content` |
 | `external-month-navigation` | 外部月份导航 | `variant` |
+| `custom-days` | 自定义日期外观 | `variant` |
 
 ## 用法与反例
 
@@ -39,3 +40,5 @@ Props、Slots、Events、默认值与 Token 槽以 [MonthCalendar Contract](../.
 ## 日期单元扩展
 
 `day` scoped slot 提供 `date`、`selected`、`today`、`disabled`，调用方可绘制业务标记；不在插槽内再放按钮或复制日期/键盘机制。`dayLabels` 按日期提供可访问说明，未提供时保留日期标签。默认插槽内容仍为日期数字。
+
+`dayAppearance="custom"` 用于完整自绘日期状态：移除默认今天外圈、选中底色与单元内边距，使用紧凑行距；仍保留最小触控范围、禁用、ARIA 与键盘焦点。插槽必须自行区分今天/选中/数据状态。默认外观不受影响。

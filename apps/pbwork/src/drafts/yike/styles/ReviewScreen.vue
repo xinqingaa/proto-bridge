@@ -117,7 +117,6 @@ const summary = computed(() => {
     <div v-if="empty" class="y-empty is-review">
       <Dial :theme="theme" :minutes="0" :total="25" size="mini" tone="done" />
       <strong>这一周还没有专注记录</strong>
-      <p>完成或提前结束的专注会出现在这里；放弃的不会。</p>
       <button type="button" class="y-button is-primary">去专注</button>
     </div>
 

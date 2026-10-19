@@ -24,6 +24,7 @@
 | `disabled` | 禁用 | `interaction` |
 | `glass` | 玻璃 | `content` |
 | `glass-disabled` | 玻璃禁用 | `interaction` |
+| `compact` | 紧凑 | `variant` |
 
 ## 用法与反例
 
@@ -34,3 +35,5 @@ Props、Slots、Events、默认值与 Token 槽以 [SegmentedControl Contract](.
 ## 展示与组合
 
 采用紧凑连体选择结构、等分选项与清晰选中表面。职责是局部属性/粒度选择，保持 radiogroup，不拥有 viewport；PrimaryTabs 则负责具名面板，FilterBar 表达独立筛选项。
+
+`density="compact"` 压低可见轨道与选中底板，点击区域仍至少为 `size.touch`；文字垂直居中、保留主题圆角和材质、单选与键盘行为。高度分别消费组件键 `compact-height`、`compact-selection-height`，默认常规密度不变。

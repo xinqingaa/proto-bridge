@@ -7,6 +7,7 @@ import { useComponentParts } from "../_shared/componentParts";
 import { monthDays, shiftMonth, shiftDay } from "../_shared/calendar";
 const props = withDefaults(
   defineProps<{
+    dayAppearance?: "default" | "custom";
     dayLabels?: Record<string, string>;
     showHeader?: boolean;
     label?: string;
@@ -19,6 +20,7 @@ const props = withDefaults(
   }>(),
   {
     label: "选择日期",
+    dayAppearance: "default",
     showHeader: true,
     month: "2026-07",
     modelValue: "2026-07-28",
@@ -114,6 +116,7 @@ usePbInspect({
   getProps: () => ({ ...props }),
   getTokenBindings: () => ({
     rowGap: "spacing.sm-plus",
+    customRowGap: "spacing.xxs",
     headerGap: "spacing.sm",
     headerBorder: "border.hairline",
     heading: "typography.subtitle",
@@ -144,11 +147,12 @@ usePbInspect({
   <section
     ref="rootRef"
     class="calendar"
+    :class="{ 'custom-days': dayAppearance === 'custom' }"
     data-pb-role="section"
     :aria-label="label"
     :style="
       pbStyle({
-        gap: 'spacing.sm',
+        gap: dayAppearance === 'custom' ? 'spacing.xxs' : 'spacing.sm',
         color: 'color.on-surface',
         typography: 'typography.content',
       })
@@ -198,7 +202,9 @@ usePbInspect({
               {
                 typography: 'typography.content',
                 color:
-                  modelValue === day ? 'color.on-primary' : 'color.on-surface',
+                  dayAppearance === 'default' && modelValue === day
+                    ? 'color.on-primary'
+                    : 'color.on-surface',
               },
               `day-${day}`,
             )
@@ -256,7 +262,7 @@ button {
   font: var(--pb-typography-numeric-content);
   cursor: pointer;
 }
-.row .selected {
+.calendar:not(.custom-days) .row .selected {
   background: var(--pb-color-primary);
   color: var(--pb-color-on-primary);
 }
@@ -294,12 +300,21 @@ header button {
   min-width: var(--pb-size-touch);
   color: var(--pb-color-on-surface);
 }
-.row .today:not(.selected) {
+.calendar:not(.custom-days) .row .today:not(.selected) {
   box-shadow: inset var(--pb-layout-zero) var(--pb-layout-zero)
     var(--pb-layout-zero) var(--pb-border-width) var(--pb-color-primary);
   color: var(--pb-color-primary);
 }
 .row button {
   border-radius: var(--pb-radius-pill);
+}
+</style>
+
+<style scoped>
+.calendar.custom-days {
+  gap: var(--pb-spacing-xxs);
+}
+.custom-days .row > * {
+  padding: var(--pb-layout-zero);
 }
 </style>
