@@ -22,6 +22,49 @@ export default defineScreen({
   variants: [
     { id: "default", label: "番茄待开始" },
     {
+      id: "short-record",
+      label: "短时专注记录确认",
+      shellPolicy: "replace",
+      requiredFragments: [
+        scope.ref("short-record-confirm"),
+        scope.ref("short-record-confirm.confirm"),
+      ],
+    },
+    {
+      id: "countdown-setup",
+      label: "倒计时待开始",
+      requiredFragments: [
+        scope.ref("root"),
+        scope.ref("timer"),
+        scope.ref("custom"),
+        scope.ref("primary-action"),
+      ],
+    },
+    ...[
+      {
+        id: "custom-duration",
+        label: "自定义倒计时",
+        panel: "custom-sheet",
+        action: "custom-save",
+      },
+      {
+        id: "abandon-confirm",
+        label: "放弃确认",
+        panel: "abandon-sheet",
+        action: "abandon-confirm",
+      },
+      {
+        id: "switch-confirm",
+        label: "切模式确认",
+        panel: "switch-sheet",
+        action: "switch-cancel",
+      },
+    ].map(({ panel, action, ...variant }) => ({
+      ...variant,
+      shellPolicy: "replace" as const,
+      requiredFragments: [scope.ref(panel), scope.ref(action)],
+    })),
+    {
       id: "running",
       label: "番茄进行中",
       requiredFragments: [
@@ -167,13 +210,65 @@ export default defineScreen({
     },
   ],
   actions: [
+    {
+      id: "confirm-short-record",
+      kind: "click",
+      target: scope.ref("short-record-confirm.confirm"),
+    },
     { id: "start", kind: "click", target: scope.ref("primary-action") },
     { id: "finish", kind: "click", target: scope.ref("finish") },
     { id: "append", kind: "click", target: scope.ref("append") },
     { id: "lap", kind: "click", target: scope.ref("lap") },
     { id: "settings", kind: "click", target: scope.ref("settings") },
+    { id: "custom-save", kind: "click", target: scope.ref("custom-save") },
+    {
+      id: "abandon-confirm",
+      kind: "click",
+      target: scope.ref("abandon-confirm"),
+    },
+    { id: "switch-cancel", kind: "click", target: scope.ref("switch-cancel") },
   ],
   scenarios: [
+    ...[
+      {
+        id: "confirm-short-record",
+        label: "确认保存短时专注",
+        initialVariantId: "short-record",
+        actionIds: ["confirm-short-record"],
+        variant: "default",
+      },
+      {
+        id: "save-custom-duration",
+        label: "确认自定义倒计时",
+        initialVariantId: "custom-duration",
+        actionIds: ["custom-save"],
+        variant: "default",
+      },
+      {
+        id: "discard-focus",
+        label: "确认放弃回待开始",
+        initialVariantId: "abandon-confirm",
+        actionIds: ["abandon-confirm"],
+        variant: "default",
+      },
+      {
+        id: "cancel-mode-switch",
+        label: "取消切模式保留会话",
+        initialVariantId: "switch-confirm",
+        actionIds: ["switch-cancel"],
+        variant: "paused",
+      },
+    ].map(({ variant, ...scenario }) => ({
+      ...scenario,
+      checkpoints: [
+        {
+          id: "result",
+          screenId: scope.screenId,
+          variantId: variant,
+          requiredFragments: [scope.ref("timer"), scope.ref("primary-action")],
+        },
+      ],
+    })),
     ...[
       {
         id: "pause-focus",
@@ -237,6 +332,10 @@ export default defineScreen({
     },
   ],
   requiredScenarioIds: [
+    "confirm-short-record",
+    "save-custom-duration",
+    "discard-focus",
+    "cancel-mode-switch",
     "start-focus",
     "pause-focus",
     "record-stopwatch",

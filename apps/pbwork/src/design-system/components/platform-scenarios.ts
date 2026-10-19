@@ -269,6 +269,12 @@ export const platformScenarios = {
       },
     },
     {
+      id: "external-month-navigation",
+      label: "外部月份导航",
+      description: "隐藏重复的内部月份标题和翻月按钮，日期交互仍由月历管理。",
+      props: { showHeader: false, month: "2026-07", modelValue: "2026-07-28" },
+    },
+    {
       id: "next-month",
       label: "八月",
       description:

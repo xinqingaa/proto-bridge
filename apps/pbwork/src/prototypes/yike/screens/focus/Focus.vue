@@ -11,8 +11,11 @@ import { scope } from "./screen";
 import YikeDial from "../../components/YikeDial.vue";
 import YikeFocusModes from "../../components/YikeFocusModes.vue";
 import YikeAction from "../../components/YikeAction.vue";
+import ConfirmDialog from "@/design-system/components/feedback/ConfirmDialog.vue";
 import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
+import DurationPicker from "@/design-system/components/input/DurationPicker.vue";
 import { useYikeStore } from "../../model";
+import { durationLabel } from "../../statistics";
 import { elapsedMs, type YikeTimerMode } from "../../timer-engine";
 
 const route = useRoute();
@@ -29,7 +32,37 @@ const commands = useYikeSession();
 const mode = commands.mode;
 const countdownMinutes = commands.countdownMinutes;
 const pendingMode = commands.pendingMode;
-const confirmAbandon = ref(false);
+const shortRecordOpen = computed(
+  () =>
+    Boolean(commands.pendingRecord.value) &&
+    route.params.screenSlug === "focus",
+);
+function resolveShortRecord(value: boolean) {
+  commands.resolveRecord(value);
+  syncVariant();
+}
+const confirmAbandon = ref(route.query.variant === "abandon-confirm");
+const customOpen = ref(route.query.variant === "custom-duration");
+const customMinutes = ref(countdownMinutes.value);
+const customError = ref("");
+function openCustom() {
+  customMinutes.value = countdownMinutes.value;
+  customError.value = "";
+  customOpen.value = true;
+}
+function saveCustom() {
+  if (
+    !Number.isInteger(customMinutes.value) ||
+    customMinutes.value < 1 ||
+    customMinutes.value > 180
+  ) {
+    customError.value = "请选择 1–180 分钟";
+    return;
+  }
+  countdownMinutes.value = customMinutes.value;
+  customOpen.value = false;
+  syncVariant();
+}
 const session = computed(() => store.data.session);
 const recoveryOpen = computed({
   get: () => store.recoveryNeeded.value && route.params.screenSlug === "focus",
@@ -105,9 +138,9 @@ const caption = computed(() =>
             ? "设置时长"
             : "准备开始",
 );
-const todayMinutes = computed(() => {
+const todayDuration = computed(() => {
   void now.value;
-  return Math.floor(
+  return durationLabel(
     store.data.focusRecords.reduce(
       (sum, record) =>
         sum +
@@ -115,7 +148,7 @@ const todayMinutes = computed(() => {
           .filter((interval) => interval.date === store.today())
           .reduce((seconds, interval) => seconds + interval.durationSeconds, 0),
       0,
-    ) / 60,
+    ),
   );
 });
 function syncVariant() {
@@ -173,7 +206,7 @@ function abandon() {
       <div>
         <span class="yike-date">{{ store.today() }}</span
         ><span class="yike-total"
-          >今天已专注 <b>{{ todayMinutes }}</b> 分钟</span
+          >今天已专注 <b>{{ todayDuration }}</b></span
         >
       </div>
       <button
@@ -230,7 +263,10 @@ function abandon() {
             :key="round"
             :class="{
               'is-done': round <= store.data.completedRounds,
-              'is-current': round === store.data.completedRounds + 1,
+              'is-current':
+                !fullRound &&
+                !isBreak &&
+                round === store.data.completedRounds + 1,
             }"
         /></span>
       </div>
@@ -244,9 +280,38 @@ function abandon() {
           :key="minutes"
           type="button"
           :class="{ 'is-active': countdownMinutes === minutes }"
+          :aria-pressed="countdownMinutes === minutes"
+          v-pb="
+            scope.node('preset', 'button', {
+              key: `minutes-${minutes}`,
+              tokens: {
+                typography: 'typography.content',
+                color:
+                  countdownMinutes === minutes
+                    ? 'color.primary'
+                    : 'color.on-surface-muted',
+                radius: 'radius.control-compact',
+              },
+            })
+          "
           @click="countdownMinutes = minutes"
         >
           {{ minutes }}<small>分</small>
+        </button>
+        <button
+          type="button"
+          v-pb="
+            scope.node('custom', 'button', {
+              tokens: {
+                typography: 'typography.content',
+                color: 'color.primary',
+                size: 'size.touch',
+              },
+            })
+          "
+          @click="openCustom"
+        >
+          自定义
         </button>
       </div>
       <YikeAction
@@ -293,7 +358,7 @@ function abandon() {
       />
       <YikeAction
         v-if="status === 'paused' && !isBreak"
-        :label="elapsed < 60_000 ? '结束（不足 1 分钟不记录）' : '结束并记录'"
+        label="结束并记录"
         kind="secondary"
         inspect-id="yike.focus.finish"
         @click="finish"
@@ -327,6 +392,48 @@ function abandon() {
         </li>
       </ol>
     </main>
+    <ConfirmDialog
+      :model-value="shortRecordOpen"
+      title="记录这次短时专注？"
+      :message="`本次专注 ${Math.round((elapsed / 1000) * 10) / 10} 秒，少于设置的 ${store.data.preferences.shortRecordThresholdSeconds} 秒确认阈值。仍然记录吗？`"
+      confirm-label="仍然记录"
+      cancel-label="暂不结束"
+      material="glass"
+      inspect-id="yike.focus.short-record-confirm"
+      @confirm="resolveShortRecord(true)"
+      @update:model-value="
+        (value) => {
+          if (!value && commands.pendingRecord.value) resolveShortRecord(false);
+        }
+      "
+    />
+    <BottomSheet
+      v-model="customOpen"
+      title="倒计时时长"
+      material="glass"
+      inspect-id="yike.focus.custom-sheet"
+    >
+      <div class="yike-sheet-content">
+        <DurationPicker
+          v-model="customMinutes"
+          label="倒计时时长"
+          :minute-step="1"
+          inspect-id="yike.focus.custom-duration"
+        />
+        <p v-if="customError" role="alert">{{ customError }}</p>
+        <YikeAction
+          label="确认时长"
+          inspect-id="yike.focus.custom-save"
+          @click="saveCustom"
+        />
+        <YikeAction
+          label="取消"
+          kind="quiet"
+          inspect-id="yike.focus.custom-cancel"
+          @click="customOpen = false"
+        />
+      </div>
+    </BottomSheet>
     <BottomSheet
       material="glass"
       :model-value="Boolean(pendingMode)"
@@ -338,7 +445,9 @@ function abandon() {
         }
       "
     >
-      <p>先结束当前阶段再切换。不足 1 分钟不生成记录，休息不计入专注。</p>
+      <p>
+        先结束当前阶段再切换。短于设置阈值时会再次确认是否记录，休息不计入专注。
+      </p>
       <YikeAction
         label="结束并切换"
         inspect-id="yike.focus.switch-record"
@@ -396,13 +505,7 @@ function abandon() {
           "
         />
         <YikeAction
-          :label="
-            isBreak
-              ? '跳过休息'
-              : elapsed < 60_000
-                ? '结束（不足 1 分钟不记录）'
-                : '结束并记录'
-          "
+          :label="isBreak ? '跳过休息' : '结束并记录'"
           kind="secondary"
           inspect-id="yike.focus.recovery-finish"
           @click="
@@ -440,8 +543,10 @@ function abandon() {
   font: var(--pb-typography-numeric-content);
   padding-inline-start: var(--pb-spacing-lg);
 }
-.yike-confirm-actions {
+.yike-confirm-actions,
+.yike-sheet-content {
   display: flex;
+  flex-direction: column;
   gap: var(--pb-spacing-sm);
 }
 .yike-focus-head,
@@ -510,6 +615,7 @@ function abandon() {
   align-items: center;
   justify-content: center;
   gap: var(--pb-spacing-lg);
+  padding-block: var(--pb-spacing-lg);
 }
 .yike-round {
   width: var(--pb-layout-fill);
@@ -543,6 +649,11 @@ function abandon() {
   min-block-size: var(--pb-size-control-compact);
   border-radius: var(--pb-radius-control-compact);
   color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-content);
+}
+.yike-presets button:focus-visible {
+  outline: var(--pb-border-focus);
+  outline-offset: var(--pb-spacing-xxs);
 }
 .yike-presets button.is-active {
   background: var(--pb-color-primary-soft);
@@ -550,6 +661,10 @@ function abandon() {
 }
 .yike-presets small {
   margin-inline-start: var(--pb-spacing-xs);
+}
+.yike-presets button:last-child {
+  min-block-size: var(--pb-size-touch);
+  color: var(--pb-color-primary);
 }
 .yike-primary {
   min-block-size: var(--pb-size-control-large);

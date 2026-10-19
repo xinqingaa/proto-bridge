@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, provide, watch } from "vue";
+import { computed, provide, watch, ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Timer, CircleCheck, ChartNoAxesColumn } from "lucide-vue-next";
 import PrototypeShell from "@/runtime/prototype/PrototypeShell.vue";
@@ -13,10 +13,20 @@ import { yikeNavigation } from "../navigation";
 import Focus from "./focus/Focus.vue";
 import CheckIn from "./checkin/CheckIn.vue";
 import Review from "./review/Review.vue";
+import Brand from "./launch/Brand.vue";
+import { claimYikeColdStart } from "../runtime";
 
 const route = useRoute();
 const router = useRouter();
 const { store, session } = useYikeRuntime();
+const launching = ref(
+  claimYikeColdStart(store) &&
+    !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+);
+// Local state is read synchronously by the store. Do not add a brand timer.
+onMounted(() => {
+  launching.value = false;
+});
 provide(YikeSessionKey, session);
 watch(
   () => focusVariant(store),
@@ -49,7 +59,12 @@ function tab(slug: string) {
 </script>
 
 <template>
-  <PrototypeShell title="一刻" :screen-id="`yike.${active}`">
+  <PrototypeShell
+    title="一刻"
+    :screen-id="`yike.${active}`"
+    :launch="launching"
+  >
+    <template #launch><Brand :face="store.data.preferences.face" /></template>
     <template #app-bar><span /></template>
     <TabViewport
       :key="store.presentation.revision"

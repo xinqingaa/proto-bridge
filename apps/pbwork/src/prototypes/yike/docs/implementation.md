@@ -8,21 +8,23 @@ prototypeId: yike
 
 ## 当前交付判断
 
-产品设计与三套风格草稿已批准，平台升级由用户确认完成。现有正式包可注册并解析三主题×浅深模式，现有六个正式 Screen 已接通共享业务。**A2/B1/B2/B3 与 C1–C3 最小演示基础已完成；D 阶段逐页草稿对照及 E 阶段整体固定交付仍未完成，当前没有正式 Capture/Handoff 完成结论。** 生命周期存量为 active、idle、无绑定产物，允许接续制作；本轮不改变生命周期或 Store。
+产品设计与三套风格草稿已批准，平台升级由用户确认完成。现有正式包可注册并解析三主题×浅深模式，七个正式 Screen 已接通共享业务与品牌启动静帧。**A/B/C 与 D1–D7 页面制作及分级体验验收已完成；E 阶段整原型固定交付尚未完成，当前没有正式 Capture/Handoff 完成结论。** 生命周期存量为 active、idle、无绑定产物，允许接续制作；本轮不改变生命周期或 Store。
 
 原先「三页已完成 Quick Check」「ready-for-review」的概括无法代表当前完整交付：它未覆盖批准契约、真实业务数据与状态、共享壳、图形还原和确定性 Runtime。本轮改为以下逐项事实；必要的业务决定保存在[制作沿革](./history/2026-10-18-before-consolidation.md)，重复说明已移除；已有代码保留，旧完成勾选不作为验收。
 
-## 当前执行：C1–C3 最小演示共享业务收口（2026-10-19）
+## 当前执行：D1–D7 页面验收完成（2026-10-19）
 
-用户要求完成 C1–C3。本批按执行方案的最小可演示范围，完成共享状态、计时统计、栈页导航、主题偏好和确定性场景；下表保留 G1–G5 的当前事实，D/E 的剩余工作独立记录。
+本批沿用用户「草稿只作参考、统筹整体协调和视觉效果」的授权，按 P1–P4 补页面缺口、检查真实旅程、核对六组合及窄屏风险并完成逐页验收。没有重新制作业务底座、扩大玻璃范围或实施 Flutter 还原。七页均通过本轮 Delivery 与 Focused Experience，记为 `accepted`；不将代表状态检查描述为全矩阵 `fully-audited`。
+
+Runtime 当前登记 7 个 Screen、46 个 Variant、19 条 Scenario；全部已声明状态的 prepare/readiness/semantic-snapshot/reset 和 Scenario/Checkpoint 已复验。正式固定采集和生命周期定稿仍属 E4–E5；整体产品校验仍有 I11。下表保留 G1–G5 的资源与页面归位事实，最新截图和验证记录见文末 D 批次。
 
 | 单元 | 当前事实 | 未完成退出项 |
 | --- | --- | --- |
-| G1 归位 | 年度图类型错误已修；preview-resources.ts七项独立登记清空，所有局部源码、五份预览、资产与测试保留；导航/模式局部文件组合DS Tabbar/SegmentedControl；月历和年度图均组合公共组件 | 在正式页面接入并核对公共组件预览；局部图形仍留原型，不登记为Workbench组件 |
-| G2 主题与控件 | 三主题六组合显式玻璃染色/边缘/高光/模糊；DS玻璃Tabbar为根导航目标；SegmentedControl公开glass材质；Button现有primary语义保留，新增accent/danger/quiet固定类型，YikeAction已改公共Button包装 | Button六类型样例和玻璃材质状态完成同步；资源六组合与材质降级已检查；页面实际业务接入仍按D阶段验证 |
-| G3 容器/日期 | 已有GlassSurface、公共列表/面板/日期组件；MonthCalendar开放day插槽/dayLabels；Heatmap开放只读绘图与legend插槽，Yike年度图以DS UTC周列为布局数据 | 已有BottomSheet/FlowSheet/Confirm/ActionSheet有限材质能力保留；不继续扩大玻璃适配。日期图形六组合资源检查通过，正式业务页面仍按D阶段验收 |
-| G4 页面接入 | 三个根Screen已共用YikeRoot + DS TabViewport/玻璃Tabbar；专注接入新表盘、DS模式和操作包装，打卡接共享事实，回顾接真实统计与既有周图/月历 | 详情/编辑/设置已接入，C 范围 Runtime 已验证；完整七页草稿对照归 D/E |
-| G5 验证 | Button/Heatmap/MonthCalendar/SegmentedControl及Yike局部组合有针对性测试；Target映射保持pending | C 范围业务 Runtime 已验证；逐页完整视觉与 Target baseline 收口仍归 D/E |
+| G1 归位 | 年度图类型错误已修；preview-resources.ts七项独立登记清空，所有局部源码、五份预览、资产与测试保留；导航/模式局部文件组合DS Tabbar/SegmentedControl；月历和年度图均组合公共组件 | 正式页面接入与公共预览已复核；局部图形仍留原型，不登记为Workbench组件；固定Evidence归E4 |
+| G2 主题与控件 | 三主题六组合显式玻璃染色/边缘/高光/模糊；DS玻璃Tabbar为根导航目标；SegmentedControl公开glass材质；Button现有primary语义保留，新增accent/danger/quiet固定类型，YikeAction已改公共Button包装 | Button六类型样例和玻璃材质状态完成同步；资源六组合与材质降级已检查；页面实际业务接入已按D阶段验证，Target pending仍归E3 |
+| G3 容器/日期 | 已有GlassSurface、公共列表/面板/日期组件；MonthCalendar开放day插槽/dayLabels；Heatmap开放只读绘图与legend插槽，Yike年度图以DS UTC周列为布局数据 | 已有BottomSheet/FlowSheet/Confirm/ActionSheet有限材质能力保留；不继续扩大玻璃适配。日期图形六组合资源检查通过，正式业务页面已按D阶段验收，固定采集归E4 |
+| G4 页面接入 | 三个根Screen已共用YikeRoot + DS TabViewport/玻璃Tabbar；专注接入新表盘、DS模式和操作包装，打卡接共享事实，回顾接真实统计与既有周图/月历 | 详情/编辑/设置已接入，C 范围 Runtime 已验证；七页方向对照与体验检查已通过；固定交付归E |
+| G5 验证 | Button/Heatmap/MonthCalendar/SegmentedControl及Yike局部组合有针对性测试；Target映射保持pending | C 范围业务 Runtime 已验证；逐页视觉已通过，Target同步与定稿仍归E |
 
 工作区保留未提交改动与未跟踪文件，无Git提交或Store变更。通用主题六个键、公共预览同步、资产和之前各测试文件均保留；Flutter仅更新pending事实，不宣称还原实现。先前批次通过不覆盖当前后续改动。
 
@@ -39,14 +41,14 @@ prototypeId: yike
 | C1 业务状态与保存 | 已验收 | 共享习惯/打卡/记录/会话/配置与轻量本机保存；新建、编辑、归档恢复、删除、撤销、重置已接入真实跨页旅程，取消不污染，刷新沿用保存；首次零历史与内存样例分离。不扩展生产级迁移/损坏恢复。 |
 | C2 计时与统计 | 已验收 | 开始/暂停/继续/结束、短长休、轮次、正计时计圈、倒计时追加及切模式确认接通；同一会话幂等入账，记录驱动回顾。可控时钟验证暂停、跨日180/120秒切分、恢复及追加，不承诺生产级后台/时区可靠性。 |
 | C3 共享壳/导航/主题偏好 | 已验收 | 共享根壳/TabViewport与公共导航/Overlay；详情、编辑、设置进入返回和缺失对象回退可用；跨Tab和栈页计时/局部状态连续，三主题与浅深/系统偏好生效；六Screen全部已声明Variant的prepare/readiness/snapshot/reset及14条Scenario通过。 |
-| D1 启动 | 待制作 | 尚无正式 Screen；草稿已有品牌静帧 |
-| D2 设置 | 制作中 | 正式Screen已接主题/模式、时长/休息间隔、提示音偏好及重置确认，配置/返回/取消的C范围旅程通过；三张风险截图已做Focused Experience复查。完整草稿对照仍待D验收。 |
-| D3 专注 | 制作中 | 共享计时与三表盘接入，模式切换确认、休息/轮次、计圈、追加、恢复和设置入口的C范围旅程通过；完整页面六组合草稿对照待D验收。 |
-| D4 打卡 | 制作中 | 共享四个首次习惯与零历史；真实打卡/撤销、新建、详情、编辑、归档恢复/删除贯通并同步回顾；正式页面六组合草稿对照待D验收。 |
-| D5 习惯详情 | 制作中 | 正式Screen已接真实周/月/年度记录及编辑、归档恢复、删除确认；三张风险截图已做Focused Experience复查。完整草稿对照待D验收。 |
-| D6 新建/编辑 | 制作中 | 正式Screen使用YikeHabitForm与DS BottomSheet，复制草稿、校验、保存、取消/返回及窄屏滚动可用；三张风险截图已做Focused Experience复查。完整草稿对照待D验收。 |
-| D7 回顾 | 制作中 | 记录驱动周/月汇总、类型和日明细；首次空态与有数据fixture分离；真实跨页旅程、跨日计时统计和月份选择复位已验证；六组合完整草稿对照待D验收。 |
-| E1–E3 整体旅程与验收 | 待制作 | 按方案完成页面后执行；不以资源单测替代 |
+| D1 启动 | 已验收 | 新增正式启动Screen；三主题品牌静帧复用DS LaunchScreen与现有物件，冷启动共享同一内容且读取完成即让路，无人为等待；六组合、居中与减少动态效果通过。 |
+| D2 设置 | 已验收 | 表盘/浅深/系统模式、后续阶段配置、提示音意图反馈、重置与返回可用；六组合、配置面板、焦点返回和窄屏滚动通过。 |
+| D3 专注 | 已验收 | 三模式、暂停/完成、短长休、轮次/计圈、追加、模式确认与恢复通过；补自定义1–180分钟选择/校验/取消，修复完成轮次多亮一点；窄屏可滚动到操作。 |
+| D4 打卡 | 已验收 | 补共用星期表头、紧凑完成概况、机械未完成加号和空态新建；默认四习惯零历史、部分/全完成、撤销与归档旅程通过，跨页统计一致。 |
+| D5 习惯详情 | 已验收 | 补习惯图标与年度总计，三项概况使用本地紧凑语义组合；每日/周目标、有记录/零记录/已归档/缺失对象和编辑/归档/恢复/删除通过。 |
+| D6 新建/编辑 | 已验收 | 已有表单与共享面板继续使用；空名称校验Variant、六图标、每日/每周、提醒、保存/取消与窄屏长表单通过，编辑取消不污染原值。 |
+| D7 回顾 | 已验收 | 周/月、可翻阅历史、汇总、类型与日明细、仅打卡/仅专注及未来禁用通过；月份只保留一套受边界约束的周期导航，移除重复内部入口。 |
+| E1–E3 整体旅程与验收 | 制作中 | 两条旅程、六组合、窄屏、减少动态效果及Runtime已验证；完整pnpm verify仍停在DS→Target同步门禁，未声明仓库总校验通过。 |
 | E4–E5 定稿与固定交付 | 待制作 | 无本轮固定 Evidence/Handoff/Delivery 结果；通过正常生命周期工作流推进 |
 
 ## 现有代码审计与问题
@@ -59,25 +61,25 @@ prototypeId: yike
 | I04 | YikeDial 的 progress 是完成比例，机械草稿是剩余分钟/60；水位仅低透明矩形，无浸没反色；日影复用机械圆盘加直线；数字/物件比例也不同 | B2 资源已解决：三物件、0/60/>60、水位反色/波纹、日影软边与深色光晕通过代表状态检查；完整页面业务验收归D3 |
 | I05 | Focus 固定「50分钟/第3轮」；CheckIn 固定3个非批准初始习惯及历史；Review 固定数组/月历，跨页操作不更新 | C1/C2 已解决：四个预置习惯与首次零历史；回顾消费共享事实，样例仅由明确Variant准备到内存。 |
 | I06 | 设置、新建未绑定操作；打卡设置入口违反只从专注进入的契约；模式禁用取代了切换确认，缺放弃/休息/恢复等主要操作 | C1–C3 已解决：仅专注进入设置；新建/管理、切模式确认、放弃/休息/恢复均有实际操作和反馈。完整页面视觉仍归D。 |
-| I07 | 三个根 Screen 的 view 不同，组件与导航散在各页；当前 mapping 却写「使用 DS」 | A3/C3 已解决：共用YikeRoot、DS TabViewport/Tabbar、公共栈导航与Overlay；Registry已包含六个正式Screen。 |
-| I08 | Focus 只有 default/running/paused 声明，初始 paused 没有对应初始化；运行数值随真实时间变化；Review default 的 chart 节点只在周视图，切月缺少相应 Variant；其余关键 Action/Scenario 缺失 | C3 已解决：所有现有Variant均有确定性fixture；同URL prepare/reset重置业务与局部状态；月份场景、14条Scenario及Checkpoints已验证。固定Capture/Handoff仍归E。 |
+| I07 | 三个根 Screen 的 view 不同，组件与导航散在各页；当前 mapping 却写「使用 DS」 | A3/C3 已解决：共用YikeRoot、DS TabViewport/Tabbar、公共栈导航与Overlay；Registry已包含七个正式Screen。 |
+| I08 | Focus 只有 default/running/paused 声明，初始 paused 没有对应初始化；运行数值随真实时间变化；Review default 的 chart 节点只在周视图，切月缺少相应 Variant；其余关键 Action/Scenario 缺失 | C3 已解决：所有现有Variant均有确定性fixture；同URL prepare/reset重置业务与局部状态；全部44个Variant、18条Scenario及Checkpoints已验证。固定Capture/Handoff仍归E。 |
 | I09 | 先前因默认外观不同而过早选择独立文字导航/模式/操作组件，偏离优先复用DS的方向 | A3/B2 已解决：导航/模式/操作为公共DS配置包装，新增公共能力有Contract/Registry/示例；B3继续核对实际编辑组合 |
 | I10 | 草稿中的水波/日影等需要的设计值，不是随意新增业务 Token 就可进入现行 Schema；SVG 固定绘制量也不应散落脚本 | A2/B2 已解决：固定绘图归六份SVG及受控artwork，实际CSS主题变量六组合均可解析；映射取舍见resources.md |
-| I11 | 2026-10-19复核`pnpm ds:target-sync:verify`仍失败：components/tokenCatalog/themes/bindPool漂移；组件包括action-sheet、bottom-sheet、button、confirm、flow-sheet、heatmap、month-calendar、segmented-control，映射保持pending | E3：保留可见 drift，不更新 Target 映射或伪造 synced；本次PBWork资源验收不包含Flutter还原；最终跨端交付及 pnpm verify 前必须解决 |
+| I11 | 本批`pnpm verify`实际执行的DS→Target门禁仍失败：components/tokenCatalog/themes/bindPool漂移；当前点名action-sheet、bottom-sheet、button、confirm、flow-sheet、heatmap、month-calendar、segmented-control、toast共9组件。月历showHeader已同步pending原因，未刷新baseline | E3：保留可见 drift，不将 Target 映射标为 synced 或伪造同步；本次PBWork资源验收不包含Flutter还原；最终跨端交付及 pnpm verify 前必须解决 |
 
 ## 页面对照与 Experience 记录
 
 | 页面 | 已验收 Variant | 草稿/正式对照 | Delivery | Experience |
 | --- | --- | --- | --- | --- |
-| 启动 | 无 | 待实现后逐页记录 | 未通过 | deferred：尚无正式实现 |
-| 设置 | C范围已声明场景 | 默认/深色/配置面板三截图复查，完整草稿对照待D | C范围通过，整页待D | accepted：Focused Experience；不含完整草稿还原 |
-| 专注 | 无 | 本轮只审阅草稿及源码差异，尚未完成正式等状态截图对照 | 未通过 | needs-focused-review：C范围核心旅程已通过，完整页面视觉仍待D验收 |
-| 打卡 | 无 | 同上，当前数据与布局不等价 | 未通过 | needs-focused-review：C范围管理与打卡旅程已通过，完整页面视觉仍待D验收 |
-| 习惯详情 | C范围已声明场景 | 默认空态/真实记录/深色删除三截图复查，完整草稿对照待D | C范围通过，整页待D | accepted：Focused Experience；不含完整草稿还原 |
-| 新建/编辑 | C范围已声明场景 | 默认新建/编辑/窄屏深色长表单三截图复查，完整草稿对照待D | C范围通过，整页待D | accepted：Focused Experience；不含完整草稿还原 |
-| 回顾 | 无 | 本轮源码审计，尚无正式等状态截图对照 | 未通过 | needs-focused-review：C范围真实统计已通过，三主题完整页面对照待D验收 |
+| 启动 | 品牌静帧 | 三物件、浅深、居中、减少动态效果；不增加启动等待 | 通过 | accepted |
+| 设置 | 默认、配置、重置确认 | 六组合与配置面板/窄屏，保留既有共享控件 | 通过 | accepted |
+| 专注 | 全部21个已声明状态 | 数字/物件、完成/休息/计圈/追加/确认、自定义与窄屏操作 | 通过 | accepted |
+| 打卡 | 默认、部分/全部完成、空、归档 | 星期与孔位对齐，独立名称/今日操作，撤销与空态 | 通过 | accepted |
+| 习惯详情 | 默认、有记录、每周、归档、对象缺失 | 图标/名称/三项概况/真实年度图与删除确认 | 通过 | accepted |
+| 新建/编辑 | 新建、编辑、空名称校验 | 默认空输入、校验、真实编辑与窄屏长表单 | 通过 | accepted |
+| 回顾 | 周/月、历史、有记录、仅打卡、仅专注 | 汇总/分布/日明细、周期边界与六组合图形 | 通过 | accepted |
 
-后续每页在本节追加方案规定的对比模板，记录实际截图与修正；此表不把旧记录的模糊声明当作新的 Quick Check。主题资源预览、正式页面体验和固定 Evidence 分别验收。
+以上为本轮正式页面的 Focused Experience 结论，详见文末逐页对照。主题资源预览、页面体验与固定 Evidence 分别验收；没有宣称全矩阵体验审计或整原型定稿。
 
 ## 先前批次检查记录
 
@@ -246,7 +248,7 @@ A2/A3、B1–B3继续保持未全部验收。下一资源顺序：六组合主�
 - `pnpm test:e2e:runtime`通过9项，验证通用Runtime/Authoring与现有固定回归样本；不表示yike缺少的业务Variant已补齐或正式采集完成。
 - 既有玻璃面板浏览器回归3项通过：背景透明、内容层级、降低透明度时切换实色、关闭及BottomSheet焦点返回；只完成已有能力验证，未增加适配范围。
 - 草稿提取新鲜度通过（28状态/314组属性值）；`pnpm docs:verify`通过155份Markdown。
-- `pnpm ds:target-sync:verify`仍未通过，当前8个组件及components/tokenCatalog/themes/bindPool漂移详见I11；pending原因已按实际变化同步，没有刷新baseline伪造同步。
+- `pnpm ds:target-sync:verify`仍未通过，当批8个组件及components/tokenCatalog/themes/bindPool漂移详见I11；pending原因已按实际变化同步，没有刷新baseline伪造同步。
 
 资源检查不是七页逐页等状态草稿验收，也不是正式Capture/Handoff。Experience页面状态继续保持needs-focused-review/deferred，D/E不推进完成声明。
 
@@ -319,3 +321,56 @@ B阶段资源到此全部收口。下一步为C1–C3的最小演示状态、计
 ### 详情默认工作台入口修复（2026-10-19）
 
 默认详情Variant原先声明必填`habit`，工作台无对象参数的页面入口因此报`INVALID_QUERY：missing declared habit`。默认Variant改为使用既有页面的默认习惯处理，`habit`继续作为可选业务参数保留；明确对象深链与missing场景声明不变。路由/Registry回归27项通过；真实浏览器验证3977工作台原链接与刷新均显示默认习惯。此改动不改变页面视觉，沿用本批Experience结果。
+
+## D1–D7 正式页面收口（2026-10-19）
+
+本条替代先前记录中 D 阶段尚未制作/未对照的判断。按既定设计闭合七页，不逐像素复制草稿，不用生产级业务建设代替页面。所有检查使用正式Runtime、真实DS/本地业务组合与共享模型。
+
+### 实际变更与同步
+
+- 启动新增`launch` Screen及显式root/object/name/promise边界；DS LaunchScreen承接现有三物件。独立Screen固定瞬时品牌帧供Workbench/Capture检查，实际根壳冷启动复用同一Brand内容，本机同步读取完成即显示专注；不设品牌计时器，减少动态效果跳过此瞬时内容，栈页返回不重复启动。水位物件的居中缺陷已修复并以真实bbox回归。
+- 打卡补共用星期表头，与卡行七孔和今日按钮对齐；概况减少体积，名称与今日操作继续独立。机械空按钮增加可见加号，无进行中习惯时增加明确的新建按钮。完成数、总数与剩余说明分别声明实际字阶/颜色Evidence。
+- 详情补图标和最近一年总计；DS Metric只有大数字字阶且无公开紧凑尺寸，故三列改用本地dl摘要，逐项显式Evidence，不覆盖DS私有样式。年度计数与图形取同一真实365天范围；相关归属已同步resources.md。
+- 专注补公共DurationPicker + BottomSheet的1–180分钟自定义时长，确认应用、越界就近提示、取消不改值；补代表性确认/自定义Variant和Scenario。暂停、休息、计圈、追加与恢复继续使用共享会话；完成时不再把下一轮也点亮，预设按钮Evidence随选中前景更新。
+- 回顾增加可翻页history fixture与往返Scenario；汇总、周期、日明细及类型文字补显式Evidence。公共MonthCalendar新增默认true的showHeader开关，回顾设false复用外层周期导航，避免可点击但无结果的重复翻月入口。Contract、Vue、Registry、场景/预览状态、组件手册、四个基础/样例包浅深回归和Target pending原因同批同步；没有新增主题键或刷新Target baseline。
+- 共享Runtime修复两项实页问题：稳定等待包含有限进退场动画，防止关Sheet后残留遮罩被当作稳定结果；外层文档在独立/嵌入模式均裁切，防止聚焦滑入控件时整屏被滚动并露白。滚动仍由Screen/公共Overlay持有，不复制手势。通用手册同步；截图后检查Runtime顶边仍为0，窄屏主操作可滚动到视区。
+- Registry当前7Screen/44Variant/18Scenario；默认边界已重生成。详情、编辑、回顾增加真实记录/周目标/归档、空名称、历史周期等确定性fixture，真实首次仍是四个预置习惯与零历史，样例不污染保存。既有C阶段CRUD、跨页连续计时、主题、重置及回顾同步继续复验。
+
+### 逐页对照与体验证据
+
+截图位于忽略目录`output/yike-d/`，管理页补充截图在`output/yike-c/`；不提交。草稿参考截图为`draft-{页面}-{主题}.png`，取styles gallery真实手机画面并取消缩放、移除边框阴影；保留其原有模拟状态行作为来源事实，正式页安全区由Runtime负责。正式六组合默认截图为`{页面}-{主题}-{模式}.png`。基准为390×844、Asia/Shanghai、2026-10-16 10:24参考时钟；交互计时允许受控时钟推进，窄屏为360×640并启用reduced motion。
+
+草稿有历史画面与正式默认零历史不强行对齐数字；有数据对照使用具名fixture。共同五项结论：结构按批准职责与阅读顺序组织，组件遵循Promotion Mapping，Token/比例/材质形成一致层级，业务状态真实且可重复，操作/反馈/返回可观察。玻璃导航替代草稿文字导航、系统触控尺寸和安全区属已批准差异。
+
+| 页面 / fixture | 选取的风险截图 | 差异、修正与复验结论 |
+| --- | --- | --- |
+| D1 品牌静帧 | launch机械/水位/日影浅色、日影深色、launch-narrow-reduced | 复用物件而不另造Logo；不显示计时数字或假入口，品牌组居中；修复水位横向偏移，六组合bbox对齐通过。静帧和实际冷启动让路分别检查。 |
+| D2 默认/配置 | settings-mechanical-light、settings-sundial-dark、settings-narrow-reduced；yike-c/settings-dark-config | 使用共享AppBar/分组与面板，主题/模式独立；深色配置可读、取消焦点返回，底部重置可滚到且危险确认可取消。提示音为明确的可见意图反馈，不宣称发送通知或播放外部声音。 |
+| D3 完成/休息/确认/暂停 | focus-mechanical-light、focus-long-break、focus-countdown-due、focus-abandon-confirm、focus-narrow-controls | 三表盘为首屏焦点；轮次点纠正，短长休不入账；窄屏操作在页内滚动后完整可达。自定义校验面板曾使外层移位，修复后focus-custom-validation背景完整、顶边为0；计圈/追加/模式确认/恢复均有真实操作回归。 |
+| D4 默认/完成/空/归档 | checkin-mechanical-light、checkin-completed、checkin-empty、checkin-archived-sheet、checkin-sundial-dark-bottom | 首次不造历史；压缩概况、补星期表头和机械加号。三主题保持同一行结构与独立热区；空态有新建，列表可滚到最后一行及归档入口，撤销后详情/回顾同步。 |
+| D5 记录/每周/删除 | habit-detail-mechanical-light、detail-weekly、detail-delete、habit-detail-narrow-reduced | 图标、名称和频率先于紧凑三项摘要，年度图创建前留空而非填随机点；周目标由真实次数计算，删除取消返回原按钮，归档/恢复/缺失对象可退出。 |
+| D6 新建/编辑/校验 | habit-editor-mechanical-light、editor-validation、editor-narrow-long；yike-c/habit-editor | 保留公共面板关闭/焦点/滚动，默认空名称；校验提示就近且修正即消失。编辑填入真实值，取消不污染，窄屏周频率+提醒长表单能滚到保存并返回列表。 |
+| D7 历史/选中/月/仅打卡 | review-mechanical-light、review-previous、review-selected、review-month、review-only-checkins | 不复制草稿假总数；周月、翻页、日明细真正更新。移除重复月历头，当前周期下一期禁用，未来日期禁用；仅打卡仍显示4次，专注为0，类型只统计专注。 |
+
+各页最终均为`accepted`（Focused），六组合默认与窄屏/reduced-motion是补充整体探针；不声称所有主题×视口×状态已做完整审计。早期移位、未居中截图只保留诊断用途，结论采用修正后复拍。
+
+### 验证与交付边界
+
+- PBWork typecheck/vue-tsc、authoring lint、边界生成与新鲜度检查通过；全量60文件432项单测通过。
+- 专用完整浏览器回归24项通过（2.5分钟），包含B3、共享旅程、全部44个Variant的prepare/readiness/snapshot/reset、18条Scenario/Checkpoint，以及D页面六组合/关键状态/窄屏检查。早期Escape测试抢在面板进入前触发，已等待真实进场稳定再验证；没有移除关闭或焦点断言。
+- 末次证据与预览默认样例纠偏后，受影响的8项浏览器复验全部通过（1.3分钟）；品牌居中修正后，六组合七页与窄屏/reduced-motion两项再通过（21.3秒），含居中bbox、外层不移位、窄屏主操作可达断言。
+- `pnpm test:e2e:runtime`通过10项（32.2秒），包括Core真实采集回归；它是通用隔离样板验证，不代表已经生成一刻固定交付产物。
+- 公共月历真实Workbench预览已观察默认头部与external-month-navigation样例，截图month-calendar-public-preview.png；基础包/样例包浅深四组合单测通过。只新增普通公开组合开关，不新增原型资源登记。
+- 草稿提取新鲜度通过（28状态/314组声明）；最终`pnpm docs:verify`通过155份Markdown，`git diff --check`通过。
+- `pnpm verify`已执行，冻结安装、docs及Core/Local Service/CLI/MCP构建通过后停在I11，后续全产品步骤未执行。当前9组件及components/tokenCatalog/themes/bindPool漂移如实保留；没有通过修改baseline伪造Target同步。
+
+D1–D7页面制作与验收到此完成。E仍需处理完整产品门禁，以及正常生命周期定稿触发的整原型Capture、固定引用与Handoff/Delivery；本批不改变一刻生命周期，不写入实际Store、不宣称final。
+
+
+## 短时记录确认增量（2026-10-19）
+
+- 按用户明确要求撤销旧的固定一分钟门槛。默认确认阈值10秒，设置提供5秒、10秒、1分钟、3分钟、5分钟、10分钟和自定义整数秒数（1–86399秒）；设置保存后立即用于后续记录决定，旧存档缺字段时补入10秒，不丢历史。
+- 少于阈值使用共享Confirm询问「仍然记录 / 暂不结束」；确认可保存实际秒数，取消或Esc保留会话。达到阈值直接记录。三种模式的主动结束、恢复结束、模式切换及自动到点使用同一逻辑；等待确认不增加时长，休息不记录，已有倒计时记录追加不重复记账。
+- 实际秒数进入持久化与统计，低于一分钟的专注在今日汇总和回顾显示秒数。新增short-record和record-threshold确定性Variant及confirm-short-record Scenario；Runtime现为7Screen/46Variant/19Scenario，默认边界已重生成。
+- 使用现有Confirm、BottomSheet、Button、Stepper和主题Token，没有新增共享组件机制或DS缺口。实际390×844明/暗页面检查设置与确认面板的阅读顺序、热区、取消、记录后反馈；属于本次增量的Quick Experience Check（quick-checked），不扩大此前D批次验收范围。截图在忽略目录output/yike-d/record-threshold-custom.png与short-record-confirm-dark.png。
+- 验证：PBWork完整单元回归434项通过，追加旧存档兼容测试所在文件7项通过（新增1项）；类型检查、authoring:lint、docs:verify、diff检查通过。专用浏览器既有24项通过，新增短记录流程在修正测试定位歧义后单独复验通过（合计25项覆盖）；全部46Variant及19Scenario/Checkpoint通过。没有新增共享DS改动，先前Target drift与E阶段待办保持原有状态。

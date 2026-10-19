@@ -70,6 +70,30 @@
     },
     {
       "screenId": "yike.checkin",
+      "pbId": "yike.checkin.title"
+    },
+    {
+      "screenId": "yike.checkin",
+      "pbId": "yike.checkin.tally"
+    },
+    {
+      "screenId": "yike.checkin",
+      "pbId": "yike.checkin.done-count"
+    },
+    {
+      "screenId": "yike.checkin",
+      "pbId": "yike.checkin.remaining"
+    },
+    {
+      "screenId": "yike.checkin",
+      "pbId": "yike.checkin.week-head"
+    },
+    {
+      "screenId": "yike.checkin",
+      "pbId": "yike.checkin.create"
+    },
+    {
+      "screenId": "yike.checkin",
       "pbId": "yike.checkin.habit-list"
     },
     {
@@ -110,6 +134,14 @@
     },
     {
       "screenId": "yike.habit-detail",
+      "pbId": "yike.habit-detail.icon"
+    },
+    {
+      "screenId": "yike.habit-detail",
+      "pbId": "yike.habit-detail.year-total"
+    },
+    {
+      "screenId": "yike.habit-detail",
       "pbId": "yike.habit-detail.edit"
     },
     {
@@ -147,10 +179,44 @@
       "pbId": "yike.habit-editor.form.save"
     }
   ],
+  "yike.launch": [
+    {
+      "screenId": "yike.launch",
+      "pbId": "yike.launch.root"
+    },
+    {
+      "screenId": "yike.launch",
+      "pbId": "yike.launch.object"
+    },
+    {
+      "screenId": "yike.launch",
+      "pbId": "yike.launch.name"
+    },
+    {
+      "screenId": "yike.launch",
+      "pbId": "yike.launch.promise"
+    }
+  ],
   "yike.review": [
     {
       "screenId": "yike.review",
       "pbId": "yike.review.root"
+    },
+    {
+      "screenId": "yike.review",
+      "pbId": "yike.review.title"
+    },
+    {
+      "screenId": "yike.review",
+      "pbId": "yike.review.period"
+    },
+    {
+      "screenId": "yike.review",
+      "pbId": "yike.review.duration"
+    },
+    {
+      "screenId": "yike.review",
+      "pbId": "yike.review.counts"
     },
     {
       "screenId": "yike.review",

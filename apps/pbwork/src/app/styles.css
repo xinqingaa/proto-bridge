@@ -30,14 +30,14 @@ html.pbwork-workbench #app {
   overflow: hidden;
 }
 
-/* iframe Runtime: lock document size so the viewport scrollbar does not
-   steal width and leave a blank gutter beside the page. */
-html.pbwork-runtime-embedded,
-html.pbwork-runtime-embedded body,
-html.pbwork-runtime-embedded #app {
+/* Runtime scrolling belongs to Screen/Overlay owners. Clip the outer document
+   so focus during a Sheet's entry cannot scroll and offset its whole viewport. */
+html.pbwork-runtime,
+html.pbwork-runtime body,
+html.pbwork-runtime #app {
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  overflow: clip;
 }
 
 :root {

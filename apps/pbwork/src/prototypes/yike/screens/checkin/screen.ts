@@ -6,6 +6,12 @@ export default defineScreen({
   slug: "checkin",
   fragments: [
     fragment("root", { required: true }),
+    fragment("title", { required: true }),
+    fragment("tally", { required: true }),
+    fragment("done-count", { required: true }),
+    fragment("remaining", { required: true }),
+    fragment("week-head", { required: true }),
+    fragment("create", { required: true }),
     fragment("habit-list", { required: true }),
     fragment("navigation", { required: true }),
   ],
@@ -29,6 +35,13 @@ export default defineScreen({
         scope.ref("root"),
         scope.ref("create"),
         scope.ref("archived"),
+        ...(["partial", "completed"].includes(variant.id)
+          ? [
+              scope.ref("habit-list"),
+              scope.ref("week-head"),
+              scope.ref("tally"),
+            ]
+          : []),
       ],
     })),
   ],

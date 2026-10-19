@@ -94,6 +94,7 @@ async function save(value: YikeHabitDraft) {
           v-if="!id || habit"
           v-model="draft"
           :submitting="saving"
+          :validate-on-mount="route.query.variant === 'invalid-name'"
           :inspect-id="scope.id('form')"
           @save="save"
         />

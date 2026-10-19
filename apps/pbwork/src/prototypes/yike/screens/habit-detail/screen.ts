@@ -12,6 +12,8 @@ export default defineScreen({
   fragments: [
     fragment("root", { required: true }),
     fragment("name", { required: true }),
+    fragment("icon", { required: true }),
+    fragment("year-total", { required: true }),
     fragment("edit", { required: true }),
     fragment("year", { required: true }),
     fragment("archive", { required: true }),
@@ -19,6 +21,27 @@ export default defineScreen({
   ],
   variants: [
     { id: "default", label: "进行中习惯" },
+    ...[
+      {
+        id: "habit-records",
+        label: "已有真实样例记录",
+        query: { habit: "habit-water" },
+      },
+      { id: "weekly", label: "每周目标", query: { habit: "habit-running" } },
+      {
+        id: "archived-detail",
+        label: "已归档习惯",
+        query: { habit: "habit-water" },
+      },
+    ].map((variant) => ({
+      ...variant,
+      requiredFragments: [
+        scope.ref("root"),
+        scope.ref("name"),
+        scope.ref("year"),
+        scope.ref("archive"),
+      ],
+    })),
     {
       id: "missing",
       label: "习惯不存在",

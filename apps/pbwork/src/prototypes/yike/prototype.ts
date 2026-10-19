@@ -12,6 +12,7 @@ export default {
     timeZone: "Asia/Shanghai",
   },
   screenGroups: [
+    { id: "entry", label: "品牌启动", screenSlugs: ["launch"] },
     {
       id: "core",
       label: "核心页面",

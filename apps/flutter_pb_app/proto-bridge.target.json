@@ -170,7 +170,7 @@
     },
     "month-calendar": {
       "status": "pending",
-      "reason": "公共月历新增day内容插槽与dayLabels，日期/键盘机制保持；Flutter尚未适配该公开扩展。"
+      "reason": "公共月历新增day插槽、dayLabels及showHeader外部周期导航组合；Flutter尚未适配这些公开扩展。"
     },
     "list-cell": {
       "status": "pending",

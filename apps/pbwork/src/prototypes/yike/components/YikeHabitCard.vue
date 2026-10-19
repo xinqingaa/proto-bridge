@@ -144,8 +144,8 @@ usePbInspect({
             @click="emit('toggleToday', habit.id)"
           >
             <Icon
-              v-if="face === 'mechanical' && doneToday"
-              name="check"
+              v-if="face === 'mechanical'"
+              :name="doneToday ? 'check' : 'plus'"
               size="sm"
             />
             <svg

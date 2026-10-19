@@ -24,6 +24,7 @@ const props = defineProps<{
   today: string;
   days: Array<{ date: string; minutes: number }>;
   modelValue?: string;
+  showHeader?: boolean;
 }>();
 const emit = defineEmits<{
   "update:modelValue": [string];
@@ -92,6 +93,7 @@ const dayLabels = computed(() =>
 </script>
 <template>
   <MonthCalendar
+    :show-header="showHeader ?? true"
     :month="parseDay(today) ? month : ''"
     :today="today"
     :model-value="modelValue ?? ''"

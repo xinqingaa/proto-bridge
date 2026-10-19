@@ -17,6 +17,7 @@ const props = defineProps<{
   inspectId: string;
   submitting?: boolean;
   saveError?: string;
+  validateOnMount?: boolean;
 }>();
 const emit = defineEmits<{
   "update:modelValue": [YikeHabitDraft];
@@ -26,7 +27,7 @@ const themeTable = inject(ThemeTableKey);
 const inputScheme = computed(() =>
   themeTable?.value.identity.mode === "dark" ? "dark" : "light",
 );
-const attempted = ref(false);
+const attempted = ref(Boolean(props.validateOnMount));
 const nameError = computed(() =>
   attempted.value ? habitNameError(props.modelValue.name) : "",
 );

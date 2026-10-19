@@ -52,6 +52,10 @@ import { scope } from './screen';
 - 主题偏好 API：复用 `useThemePackPreference`、`writeThemePackPreference`、`useSystemThemeMode`，实际主题应用仍由 RuntimeLayout 统一完成。返回时按原型当前主题与模式盖章，system 转成具体模式。
 - `useClock()`：复用 Date 时钟；Capture 从 `prototype.ts` 的 `clock` 声明安装时间与时区，交互模式读真实时间。
 - `usePrototypeCaseReset(reset)`：在当前 view 注册 authored fixture 的同步准备函数。Capture `prepare` 和 `reset` 均触发，即使 URL 未变化；函数应复位共享业务状态、表单、Overlay、选中和滚动等局部状态。普通产品导航不触发此钩子，不能以路由 query 的改变代替实际状态准备。演示 fixture 与真实首次数据分离，隔离保存副作用。
+
+Runtime 的稳定等待会等字体、Vue 渲染及当前有限动画结束，再检查语义节点；共享面板退出期间仍存在的遮罩不会被视作稳定结果。循环环境动效不纳入该等待，检查目标被真正遮挡时仍应失败。
+
+独立与嵌入 Runtime 的外层文档均固定于视口并裁切溢出，滚动由 Screen 或共享 Overlay 内的明确所有者承担；聚焦滑入中的控件不得滚动整个文档或让设备画面移位。裁切不关闭内容区的滚轮、触摸或键盘滚动。
 - `PrototypeShell`：AppBar、内容与 navigation 插槽；`launch` 为真时只显示 `launch` 插槽。它是组合外壳，不新增启动页业务或品牌组件。
 - `PrototypeTabs`：组合已有 TabViewport 与 Tabbar，保活、关闭横滑、使用 `motion.duration-instant`；父级把更新交给导航的 `tab()`。
 

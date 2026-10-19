@@ -235,6 +235,10 @@ describe("design contracts", () => {
       prototypeScreens.find((item) => item.screenId === "yike.focus")
         ?.requiredScenarioIds,
     ).toEqual([
+      "confirm-short-record",
+      "save-custom-duration",
+      "discard-focus",
+      "cancel-mode-switch",
       "start-focus",
       "pause-focus",
       "record-stopwatch",
@@ -252,6 +256,7 @@ describe("design contracts", () => {
       "yike.focus",
       "yike.habit-detail",
       "yike.habit-editor",
+      "yike.launch",
       "yike.review",
       "yike.settings",
     ]);

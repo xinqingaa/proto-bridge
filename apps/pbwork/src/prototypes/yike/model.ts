@@ -59,6 +59,7 @@ export type YikeState = {
     longBreakMinutes: number;
     longBreakEvery: number;
     sound: boolean;
+    shortRecordThresholdSeconds: number;
   };
 };
 
@@ -123,6 +124,7 @@ export function createInitialYikeState(today: string): YikeState {
       longBreakMinutes: 15,
       longBreakEvery: 4,
       sound: true,
+      shortRecordThresholdSeconds: 10,
     },
   };
 }
@@ -179,7 +181,7 @@ export function isYikeState(value: unknown): value is YikeState {
         ["pomodoro", "stopwatch", "countdown"].includes(record.mode) &&
         Number.isFinite(Date.parse(record.startedAt)) &&
         Number.isFinite(record.durationSeconds) &&
-        record.durationSeconds >= 60 &&
+        record.durationSeconds > 0 &&
         Array.isArray(record.intervals) &&
         record.intervals.every(
           (interval) =>
@@ -202,6 +204,8 @@ export function isYikeState(value: unknown): value is YikeState {
         ) &&
         Number.isFinite(state.session.sessionStartedAt) &&
         Number.isFinite(state.session.accumulatedMs) &&
+        (state.session.recordDecision === undefined ||
+          typeof state.session.recordDecision === "boolean") &&
         Number.isFinite(state.session.targetMs) &&
         Array.isArray(state.session.intervals) &&
         (state.session.phase === undefined ||
@@ -233,7 +237,8 @@ export function isYikeState(value: unknown): value is YikeState {
       numberIn(p.shortBreakMinutes, 1, 60) &&
       numberIn(p.longBreakMinutes, 1, 60) &&
       numberIn(p.longBreakEvery, 2, 8) &&
-      typeof p.sound === "boolean",
+      typeof p.sound === "boolean" &&
+      numberIn(p.shortRecordThresholdSeconds, 1, 86399),
     )
   );
 }
@@ -291,6 +296,13 @@ export function createYikeStore(
             : today();
           envelope.schemaVersion = YIKE_SCHEMA_VERSION;
         }
+        const savedPreferences = (envelope.value as Partial<YikeState> | null)
+          ?.preferences;
+        if (
+          savedPreferences &&
+          savedPreferences.shortRecordThresholdSeconds === undefined
+        )
+          savedPreferences.shortRecordThresholdSeconds = 10;
         if (
           envelope.schemaVersion !== YIKE_SCHEMA_VERSION ||
           !isYikeState(envelope.value)
@@ -526,6 +538,7 @@ export function createYikeStore(
       return true;
     },
     setSession(session: YikeTimerSession | null) {
+      const previous = data.session;
       data.session = session;
       if (!session || session.status !== "paused") recoveryNeeded.value = false;
       if (!session || session.status !== "paused")
@@ -536,6 +549,11 @@ export function createYikeStore(
       if (
         session &&
         !priorRecord &&
+        !(
+          previous?.id === session.id &&
+          previous.status === "finished" &&
+          previous.accumulatedMs >= previous.targetMs
+        ) &&
         session.mode === "pomodoro" &&
         (session.phase ?? "focus") === "focus" &&
         session.status === "finished" &&
@@ -544,7 +562,10 @@ export function createYikeStore(
         data.completedRounds += 1;
       if (
         session &&
-        (shouldPersistFocusRecord(session) ||
+        (shouldPersistFocusRecord(
+          session,
+          data.preferences.shortRecordThresholdSeconds,
+        ) ||
           (priorRecord && session.status === "abandoned"))
       ) {
         const record = data.focusRecords.find((item) => item.id === session.id);
@@ -554,10 +575,10 @@ export function createYikeStore(
           durationSeconds: interval.durationMs / 1000,
         }));
         if (record) {
-          record.durationSeconds = Math.floor(session.accumulatedMs / 1000);
+          record.durationSeconds = session.accumulatedMs / 1000;
           record.intervals = intervals;
         } else {
-          const durationSeconds = Math.floor(session.accumulatedMs / 1000);
+          const durationSeconds = session.accumulatedMs / 1000;
           data.focusRecords.push({
             id: session.id,
             mode: session.mode,

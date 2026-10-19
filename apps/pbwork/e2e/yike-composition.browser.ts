@@ -33,6 +33,15 @@ for (const theme of ["mechanical", "water", "sundial"])
       await edit.click();
       await expect(name).toHaveValue("每天读书");
       await name.fill("未保存的修改");
+      await page.waitForFunction(
+        () =>
+          !Array.from(document.querySelectorAll("#host-A [class]")).some(
+            (element) =>
+              Array.from(element.classList).some((name) =>
+                /-(enter|leave)-active$/.test(name),
+              ),
+          ),
+      );
       await page.keyboard.press("Escape");
       await expect(editor).toBeHidden();
       await expect(edit).toBeFocused();

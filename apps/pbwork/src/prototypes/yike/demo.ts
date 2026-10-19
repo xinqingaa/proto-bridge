@@ -6,6 +6,7 @@ import {
   advanceTimer,
   shouldPersistFocusRecord,
 } from "./timer-engine";
+import { shiftDay } from "@/design-system/components/_shared/calendar";
 
 /** Authored fixtures use the installed Capture clock, never random/sample first-use history. */
 export function createYikeDemo(variant: string, now: Date) {
@@ -28,11 +29,16 @@ export function createYikeDemo(variant: string, now: Date) {
     "long-break-finished",
     "recovery",
     "cross-day",
+    "short-record",
+    "abandon-confirm",
+    "switch-confirm",
   ];
   if (timerVariants.includes(variant)) {
     const mode = variant.startsWith("countdown")
       ? "countdown"
-      : variant.startsWith("stopwatch") || variant === "cross-day"
+      : variant.startsWith("stopwatch") ||
+          variant === "cross-day" ||
+          variant === "short-record"
         ? "stopwatch"
         : "pomodoro";
     const phase = variant.startsWith("short-break")
@@ -48,9 +54,11 @@ export function createYikeDemo(variant: string, now: Date) {
       variant === "countdown-due";
     const elapsed = finished
       ? targetMs
-      : phase !== "focus"
-        ? 60_000
-        : 5 * 60_000;
+      : variant === "short-record"
+        ? 5_000
+        : phase !== "focus"
+          ? 60_000
+          : 5 * 60_000;
     const at =
       variant === "cross-day"
         ? new Date(`${day}T00:02:00`).getTime()
@@ -72,10 +80,14 @@ export function createYikeDemo(variant: string, now: Date) {
       : variant.endsWith("paused") ||
           variant === "paused" ||
           variant === "recovery" ||
-          variant === "cross-day"
+          variant === "cross-day" ||
+          variant === "short-record" ||
+          variant === "abandon-confirm" ||
+          variant === "switch-confirm"
         ? paused
         : { ...paused, status: "running", startedAt: at };
-    if (mode === "stopwatch") data.session.laps = [60_000, 180_000];
+    if (mode === "stopwatch" && variant !== "short-record")
+      data.session.laps = [60_000, 180_000];
     if (phase !== "focus")
       data.completedRounds = phase === "long-break" ? 4 : 1;
   }
@@ -122,6 +134,34 @@ export function createYikeDemo(variant: string, now: Date) {
     });
   }
   if (variant === "empty") data.habits = [];
+  if (variant === "habit-records" || variant === "weekly") {
+    data.initializedOn = shiftDay(day, -90)!;
+    for (const habit of data.habits) habit.createdOn = data.initializedOn;
+    const habitId = variant === "weekly" ? "habit-running" : "habit-water";
+    for (const offset of [0, -2, -5, -12, -28, -60]) {
+      const date = shiftDay(day, offset)!;
+      data.checkins.push({
+        id: `${habitId}:${date}`,
+        habitId,
+        date,
+        createdAt: `${date}T04:00:00.000Z`,
+      });
+    }
+  }
+  if (variant === "history") {
+    data.initializedOn = shiftDay(day, -35)!;
+    for (const offset of [0, -2, -7, -20, -35]) {
+      const date = shiftDay(day, offset)!;
+      data.focusRecords.push({
+        id: `review-${date}`,
+        mode: "pomodoro",
+        startedAt: `${date}T02:00:00.000Z`,
+        durationSeconds: 1500,
+        intervals: [{ date, durationSeconds: 1500 }],
+      });
+    }
+  }
+  if (variant === "archived-detail") data.habits[0]!.archivedOn = day;
   if (variant === "archived")
     for (const habit of data.habits) habit.archivedOn = day;
   return data;

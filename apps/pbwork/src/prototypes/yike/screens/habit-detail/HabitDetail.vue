@@ -4,9 +4,10 @@ import { useRoute, useRouter } from "vue-router";
 import { vPb } from "@/authoring/pb-style";
 import PrototypeShell from "@/runtime/prototype/PrototypeShell.vue";
 import Button from "@/design-system/components/action/Button.vue";
-import Metric from "@/design-system/components/display/Metric.vue";
 import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
 import YikeHabitYear from "../../components/YikeHabitYear.vue";
+import YikeHabitGlyph from "../../components/YikeHabitGlyph.vue";
+import { shiftDay } from "@/design-system/components/_shared/calendar";
 import { useYikeRuntime } from "../../runtime";
 import { yikeNavigation } from "../../navigation";
 import { reviewPeriod } from "../../statistics";
@@ -34,6 +35,18 @@ const count = (range: "week" | "month") => {
   return records.value.filter((item) => item.date >= start && item.date <= end)
     .length;
 };
+const yearCount = computed(
+  () =>
+    records.value.filter(
+      (item) =>
+        item.date >= shiftDay(today.value, -364)! && item.date <= today.value,
+    ).length,
+);
+const metrics = computed(() => [
+  { id: "week", label: "本周", value: count("week") },
+  { id: "month", label: "本月", value: count("month") },
+  { id: "year-total", label: "最近一年", value: yearCount.value },
+]);
 const deleting = ref(false);
 watch(
   () => store.presentation.revision,
@@ -75,18 +88,36 @@ function remove() {
     >
       <template v-if="habit">
         <div class="section">
-          <h1
-            v-pb="
-              scope.node('name', 'text', {
-                tokens: {
-                  typography: 'typography.title-lg',
-                  color: 'color.on-surface',
-                },
-              })
-            "
-          >
-            {{ habit.name }}
-          </h1>
+          <div class="habit-heading">
+            <span
+              class="habit-glyph"
+              v-pb="
+                scope.node('icon', 'image', {
+                  tokens: {
+                    size: 'size.touch',
+                    color: 'color.primary',
+                    background: 'color.primary-soft',
+                    radius: 'radius.control',
+                  },
+                })
+              "
+              :aria-label="`习惯图标：${habit.icon}`"
+              role="img"
+              ><YikeHabitGlyph :icon="habit.icon"
+            /></span>
+            <h1
+              v-pb="
+                scope.node('name', 'text', {
+                  tokens: {
+                    typography: 'typography.title-lg',
+                    color: 'color.on-surface',
+                  },
+                })
+              "
+            >
+              {{ habit.name }}
+            </h1>
+          </div>
           <p class="muted">
             {{ habit.frequency === "daily" ? "每天" : `每周 ${habit.target} 次`
             }}{{ habit.reminder ? ` · 提醒 ${habit.reminderTime}` : "" }}
@@ -101,20 +132,53 @@ function remove() {
             @click="nav().editor(habit.id)"
           />
         </div>
-        <div class="metrics">
-          <Metric
-            label="本周"
-            :value="count('week')"
-            unit="次"
-            :inspect-id="scope.id('week')"
-          />
-          <Metric
-            label="本月"
-            :value="count('month')"
-            unit="次"
-            :inspect-id="scope.id('month')"
-          />
-        </div>
+        <dl class="habit-stats">
+          <div
+            v-for="metric in metrics"
+            :key="metric.id"
+            v-pb="
+              scope.node(metric.id, 'summary', {
+                tokens: { gap: 'spacing.sm' },
+              })
+            "
+          >
+            <dt
+              v-pb="
+                scope.node(`${metric.id}.label`, 'text', {
+                  tokens: {
+                    typography: 'typography.caption',
+                    color: 'color.on-surface-muted',
+                  },
+                })
+              "
+            >
+              {{ metric.label }}
+            </dt>
+            <dd>
+              <strong
+                v-pb="
+                  scope.node(`${metric.id}.value`, 'text', {
+                    tokens: {
+                      typography: 'typography.numeric-title',
+                      color: 'color.on-surface',
+                    },
+                  })
+                "
+                >{{ metric.value }}</strong
+              ><span
+                v-pb="
+                  scope.node(`${metric.id}.unit`, 'text', {
+                    tokens: {
+                      typography: 'typography.caption',
+                      color: 'color.on-surface-muted',
+                    },
+                  })
+                "
+                >次</span
+              >
+            </dd>
+          </div>
+        </dl>
         <p v-if="habit.frequency === 'weekly'" class="muted">
           本周
           {{
@@ -199,3 +263,52 @@ function remove() {
     </BottomSheet>
   </PrototypeShell>
 </template>
+<style scoped>
+.habit-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--pb-spacing-md);
+}
+.habit-glyph {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--pb-size-touch);
+  block-size: var(--pb-size-touch);
+  border-radius: var(--pb-radius-control);
+  background: var(--pb-color-primary-soft);
+  color: var(--pb-color-primary);
+}
+h1 {
+  overflow-wrap: anywhere;
+}
+.habit-stats {
+  display: flex;
+  gap: var(--pb-spacing-md);
+  margin: var(--pb-layout-zero);
+}
+.habit-stats > div {
+  display: flex;
+  flex: var(--pb-layout-flex-fill);
+  min-inline-size: var(--pb-layout-zero);
+  flex-direction: column;
+  gap: var(--pb-spacing-sm);
+}
+.habit-stats dd {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--pb-spacing-xs);
+  margin: var(--pb-layout-zero);
+}
+.habit-stats dt,
+.habit-stats span {
+  font: var(--pb-typography-caption);
+  color: var(--pb-color-on-surface-muted);
+}
+.habit-stats strong {
+  font: var(--pb-typography-numeric-title);
+  color: var(--pb-color-on-surface);
+}
+</style>

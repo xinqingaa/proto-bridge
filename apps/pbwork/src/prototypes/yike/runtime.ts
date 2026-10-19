@@ -9,6 +9,12 @@ import { sharedYikeSession, focusVariant } from "./session";
 import { createYikeDemo } from "./demo";
 
 const mountedStores = new WeakSet<object>();
+const presentedStores = new WeakSet<object>();
+export function claimYikeColdStart(store: object) {
+  if (presentedStores.has(store)) return false;
+  presentedStores.add(store);
+  return true;
+}
 
 /** Each active view owns a scoped clock; commands and facts survive stack views. */
 export function useYikeRuntime() {
@@ -43,6 +49,14 @@ export function useYikeRuntime() {
     store.recoveryNeeded.value = route.query.variant === "recovery";
     store.recoveryAvailable.value = store.recoveryNeeded.value;
     session.sync();
+    if (route.query.variant === "short-record") session.finish();
+    if (
+      route.query.variant === "countdown-setup" ||
+      route.query.variant === "custom-duration"
+    )
+      session.mode.value = "countdown";
+    if (route.query.variant === "switch-confirm")
+      session.pendingMode.value = "countdown";
     if (route.params.screenSlug === "review" && route.query.variant === "month")
       store.presentation.review.range = "month";
     store.presentation.preparing = false;

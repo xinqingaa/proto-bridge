@@ -8,6 +8,7 @@ import { monthDays, shiftMonth, shiftDay } from "../_shared/calendar";
 const props = withDefaults(
   defineProps<{
     dayLabels?: Record<string, string>;
+    showHeader?: boolean;
     label?: string;
     month?: string;
     modelValue?: string;
@@ -18,6 +19,7 @@ const props = withDefaults(
   }>(),
   {
     label: "选择日期",
+    showHeader: true,
     month: "2026-07",
     modelValue: "2026-07-28",
     today: "",
@@ -152,7 +154,7 @@ usePbInspect({
       })
     "
   >
-    <header>
+    <header v-if="showHeader">
       <button
         type="button"
         aria-label="上个月"

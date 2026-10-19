@@ -45,7 +45,9 @@ const labels: Record<Setting, string> = {
   longBreakMinutes: "长休息",
   longBreakEvery: "长休间隔",
 };
-const setting = ref<Setting | null>(null);
+const setting = ref<Setting | null>(
+  route.query.variant === "configuration-open" ? "pomodoroMinutes" : null,
+);
 const settingOpen = computed({
   get: () => setting.value !== null,
   set: (open: boolean) => {
@@ -54,13 +56,43 @@ const settingOpen = computed({
 });
 const settingDraft = ref(25),
   settingError = ref("");
-const resetOpen = ref(false);
+const resetOpen = ref(route.query.variant === "reset-confirm");
 const feedback = ref("");
+const thresholdOpen = ref(route.query.variant === "record-threshold");
+const thresholdDraft = ref(preference.value.shortRecordThresholdSeconds);
+const thresholds = [5, 10, 60, 180, 300, 600];
+const thresholdCustom = ref(!thresholds.includes(thresholdDraft.value));
+const thresholdError = ref("");
+const thresholdLabel = (seconds: number) =>
+  seconds < 60 || seconds % 60 ? `${seconds} 秒` : `${seconds / 60} 分钟`;
+function openThreshold() {
+  thresholdDraft.value = preference.value.shortRecordThresholdSeconds;
+  thresholdCustom.value = !thresholds.includes(thresholdDraft.value);
+  thresholdError.value = "";
+  thresholdOpen.value = true;
+}
+function saveThreshold() {
+  if (
+    !store.updatePreferences({
+      shortRecordThresholdSeconds: thresholdDraft.value,
+    })
+  ) {
+    thresholdError.value = "请输入 1–86399 的整数秒数";
+    return;
+  }
+  feedback.value = `短时记录确认阈值已设为 ${thresholdLabel(thresholdDraft.value)}。`;
+  thresholdOpen.value = false;
+}
 watch(
   () => store.presentation.revision,
   () => {
-    setting.value = null;
-    resetOpen.value = false;
+    setting.value =
+      route.query.variant === "configuration-open" ? "pomodoroMinutes" : null;
+    settingDraft.value = preference.value.pomodoroMinutes;
+    resetOpen.value = route.query.variant === "reset-confirm";
+    thresholdOpen.value = route.query.variant === "record-threshold";
+    thresholdDraft.value = preference.value.shortRecordThresholdSeconds;
+    thresholdError.value = "";
     feedback.value = "";
     settingError.value = "";
   },
@@ -68,7 +100,7 @@ watch(
 const groups = computed(() => [
   {
     id: "pomodoro",
-    title: "番茄配置",
+    title: "计时与记录",
     items: [
       ...Object.entries(labels).map(([id, title]) => ({
         id,
@@ -80,6 +112,13 @@ const groups = computed(() => [
             ? `每 ${preference.value.longBreakEvery} 轮`
             : `${preference.value[id as Setting]} 分钟`,
       })),
+      {
+        id: "record-threshold",
+        title: "短时记录确认阈值",
+        value: thresholdLabel(preference.value.shortRecordThresholdSeconds),
+        description: "少于阈值先确认，达到阈值直接记录",
+        icon: "",
+      },
       {
         id: "sound",
         title: "提示音",
@@ -93,6 +132,10 @@ const groups = computed(() => [
   },
 ]);
 function chooseSetting({ itemId }: { itemId: string }) {
+  if (itemId === "record-threshold") {
+    openThreshold();
+    return;
+  }
   if (!(itemId in labels)) return;
   setting.value = itemId as Setting;
   settingDraft.value = preference.value[setting.value];
@@ -205,6 +248,64 @@ async function reset() {
       />
     </div>
     <BottomSheet
+      v-model="thresholdOpen"
+      title="记录确认阈值"
+      material="glass"
+      inspect-id="yike.settings.threshold-sheet"
+    >
+      <div class="yike-decision">
+        <p>
+          少于此时长时先询问是否记录；达到阈值直接记录。取消确认会保留会话。
+        </p>
+        <div class="threshold-options">
+          <Button
+            v-for="seconds in thresholds"
+            :key="seconds"
+            :label="thresholdLabel(seconds)"
+            :kind="
+              !thresholdCustom && thresholdDraft === seconds
+                ? 'accent'
+                : 'outlined'
+            "
+            :aria-pressed="!thresholdCustom && thresholdDraft === seconds"
+            :inspect-id="`yike.settings.threshold-${seconds}`"
+            @click="
+              thresholdDraft = seconds;
+              thresholdCustom = false;
+            "
+          />
+          <Button
+            label="自定义"
+            :kind="thresholdCustom ? 'accent' : 'outlined'"
+            :aria-pressed="thresholdCustom"
+            inspect-id="yike.settings.threshold-custom"
+            @click="thresholdCustom = true"
+          />
+        </div>
+        <p v-if="thresholdCustom">自定义时长以秒为单位。</p>
+        <Stepper
+          v-if="thresholdCustom"
+          v-model="thresholdDraft"
+          label="自定义阈值（秒）"
+          :min="1"
+          :max="86399"
+          inspect-id="yike.settings.threshold-seconds"
+        />
+        <p v-if="thresholdError" role="alert">{{ thresholdError }}</p>
+        <Button
+          label="保存阈值"
+          inspect-id="yike.settings.threshold-save"
+          @click="saveThreshold"
+        />
+        <Button
+          label="取消"
+          kind="quiet"
+          inspect-id="yike.settings.threshold-cancel"
+          @click="thresholdOpen = false"
+        />
+      </div>
+    </BottomSheet>
+    <BottomSheet
       v-model="settingOpen"
       :title="setting ? labels[setting] : '番茄配置'"
       material="glass"
@@ -267,6 +368,11 @@ async function reset() {
   </PrototypeShell>
 </template>
 <style scoped>
+.threshold-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pb-spacing-sm);
+}
 .faces {
   display: flex;
   gap: var(--pb-spacing-sm);

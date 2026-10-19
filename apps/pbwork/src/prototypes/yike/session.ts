@@ -7,6 +7,7 @@ import {
   completeTimer,
   createTimerSession,
   lapTimer,
+  elapsedMs,
   pauseTimer,
   resumeTimer,
   startTimer,
@@ -18,10 +19,46 @@ export function createYikeSession(store: YikeStore, now = () => Date.now()) {
   const mode = ref<YikeTimerMode>(store.data.session?.mode ?? "pomodoro");
   const countdownMinutes = ref(5);
   const pendingMode = ref<YikeTimerMode | null>(null);
+  const dismissedCompletion = new Set<string>();
+  const pendingRecord = ref<{
+    kind: "finish" | "switch" | "complete";
+    next?: YikeTimerMode;
+  } | null>(null);
+  function needsRecordConfirmation(at = now()) {
+    const current = store.data.session;
+    return Boolean(
+      current &&
+      (current.phase ?? "focus") === "focus" &&
+      current.recordDecision === undefined &&
+      !store.data.focusRecords.some((record) => record.id === current.id) &&
+      elapsedMs(current, at) > 0 &&
+      elapsedMs(current, at) <
+        store.data.preferences.shortRecordThresholdSeconds * 1000,
+    );
+  }
+  function requestRecord(
+    kind: "finish" | "switch" | "complete",
+    next?: YikeTimerMode,
+  ) {
+    if (!needsRecordConfirmation()) return false;
+    if (store.data.session?.status === "running")
+      store.setSession(pauseTimer(store.data.session, now()));
+    pendingRecord.value = { kind, ...(next ? { next } : {}) };
+    return true;
+  }
+  function queueCompletion() {
+    if (
+      ["finished", "due"].includes(store.data.session?.status ?? "") &&
+      !pendingRecord.value &&
+      !dismissedCompletion.has(store.data.session!.id)
+    )
+      requestRecord("complete");
+  }
   function tick(at = now()) {
     const current = store.data.session;
     if (current?.status === "running")
       store.setSession(checkpointTimer(current, at));
+    queueCompletion();
   }
   function toggle() {
     const current = store.data.session;
@@ -58,6 +95,7 @@ export function createYikeSession(store: YikeStore, now = () => Date.now()) {
       store.leaveBreak();
       return;
     }
+    if (requestRecord("finish")) return;
     if (
       current.mode === "pomodoro" &&
       current.status === "finished" &&
@@ -88,6 +126,7 @@ export function createYikeSession(store: YikeStore, now = () => Date.now()) {
     const next = pendingMode.value;
     pendingMode.value = null;
     if (!next || choice === "cancel") return;
+    if (choice === "record" && requestRecord("switch", next)) return;
     const current = store.data.session;
     if (current) {
       if (current.phase && current.phase !== "focus") store.leaveBreak();
@@ -103,7 +142,25 @@ export function createYikeSession(store: YikeStore, now = () => Date.now()) {
     store.setSession(null);
     mode.value = next;
   }
+  function resolveRecord(record: boolean) {
+    const pending = pendingRecord.value;
+    pendingRecord.value = null;
+    if (!pending || !store.data.session) return;
+    if (!record) {
+      if (pending.kind === "complete")
+        dismissedCompletion.add(store.data.session.id);
+      return;
+    }
+    store.setSession({ ...store.data.session, recordDecision: true });
+    if (pending.kind === "finish") finish();
+    if (pending.kind === "switch" && pending.next) {
+      pendingMode.value = pending.next;
+      resolveMode("record");
+    }
+  }
   return {
+    pendingRecord,
+    resolveRecord,
     mode,
     countdownMinutes,
     pendingMode,
@@ -127,6 +184,9 @@ export function createYikeSession(store: YikeStore, now = () => Date.now()) {
     sync() {
       mode.value = store.data.session?.mode ?? "pomodoro";
       pendingMode.value = null;
+      pendingRecord.value = null;
+      dismissedCompletion.clear();
+      queueCompletion();
     },
   };
 }

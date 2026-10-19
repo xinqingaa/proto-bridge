@@ -19,6 +19,15 @@ export default defineScreen({
   variants: [
     { id: "default", label: "新建习惯" },
     {
+      id: "invalid-name",
+      label: "空名称校验",
+      requiredFragments: [
+        scope.ref("root"),
+        scope.ref("form.name"),
+        scope.ref("form.save"),
+      ],
+    },
+    {
       id: "edit",
       label: "编辑习惯",
       query: { habit: "habit-water" },

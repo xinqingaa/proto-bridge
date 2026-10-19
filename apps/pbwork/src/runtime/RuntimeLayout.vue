@@ -432,6 +432,22 @@ onMounted(() => {
     waitForStable: async () => {
       await document.fonts.ready;
       await nextTick();
+      // A closed shared Overlay can still cover the checkpoint during its
+      // leave transition. Await finite UI motion, excluding ambient loops.
+      const animations =
+        document
+          .querySelector(".runtime-app")
+          ?.getAnimations({ subtree: true }) ?? [];
+      await Promise.all(
+        animations
+          .filter(
+            (animation) =>
+              animation.playState === "running" &&
+              animation.effect?.getTiming().iterations !== Infinity,
+          )
+          .map((animation) => animation.finished.catch(() => undefined)),
+      );
+      await nextTick();
       await new Promise<void>((resolveFrame) =>
         requestAnimationFrame(() =>
           requestAnimationFrame(() => resolveFrame()),

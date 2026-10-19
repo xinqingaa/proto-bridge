@@ -15,7 +15,36 @@ export default defineScreen({
     fragment("configuration", { required: true }),
     fragment("reset", { required: true }),
   ],
-  variants: [{ id: "default", label: "设置" }],
+  variants: [
+    { id: "default", label: "设置" },
+    {
+      id: "record-threshold",
+      label: "短时记录确认阈值",
+      shellPolicy: "replace",
+      requiredFragments: [
+        scope.ref("threshold-sheet"),
+        scope.ref("threshold-save"),
+      ],
+    },
+    ...[
+      {
+        id: "configuration-open",
+        label: "时长配置",
+        panel: "configuration-sheet",
+        action: "configuration-save",
+      },
+      {
+        id: "reset-confirm",
+        label: "重置确认",
+        panel: "reset-sheet",
+        action: "reset-confirm",
+      },
+    ].map(({ panel, action, ...variant }) => ({
+      ...variant,
+      shellPolicy: "replace" as const,
+      requiredFragments: [scope.ref(panel), scope.ref(action)],
+    })),
+  ],
   actions: [
     { id: "reset", kind: "click", target: scope.ref("reset") },
     { id: "confirm-reset", kind: "click", target: scope.ref("reset-confirm") },

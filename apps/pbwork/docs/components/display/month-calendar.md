@@ -15,6 +15,7 @@
 - 月份和日期来自 props，不使用系统当前时间；非法月份不渲染错误日历。
 - 一周从周一开始，前后月切换正确跨年；禁用日期不可选。
 - 方向键和 Home/End 在当前月可用日期间移动焦点，Enter/Space 选择。
+- 已有外部周期导航时使用 `showHeader=false`，隐藏内部月份标题与翻月按钮；调用方负责控制月份和周期边界，组件继续负责星期、日期、选择、键盘与禁用。
 
 ## States
 
@@ -22,6 +23,7 @@
 | --- | --- | --- |
 | `next-month` | 八月 | `content` |
 | `empty-selection` | 未选择 | `content` |
+| `external-month-navigation` | 外部月份导航 | `variant` |
 
 ## 用法与反例
 

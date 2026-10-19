@@ -6,6 +6,77 @@ import { createYikeDemo } from "@/prototypes/yike/demo";
 import { reviewSummary } from "@/prototypes/yike/statistics";
 
 describe("一刻最小演示业务基础", () => {
+  it("短记录确认、取消、阈值等号与本机重开保留实际秒数", () => {
+    let at = new Date("2026-10-19T12:00:00+08:00").getTime();
+    const saved = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => saved.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        saved.set(key, value);
+      },
+    };
+    const store = createYikeStore({ storage, now: () => new Date(at) });
+    const session = createYikeSession(store, () => at);
+    session.requestMode("stopwatch");
+    session.toggle();
+    at += 5_000;
+    session.toggle();
+    session.finish();
+    expect(session.pendingRecord.value?.kind).toBe("finish");
+    expect(store.data.focusRecords).toHaveLength(0);
+    session.resolveRecord(false);
+    expect(store.data.session?.status).toBe("paused");
+    session.finish();
+    session.resolveRecord(true);
+    session.resolveRecord(true);
+    expect(store.data.focusRecords).toHaveLength(1);
+    expect(store.data.focusRecords[0]?.durationSeconds).toBe(5);
+    const reopened = createYikeStore({ storage, now: () => new Date(at) });
+    expect(reopened.storageIssue.value).toBeNull();
+    expect(reopened.data.focusRecords[0]?.durationSeconds).toBe(5);
+    expect(
+      reviewSummary(reopened.data, store.today(), store.today()).seconds,
+    ).toBe(5);
+    session.toggle();
+    at += 10_000;
+    session.toggle();
+    session.finish();
+    expect(session.pendingRecord.value).toBeNull();
+    expect(store.data.focusRecords.at(-1)?.durationSeconds).toBe(10);
+  });
+  it("高阈值的切模式与自然到点需确认，完整轮次不会重复累计", () => {
+    let at = new Date("2026-10-19T12:00:00+08:00").getTime();
+    const store = createYikeStore({ storage: null, now: () => new Date(at) });
+    store.updatePreferences({
+      shortRecordThresholdSeconds: 180,
+      pomodoroMinutes: 1,
+    });
+    const session = createYikeSession(store, () => at);
+    session.requestMode("stopwatch");
+    session.toggle();
+    at += 65_000;
+    session.requestMode("countdown");
+    session.resolveMode("record");
+    expect(session.pendingRecord.value?.kind).toBe("switch");
+    at += 20_000;
+    session.resolveRecord(true);
+    expect(session.mode.value).toBe("countdown");
+    expect(store.data.focusRecords[0]?.durationSeconds).toBe(65);
+    session.requestMode("pomodoro");
+    session.toggle();
+    at += 60_000;
+    session.tick();
+    expect(session.pendingRecord.value?.kind).toBe("complete");
+    expect(store.data.completedRounds).toBe(1);
+    session.resolveRecord(false);
+    session.tick();
+    expect(session.pendingRecord.value).toBeNull();
+    session.finish();
+    session.resolveRecord(true);
+    expect(store.data.completedRounds).toBe(1);
+    expect(store.data.focusRecords.at(-1)?.durationSeconds).toBe(60);
+    expect(store.data.session?.phase).toBe("short-break");
+  });
   it("习惯增改、打卡撤销、归档恢复、删除共享同一事实", () => {
     const store = createYikeStore({
       storage: null,

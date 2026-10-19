@@ -1085,12 +1085,14 @@ export const componentRecords = [
   {
     id: "month-calendar",
     label: "MonthCalendar",
-    description: "按月选择日期，使用固定星期顺序与受控月份。",
+    description:
+      "按月选择日期，使用固定星期顺序与受控月份；可由外部周期导航管理月份。",
     category: "display",
     view: "display/MonthCalendar.vue",
     contract: "contracts/month-calendar.json",
     example: {},
     controls: [
+      { key: "showHeader", label: "显示月份导航", control: "boolean" },
       { key: "today", label: "今日日期", control: "text" },
       {
         key: "label",

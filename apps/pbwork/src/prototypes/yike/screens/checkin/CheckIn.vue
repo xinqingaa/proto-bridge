@@ -106,7 +106,18 @@ function resetCorruptData() {
     <header class="yike-page-head">
       <div>
         <span class="yike-eyebrow">{{ today }}</span>
-        <h1>今天的习惯</h1>
+        <h1
+          v-pb="
+            scope.node('title', 'text', {
+              tokens: {
+                typography: 'typography.headline',
+                color: 'color.on-surface',
+              },
+            })
+          "
+        >
+          今天的习惯
+        </h1>
       </div>
     </header>
     <p
@@ -128,16 +139,52 @@ function resetCorruptData() {
       </button>
       <button v-else type="button" @click="store.retrySave">重试保存</button>
     </p>
-    <div class="yike-tally">
+    <div
+      class="yike-tally"
+      v-pb="
+        scope.node('tally', 'summary', {
+          tokens: { gap: 'spacing.sm' },
+        })
+      "
+      aria-live="polite"
+    >
       <strong
-        >{{ doneCount }}<small>/{{ habits.length }}</small></strong
-      ><span>{{
-        habits.length === 0
-          ? "从一个小习惯开始"
-          : doneCount === habits.length
-            ? "今天的都完成了"
-            : `还剩 ${habits.length - doneCount} 个`
-      }}</span
+        v-pb="
+          scope.node('done-count', 'text', {
+            tokens: {
+              typography: 'typography.numeric-title',
+              color: 'color.on-surface',
+            },
+          })
+        "
+        >{{ doneCount
+        }}<small
+          v-pb="
+            scope.node('habit-count', 'text', {
+              tokens: {
+                typography: 'typography.body-sm',
+                color: 'color.on-surface',
+              },
+            })
+          "
+          >/{{ habits.length }}</small
+        ></strong
+      ><span
+        v-pb="
+          scope.node('remaining', 'text', {
+            tokens: {
+              typography: 'typography.content',
+              color: 'color.on-surface-muted',
+            },
+          })
+        "
+        >{{
+          habits.length === 0
+            ? "从一个小习惯开始"
+            : doneCount === habits.length
+              ? "今天的都完成了"
+              : `还剩 ${habits.length - doneCount} 个`
+        }}</span
       ><button
         type="button"
         aria-label="新建习惯"
@@ -152,9 +199,38 @@ function resetCorruptData() {
       </button>
     </div>
     <p v-if="habits.length === 0" class="yike-empty">还没有进行中的习惯</p>
+    <Button
+      v-if="habits.length === 0"
+      label="新建习惯"
+      kind="accent"
+      inspect-id="yike.checkin.empty-create"
+      @click="nav().editor()"
+    />
     <p v-if="store.presentation.message" role="status">
       {{ store.presentation.message }}
     </p>
+    <div
+      v-if="habits.length"
+      class="yike-week-head"
+      v-pb="
+        scope.node('week-head', 'text', {
+          tokens: {
+            typography: 'typography.caption',
+            color: 'color.on-surface-muted',
+            padding: 'spacing.md',
+          },
+        })
+      "
+      aria-label="本周一至周日记录，最右侧为今日打卡"
+    >
+      <span
+        v-for="day in weekDays"
+        :key="day.key"
+        :class="{ 'is-today': day.isToday }"
+        >{{ day.label }}</span
+      >
+      <span class="today-label">今天</span>
+    </div>
     <div
       class="yike-habits"
       v-pb="scope.node('habit-list', 'list', { tokens: { gap: 'spacing.md' } })"
@@ -303,15 +379,11 @@ function resetCorruptData() {
   block-size: var(--pb-size-icon);
 }
 .yike-tally {
-  margin-block: var(--pb-spacing-lg);
-  padding: var(--pb-spacing-sm);
-  border: var(--pb-border-width) solid var(--pb-color-outline);
-  border-radius: var(--pb-radius-surface);
-  background: var(--pb-color-surface);
+  margin-block: var(--pb-spacing-md);
   gap: var(--pb-spacing-sm);
 }
 .yike-tally strong {
-  font: var(--pb-typography-numeric-display);
+  font: var(--pb-typography-numeric-title);
 }
 .yike-tally small {
   font: var(--pb-typography-body-sm);
@@ -337,5 +409,27 @@ function resetCorruptData() {
   padding: var(--pb-layout-zero);
   margin: var(--pb-layout-zero);
   list-style: none;
+}
+.yike-week-head {
+  display: flex;
+  align-items: center;
+  padding-inline: var(--pb-spacing-md);
+  margin-block-end: var(--pb-spacing-sm);
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+  text-align: center;
+}
+.yike-week-head > span {
+  flex: var(--pb-layout-flex-fill);
+  min-inline-size: var(--pb-layout-zero);
+}
+.yike-week-head .today-label {
+  flex: none;
+  inline-size: var(--pb-size-touch);
+  margin-inline-start: var(--pb-spacing-sm);
+}
+.yike-week-head .is-today {
+  color: var(--pb-color-primary);
+  font: var(--pb-typography-caption-strong);
 }
 </style>

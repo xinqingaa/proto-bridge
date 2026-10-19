@@ -15,6 +15,46 @@ const global = {
   stubs: { Icon: true },
 };
 describe("公共月历的日期展示扩展", () => {
+  it.each([
+    ["pbwork-base", "default", "light"],
+    ["pbwork-base", "default", "dark"],
+    ["pbwork-sample", "garden", "light"],
+    ["pbwork-sample", "garden", "dark"],
+  ] as const)(
+    "%s/%s/%s 外部周期导航不复制日期选择与键盘机制",
+    async (pack, theme, mode) => {
+      const wrapper = mount(MonthCalendar, {
+        props: {
+          month: "2024-02",
+          showHeader: false,
+          modelValue: "2024-02-27",
+          disabledDates: ["2024-02-29"],
+        },
+        global: {
+          provide: {
+            [ThemeTableKey as symbol]: shallowRef(
+              resolveRuntimeTheme(pack, theme, mode),
+            ),
+          },
+          stubs: { Icon: true },
+        },
+      });
+      expect(wrapper.find("header").exists()).toBe(false);
+      expect(wrapper.findAll("[data-date]")).toHaveLength(29);
+      expect(
+        wrapper.get('[data-date="2024-02-29"]').attributes("disabled"),
+      ).toBeDefined();
+      await wrapper.get('[data-date="2024-02-28"]').trigger("click");
+      expect(wrapper.emitted("update:modelValue")).toEqual([["2024-02-28"]]);
+      await wrapper
+        .get('[data-date="2024-02-28"]')
+        .trigger("keydown", { key: "Home" });
+      await wrapper.setProps({ month: "2024-03" });
+      expect(wrapper.findAll("[data-date]")).toHaveLength(31);
+      expect(wrapper.emitted("update:month")).toBeUndefined();
+      wrapper.unmount();
+    },
+  );
   it("插槽展示不改变闰月计算、日期禁用和受控选择", async () => {
     const wrapper = mount(MonthCalendar, {
       props: {

@@ -106,7 +106,18 @@ function chooseMonth(month: string) {
   >
     <header>
       <p>回顾</p>
-      <h1>时间去了哪里</h1>
+      <h1
+        v-pb="
+          scope.node('title', 'text', {
+            tokens: {
+              typography: 'typography.headline',
+              color: 'color.on-surface',
+            },
+          })
+        "
+      >
+        时间去了哪里
+      </h1>
     </header>
     <SegmentedControl
       :model-value="range"
@@ -128,7 +139,17 @@ function chooseMonth(month: string) {
         inspect-id="yike.review.previous"
         @click="move(-1)"
       />
-      <span>{{ period.start }} — {{ period.end }}</span>
+      <span
+        v-pb="
+          scope.node('period', 'text', {
+            tokens: {
+              typography: 'typography.caption',
+              color: 'color.on-surface-muted',
+            },
+          })
+        "
+        >{{ period.start }} — {{ period.end }}</span
+      >
       <Button
         label="下一期"
         kind="quiet"
@@ -139,8 +160,27 @@ function chooseMonth(month: string) {
       />
     </div>
     <GlassSurface inspect-id="yike.review.summary" class="summary">
-      <strong>{{ durationLabel(summary.seconds) }}</strong>
-      <p>
+      <strong
+        v-pb="
+          scope.node('duration', 'text', {
+            tokens: {
+              typography: 'typography.numeric-title',
+              color: 'color.on-surface',
+            },
+          })
+        "
+        >{{ durationLabel(summary.seconds) }}</strong
+      >
+      <p
+        v-pb="
+          scope.node('counts', 'text', {
+            tokens: {
+              typography: 'typography.content',
+              color: 'color.on-surface-muted',
+            },
+          })
+        "
+      >
         {{
           range === "week"
             ? `专注 ${summary.focusCount} 次`
@@ -160,6 +200,7 @@ function chooseMonth(month: string) {
     />
     <YikeMonthCalendar
       v-else
+      :show-header="false"
       :face="face"
       :month="period.start.slice(0, 7)"
       :today="today"
@@ -178,7 +219,19 @@ function chooseMonth(month: string) {
         这一天还没有记录。
       </p>
       <ul v-else>
-        <li v-for="record in selectedRecords" :key="record.id">
+        <li
+          v-for="record in selectedRecords"
+          :key="record.id"
+          v-pb="
+            scope.node('record', 'text', {
+              key: record.id,
+              tokens: {
+                typography: 'typography.content',
+                color: 'color.on-surface',
+              },
+            })
+          "
+        >
           {{
             new Date(record.startedAt).toLocaleTimeString([], {
               hour: "2-digit",
@@ -187,7 +240,19 @@ function chooseMonth(month: string) {
           }}
           · {{ modeLabels[record.mode] }} · {{ durationLabel(record.seconds) }}
         </li>
-        <li v-for="habit in selectedHabits" :key="habit.id">
+        <li
+          v-for="habit in selectedHabits"
+          :key="habit.id"
+          v-pb="
+            scope.node('habit', 'text', {
+              key: habit.id,
+              tokens: {
+                typography: 'typography.content',
+                color: 'color.on-surface',
+              },
+            })
+          "
+        >
           已完成 · {{ habit.name }}
         </li>
       </ul>
@@ -200,7 +265,19 @@ function chooseMonth(month: string) {
     </p>
     <section v-else-if="summary.seconds > 0" class="distribution">
       <h2>专注方式</h2>
-      <p v-for="(seconds, mode) in summary.byMode" :key="mode">
+      <p
+        v-for="(seconds, mode) in summary.byMode"
+        :key="mode"
+        v-pb="
+          scope.node('type', 'text', {
+            key: mode,
+            tokens: {
+              typography: 'typography.content',
+              color: 'color.on-surface-muted',
+            },
+          })
+        "
+      >
         {{ modeLabels[mode] }} · {{ durationLabel(seconds) }}
       </p>
     </section>
@@ -253,6 +330,7 @@ h2 {
   flex-direction: column;
   gap: var(--pb-spacing-sm);
   padding: var(--pb-spacing-md);
+  border-radius: var(--pb-radius-surface);
 }
 .summary strong {
   font: var(--pb-typography-numeric-title);
