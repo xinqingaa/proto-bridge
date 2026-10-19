@@ -1,68 +1,73 @@
 import { expect, test } from "@playwright/test";
 
-test("current Screen diagnostics update after edits without selecting an element", async ({
+test("prototype browsing never requests or blocks on whole-page checks", async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 1440, height: 1050 });
-  await page.goto(
-    "/workbench/prototypes/cold-chain-ops/screens/exception-queue?variant=default&theme=default&mode=light",
+  const requests: string[] = [];
+  await page.exposeFunction("recordPageCheck", (type: string) =>
+    requests.push(type),
   );
-  const frame = page.frameLocator("iframe");
-  const root = frame.locator(
-    '[data-pb-id="cold-chain-ops.exception-queue.root"]',
-  );
-  await expect(root).toBeVisible();
-  const diagnostics = page.getByTestId("live-authoring-diagnostics");
-  await expect(diagnostics).toBeVisible();
-  await root.evaluate((el) => el.removeAttribute("data-pb-role"));
-  await expect(diagnostics).toContainText("without data-pb-role");
-  await root.evaluate((el) => el.setAttribute("data-pb-role", "page"));
-  await expect(diagnostics).not.toContainText("without data-pb-role");
-  await root.evaluate((el) => {
-    el.setAttribute(
-      "data-test-bindings",
-      JSON.stringify(
-        Array.from(el.attributes)
-          .filter((a) => a.name.startsWith("data-pb-token-"))
-          .map((a) => [a.name, a.value]),
-      ),
+  await page.addInitScript(() => {
+    window.addEventListener("message", (event) => {
+      if (
+        ["authoring-check", "authoring-diagnostics"].includes(event.data?.type)
+      )
+        (window as any).recordPageCheck(event.data.type);
+    });
+  });
+  for (const path of [
+    "cold-chain-ops/screens/exception-queue?variant=default&theme=default&mode=light",
+    "yike/screens/settings?theme=mechanical&mode=light",
+    "yike/screens/habit-detail?theme=mechanical&mode=light",
+  ]) {
+    await page.goto(`/workbench/prototypes/${path}`);
+    await expect(
+      page.frameLocator("iframe").locator(".prototype-shell"),
+    ).toBeVisible();
+    await expect(page.getByTestId("page-check-gate")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /页面检查/ })).toHaveCount(0);
+    await expect(page.locator(".canvas-content")).not.toHaveAttribute("inert");
+  }
+  await page.reload();
+  await expect(
+    page.frameLocator("iframe").locator(".prototype-shell"),
+  ).toBeVisible();
+  expect(requests).toEqual([]);
+});
+
+test("settings scrollers hide chrome and still scroll in embedded and standalone Runtime", async ({
+  page,
+}) => {
+  for (const embedded of [true, false]) {
+    await page.setViewportSize(
+      embedded ? { width: 1440, height: 1050 } : { width: 375, height: 667 },
     );
-    for (const a of Array.from(el.attributes))
-      if (a.name.startsWith("data-pb-token-")) el.removeAttribute(a.name);
-  });
-  await expect(diagnostics).toContainText("has no explicit Token Evidence");
-  await root.evaluate((el) => {
-    for (const [name, value] of JSON.parse(
-      el.getAttribute("data-test-bindings")!,
-    ))
-      el.setAttribute(name, value);
-  });
-  await expect(diagnostics).not.toContainText("has no explicit Token Evidence");
-  await root.evaluate((el) => {
-    (el as HTMLElement).style.display = "none";
-  });
-  await expect(diagnostics).toContainText("zero-size box");
-  await root.evaluate((el) => {
-    (el as HTMLElement).style.removeProperty("display");
-  });
-  await expect(diagnostics).not.toContainText("zero-size box");
-  await root.evaluate((el) => {
-    const overlay = el.ownerDocument.createElement("div");
-    overlay.id = "test-overlay";
-    overlay.style.cssText =
-      "position:fixed;inset:0;z-index:99999;background:black";
-    el.ownerDocument.body.append(overlay);
-  });
-  await expect(diagnostics).toContainText("occluded at its center point");
-  await root.evaluate((el) =>
-    el.ownerDocument.getElementById("test-overlay")!.remove(),
-  );
-  await expect(diagnostics).not.toContainText("occluded at its center point");
-  await root.evaluate((el) => {
-    el.setAttribute("data-test-id", el.getAttribute("data-pb-id")!);
-    el.removeAttribute("data-pb-id");
-  });
-  await expect(diagnostics).toContainText(
-    "cold-chain-ops.exception-queue.root/ is missing",
-  );
+    await page.goto(
+      `${embedded ? "/workbench/prototypes/yike/screens" : "/prototype/yike"}/settings?theme=mechanical&mode=light`,
+    );
+    const root = embedded
+      ? page.frameLocator("iframe").locator("html")
+      : page.locator("html");
+    await expect(root).toHaveClass(/pbwork-runtime/);
+    const shell = embedded
+      ? page.frameLocator("iframe").locator(".prototype-shell")
+      : page.locator(".prototype-shell");
+    await expect(shell).toBeVisible();
+    const result = await root.evaluate((html) => {
+      const scrollers = Array.from(
+        html.querySelectorAll<HTMLElement>("*"),
+      ).filter(
+        (el) =>
+          /auto|scroll/.test(getComputedStyle(el).overflowY) &&
+          el.scrollHeight > el.clientHeight,
+      );
+      return scrollers.map((el) => {
+        const style = getComputedStyle(el);
+        el.scrollTop = 80;
+        return { scrollbar: style.scrollbarWidth, moved: el.scrollTop > 0 };
+      });
+    });
+    expect(result.length).toBeGreaterThan(0);
+    expect(result.every((r) => r.scrollbar === "none" && r.moved)).toBe(true);
+  }
 });

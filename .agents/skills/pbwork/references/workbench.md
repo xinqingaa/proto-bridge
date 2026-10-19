@@ -117,12 +117,12 @@ pnpm docs:verify
 For interaction changes, run relevant Playwright specs and inspect scrolling,
 focus, empty/error states, keyboard use, and both themes.
 
-## Live authoring checks
+## Page authoring checks
 
-Current-Screen diagnostics travel through the validated Runtime bridge and reuse
-Capture required-fragment geometry and occlusion checks. Keep selected-element
-heuristics; do not infer a new boundary or write these transient results to Evidence.
-See `apps/pbwork/docs/prototypes/authoring-tools.md`.
+Do not add page-entry authoring checks, blocking check loading, or a separate
+Canvas check entry. Browsing remains independent of authoring diagnostics.
+Keep selected-element heuristics in Inspector and formal Preflight/Capture
+readiness in the Core flow. See `apps/pbwork/docs/prototypes/authoring-tools.md`.
 
 共享预览尺寸交互与本地偏好以 `apps/pbwork/docs/workbench-preview.md` 为准：拖动手机设备容器等比缩放，外层卡片随手机展示高度撑开，舞台不设纵向内部滚动，双机空间不足换行；预览偏好跨页面共用并持久化。预览/来源 Tab 切换保留实例与搜索，来源隐藏侧栏、表格占满卡片，支持减少动态效果；共同滚动使用舞台顶部紧凑开关并持久化，只联动手机内容滚动进度。来源表格完整列出每项实际样板与值（字体按真实配置逐项渲染），不显示差异列/差异筛选或引用链；同值条目仍全部保留。
 

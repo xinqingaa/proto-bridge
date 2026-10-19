@@ -63,8 +63,16 @@ import { scope } from './screen';
 
 `pnpm test:e2e:scaffold` 生成临时原型，构建后执行真实 Core Preflight、两次同 Case 采集（比较时间文本与截图字节）、Workbench 完整定稿。Store 与固定引用结果保存在命令输出的系统临时目录；结束时移除临时源码并重新生成边界，不改变日常 Workspace。
 
-## 当前 Screen 实时检查
+## 制作诊断与正式校验
 
-Workbench Inspector 显示“当前 Screen 制作检查”，不要求先选中元素。Runtime 在 DOM 变更、滚动、尺寸变化和 bridge 上下文变化后去抖检查：缺必需节点、缺 id/role、非法 role、重复 identity、缺 Token Evidence、零 bbox、不可见和遮挡。必需边界与几何判定和 Capture readiness 共用；非必需局部节点缺 Token Evidence 显示 warning。Inspector 原有选中元素启发式提示继续保留。
+Workbench 浏览、刷新、切换 Screen 时不执行整页制作检查，不显示检查 loading、检查面板或工具栏入口，也不以声明诊断禁止原型交互。元素 Inspector 保留选中节点的信息与启发式提示。
 
-列表只传输前 40 项并明确显示截断，不写入 Evidence，不取代完整 Preflight、主题一致性探针或定稿门禁。
+正式采集继续执行 Core 的 Preflight 和 Runtime Capture readiness，覆盖必需节点、身份、role、Token Evidence、几何与遮挡等声明问题；Block 仍阻止完整性声明和正式交付。这些技术校验不代表业务、视觉或体验验收。
+
+## 模拟设备与安全区
+
+公共PhoneShell只绘制中性的模拟状态栏（固定09:41）与底部指示条，不使用业务背景渐变，不属于原型业务节点或Evidence。设备选择只表达逻辑视口尺寸，不声称复刻指定型号或OS状态栏。草稿外壳维持原样，不提取为业务布局。
+
+Runtime默认模拟安全区为顶部44px、底部20px，与设备外壳一致；移动浏览器实际env安全区与默认值取较大者，不相加。独立Runtime与Core Capture使用相同默认值，嵌入状态不改变业务布局。背景可铺满，交互内容避让保护区。PrototypeShell的默认AppBar负责顶部，定制app-bar插槽由Shell负责顶部，二者只消费一次；有navigation时由底部导航消费底区，无navigation的普通页由Shell消费，launch保留全屏背景。Toast底部使用底区与常规间距较大者，Sheet沿用大于底区的内容留白。资源预览已经在scroll宿主扣除安全区，因此该宿主的子组件safe变量为零，避免重复避让；覆盖整个viewport的Overlay仍使用完整环境。
+
+原型页面默认不显示滚动条，包括嵌套内容和弹层；保留滚轮、触摸和键盘滚动。只有用户明确要求时才允许显示滚动条。此规则覆盖嵌入、独立 Runtime 和采集，不改变 Workbench 自身滚动条。

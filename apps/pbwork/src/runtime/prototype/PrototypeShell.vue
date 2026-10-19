@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useSlots } from "vue";
 import AppBar from "@/design-system/components/navigation/AppBar.vue";
 defineProps<{
   title: string;
@@ -7,9 +8,16 @@ defineProps<{
   launch?: boolean;
 }>();
 defineEmits<{ back: [] }>();
+const slots = useSlots();
 </script>
 <template>
-  <div class="prototype-shell">
+  <div
+    class="prototype-shell"
+    :class="{
+      'has-custom-header': !launch && Boolean(slots['app-bar']),
+      'without-navigation': !launch && !slots.navigation,
+    }"
+  >
     <template v-if="launch"><slot name="launch" /></template>
     <template v-else>
       <slot name="app-bar"
@@ -34,6 +42,12 @@ defineEmits<{ back: [] }>();
   overflow: hidden;
   background: var(--pb-color-background);
   color: var(--pb-color-on-background);
+}
+.prototype-shell.has-custom-header {
+  padding-top: var(--pb-safe-top, var(--pb-layout-zero));
+}
+.prototype-shell.without-navigation {
+  padding-bottom: var(--pb-safe-bottom, var(--pb-layout-zero));
 }
 main {
   flex: var(--pb-layout-flex-fill);

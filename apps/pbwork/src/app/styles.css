@@ -40,10 +40,11 @@ html.pbwork-runtime-embedded #app {
   overflow: hidden;
 }
 
-html.pbwork-runtime-embedded {
-  /* Unified device safe insets — match DeviceFrame overlays */
-  --pb-safe-top: 44px;
-  --pb-safe-bottom: 20px;
+:root {
+  /* Neutral simulated viewport, shared by standalone Runtime and Capture.
+     Physical browser insets replace smaller defaults; never add both. */
+  --pb-safe-top: max(44px, env(safe-area-inset-top, 0px));
+  --pb-safe-bottom: max(20px, env(safe-area-inset-bottom, 0px));
 }
 
 html.pbwork-runtime-embedded .v-application {
@@ -64,4 +65,15 @@ a:focus-visible,
 .v-tooltip > .v-overlay__content {
   background: rgb(var(--v-theme-tooltip));
   color: rgb(var(--v-theme-on-tooltip));
+}
+
+/* Prototype viewports, nested scrollers and teleported overlays scroll without
+   visible scrollbar chrome. Workbench surfaces retain their own policy. */
+html.pbwork-runtime,
+html.pbwork-runtime * {
+  scrollbar-width: none;
+}
+html.pbwork-runtime::-webkit-scrollbar,
+html.pbwork-runtime *::-webkit-scrollbar {
+  display: none;
 }

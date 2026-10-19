@@ -1,4 +1,3 @@
-import type { AuthoringDiagnostic } from "@proto-bridge/core/v2";
 /** PBWork ↔ Runtime Bridge protocol (design §11). */
 
 export const BRIDGE_PROTOCOL_VERSION = 1 as const;
@@ -148,10 +147,6 @@ export type BridgePayloads = {
      */
     navigation: "push" | "replace" | "back";
   };
-  "authoring-diagnostics": {
-    diagnostics: AuthoringDiagnostic[];
-    truncated: boolean;
-  };
   state: { summary: JsonRecord; meta?: SnapshotMeta };
   "inspect-mode": { enabled: boolean };
   "comment-mode": { enabled: boolean };
@@ -176,10 +171,6 @@ export type RuntimeBridgeMessage =
   | BridgeEnvelope<"comment-target", BridgePayloads["comment-target"]>
   | BridgeEnvelope<"clear-select", BridgePayloads["clear-select"]>
   | BridgeEnvelope<"route", BridgePayloads["route"]>
-  | BridgeEnvelope<
-      "authoring-diagnostics",
-      BridgePayloads["authoring-diagnostics"]
-    >
   | BridgeEnvelope<"state", BridgePayloads["state"]>
   | BridgeEnvelope<"error", BridgePayloads["error"]>;
 

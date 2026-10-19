@@ -64,6 +64,7 @@ usePbInspect({
     @submit.prevent="$emit('submit')"
   >
     <TextField
+      :inspect-id="`${inspectId ?? 'ds.search-bar'}.field`"
       class="pb-search-field"
       :show-label="false"
       :model-value="modelValue ?? ''"

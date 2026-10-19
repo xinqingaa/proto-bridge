@@ -154,7 +154,7 @@ button:disabled {
 .pb-toast.v-snackbar > .v-overlay__content {
   position: absolute !important;
   right: var(--pb-spacing-sm) !important;
-  bottom: var(--pb-spacing-sm) !important;
+  bottom: max(var(--pb-spacing-sm), var(--pb-safe-bottom, var(--pb-layout-zero))) !important;
   left: var(--pb-spacing-sm) !important;
   width: auto !important;
 }

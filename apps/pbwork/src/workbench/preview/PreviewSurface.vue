@@ -120,6 +120,9 @@ const hostId = `preview-host-${useId().replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 .preview-scroll {
   position: absolute;
   inset: var(--preview-safe-top) 0 var(--preview-safe-bottom);
+  /* This host already reserves the safe area; child controls must not reserve it again. */
+  --pb-safe-top: 0px;
+  --pb-safe-bottom: 0px;
   overflow: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;

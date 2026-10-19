@@ -93,7 +93,7 @@ Runtime 提供：
 - Capture Protocol；
 - 稳定等待、路由准备和 reset。
 
-Workbench Inspector 通过已验证的 Runtime bridge 接收当前 Screen 的实时制作诊断；几何与遮挡复用 Capture readiness 的检查，既有选中元素启发式提示保留。它不写 Evidence，不取代 Preflight，接口和目录见[制作工具](../pbwork/prototypes/authoring-tools.md)。
+Workbench 浏览原型不执行整页制作检查，也不显示阻断检查层或额外检查入口。Inspector 保留选中元素诊断；正式声明问题由 Core Preflight 与 Runtime Capture readiness 校验，Block 不可绕过，见[制作工具](../pbwork/prototypes/authoring-tools.md)。
 
 Capture Protocol 的 manifest 由 Registry 构造。`inputVersion` 覆盖 Screen、Variant、Action、Scenario、主题包摘要、键目录摘要和原型声明的时钟。页面语义快照只读取同时具有合法 `data-pb-role` 与 `data-pb-id` 的节点。
 

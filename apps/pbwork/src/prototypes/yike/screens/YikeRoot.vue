@@ -30,6 +30,10 @@ watch(
   },
   { flush: "sync" },
 );
+// Restored sessions open their actual recovery boundary before an entry check.
+// Do not canonicalize authored fixture aliases (for example cross-day).
+if (store.recoveryNeeded.value && route.params.screenSlug === "focus")
+  void yikeNavigation(router, route, store).variant();
 const active = computed(() => String(route.params.screenSlug));
 const items = [
   { value: "focus", label: "专注", icon: Timer },

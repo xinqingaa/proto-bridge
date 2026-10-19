@@ -112,7 +112,6 @@ usePbInspect({
       :id="fieldId"
       class="pb-field radius-md"
       :class="{ 'is-plain': !labeled, 'is-labeled': labeled }"
-      data-pb-id="ds.text-field"
       :label="undefined"
       :aria-label="label ?? undefined"
       :hide-details="!errorMessage"

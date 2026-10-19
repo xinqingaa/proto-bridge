@@ -551,11 +551,6 @@ function onWindowMessage(event: MessageEvent) {
     );
     return;
   }
-  if (msg.type === "authoring-diagnostics") {
-    selection.authoringDiagnostics = msg.payload.diagnostics;
-    selection.diagnosticsTruncated = msg.payload.truncated;
-    return;
-  }
   if (msg.type === "hover") {
     selection.setHover(msg.payload.element);
     return;
@@ -788,16 +783,17 @@ onBeforeUnmount(() => {
       Runtime 握手超时，请点击刷新。
     </v-alert>
 
-    <PhoneStage
-      v-if="iframeSrc"
-      :key="iframeRenderKey"
-      ref="stageRef"
-      :src="iframeSrc"
-      :iframe-title="iframeTitle"
-      :is-dark="isDark"
-      @iframe-load="onIframeLoad"
-    />
-
+    <div class="canvas-content">
+      <PhoneStage
+        v-if="iframeSrc"
+        :key="iframeRenderKey"
+        ref="stageRef"
+        :src="iframeSrc"
+        :iframe-title="iframeTitle"
+        :is-dark="isDark"
+        @iframe-load="onIframeLoad"
+      />
+    </div>
     <CanvasToolbar
       :variants="screen.variants"
       :themes="themes"
@@ -824,6 +820,11 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.canvas-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
 .phone-canvas {
   position: relative;
   container-type: inline-size;

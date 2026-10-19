@@ -28,14 +28,7 @@ const screenStyle = computed(() => ({
   height: `${props.height}px`,
 }));
 
-const statusTime = computed(() => {
-  if (props.time) return props.time;
-  const now = new Date();
-  return `${now.getHours().toString().padStart(2, "0")}:${now
-    .getMinutes()
-    .toString()
-    .padStart(2, "0")}`;
-});
+const statusTime = computed(() => props.time ?? "09:41");
 </script>
 
 <template>
@@ -53,9 +46,41 @@ const statusTime = computed(() => {
       >
         <span class="status-time">{{ statusTime }}</span>
         <span class="status-trailing">
-          <span class="sig" />
-          <span class="wifi" />
-          <span class="batt" />
+          <svg
+            width="58"
+            height="14"
+            viewBox="0 0 58 14"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M1 12V9H3V12ZM5 12V6H7V12ZM9 12V3H11V12ZM13 12V1H15V12Z"
+              fill="currentColor"
+            />
+            <path
+              d="M20 4C24 0 30 0 34 4M23 7C25 5 29 5 31 7M26 10L27 11L28 10"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            />
+            <rect
+              x="39"
+              y="2"
+              width="16"
+              height="10"
+              rx="2"
+              stroke="currentColor"
+            />
+            <rect
+              x="41"
+              y="4"
+              width="12"
+              height="6"
+              rx="1"
+              fill="currentColor"
+            />
+            <path d="M57 5V9" stroke="currentColor" stroke-linecap="round" />
+          </svg>
         </span>
       </div>
       <div class="phone-body">
@@ -135,97 +160,21 @@ const statusTime = computed(() => {
   justify-content: space-between;
   padding: 0 22px 8px;
   color: rgba(15, 23, 42, 0.88);
-  font: 600 15px/1 system-ui, -apple-system, "PingFang SC", sans-serif;
-}
-
-.phone-shell.is-overlay .status-bar {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.72) 0%,
-    rgba(255, 255, 255, 0) 100%
-  );
+  font:
+    600 15px/1 system-ui,
+    -apple-system,
+    "PingFang SC",
+    sans-serif;
 }
 
 .phone-shell.is-dark .status-bar {
   color: rgba(241, 245, 249, 0.92);
 }
 
-.phone-shell.is-overlay.is-dark .status-bar {
-  background: linear-gradient(
-    180deg,
-    rgba(16, 17, 19, 0.72) 0%,
-    rgba(16, 17, 19, 0) 100%
-  );
-}
-
 .status-trailing {
   display: flex;
   align-items: center;
   gap: 5px;
-}
-
-.sig,
-.wifi,
-.batt {
-  display: block;
-  background: currentColor;
-}
-
-.sig {
-  width: 15px;
-  height: 9px;
-  clip-path: polygon(
-    0 100%,
-    20% 70%,
-    20% 100%,
-    40% 55%,
-    40% 100%,
-    60% 35%,
-    60% 100%,
-    80% 15%,
-    80% 100%,
-    100% 0,
-    100% 100%
-  );
-}
-
-.wifi {
-  width: 13px;
-  height: 9px;
-  border-radius: 50%;
-  background: transparent;
-  box-shadow:
-    inset 0 0 0 1.4px currentColor,
-    0 -2.5px 0 -1px currentColor;
-  transform: translateY(2px);
-}
-
-.batt {
-  position: relative;
-  width: 20px;
-  height: 9px;
-  border-radius: 2.5px;
-  box-shadow: inset 0 0 0 1.3px currentColor;
-  background: transparent;
-}
-
-.batt::before {
-  content: "";
-  position: absolute;
-  inset: 1.5px 3px 1.5px 1.5px;
-  border-radius: 1px;
-  background: currentColor;
-}
-
-.batt::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  right: -2.5px;
-  width: 2px;
-  height: 5px;
-  border-radius: 0 1px 1px 0;
-  background: currentColor;
 }
 
 .home-bar {

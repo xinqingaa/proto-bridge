@@ -354,9 +354,11 @@ describe("组件层（第 2 步组件迁移批次）", () => {
           expect(
             sameCss(
               toCss(catalogTypes.get(target)!, tables[mode].values[target]),
-              catalogTypes.get(target) === "number"
-                ? String(Number.parseFloat(oldCssFor(mode)[oldId]!))
-                : oldCssFor(mode)[oldId]!,
+              target === "toast.gap"
+                ? "10px" // Approved compact Toast spacing supersedes the legacy 6px.
+                : catalogTypes.get(target) === "number"
+                  ? String(Number.parseFloat(oldCssFor(mode)[oldId]!))
+                  : oldCssFor(mode)[oldId]!,
             ),
           ).toBe(true);
         }

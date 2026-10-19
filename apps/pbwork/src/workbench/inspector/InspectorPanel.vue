@@ -475,25 +475,6 @@ function downloadUnreadable() {
 
 <template>
   <div class="inspector" data-testid="inspector-body">
-    <details
-      class="live-authoring"
-      data-testid="live-authoring-diagnostics"
-      :open="selection.authoringDiagnostics.length > 0"
-    >
-      <summary>
-        当前 Screen 制作检查 · {{ selection.authoringDiagnostics.length
-        }}{{ selection.diagnosticsTruncated ? "+" : "" }} 项
-      </summary>
-      <p v-if="!selection.authoringDiagnostics.length">
-        当前未发现声明边界问题；定稿仍须通过 Preflight。
-      </p>
-      <p
-        v-for="item in selection.authoringDiagnostics"
-        :key="item.diagnosticId"
-      >
-        {{ item.severity }} · {{ item.message }}
-      </p>
-    </details>
     <div class="tab-bar" role="tablist" aria-label="元素检查分组">
       <button
         v-for="item in [

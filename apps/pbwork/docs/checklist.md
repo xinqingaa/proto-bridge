@@ -20,7 +20,7 @@
 - [ ] 未用大 type 兼多语义角色（见 alignment-protocol / audit-large-types）
 
 - [ ] `ds:keys:generate` 的键类型和 `pb:screens:generate` 的显式边界已更新，新鲜度单测通过
-- [ ] 当前 Screen 实时诊断已核对；Token Evidence 未借用祖先或用 CSS 匹配伪装显式绑定
+- [ ] 通过 Inspector 与正式 Preflight/Capture readiness 核对声明，不以整页检查阻断原型浏览；Token Evidence 未借用祖先或用 CSS 匹配伪装显式绑定
 
 ## 资源展示（人工验收）
 
@@ -49,7 +49,7 @@
 - [ ] 唯一纵滚；顶部下拉与横滑不打架
 - [ ] 嵌套横条使用 `data-horizontal-scroll` + 共享 hook
 - [ ] 未页内复制手势仲裁
-- [ ] 原型表面默认隐藏滚动条，内容仍可滚动；仅页面明确要求时露出
+- [ ] 原型表面默认隐藏滚动条，内容仍可滚动；仅用户明确要求时露出
 - [ ] Dialog/Toast 未深埋进滚动变换层（宜兄弟挂载）
 
 ## 导航与 Variant

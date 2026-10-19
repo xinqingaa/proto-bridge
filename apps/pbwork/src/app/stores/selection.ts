@@ -24,9 +24,6 @@ export const useSelectionStore = defineStore("selection", {
     highlightRequest: null as ElementSummary["ref"] | null,
     highlightNonce: 0,
     highlightStatus: "idle" as HighlightStatus,
-    authoringDiagnostics:
-      [] as BridgePayloads["authoring-diagnostics"]["diagnostics"],
-    diagnosticsTruncated: false,
     lastError: null as string | null,
   }),
   getters: {
@@ -64,8 +61,6 @@ export const useSelectionStore = defineStore("selection", {
     onRuntimeLoading(runtimeId: string) {
       this.runtimeId = runtimeId;
       this.runtimeReady = false;
-      this.authoringDiagnostics = [];
-      this.diagnosticsTruncated = false;
       this.handshakeTimedOut = false;
       this.capabilities = [];
       this.hover = null;
@@ -128,8 +123,6 @@ export const useSelectionStore = defineStore("selection", {
     resetForNavigation() {
       this.clearSelection();
       this.runtimeReady = false;
-      this.authoringDiagnostics = [];
-      this.diagnosticsTruncated = false;
       this.capabilities = [];
       this.highlightRequest = null;
       this.highlightStatus = "idle";

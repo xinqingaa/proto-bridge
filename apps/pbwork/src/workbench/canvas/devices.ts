@@ -3,13 +3,9 @@ export type DevicePreset = {
   label: string;
   width: number;
   height: number;
-  /** In-screen decorative top chrome (does not change outer aspect ratio). */
-  topChrome: "island" | "bar";
-  /** Show in-screen home indicator overlay. */
-  showHomeIndicator: boolean;
 };
 
-/** Unified safe-area insets injected into embedded Runtime (CSS px). */
+/** Neutral simulated safe-area insets shared with Runtime CSS (not OS device claims) (CSS px). */
 export const SAFE_TOP = 44;
 export const SAFE_BOTTOM = 20;
 
@@ -22,35 +18,27 @@ export const FRAME_BEZEL = 0;
 export const DEVICE_PRESETS: DevicePreset[] = [
   {
     id: "iphone-14",
-    label: "iPhone 14",
+    label: "通用手机 · 390 × 844",
     width: 390,
     height: 844,
-    topChrome: "island",
-    showHomeIndicator: true,
   },
   {
     id: "iphone-se",
-    label: "iPhone SE",
+    label: "紧凑手机 · 375 × 667",
     width: 375,
     height: 667,
-    topChrome: "bar",
-    showHomeIndicator: false,
   },
   {
     id: "android-common",
-    label: "Android 常见",
+    label: "窄屏手机 · 360 × 800",
     width: 360,
     height: 800,
-    topChrome: "bar",
-    showHomeIndicator: true,
   },
   {
     id: "iphone-14-pro-max",
-    label: "iPhone 14 Pro Max",
+    label: "大屏手机 · 430 × 932",
     width: 430,
     height: 932,
-    topChrome: "island",
-    showHomeIndicator: true,
   },
 ];
 
