@@ -102,7 +102,7 @@
 - `components/YikeHabitCard.vue`：名称与今日按钮各发独立事件；过去/未来记录只读，未来不显示完成。七日数据由调用方提供，不生成历史。六种习惯图标共用 YikeHabitGlyph，来源为 Lucide 公开组件，尺寸/描边从主题读取。
 - 五个存量预览文件保留，preview-resources.ts 已清空七项独立登记，状态写入设备 session，支持复位与独立复制；普通 DS Button 仅用于演示工具，不登记业务变体。
 
-字距、主操作最小宽度、图形滤镜分别由 tracking.*、size.action-min-inline、effect.artwork-shadow 承接；水波、日影渐隐/暂停与卡行标记使用受控 artwork。周图保留三形态，月历与年度图组合公共日期组件。资源规格以本文件为准，资源验收与正式页面的后续接入检查分别记录在 implementation.md。B3 的表单焦点/长内容滚动仍按业务组合验证，不作为继续扩大玻璃适配的理由。
+字距、主操作最小宽度、图形滤镜分别由 tracking.*、size.action-min-inline、effect.artwork-shadow 承接；水波、日影渐隐/暂停与卡行标记使用受控 artwork。周图保留三形态，月历与年度图组合公共日期组件。资源规格以本文件为准，资源验收与正式页面的后续接入检查分别记录在 implementation.md。B3的表单焦点/长内容滚动按有限资源组合验证；正式页面仍检查接入后的业务行为，不作为继续扩大玻璃适配的理由。
 
 
 ### 操作与编辑组合

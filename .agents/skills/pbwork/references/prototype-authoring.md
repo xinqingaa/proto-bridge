@@ -40,6 +40,16 @@ rewriting the baseline.
    `.agents/skills/frontend-design/SKILL.md` for the post-authoring Experience
    Gate as well as initial direction.
 
+## Prototype business scope
+
+Apply [原型业务实现尺度](../../../../apps/pbwork/docs/principles.md#9-原型业务实现尺度).
+Implement enough shared state and logic for the approved journeys to be
+observable, consistent across pages, demonstrable and repeatable. Mock services,
+fixtures and lightweight local state are valid; do not infer a requirement for
+production persistence, exhaustive recovery or a complete business backend from
+a page contract. Scope such work explicitly only when the experience needs it.
+Keep formal authoring and Evidence gates intact.
+
 ## Constraints
 
 - Build on the PBWork Design System and follow the Promotion Mapping in

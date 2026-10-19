@@ -79,6 +79,16 @@ important assumptions. Pause again only when alternatives materially change the
 product direction, core flow, or information architecture. Do not draw an
 unimplemented capability as an interactive control.
 
+## Prototype business scope
+
+Apply [原型业务实现尺度](../../../../apps/pbwork/docs/principles.md#9-原型业务实现尺度).
+Implement enough shared state and logic for the approved journeys to be
+observable, consistent across pages, demonstrable and repeatable. Mock services,
+fixtures and lightweight local state are valid; do not infer a requirement for
+production persistence, exhaustive recovery or a complete business backend from
+a page contract. Scope such work explicitly only when the experience needs it.
+Keep formal authoring and Evidence gates intact.
+
 ## Select a mode
 
 ### Design baseline
