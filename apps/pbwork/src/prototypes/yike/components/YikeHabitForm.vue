@@ -64,6 +64,8 @@ function save() {
     :aria-busy="submitting || undefined"
     :data-pb-id="inspectId"
     data-pb-role="form"
+    data-pb-token-gap="spacing.lg"
+    data-pb-token-color="color.on-surface"
     @submit.prevent="save"
   >
     <TextField

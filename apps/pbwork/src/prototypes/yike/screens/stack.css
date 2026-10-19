@@ -1,0 +1,50 @@
+.yike-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-lg);
+  block-size: var(--pb-layout-fill);
+  min-block-size: var(--pb-layout-zero);
+  overflow: auto;
+  padding: var(--pb-spacing-lg);
+  background: var(--pb-color-background);
+  color: var(--pb-color-on-surface);
+  font: var(--pb-typography-content);
+}
+.yike-stack h1,
+.yike-stack h2,
+.yike-stack p {
+  margin: var(--pb-layout-zero);
+}
+.yike-stack h1 {
+  font: var(--pb-typography-title-lg);
+}
+.yike-stack h2 {
+  font: var(--pb-typography-subtitle);
+}
+.yike-stack .muted {
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-caption);
+}
+.yike-stack .actions,
+.yike-decision {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-md);
+}
+.yike-stack .metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pb-spacing-lg);
+}
+.yike-stack .metrics > * {
+  flex: var(--pb-layout-flex-fill);
+}
+.yike-stack .section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-md);
+}
+.yike-decision p {
+  font: var(--pb-typography-content);
+  color: var(--pb-color-on-surface-muted);
+}

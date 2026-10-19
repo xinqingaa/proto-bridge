@@ -134,7 +134,7 @@
     },
     "toast": {
       "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "reason": "PBWork Toast 内边距绑定改为垂直 toast.gap（10px）、水平 spacing.md（16px），并移除底层重复留白；可选撤销改为无独立内边距/最小高度的紧凑文字操作；Flutter 尚待按当前 Contract 复核实现。"
     },
     "segmented-control": {
       "status": "pending",

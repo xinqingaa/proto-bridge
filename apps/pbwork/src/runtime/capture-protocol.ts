@@ -56,6 +56,8 @@ type CaptureProtocolOptions = {
   /** Allows `describe` to expose a Prototype manifest before a Screen resolves. */
   getManifestPrototypeId?(): string | null;
   navigate(input: RuntimeContext): Promise<void>;
+  /** Reapply authored business fixtures even when the URL did not change. */
+  prepareCase?(): Promise<void>;
   waitForStable(): Promise<void>;
 };
 
@@ -1170,6 +1172,7 @@ export function installRuntimeCaptureProtocol(
         );
       }
       saveBaseline(context);
+      await options.prepareCase?.();
       await options.waitForStable();
       return { actual: actualDimensions(context) };
     }
@@ -1183,6 +1186,7 @@ export function installRuntimeCaptureProtocol(
         );
       }
       await options.navigate(baseline);
+      await options.prepareCase?.();
       const resetContext = await waitForExpectedContext(options, baseline);
       return { actual: actualDimensions(resetContext) };
     }

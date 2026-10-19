@@ -191,6 +191,8 @@ Runtime 在 readiness 成功前必须完成：
 
 每个 Case 必须能回到独立 baseline。reset 不能依赖上一个 Case 的偶然页面状态。
 
+PBWork view 可通过 `usePrototypeCaseReset` 注册状态准备函数，`prepare` 与 `reset` 在等待稳定前触发它。同 URL 的重复调用也必须复位业务与局部状态；只更新或监听 URL 不构成复位。接口用法见 [制作工具](../../apps/pbwork/docs/prototypes/authoring-tools.md#共享运行套件)。
+
 ## 12. 页面结构
 
 - 一个页面只有一个主滚动所有者。

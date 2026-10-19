@@ -51,6 +51,7 @@ import { scope } from './screen';
 - `prototypeNavigation(router, route, prototypeId)`：`enter` 进栈并写父路径链，`replace`/`variant` 保留父引用，`back` 在嵌入画布恢复父级、独立窗口返回历史；深链回退到显式 fallback。`tab` replace 根目的地，跨 Tab `enter(to, targetHome)` 先规范父级，`home` replace 清空中间链。
 - 主题偏好 API：复用 `useThemePackPreference`、`writeThemePackPreference`、`useSystemThemeMode`，实际主题应用仍由 RuntimeLayout 统一完成。返回时按原型当前主题与模式盖章，system 转成具体模式。
 - `useClock()`：复用 Date 时钟；Capture 从 `prototype.ts` 的 `clock` 声明安装时间与时区，交互模式读真实时间。
+- `usePrototypeCaseReset(reset)`：在当前 view 注册 authored fixture 的同步准备函数。Capture `prepare` 和 `reset` 均触发，即使 URL 未变化；函数应复位共享业务状态、表单、Overlay、选中和滚动等局部状态。普通产品导航不触发此钩子，不能以路由 query 的改变代替实际状态准备。演示 fixture 与真实首次数据分离，隔离保存副作用。
 - `PrototypeShell`：AppBar、内容与 navigation 插槽；`launch` 为真时只显示 `launch` 插槽。它是组合外壳，不新增启动页业务或品牌组件。
 - `PrototypeTabs`：组合已有 TabViewport 与 Tabbar，保活、关闭横滑、使用 `motion.duration-instant`；父级把更新交给导航的 `tab()`。
 

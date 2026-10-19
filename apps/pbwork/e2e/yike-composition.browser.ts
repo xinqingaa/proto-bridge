@@ -38,6 +38,10 @@ for (const theme of ["mechanical", "water", "sundial"])
       await expect(edit).toBeFocused();
       await edit.click();
       await expect(name).toHaveValue("每天读书");
+      await expect(
+        a.locator('[class*="-enter-active"], [class*="-leave-active"]'),
+      ).toHaveCount(0);
+      await name.focus();
       await page.keyboard.press("Tab");
       expect(
         await editor.evaluate((e) => e.contains(document.activeElement)),

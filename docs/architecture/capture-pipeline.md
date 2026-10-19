@@ -52,6 +52,8 @@ Playwright Driver 为每个 Case 建立隔离上下文，固定：
 
 `prepare` 使用 Manifest 中的 authored route query 导航到精确 Screen/Variant/Theme/Fixture，并保存 reset baseline。Runtime 必须返回实际 dimensions；任一维度不匹配都失败。
 
+PBWork 在 `prepare` 与 `reset` 中触发当前 view 注册的 authored Case 准备钩子，再等待渲染稳定。同 URL 重复复位不依赖路由变化；原型负责重建业务 fixture、Overlay 与局部选中状态，普通产品导航保留交互状态。
+
 `readiness` 只在页面完成状态准备、语义标记稳定且 required Fragment 可解析时成功。Core 会重复观察稳定签名，防止把中间渲染状态当成最终页面。
 
 ## 6. Semantic Snapshot

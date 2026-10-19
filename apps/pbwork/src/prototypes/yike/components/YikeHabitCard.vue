@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
+import { usePbInspect } from "@/runtime/inspect/usePbInspect";
 import GlassSurface from "@/design-system/components/display/GlassSurface.vue";
 import Icon from "@/design-system/components/action/Icon.vue";
 import YikeHabitGlyph, { type YikeHabitIcon } from "./YikeHabitGlyph.vue";
@@ -17,6 +18,14 @@ const doneToday = computed(() =>
   props.days.some((day) => day.date === props.today && day.completed),
 );
 const stamp = computed(() => Array.from(props.habit.name.trim())[0] ?? "印");
+const todayRef = ref<HTMLElement | null>(null);
+usePbInspect({
+  element: todayRef,
+  pbId: "yike.habit-today",
+  instanceId: () => `${props.inspectId}.today`,
+  pbKey: () => props.habit.id,
+  getState: () => ({ checked: doneToday.value }),
+});
 </script>
 <template>
   <article
@@ -110,12 +119,13 @@ const stamp = computed(() => Array.from(props.habit.name.trim())[0] ?? "印");
             </svg>
           </span>
           <button
+            ref="todayRef"
             type="button"
             class="today"
             :class="{ 'is-done': doneToday }"
             :disabled="disabled"
             :aria-pressed="doneToday"
-            :aria-label="`${habit.name}今天${doneToday ? '取消打卡' : '打卡'}`"
+            :aria-label="`${doneToday ? '取消打卡' : '打卡'}：${habit.name}`"
             :data-pb-id="`${inspectId}.today`"
             data-pb-role="button"
             :data-pb-key="habit.id"

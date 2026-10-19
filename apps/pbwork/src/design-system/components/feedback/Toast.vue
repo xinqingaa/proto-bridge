@@ -53,25 +53,22 @@ const { resync } = usePbInspect({
     "color.on-inverse-surface",
     "radius.surface",
     "spacing.sm",
-    "spacing.xs",
+    "spacing.md",
     "toast.gap",
     "typography.content",
     "toast.duration",
-    "size.touch",
     "border.focus",
   ],
   getTokenBindings: () => ({
     surface: "color.inverse-surface",
     text: "color.on-inverse-surface",
     radius: "radius.surface",
-    paddingX: "spacing.sm",
+    paddingX: "spacing.md",
     paddingY: "toast.gap",
     message: "typography.content",
     duration: "toast.duration",
     gap: "spacing.sm",
-    target: "size.touch",
     focus: "border.focus",
-    actionPadding: "spacing.xs",
   }),
 });
 
@@ -119,12 +116,13 @@ watch(modelValue, async (value) => {
   display: flex;
   align-items: center;
   gap: var(--pb-spacing-sm);
-  padding: var(--pb-toast-gap) var(--pb-spacing-sm);
+  padding: var(--pb-toast-gap) var(--pb-spacing-md);
   font: var(--pb-typography-content);
 }
 button {
-  min-height: var(--pb-size-touch);
-  padding: var(--pb-spacing-xs) var(--pb-spacing-sm);
+  min-height: var(--pb-layout-zero);
+  padding: var(--pb-layout-zero);
+  white-space: nowrap;
   border: none;
   background: transparent;
   color: inherit;
@@ -143,11 +141,15 @@ button:disabled {
 <style>
 /* Teleported overlay content; keep classes unscoped so attach target still styles. */
 .pb-toast-surface {
+  min-height: var(--pb-layout-zero) !important;
   border-radius: var(--pb-radius-surface) !important;
   background: var(--pb-color-inverse-surface) !important;
   color: var(--pb-color-on-inverse-surface) !important;
   box-shadow: none !important;
   font: var(--pb-typography-content);
+}
+.pb-toast-surface .v-snackbar__content {
+  padding: var(--pb-layout-zero);
 }
 .pb-toast.v-snackbar > .v-overlay__content {
   position: absolute !important;

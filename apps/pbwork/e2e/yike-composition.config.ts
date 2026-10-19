@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 const port = Number(process.env.PBWORK_B3_PORT ?? 43977);
 export default defineConfig({
   testDir: ".",
-  testMatch: "yike-composition.browser.ts",
+  testMatch: ["yike-composition.browser.ts", "yike-foundation.browser.ts"],
   use: {
     baseURL: `http://127.0.0.1:${port}`,
     viewport: { width: 900, height: 820 },

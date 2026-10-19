@@ -99,6 +99,54 @@
       "pbId": "yike.focus.navigation"
     }
   ],
+  "yike.habit-detail": [
+    {
+      "screenId": "yike.habit-detail",
+      "pbId": "yike.habit-detail.root"
+    },
+    {
+      "screenId": "yike.habit-detail",
+      "pbId": "yike.habit-detail.name"
+    },
+    {
+      "screenId": "yike.habit-detail",
+      "pbId": "yike.habit-detail.edit"
+    },
+    {
+      "screenId": "yike.habit-detail",
+      "pbId": "yike.habit-detail.year"
+    },
+    {
+      "screenId": "yike.habit-detail",
+      "pbId": "yike.habit-detail.archive"
+    },
+    {
+      "screenId": "yike.habit-detail",
+      "pbId": "yike.habit-detail.delete"
+    }
+  ],
+  "yike.habit-editor": [
+    {
+      "screenId": "yike.habit-editor",
+      "pbId": "yike.habit-editor.root"
+    },
+    {
+      "screenId": "yike.habit-editor",
+      "pbId": "yike.habit-editor.panel"
+    },
+    {
+      "screenId": "yike.habit-editor",
+      "pbId": "yike.habit-editor.form"
+    },
+    {
+      "screenId": "yike.habit-editor",
+      "pbId": "yike.habit-editor.form.name"
+    },
+    {
+      "screenId": "yike.habit-editor",
+      "pbId": "yike.habit-editor.form.save"
+    }
+  ],
   "yike.review": [
     {
       "screenId": "yike.review",
@@ -115,6 +163,24 @@
     {
       "screenId": "yike.review",
       "pbId": "yike.review.navigation"
+    }
+  ],
+  "yike.settings": [
+    {
+      "screenId": "yike.settings",
+      "pbId": "yike.settings.root"
+    },
+    {
+      "screenId": "yike.settings",
+      "pbId": "yike.settings.mode"
+    },
+    {
+      "screenId": "yike.settings",
+      "pbId": "yike.settings.configuration"
+    },
+    {
+      "screenId": "yike.settings",
+      "pbId": "yike.settings.reset"
     }
   ]
 }

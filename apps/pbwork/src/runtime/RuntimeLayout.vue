@@ -49,6 +49,7 @@ import { useRuntimeVuetifyTheme } from "@/design-system/theme/vuetify-theme";
 import { loadPrototypeThemePack } from "@/design-system/loaders";
 import { buildCanonicalRuntimeUrl, resolveRuntimeRoute } from "@/runtime/url";
 import InspectHost from "@/runtime/inspect/InspectHost.vue";
+import { PrototypeCaseRevisionKey } from "@/runtime/prototype/case";
 import {
   inspectCurrentScreen,
   installRuntimeCaptureProtocol,
@@ -60,6 +61,8 @@ installNavigationIntentTracking();
 
 const route = useRoute();
 const router = useRouter();
+const prototypeCaseRevision = ref(0);
+provide(PrototypeCaseRevisionKey, prototypeCaseRevision);
 const screenComponent = shallowRef<Component | null>(null);
 const loadedView = shallowRef<string | null>(null);
 const loadError = shallowRef<string | null>(null);
@@ -420,6 +423,10 @@ onMounted(() => {
     document.documentElement.classList.add("pbwork-runtime-embedded");
   }
   disposeCaptureProtocol = installRuntimeCaptureProtocol({
+    prepareCase: async () => {
+      prototypeCaseRevision.value++;
+      await nextTick();
+    },
     getContext: () => {
       if (!resolved.value.ok) return null;
       return {

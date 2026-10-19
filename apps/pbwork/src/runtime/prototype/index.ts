@@ -1,4 +1,5 @@
 export { usePrototypeStorage } from "./storage";
+export { usePrototypeCaseReset } from "./case";
 export { prototypeNavigation } from "./navigation";
 export { useClock } from "../useClock";
 export {

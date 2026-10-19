@@ -6,7 +6,7 @@
     "secondary-tabs.indicator": "{color.on-surface}",
     "menu.menu-item-height": "{size.control-large}",
     "menu.offset": "{space.6}",
-    "toast.gap": "{space.6}",
+    "toast.gap": "{space.10}",
     "flow-sheet.gap": "{space.6}",
     "progress.gap": "{space.6}",
     "scrollable-data-list.action-min-width": 96,

@@ -16,7 +16,7 @@
     "summary": "短提示悬浮于内容上方并保持内容宽度；不占据页面流，不阻断下层布局与交互。"
   },
   "visualAnatomy": {
-    "summary": "反色表面包含文本；有动作时在同一行末尾放一个文本按钮。无 tone 色条、图标或标题。"
+    "summary": "反色表面包含文本；有动作时在同一行末尾放一个紧凑文字操作，不设独立按钮内边距和最小高度；保留原生button的键盘与禁用语义。无 tone 色条、图标或标题。"
   },
   "propsSchema": {
     "type": "object",
@@ -64,14 +64,12 @@
     "surface": "color.inverse-surface",
     "text": "color.on-inverse-surface",
     "radius": "radius.surface",
-    "paddingX": "spacing.sm",
+    "paddingX": "spacing.md",
     "paddingY": "toast.gap",
     "message": "typography.content",
     "duration": "toast.duration",
     "gap": "spacing.sm",
-    "target": "size.touch",
-    "focus": "border.focus",
-    "actionPadding": "spacing.xs"
+    "focus": "border.focus"
   },
   "playground": {
     "presentation": "trigger"
@@ -79,7 +77,7 @@
   "componentTokens": {
     "gap": {
       "valueType": "length",
-      "default": "{space.6}",
+      "default": "{space.10}",
       "modeVariant": false,
       "bindable": true
     },

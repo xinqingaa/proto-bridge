@@ -8,7 +8,7 @@ export default {
   roles: ["日常使用者"],
   themePackId: "yike",
   clock: {
-    now: "2026-10-16T10:24:00.000+08:00",
+    now: "2026-10-16T02:24:00.000Z",
     timeZone: "Asia/Shanghai",
   },
   screenGroups: [
@@ -16,6 +16,11 @@ export default {
       id: "core",
       label: "核心页面",
       screenSlugs: ["focus", "checkin", "review"],
+    },
+    {
+      id: "management",
+      label: "习惯与设置",
+      screenSlugs: ["habit-detail", "habit-editor", "settings"],
     },
   ],
 } satisfies PrototypeRecord;

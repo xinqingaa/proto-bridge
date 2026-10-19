@@ -26,6 +26,20 @@ describe("buildCanonicalRuntimeUrl", () => {
 });
 
 describe("resolveRuntimeRoute", () => {
+  it("opens the Yike detail entry without a habit and preserves explicit objects", () => {
+    for (const query of ["theme=mechanical&mode=light", "theme=mechanical&mode=light&habit=habit-reading"]) {
+      const result = resolveRuntimeRoute({
+        prototypeId: "yike",
+        screenSlug: "habit-detail",
+        searchParams: new URLSearchParams(query),
+      });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.variant.id).toBe("default");
+        expect(result.query).toEqual(query.includes("habit=") ? { habit: "habit-reading" } : {});
+      }
+    }
+  });
   it("resolves known routes and fills defaults when variant/theme omitted", () => {
     const withExplicit = resolveRuntimeRoute({
       prototypeId: "cold-chain-ops",
