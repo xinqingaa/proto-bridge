@@ -226,6 +226,7 @@ test("D7: history navigation, month selection, empty days and future dates refle
     page.locator('[data-pb-id="yike.review.day-detail"]'),
   ).toContainText("番茄钟");
   await shot(page, "review-selected");
+  await page.locator('[data-pb-id="yike.review.day-detail.close"]').click();
   await page.getByRole("radio", { name: "月", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "下个月", exact: true }),

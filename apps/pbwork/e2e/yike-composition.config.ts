@@ -9,6 +9,8 @@ export default defineConfig({
     "yike-rework.browser.ts",
     "yike-review-fixes.browser.ts",
     "yike-experience.browser.ts",
+    "yike-review-sheet.browser.ts",
+    "yike-controls.browser.ts",
   ],
   use: {
     baseURL: `http://127.0.0.1:${port}`,

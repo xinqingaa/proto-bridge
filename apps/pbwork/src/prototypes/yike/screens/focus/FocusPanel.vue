@@ -151,7 +151,6 @@ function appendMinute() {
       <YikeDial
         class="yike-focus-dial"
         :face="face"
-        :compact="mode === 'countdown'"
         :minutes="(mode === 'stopwatch' ? elapsed : remaining) / 60_000"
         :total="total / 60_000"
         :digits="display"
@@ -170,6 +169,8 @@ function appendMinute() {
         :counting-up="mode === 'stopwatch'"
         inspect-id="yike.focus.timer"
       />
+    </div>
+    <div class="yike-support">
       <div
         v-if="mode === 'pomodoro'"
         class="yike-round"
@@ -185,108 +186,107 @@ function appendMinute() {
         <span>{{ roundLabel }}</span>
         <span class="yike-pips" aria-hidden="true">
           <svg
-            v-for="round in store.data.preferences.longBreakEvery"
-            :key="round"
+            v-for="round in store.data.preferences.longBreakEvery" :key="round"
             :viewBox="roundArtwork.viewBox"
-            :class="{
-              'is-done': round <= store.data.completedRounds,
-              'is-current':
-                status !== 'idle' &&
-                !fullRound &&
-                !isBreak &&
-                round === store.data.completedRounds + 1,
-            }"
-            v-pb="
-              scope.node('round-marker', 'image', {
-                key: `round-${round}`,
-                tokens: { width: 'size.icon-inline', color: 'color.primary' },
-              })
-            "
-          >
-            <path :d="roundArtwork[face]" />
-          </svg>
+            :class="{ 'is-done': round <= store.data.completedRounds, 'is-current': status !== 'idle' && !fullRound && !isBreak && round === store.data.completedRounds + 1 }"
+            v-pb="scope.node('round-marker', 'image', { key: `round-${round}`, tokens: { width: 'size.icon-inline', color: 'color.primary' } })"
+          ><path :d="roundArtwork[face]" /></svg>
         </span>
       </div>
+      <div
+        v-if="mode === 'countdown' && status === 'idle'"
+        class="yike-presets"
+        role="group"
+        aria-label="倒计时时长"
+        data-no-swipe
+      >
+        <button
+          v-for="minutes in [3, 5, 10, 20]"
+          :key="minutes"
+          type="button"
+          :class="{ 'is-active': countdownMinutes === minutes }"
+          :aria-pressed="countdownMinutes === minutes"
+          v-pb="
+            scope.node('preset', 'button', {
+              key: `minutes-${minutes}`,
+              tokens: {
+                typography: 'typography.content',
+                color:
+                  countdownMinutes === minutes
+                    ? 'color.primary'
+                    : 'color.on-surface-muted',
+                background: countdownMinutes === minutes
+                  ? 'color.primary-soft' : 'color.background',
+                border: countdownMinutes === minutes
+                  ? 'color.primary' : 'color.border',
+                radius: 'radius.control-compact',
+                size: 'size.touch',
+                padding: 'spacing.sm',
+                focus: 'border.focus',
+              },
+            })
+          "
+          @click="countdownMinutes = minutes"
+        >
+          {{ minutes }}分
+        </button>
+        <button
+          type="button"
+          class="is-custom"
+          v-pb="
+            scope.node('custom', 'button', {
+              tokens: {
+                typography: 'typography.content',
+                color: 'color.on-surface-muted',
+                background: 'color.background',
+                radius: 'radius.control-compact',
+                size: 'size.touch',
+                padding: 'spacing.sm',
+                focus: 'border.focus',
+              },
+            })
+          "
+          @click="openCustom"
+        >
+          自定义
+        </button>
+      </div>
+      <ScrollableDataList
+        v-if="mode === 'stopwatch' && session"
+        class="yike-lap-scroll"
+        inspect-id="yike.focus.lap-scroll"
+        tabindex="0"
+        aria-label="滚动计圈记录"
+      >
+        <ol
+          class="yike-laps"
+          aria-label="计圈记录"
+          v-pb="
+            scope.node('laps', 'list', {
+              tokens: {
+                typography: 'typography.numeric-content',
+                color: 'color.on-surface',
+              },
+            })
+          "
+        >
+          <li class="is-current">
+            <span>第 {{ (session.laps?.length ?? 0) + 1 }} 圈</span
+            ><b>{{ lapLabel(elapsed - (session.laps?.at(-1) ?? 0)) }}</b
+            ><em>{{ status === "paused" ? "已暂停" : "进行中" }}</em>
+          </li>
+          <li v-for="lap in completedLaps" :key="lap.index">
+            <span>第 {{ lap.index }} 圈</span><b>{{ lapLabel(lap.duration) }}</b
+            ><em>累计 {{ lapLabel(lap.total) }}</em>
+          </li>
+        </ol>
+      </ScrollableDataList>
+      <div
+        v-else-if="mode === 'stopwatch'"
+        class="yike-lap-placeholder"
+        aria-hidden="true"
+      />
     </div>
-    <div
-      v-if="mode === 'countdown' && status === 'idle'"
-      class="yike-presets"
-      aria-label="倒计时时长"
-    >
-      <button
-        v-for="minutes in [3, 5, 10, 20]"
-        :key="minutes"
-        type="button"
-        :class="{ 'is-active': countdownMinutes === minutes }"
-        :aria-pressed="countdownMinutes === minutes"
-        v-pb="
-          scope.node('preset', 'button', {
-            key: `minutes-${minutes}`,
-            tokens: {
-              typography: 'typography.content',
-              color:
-                countdownMinutes === minutes
-                  ? 'color.primary'
-                  : 'color.on-surface-muted',
-              radius: 'radius.pill',
-            },
-          })
-        "
-        @click="countdownMinutes = minutes"
-      >
-        {{ minutes }}<small>分</small>
-      </button>
-      <button
-        type="button"
-        v-pb="
-          scope.node('custom', 'button', {
-            tokens: {
-              typography: 'typography.content',
-              color: 'color.primary',
-              size: 'size.touch',
-            },
-          })
-        "
-        @click="openCustom"
-      >
-        自定义
-      </button>
-    </div>
-    <ScrollableDataList
-      v-if="mode === 'stopwatch' && session"
-      class="yike-lap-scroll"
-      inspect-id="yike.focus.lap-scroll"
-      tabindex="0"
-      aria-label="滚动计圈记录"
-    >
-      <ol
-        class="yike-laps"
-        aria-label="计圈记录"
-        v-pb="
-          scope.node('laps', 'list', {
-            tokens: {
-              typography: 'typography.numeric-content',
-              color: 'color.on-surface',
-            },
-          })
-        "
-      >
-        <li class="is-current">
-          <span>第 {{ (session.laps?.length ?? 0) + 1 }} 圈</span
-          ><b>{{ lapLabel(elapsed - (session.laps?.at(-1) ?? 0)) }}</b
-          ><em>{{ status === "paused" ? "已暂停" : "进行中" }}</em>
-        </li>
-        <li v-for="lap in completedLaps" :key="lap.index">
-          <span>第 {{ lap.index }} 圈</span><b>{{ lapLabel(lap.duration) }}</b
-          ><em>累计 {{ lapLabel(lap.total) }}</em>
-        </li>
-      </ol>
-    </ScrollableDataList>
-    <div
-      v-else-if="mode === 'stopwatch'"
-      class="yike-lap-placeholder"
-      aria-hidden="true"
-    />
     <div class="yike-actions">
       <div class="yike-primary-row">
         <YikeAction
@@ -392,35 +392,42 @@ function appendMinute() {
   box-sizing: border-box;
   min-block-size: var(--pb-layout-zero);
   block-size: var(--pb-layout-fill);
-  overflow-y: auto;
-  gap: var(--pb-spacing-sm);
-  padding-block: var(--pb-spacing-sm-plus) var(--pb-spacing-sm);
+  overflow: hidden;
+  gap: var(--pb-spacing-xs);
+  padding-block: var(--pb-spacing-xs) var(--pb-layout-zero);
 }
 .yike-stage {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  inline-size: var(--pb-layout-fill);
   min-block-size: var(--pb-layout-zero);
-  flex: var(--pb-layout-zero) var(--pb-layout-flex-grow) auto;
-  gap: var(--pb-spacing-sm-plus);
+  flex: var(--pb-layout-flex-fill);
 }
 .yike-focus-dial {
-  min-block-size: var(--pb-layout-zero);
-}
-.is-stopwatch {
-  overflow: hidden;
-  gap: var(--pb-spacing-xs);
-  padding-block: var(--pb-spacing-xs) var(--pb-layout-zero);
-}
-.is-stopwatch .yike-stage {
-  inline-size: var(--pb-layout-fill);
-  flex: var(--pb-layout-flex-fill);
-  justify-content: center;
-}
-.is-stopwatch .yike-focus-dial {
   flex: none;
+  min-block-size: var(--pb-layout-zero);
   block-size: auto;
   max-block-size: var(--pb-layout-fill);
+}
+.yike-support {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  inline-size: var(--pb-layout-fill);
+  block-size: clamp(
+    var(--pb-size-touch),
+    calc(
+      var(--pb-layout-fill) - var(--pb-size-plot) -
+        var(--pb-size-control-large) - var(--pb-size-control-large) -
+        var(--pb-spacing-lg)
+    ),
+    calc(var(--pb-size-control) + var(--pb-size-control))
+  );
+  min-block-size: var(--pb-layout-zero);
 }
 .yike-round {
   display: flex;
@@ -434,27 +441,11 @@ function appendMinute() {
   display: flex;
   gap: var(--pb-spacing-xs);
 }
-.yike-pips svg {
-  inline-size: var(--pb-size-icon-inline);
-  block-size: var(--pb-size-icon-inline);
-  overflow: visible;
-}
-.yike-pips path {
-  fill: var(--pb-color-outline);
-  stroke: transparent;
-  stroke-width: var(--pb-border-width);
-}
-.yike-pips .is-done path {
-  fill: var(--pb-color-primary);
-}
-.yike-pips .is-current path {
-  fill: var(--pb-color-background);
-  stroke: var(--pb-color-primary);
-}
-[data-face="water"] .yike-pips .is-current path,
-[data-face="sundial"] .yike-pips .is-current path {
-  fill: var(--pb-color-primary-soft);
-}
+.yike-pips svg { inline-size: var(--pb-size-icon-inline); block-size: var(--pb-size-icon-inline); overflow: visible; }
+.yike-pips path { fill: var(--pb-color-outline); stroke: transparent; stroke-width: var(--pb-border-width); }
+.yike-pips .is-done path { fill: var(--pb-color-primary); }
+.yike-pips .is-current path { fill: var(--pb-color-background); stroke: var(--pb-color-primary); }
+[data-face="water"] .yike-pips .is-current path, [data-face="sundial"] .yike-pips .is-current path { fill: var(--pb-color-primary-soft); }
 .yike-actions {
   flex: none;
   display: flex;
@@ -493,16 +484,30 @@ function appendMinute() {
   gap: var(--pb-spacing-xs);
 }
 .yike-presets button {
+  min-inline-size: var(--pb-size-touch);
   min-block-size: var(--pb-size-touch);
   padding-inline: var(--pb-spacing-sm);
   border: var(--pb-border-default);
-  border-radius: var(--pb-radius-pill);
+  border-radius: var(--pb-radius-control-compact);
+  background: var(--pb-color-background);
   font: var(--pb-typography-content);
   color: var(--pb-color-on-surface-muted);
+  cursor: pointer;
 }
 .yike-presets button.is-active {
-  background: var(--pb-color-action);
-  color: var(--pb-color-on-action);
+  background: var(--pb-color-primary-soft);
+  border-color: var(--pb-color-primary);
+  color: var(--pb-color-primary);
+}
+.yike-presets button.is-custom {
+  border-color: transparent;
+}
+.yike-presets button:focus-visible {
+  outline: var(--pb-border-focus);
+  outline-offset: var(--pb-spacing-xxs);
+}
+.yike-presets button:active {
+  transform: scale(var(--pb-motion-press-scale));
 }
 .yike-laps {
   display: flex;
@@ -516,16 +521,7 @@ function appendMinute() {
 }
 .yike-lap-scroll,
 .yike-lap-placeholder {
-  flex: none;
-  block-size: clamp(
-    var(--pb-size-touch),
-    calc(
-      var(--pb-layout-fill) - var(--pb-size-plot) -
-        var(--pb-size-control-large) - var(--pb-size-control-large) -
-        var(--pb-spacing-lg)
-    ),
-    calc(var(--pb-size-control) + var(--pb-size-control))
-  );
+  flex: var(--pb-layout-flex-fill);
   min-block-size: var(--pb-layout-zero);
   inline-size: var(--pb-layout-fill);
 }

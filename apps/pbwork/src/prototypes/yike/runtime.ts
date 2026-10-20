@@ -59,9 +59,18 @@ export function useYikeRuntime() {
       session.pendingMode.value = "countdown";
     if (
       route.params.screenSlug === "review" &&
-      ["month", "intensity-levels"].includes(String(route.query.variant))
+      ["month", "intensity-levels", "day-detail"].includes(
+        String(route.query.variant),
+      )
     )
       store.presentation.review.range = "month";
+    if (
+      route.params.screenSlug === "review" &&
+      route.query.variant === "day-detail"
+    ) {
+      store.presentation.review.selected = store.today();
+      store.presentation.review.detailOpen = true;
+    }
     store.presentation.preparing = false;
   }
   usePrototypeCaseReset(prepare);

@@ -6,6 +6,7 @@ import {
   parseDay,
 } from "@/design-system/components/_shared/calendar";
 import artwork from "./date-artwork.json";
+import mechanicalBezel from "../theme/assets/mechanical-calendar-icon.svg?url";
 import {
   compositeOver,
   contrastRatio,
@@ -62,6 +63,8 @@ const level = (date: string) =>
     high: intensityHigh.value,
   })[band(date)];
 function numberColor(date: string) {
+  if (props.face === "mechanical")
+    return minutes(date) > 0 ? "color.on-surface" : "color.on-surface-muted";
   if (minutes(date) === 0) return "color.on-surface-muted";
   const fill = parseThemeColor(String(primary.value))!;
   const paper = parseThemeColor(String(background.value))!;
@@ -224,6 +227,7 @@ const dayLabels = computed(() =>
               :r="artwork.cell.radius"
             />
           </template>
+          <image v-if="face === 'mechanical'" :href="mechanicalBezel" :width="artwork.cell.size" :height="artwork.cell.size" />
           <text
             class="number"
             :x="artwork.cell.cx"
@@ -328,7 +332,6 @@ const dayLabels = computed(() =>
   stroke-width: var(--pb-border-width);
 }
 .outline {
-  stroke: var(--pb-color-divider);
-  stroke-width: var(--pb-border-width);
+  stroke: none;
 }
 </style>

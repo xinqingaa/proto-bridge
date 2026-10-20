@@ -203,20 +203,32 @@ function resetCorruptData() {
           ? "本机数据无法读取。重置后会恢复默认习惯并清除记录。"
           : "暂未保存，关闭后可能丢失。"
       }}
-      <button
+      <Button
         v-if="store.storageIssue.value === 'corrupt'"
-        type="button"
+        label="重置数据"
+        kind="quiet"
+        shape="pill"
+        size="lg"
+        inspect-id="yike.checkin.storage-reset"
         @click="showReset = true"
-      >
-        重置数据
-      </button>
-      <button v-else type="button" @click="store.retrySave">重试保存</button>
+      />
+      <Button
+        v-else
+        label="重试保存"
+        kind="quiet"
+        shape="pill"
+        size="lg"
+        inspect-id="yike.checkin.storage-retry"
+        @click="store.retrySave"
+      />
     </p>
     <p v-if="habits.length === 0" class="yike-empty">还没有进行中的习惯</p>
     <Button
       v-if="habits.length === 0"
       label="新建习惯"
       kind="accent"
+      shape="pill"
+      size="lg"
       inspect-id="yike.checkin.empty-create"
       @click="nav().editor()"
     />
@@ -304,6 +316,7 @@ function resetCorruptData() {
         <Button
           label="恢复"
           kind="outlined"
+          shape="pill"
           :inspect-id="`yike.checkin.archived.${habit.id}.restore`"
           @click="
             store.archiveHabit(habit.id, false);
@@ -329,6 +342,7 @@ function resetCorruptData() {
     <BottomSheet
       v-model="showReset"
       title="重置本机数据？"
+      material="glass"
       inspect-id="yike.checkin.corrupt-reset"
     >
       <p>
@@ -337,7 +351,7 @@ function resetCorruptData() {
       <template #actions>
         <Button
           label="取消"
-          kind="secondary"
+          kind="quiet"
           shape="pill"
           inspect-id="yike.checkin.reset-cancel"
           @click="showReset = false"
@@ -392,10 +406,6 @@ function resetCorruptData() {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--pb-spacing-xs);
-}
-.yike-storage-warning button {
-  color: var(--pb-color-primary);
-  text-decoration: underline;
 }
 .yike-page-head,
 .yike-tally,

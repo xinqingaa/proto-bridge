@@ -7,18 +7,21 @@
     "color.action": "{color.on-surface}",
     "color.on-action": "{color.surface}",
     "color.action-soft": "{color.surface-recessed}",
+    "color.secondary": "{color.on-surface}",
+    "color.secondary-soft": "{color.surface-recessed}",
+    "color.on-secondary": "{color.surface}",
     "color.disabled": "{color.on-surface-muted}",
     "surface.treatment": "glass",
     "size.action-min-inline": 200,
-    "opacity.data-low": 0.3,
-    "opacity.data-medium": 0.65,
-    "opacity.data-high": 1
+    "opacity.data-low": 0.18,
+    "opacity.data-medium": 0.38,
+    "opacity.data-high": 0.62
   },
   "modes": {
     "dark": {
-      "opacity.data-low": 0.35,
-      "opacity.data-medium": 0.7,
-      "opacity.data-high": 1
+      "opacity.data-low": 0.22,
+      "opacity.data-medium": 0.44,
+      "opacity.data-high": 0.66
     }
   },
   "themes": {

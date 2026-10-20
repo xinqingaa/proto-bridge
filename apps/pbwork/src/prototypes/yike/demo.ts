@@ -108,6 +108,7 @@ export function createYikeDemo(variant: string, now: Date) {
     variant === "partial" ||
     variant === "completed" ||
     variant === "with-records" ||
+    variant === "day-detail" ||
     variant === "only-checkins"
   ) {
     for (const habit of variant === "partial"
@@ -132,6 +133,25 @@ export function createYikeDemo(variant: string, now: Date) {
       durationSeconds: 1500,
       intervals: [{ date: day, durationSeconds: 1500 }],
     });
+  }
+  if (variant === "day-detail") {
+    for (const [index, time] of [
+      "08:50",
+      "09:20",
+      "09:50",
+      "10:30",
+    ].entries()) {
+      const mode =
+        index < 2 ? "pomodoro" : index === 2 ? "countdown" : "stopwatch";
+      const durationSeconds = (index === 3 ? 45 : 25) * 60;
+      data.focusRecords.push({
+        id: `day-detail-${index}`,
+        mode,
+        startedAt: new Date(`${day}T${time}:00`).toISOString(),
+        durationSeconds,
+        intervals: [{ date: day, durationSeconds }],
+      });
+    }
   }
   if (variant === "intensity-levels") {
     data.initializedOn = shiftDay(day, -3)!;

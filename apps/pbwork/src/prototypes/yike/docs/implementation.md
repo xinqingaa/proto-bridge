@@ -279,3 +279,65 @@ Promotion Mapping：既有原型布局修正，YikeDial使用既有公开compact
 Focused Experience：accepted（待用户复核）。实看三主题390×844待开始、水位360×640深色多圈、日影390×844多圈共5张截图。主体明显放大、完整造型与数字/状态可读、纵向留白更合理、操作区与导航不遮挡。三主题各在390×844浅色与360×640深色测试真实「开始→12次计圈→列表滚动→暂停」旅程，SVG实际绘制区域的位置/尺寸变化小于1px；常规屏实际主体高度至少300px（机械全宽312），矮屏至少170px。原24次计圈独立滚动回归在两种视口均通过。截图为output/yike-experience/stopwatch-idle-{theme}-{width}.png与stopwatch-laps-{theme}-{width}.png。
 
 D阶段保持不变，未进行正式采集、Store或生命周期修改；前节旧比例评估保留作为本批修正依据，不再代表当前正计时实现。
+
+
+### 2026-10-20 图标归位纠正
+
+用户明确图标为一刻专属纯 SVG，统一放在 `theme/assets/`；本轮 DS Icon、Contract、基础预览与 Target 扩展已撤回，未来 DS 整理由用户另行处理。三主题低/中/高专注度资源保留，模式图标以文末通用三枚方案为准，机械使用圆形腕表表圈、十二刻度与细指针，取消齿轮。原有六份完整表盘 SVG 保留。回顾类型行直接使用资产，月历机械恢复圆形并使用独立腕表刻度资产；其余动态绘图恢复原位置。保留此前专注布局与日明细修改，D 阶段继续复核。
+
+最高档补正：机械月历取消整圆实心填充，三档均保留空心读数区和腕表刻度，以内圈描边深浅表达强度；日期前景按空心底色使用 on-surface，避免最高档吞没刻度或反白数字失去对比。
+
+
+## 一套通用实物图标（2026-10-20）
+
+用户明确要求开始制作、只保留一套且不随主题切换。本批正式制作三份SVG：番茄厨房计时器、金属手持秒表、木架玻璃沙漏。物件体积来自克制渐变、少量明暗面与高光；固定配色归资产本身，三主题/浅深模式共用完全相同src。此前九枚主题模式图标已移除，不保留另一套备用选择。
+
+Review中的类型分布与记录图标改为直接img，移除主题mask及color.primary依赖；尺寸由size.icon改为已有size.icon-prominent（20→24），显式image绑定同步。sheet标题、日期、合计、列对齐与前后一天沿用既有实现。本批不调整三档强度、主表盘、其它页面、DS或Target。
+
+局部验证与真实截图仅覆盖本批图标及其所在记录行，待用户视觉复核；不据此宣布D阶段完成。当前正式复核入口为回顾day-detail Variant，四条记录同时展示三种模式；生产首次状态不注入样例历史。
+
+本批检查结果：类型检查、authoring lint、docs:verify、diff空白检查通过；3项浏览器回归通过，包含三主题/水位深色窄屏、24px真实图片载入、四条记录、前后日及周月标题。额外比较机械浅色与水位深色的三枚src完全相同，确认不随主题切换。已查看三张真实截图output/yike-universal-icons/sheet-{mechanical,water,sundial}.png，待用户视觉复核。
+
+
+## 对照DS预览修正日明细调用（2026-10-20）
+
+用户明确不修改BottomSheet。已在实际DS预览打开玻璃样板，对照其默认正文/actions组合；此前判断“需要修改公共组件紧凑能力”撤回，本批只改一刻调用。
+
+- Review补material=glass；去掉本地满高容器与嵌套ScrollableDataList，恢复面板自身正文滚动。日期/总量直接接记录列表，局部间隔16→8；前后一天进入固定actions，复用Button公开图标槽。未改共享标题、padding、面板高度或DS文件。
+- 顶部到第一条记录的空间由约155降至约123逻辑像素。玻璃只使用共享一层，空/有记录换日保持面板高度及背景布局稳定；窄屏可滚到最后一条，换日回到正文顶部。
+- 同一套三枚24px实物SVG收敛到克制中性色与轻微明暗，固定配色、路径与src均不随主题切换。彩色插画方案的视觉判断撤回。其它表盘、专注度与页面保持原状。
+- 实看output/yike-sheet-usage/sheet-{mechanical,water,sundial}.png，机械/日影390×844浅色与水位360×640深色，检查玻璃一致性、信息密度、列对齐、固定操作、长内容可达与图标分量。仅为本批Agent检查，仍待用户视觉复核，不恢复D阶段验收结论。
+- 6项局部浏览器回归通过：背景及sheet几何稳定、空日/边界/未来禁用、焦点返回、prepare/reset、三主题真实24px图标与相同src、玻璃材质、首记录位置、窄屏最后一条可滚达及周月标题。类型检查通过；最终authoring lint与docs检查见本轮结果。
+
+本批git diff在apps/pbwork/src/design-system下为空，没有修改BottomSheet、SheetHeader、Contract或Registry，不推进E或生命周期定稿。
+
+
+## 模式图标回归现有规范（2026-10-20）
+
+用户否决实物感并要求读取现有规范。已核对Icon手册/共享SVG定义/renderer和一刻design.md第275行的“线性、细笔画、不作装饰”，采用24视框、1.7统一描边、圆端圆角、无填充重画番茄/秒表/沙漏。仍只有theme/assets中的三份通用资源，不改DS注册。
+
+删除全部渐变、明暗面、高光、底影与多色，渲染改为中性文字色Token的alpha mask；三主题使用相同asset URL，浅深背景只由合法中性Token提供可读性，不使用主题品牌色。size.icon-prominent与color.on-surface-muted显式绑定同步。此前拟物及中性色材质方案的视觉结论撤回，sheet使用及其它页面未改。
+
+类型检查和3项针对性浏览器回归通过，验证实际24px图标载入、跨主题相同资源、玻璃sheet、日期与周月标题、长内容可达及翻日。实看output/yike-linear-icons/sheet-mechanical.png与sheet-water.png，核对线条、透明背景、与功能图标一致性和浅深可读；仍待用户复核，不据此完成D阶段。最终authoring lint/docs检查见本轮结果。
+
+
+### 模式名称仅显示文字（2026-10-20，当前决定）
+
+用户决定停止渲染番茄钟、正计时、倒计时图标。回顾类型分布与日明细仅保留模式文字，移除前端图标节点、资源导入、着色辅助函数与专用样式；theme/assets中的三份SVG原样保留，不删除资产。玻璃sheet、日期合计、列表及前后一天保持现状。本决定取代此前模式图标展示约定。
+
+
+## 控件主题遗漏清单修正（2026-10-20）
+
+用户批准上一轮六项清单，本批独立实现/验收节点为：focus.preset/custom、review.previous/next/today与settings.threshold-custom、checkin.empty-create/归档restore、habit-detail.return与habit-editor.return、checkin.storage-reset/storage-retry、checkin.corrupt-reset及取消操作。
+
+倒计时保留既有局部节点，修复主题轻选中、紧凑圆角、触控和焦点；不复制单选键盘机制，原生按钮按Tab及Enter/空格操作。主操作胶囊与既有布局保持。其它节点通过公开Button props、BottomSheet材质参数和一刻secondary主题别名补齐。secondary采用on-surface保证次级表面上的文字对比度，不添加对比度豁免。
+
+未改DS源码/Contract/Registry、未新增扩展登记、未改导航和会话逻辑；三份模式SVG不改不删且不恢复渲染。新增检查覆盖六组合预设、键盘/自定义/启动、空归档/失效对象返回以及存储失败与损坏确认的取消和焦点。验证结果见下文；D阶段继续待用户复核。
+
+### 本批验证结果
+
+- `vue-tsc -p tsconfig.json --noEmit`、静态authoring lint通过。主题与Flex门禁共11项通过；Core验证六组合真实资产/颜色配对无block，未添加对比度豁免。
+- `yike-controls.browser.ts`共9项通过（10秒），覆盖六主题模式组合、390×844/360×640、真实选中色/半径/44触控范围、键盘焦点与选择、自定义11分钟后回选3分钟启动、归档恢复/失效对象返回、损坏确认取消保持原数据并返回焦点、保存失败重试。
+- 实看`output/yike-controls/countdown-mechanical-light.png`、`countdown-water-dark.png`、`countdown-sundial-light.png`及`corrupt-confirm-sundial-dark.png`，预设不抢主操作、窄屏单行可达、确认面板沿用玻璃与固定操作。Experience为quick-checked，仅代表本批局部复查，未代替D阶段用户复核。
+- `pnpm docs:verify`通过156份Markdown。`pnpm ds:target-sync:verify`仍未通过，报告components/iconAssets/tokenCatalog/themes/bindPool漂移，保留原有Target pending及基线，不把本批Web适配描述成Flutter同步完成。
+- 本批仅更改一刻现有主题与业务调用、对应测试和三份原型文档；DS实现、SVG、Capture/Store和生命周期未修改，无Git提交。

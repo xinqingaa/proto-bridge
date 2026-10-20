@@ -327,6 +327,7 @@ export function createYikeStore(
       range: "week" as "week" | "month",
       anchor: today(),
       selected: "",
+      detailOpen: false,
     },
     scroll: {} as Record<string, number>,
     message: "",
@@ -337,6 +338,7 @@ export function createYikeStore(
       range: "week",
       anchor: today(),
       selected: "",
+      detailOpen: false,
     });
     presentation.scroll = {};
     presentation.message = "";

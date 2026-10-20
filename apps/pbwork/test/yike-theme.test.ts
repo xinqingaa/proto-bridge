@@ -48,6 +48,15 @@ describe("一刻主题矩阵", () => {
         expect(table.values["color.on-action"]).toBe(
           table.values["color.surface"],
         );
+        expect(table.values["color.secondary"]).toBe(
+          table.values["color.on-surface"],
+        );
+        expect(table.values["color.secondary-soft"]).toBe(
+          table.values["color.surface-recessed"],
+        );
+        expect(table.values["color.on-secondary"]).toBe(
+          table.values["color.surface"],
+        );
         expect(table.values["tabbar.active"]).toBe(
           table.values["color.primary"],
         );
@@ -145,8 +154,10 @@ it("布局节奏、公共动效与禁用透明度主动继承基础包", () => {
     for (const mode of ["light", "dark"]) {
       const base = resolveRuntimeTheme("pbwork-base", "default", mode).values;
       const own = resolveRuntimeTheme("yike", theme, mode).values;
-      const keys = Object.keys(base).filter((key) =>
-        /^(spacing\.|motion\.|opacity\.)/.test(key) && !key.startsWith("opacity.data-"),
+      const keys = Object.keys(base).filter(
+        (key) =>
+          /^(spacing\.|motion\.|opacity\.)/.test(key) &&
+          !key.startsWith("opacity.data-"),
       );
       expect(keys.length).toBeGreaterThan(10);
       for (const key of keys)

@@ -289,6 +289,8 @@ function remove() {
         </p>
         <Button
           label="返回打卡"
+          kind="quiet"
+          shape="pill"
           :inspect-id="scope.id('return')"
           @click="nav().home('checkin')"
         />

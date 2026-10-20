@@ -1,16 +1,27 @@
 <script setup lang="ts">
-import { useReducedMotion } from "@/runtime/useReducedMotion";
-const reducedMotion = useReducedMotion();
-import { computed, ref, toRefs, watch, onMounted, onBeforeUnmount } from "vue";
+import {
+  computed,
+  ref,
+  toRefs,
+  watch,
+  nextTick,
+  onMounted,
+  onBeforeUnmount,
+} from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { vPb } from "@/authoring/pb-style";
 import { useClock } from "@/runtime/useClock";
 import SegmentedControl from "@/design-system/components/input/SegmentedControl.vue";
 import Button from "@/design-system/components/action/Button.vue";
+import Icon from "@/design-system/components/action/Icon.vue";
 import IconButton from "@/design-system/components/action/IconButton.vue";
 import YikeDial from "../../components/YikeDial.vue";
 import { yikeNavigation } from "../../navigation";
-import GlassSurface from "@/design-system/components/display/GlassSurface.vue";
+import BottomSheet from "@/design-system/components/feedback/BottomSheet.vue";
+import {
+  parseDay,
+  shiftDay,
+} from "@/design-system/components/_shared/calendar";
 import YikeWeekChart from "../../components/YikeWeekChart.vue";
 import YikeMonthCalendar from "../../components/YikeMonthCalendar.vue";
 import { useYikeStore } from "../../model";
@@ -31,8 +42,16 @@ const today = computed(() => {
   void clock.value;
   return store.today();
 });
-const { range, anchor, selected } = toRefs(store.presentation.review);
+const { range, anchor, selected, detailOpen } = toRefs(
+  store.presentation.review,
+);
 const root = ref<HTMLElement | null>(null);
+const detailContent = ref<HTMLElement | null>(null);
+watch(selected, async () => {
+  await nextTick();
+  // The shared sheet owns scrolling; changing dates returns its slot to the top.
+  detailContent.value?.parentElement?.scrollTo({ top: 0 });
+});
 useYikeScroll(root, "review");
 const period = computed(() => reviewPeriod(anchor.value, range.value));
 const summary = computed(() =>
@@ -49,12 +68,14 @@ const face = computed(() =>
       : "mechanical",
 );
 const selectedRecords = computed(() =>
-  store.data.focusRecords.flatMap((record) => {
-    const seconds = record.intervals
-      .filter((interval) => interval.date === selected.value)
-      .reduce((sum, interval) => sum + interval.durationSeconds, 0);
-    return seconds > 0 ? [{ ...record, seconds }] : [];
-  }),
+  store.data.focusRecords
+    .flatMap((record) => {
+      const seconds = record.intervals
+        .filter((interval) => interval.date === selected.value)
+        .reduce((sum, interval) => sum + interval.durationSeconds, 0);
+      return seconds > 0 ? [{ ...record, seconds }] : [];
+    })
+    .sort((left, right) => left.startedAt.localeCompare(right.startedAt)),
 );
 const selectedHabits = computed(() =>
   store.data.checkins
@@ -67,6 +88,43 @@ const modeLabels = {
   stopwatch: "正计时",
   countdown: "倒计时",
 };
+const selectedTitle = computed(() => {
+  const date = parseDay(selected.value);
+  return date
+    ? `${date.getUTCMonth() + 1}月${date.getUTCDate()}日 周${["日", "一", "二", "三", "四", "五", "六"][date.getUTCDay()]}`
+    : "当日记录";
+});
+const selectedSeconds = computed(() =>
+  selectedRecords.value.reduce((sum, record) => sum + record.seconds, 0),
+);
+const canPreviousDay = computed(() => selected.value > period.value.start);
+const canNextDay = computed(
+  () => selected.value < period.value.end && selected.value < today.value,
+);
+function chooseDay(date: string) {
+  // Date components toggle their selection; a retained selection reopens its sheet.
+  const target = date || selected.value;
+  if (
+    !parseDay(target) ||
+    target < period.value.start ||
+    target > period.value.end ||
+    target > today.value
+  )
+    return;
+  selected.value = target;
+  detailOpen.value = true;
+}
+function moveDay(offset: number) {
+  if (offset < 0 ? !canPreviousDay.value : !canNextDay.value) return;
+  chooseDay(shiftDay(selected.value, offset)!);
+}
+watch(
+  () => [range.value, anchor.value, route.params.screenSlug],
+  () => {
+    detailOpen.value = false;
+  },
+  { flush: "sync" },
+);
 function chooseRange(value: string) {
   if (value !== "week" && value !== "month") return;
   anchor.value =
@@ -288,7 +346,8 @@ onBeforeUnmount(() => chartObserver?.disconnect());
           :week-start="period.start"
           :today="today"
           :days="summary.days"
-          v-model="selected"
+          :model-value="selected"
+          @update:model-value="chooseDay"
           inspect-id="yike.review.chart"
         />
         <YikeMonthCalendar
@@ -298,7 +357,8 @@ onBeforeUnmount(() => chartObserver?.disconnect());
           :month="period.start.slice(0, 7)"
           :today="today"
           :days="summary.days"
-          v-model="selected"
+          :model-value="selected"
+          @update:model-value="chooseDay"
           inspect-id="yike.review.chart"
           @update:month="chooseMonth"
         />
@@ -323,58 +383,6 @@ onBeforeUnmount(() => chartObserver?.disconnect());
         </p>
       </div>
     </div>
-    <v-expand-transition :disabled="reducedMotion">
-      <GlassSurface
-        v-if="selected"
-        inspect-id="yike.review.day-detail"
-        class="day-detail"
-      >
-        <h2>{{ selected }}</h2>
-        <p v-if="!selectedRecords.length && !selectedHabits.length">
-          这一天还没有记录。
-        </p>
-        <ul v-else>
-          <li
-            v-for="record in selectedRecords"
-            :key="record.id"
-            v-pb="
-              scope.node('record', 'text', {
-                key: record.id,
-                tokens: {
-                  typography: 'typography.content',
-                  color: 'color.on-surface',
-                },
-              })
-            "
-          >
-            {{
-              new Date(record.startedAt).toLocaleTimeString("zh-CN", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hourCycle: "h23",
-              })
-            }}
-            · {{ modeLabels[record.mode] }} ·
-            {{ durationLabel(record.seconds) }}
-          </li>
-          <li
-            v-for="habit in selectedHabits"
-            :key="habit.id"
-            v-pb="
-              scope.node('habit', 'text', {
-                key: habit.id,
-                tokens: {
-                  typography: 'typography.content',
-                  color: 'color.on-surface',
-                },
-              })
-            "
-          >
-            已完成 · {{ habit.name }}
-          </li>
-        </ul>
-      </GlassSurface>
-    </v-expand-transition>
     <section v-if="summary.seconds > 0" class="distribution">
       <h2>按类型</h2>
       <p
@@ -390,7 +398,7 @@ onBeforeUnmount(() => chartObserver?.disconnect());
           })
         "
       >
-        <span>{{ modeLabels[mode] }}</span
+        <span class="type-label">{{ modeLabels[mode] }}</span
         ><b
           v-pb="
             scope.node('type-value', 'text', {
@@ -445,6 +453,160 @@ onBeforeUnmount(() => chartObserver?.disconnect());
         /></span>
       </p>
     </section>
+    <BottomSheet
+      v-model="detailOpen"
+      :title="range === 'week' ? '本周' : '本月'"
+      material="glass"
+      detent="medium"
+      inspect-id="yike.review.day-detail"
+    >
+      <div
+        ref="detailContent"
+        class="day-browser"
+        v-pb="
+          scope.node('day-browser', 'section', {
+            tokens: { gap: 'spacing.sm' },
+          })
+        "
+      >
+        <div class="day-heading" aria-live="polite" aria-atomic="true">
+          <h3
+            v-pb="
+              scope.node('day-title', 'text', {
+                tokens: {
+                  typography: 'typography.subtitle',
+                  color: 'color.on-surface',
+                },
+              })
+            "
+          >
+            {{ selectedTitle }}
+          </h3>
+          <span
+            v-pb="
+              scope.node('day-total', 'text', {
+                tokens: {
+                  typography: 'typography.caption',
+                  color: 'color.on-surface-muted',
+                },
+              })
+            "
+            >{{ durationLabel(selectedSeconds) }}</span
+          >
+        </div>
+        <div
+          :key="selected"
+          class="day-records"
+          aria-label="当日专注与打卡记录"
+          v-pb="
+            scope.node('day-records', 'section', {
+              tokens: { typography: 'typography.content' },
+            })
+          "
+        >
+          <p
+            v-if="!selectedRecords.length && !selectedHabits.length"
+            class="day-empty"
+            role="status"
+            v-pb="
+              scope.node('day-empty', 'text', {
+                tokens: {
+                  typography: 'typography.content',
+                  color: 'color.on-surface-muted',
+                },
+              })
+            "
+          >
+            这一天还没有记录
+          </p>
+          <ul
+            v-if="selectedRecords.length"
+            class="day-focus-records"
+            aria-label="专注记录"
+          >
+            <li
+              v-for="record in selectedRecords"
+              :key="record.id"
+              v-pb="
+                scope.node('record', 'text', {
+                  key: record.id,
+                  tokens: {
+                    typography: 'typography.content',
+                    color: 'color.on-surface',
+                    padding: 'spacing.sm',
+                    border: 'border.hairline',
+                  },
+                })
+              "
+            >
+              <time class="record-time">{{
+                new Date(record.startedAt).toLocaleTimeString("zh-CN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hourCycle: "h23",
+                })
+              }}</time>
+              <span class="record-mode">{{ modeLabels[record.mode] }}</span>
+              <strong>{{ durationLabel(record.seconds) }}</strong>
+            </li>
+          </ul>
+          <p
+            v-if="selectedHabits.length"
+            class="day-habits"
+            v-pb="
+              scope.node('day-habits', 'text', {
+                tokens: {
+                  typography: 'typography.content',
+                  color: 'color.on-surface-muted',
+                  padding: 'spacing.sm',
+                },
+              })
+            "
+          >
+            打卡：<span
+              v-for="(habit, index) in selectedHabits"
+              :key="habit.id"
+              v-pb="
+                scope.node('habit', 'text', {
+                  key: habit.id,
+                  tokens: {
+                    typography: 'typography.content',
+                    color: 'color.on-surface-muted',
+                  },
+                })
+              "
+              >{{ index ? "、" : "" }}{{ habit.name }}</span
+            >
+          </p>
+        </div>
+      </div>
+      <template #actions>
+        <Button
+          label="前一天"
+          kind="quiet"
+          :disabled="!canPreviousDay"
+          inspect-id="yike.review.day-previous"
+          @click="moveDay(-1)"
+          ><template #prepend
+            ><Icon
+              name="chevron-left"
+              size="sm"
+              inspect-id="yike.review.day-previous-symbol" /></template
+        ></Button>
+        <Button
+          label="后一天"
+          kind="quiet"
+          :disabled="!canNextDay"
+          inspect-id="yike.review.day-next"
+          @click="moveDay(1)"
+          ><template #append
+            ><Icon
+              name="chevron-right"
+              size="sm"
+              inspect-id="yike.review.day-next-symbol" /></template
+        ></Button>
+      </template>
+    </BottomSheet>
   </div>
 </template>
 <style scoped>
@@ -462,7 +624,6 @@ header p,
 .period,
 .empty,
 .summary p,
-.day-detail p,
 .distribution p {
   font: var(--pb-typography-content);
   color: var(--pb-color-on-surface-muted);
@@ -491,15 +652,6 @@ h2 {
 .period span {
   font: var(--pb-typography-caption);
   text-align: center;
-}
-.day-detail {
-  transition-duration: var(--pb-motion-duration-medium);
-  transition-timing-function: var(--pb-motion-easing-standard);
-  display: flex;
-  flex-direction: column;
-  gap: var(--pb-spacing-sm);
-  padding: var(--pb-spacing-md);
-  border-radius: var(--pb-radius-surface);
 }
 .summary {
   display: flex;
@@ -585,15 +737,74 @@ h2 {
 .type-track .type-rest {
   background: var(--pb-color-surface-variant);
 }
-ul {
-  margin: var(--pb-layout-zero);
-  padding-inline-start: var(--pb-spacing-lg);
-  font: var(--pb-typography-content);
-}
 .distribution {
   display: flex;
   flex-direction: column;
   gap: var(--pb-spacing-md);
+}
+.day-browser {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pb-spacing-sm);
+}
+.day-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--pb-spacing-sm);
+}
+.day-heading h3 {
+  margin: var(--pb-layout-zero);
+  font: var(--pb-typography-subtitle);
+}
+.day-heading > span {
+  font: var(--pb-typography-caption);
+  color: var(--pb-color-on-surface-muted);
+}
+.day-records {
+  background: transparent;
+}
+.day-focus-records {
+  list-style: none;
+  margin: var(--pb-layout-zero);
+  padding: var(--pb-layout-zero);
+}
+.day-focus-records li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--pb-spacing-sm-plus);
+  padding-block: var(--pb-spacing-sm);
+  border-block-start: var(--pb-border-hairline);
+  font: var(--pb-typography-content);
+}
+.record-time {
+  flex: none;
+  min-inline-size: var(--pb-size-control-large);
+  color: var(--pb-color-on-surface-muted);
+  font-variant-numeric: tabular-nums;
+}
+.record-mode {
+  display: flex;
+  align-items: center;
+  gap: var(--pb-spacing-sm);
+  flex: var(--pb-layout-flex-fill);
+  min-inline-size: var(--pb-layout-zero);
+  white-space: nowrap;
+}
+.day-focus-records strong {
+  font: var(--pb-typography-label);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+.day-habits {
+  padding-block: var(--pb-spacing-sm-plus);
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-content);
+}
+.day-empty {
+  padding-block: var(--pb-spacing-lg);
+  color: var(--pb-color-on-surface-muted);
+  text-align: center;
 }
 </style>
 
@@ -649,5 +860,29 @@ header {
   .chart-content {
     animation: none;
   }
+}
+</style>
+
+<style scoped>
+.type-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pb-spacing-sm);
+}
+.day-heading h3 {
+  font: var(--pb-typography-label);
+}
+.day-heading > span {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+</style>
+
+<style scoped>
+.day-focus-records li {
+  align-items: center;
+}
+.day-focus-records strong {
+  white-space: nowrap;
 }
 </style>

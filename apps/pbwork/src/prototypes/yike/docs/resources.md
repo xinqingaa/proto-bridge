@@ -206,3 +206,48 @@ opacity.data-low/medium/high是通用可绑定数据强度语义键，具体浅�
 ### 正计时主体占比（2026-10-19）
 
 FocusPanel的正计时使用完整YikeDial，不启用compact，主视觉区按主题源资产的真实比例与可用高度居中显示。计圈槽与待开始的装饰占位同尺寸；真实记录仍复用ScrollableDataList。外围间距、绘图宽度与计圈槽界限仅消费既有spacing/size/layout Token，不新增主题键、组件扩展或资产。独立交付节点为原timer、lap-scroll与primary-action。
+
+
+### 2026-10-20 图标归位纠正
+
+用户明确图标为一刻专属纯 SVG，统一放在 `theme/assets/`；本轮 DS Icon、Contract、基础预览与 Target 扩展已撤回，未来 DS 整理由用户另行处理。三主题低/中/高专注度资源保留，模式图标以文末通用三枚方案为准，机械使用圆形腕表表圈、十二刻度与细指针，取消齿轮。原有六份完整表盘 SVG 保留。回顾类型行直接使用资产，月历机械恢复圆形并使用独立腕表刻度资产；其余动态绘图恢复原位置。保留此前专注布局与日明细修改，D 阶段继续复核。
+
+
+三档浓度修订（2026-10-20）：保留低/中/高的颜色深浅编码，机械恢复有色底而非仅改变细线透明度。浅色三档为0.18/0.38/0.62，深色为0.22/0.44/0.66；最高档不再完全不透明。独立SVG资产的浅色浓度同步，表圈、刻度与指针保持清楚。
+
+机械表盘单圈修订：移除内圈描边，日期底色铺至外表圈，避免独立内圆；外圈与十二刻度保留，浓度沿用当前三档。
+
+
+### 一套通用实物模式 SVG（2026-10-20）
+
+唯一模式资产为theme/assets/mode-pomodoro-icon.svg、mode-stopwatch-icon.svg、mode-countdown-icon.svg。旧九份主题模式SVG已移除，完整表盘、日期、三档专注度资产不变。三图分别为番茄厨房计时器、金属手持秒表、木架玻璃沙漏；32单位视框，固定材质色与克制渐变均封装在SVG内。
+
+回顾类型分布与sheet记录直接使用img显示相同资产，尺寸消费既有size.icon-prominent=24，显式image证据只绑定实际消费的尺寸Token。图标不使用color.primary、不使用mask染色、不根据主题/模式选择文件；浅深背景均保留原物件颜色。没有新增Token、DS API或展台。
+
+日明细继续复用既有BottomSheet/ScrollableDataList，时间/模式/时长三列、前后一天与既有day-detail四条显式记录夹具保持原状，首次默认仍为零历史。
+
+
+### BottomSheet 使用修正（2026-10-20）
+
+对照/workbench/components/bottom-sheet的实际玻璃样板：只使用现有material=glass、detent=medium、默认正文和actions公开槽。去掉day-browser满高约束与内层ScrollableDataList，正文恢复文档流并由共享面板承担唯一纵向滚动；本地只保留spacing.sm的内容间隔，未覆盖pb-sheet-body、标题区、Vuetify私有类或共享padding。
+
+日期合计为紧凑单行，换日按钮复用现有Button的prepend/append槽及Icon，放入actions。业务换日后将公开slot的滚动宿主回到顶部；未复制滚动、焦点或手势机制。日记录容器仍保留yike.review.day-records身份。通用三枚图标改为固定中性色，保持24px尺寸与相同src；未新增DS能力或主题键。
+
+
+### 模式图标回归原有线性规范（2026-10-20）
+
+已读取components/action/icon手册、共享glyph-artwork.json与icons.ts，以及一刻design.md原有图标规则。mode-pomodoro/stopwatch/countdown-icon.svg按相同24视框、1.7描边、round端点/接点、fill=none重画，单path结构，无渐变、材质、投影或固定配色。三份文件仍归theme/assets，未修改DS策展清单。
+
+Review以SVG alpha mask读取相同路径，尺寸为size.icon-prominent，绘色为color.on-surface-muted；不使用主题品牌色或按主题换文件。局部image证据同步尺寸与真实颜色Token。本条取代前文直接img固定材质色的方案，sheet的玻璃材质、布局、actions、滚动及换日保持不变。
+
+
+### 模式名称仅显示文字（2026-10-20，当前决定）
+
+用户决定停止渲染番茄钟、正计时、倒计时图标。回顾类型分布与日明细仅保留模式文字，移除前端图标节点、资源导入、着色辅助函数与专用样式；theme/assets中的三份SVG原样保留，不删除资产。玻璃sheet、日期合计、列表及前后一天保持现状。本决定取代此前模式图标展示约定。
+
+
+### 控件适配补齐（2026-10-20）
+
+- 既有FocusPanel倒计时预设局部节点沿用原生按钮语义，不新增组件、手势或选择仲裁。公开Button/SegmentedControl尚无适合此处的轻品牌选中形态，本批仅修复已有局部Token样式：primary/primary-soft、control-compact圆角、size.touch、border.focus；保留按Tab遍历、Enter/空格激活与aria-pressed。Evidence随实际选中前景、底和描边同步。自定义是无选中态的文字入口。
+- yike/semantic显式映射secondary→on-surface、secondary-soft→surface-recessed、on-secondary→surface；沿用DS IconButton公开语义，六组合经Core对比度门禁。无新增Token、Contract、Registry或DS API。
+- 空态新建与归档恢复补齐公开shape=pill；失效对象返回和存储异常入口使用Button kind=quiet，异常按钮提供稳定业务inspectId。损坏确认仅补BottomSheet material=glass及取消kind=quiet。共享组件源码不变，普通公开props不登记为独立资源。

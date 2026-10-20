@@ -78,7 +78,7 @@ test("month cells stay compact, selection preserves data, and type tracks share 
   await open(page, "review", "month");
   const cell = page.locator('[data-date="2026-10-19"]');
   expect((await cell.boundingBox())!.height).toBeLessThanOrEqual(48);
-  await expect(cell.locator("svg circle.outline")).toHaveCount(1);
+  await expect(cell.locator("svg path.outline")).toHaveCount(1);
   const before = await cell
     .locator(".number")
     .getAttribute("data-pb-token-color");
@@ -99,7 +99,7 @@ test("month cells stay compact, selection preserves data, and type tracks share 
     );
   expect(Math.max(...sizes) - Math.min(...sizes)).toBeLessThan(1);
   await shot(page, "month-selected");
-  await cell.click();
+  await page.locator('[data-pb-id="yike.review.day-detail.close"]').click();
   await expect(
     page.locator('[data-pb-id="yike.review.day-detail"]'),
   ).not.toBeVisible();
@@ -240,8 +240,10 @@ test("checkin-only weeks expose day records instead of a dead empty chart", asyn
     .getByRole("button", { name: "2026-10-19，0 分钟", exact: true })
     .click();
   const detail = page.locator('[data-pb-id="yike.review.day-detail"]');
-  await expect(detail).toContainText("已完成 · 喝够 8 杯水");
-  await expect(detail.locator("li")).toHaveCount(4);
+  await expect(detail).toContainText("打卡：喝够 8 杯水");
+  await expect(detail.locator('[data-pb-id="yike.review.habit"]')).toHaveCount(
+    4,
+  );
 });
 
 test("narrow editor keeps its save action with optional content expanded", async ({
@@ -338,7 +340,7 @@ for (const theme of ["mechanical", "water", "sundial"])
       }
       const day = page.locator('[data-date="2026-10-16"]');
       if (theme === "mechanical")
-        await expect(day.locator("circle.outline")).toHaveCount(1);
+        await expect(day.locator("path.outline")).toHaveCount(1);
       const today = page.locator('[data-date="2026-10-19"]');
       await expect(today.locator(".today-mark")).toHaveAttribute(
         "data-face",
@@ -391,6 +393,7 @@ for (const theme of ["mechanical", "water", "sundial"])
         await day.locator("svg").getAttribute("data-pb-token-opacity"),
       ).toBe(before);
       await expect(day.locator(".selection")).toHaveCount(1);
+      await page.locator('[data-pb-id="yike.review.day-detail.close"]').click();
       await control.getByRole("radio", { name: "周", exact: true }).click();
       await expect(page.locator(".week-chart")).toBeVisible();
       if (mode === "light") await shot(page, `compact-week-${theme}`);

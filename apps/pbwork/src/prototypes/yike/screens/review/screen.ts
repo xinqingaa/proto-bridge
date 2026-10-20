@@ -22,6 +22,15 @@ export default defineScreen({
   shellFragments: [scope.ref("root")],
   variants: [
     { id: "default", label: "本周回顾" },
+    {
+      id: "day-detail",
+      label: "当日记录面板",
+      requiredFragments: [
+        scope.ref("chart"),
+        scope.ref("day-detail"),
+        scope.ref("day-title"),
+      ],
+    },
     ...[
       { id: "only-checkins", label: "仅打卡" },
       { id: "only-focus", label: "仅专注" },
@@ -41,8 +50,25 @@ export default defineScreen({
   actions: [
     { id: "previous", kind: "click", target: scope.ref("previous") },
     { id: "next", kind: "click", target: scope.ref("next") },
+    { id: "previous-day", kind: "click", target: scope.ref("day-previous") },
+    { id: "next-day", kind: "click", target: scope.ref("day-next") },
+    { id: "close-day", kind: "click", target: scope.ref("day-detail.close") },
   ],
   scenarios: [
+    {
+      id: "browse-day-records",
+      label: "查看前一天并返回当天后关闭",
+      initialVariantId: "day-detail",
+      actionIds: ["previous-day", "next-day", "close-day"],
+      checkpoints: [
+        {
+          id: "closed",
+          screenId: scope.screenId,
+          variantId: "day-detail",
+          requiredFragments: [scope.ref("chart"), scope.ref("period")],
+        },
+      ],
+    },
     {
       id: "browse-history",
       label: "翻阅上一周再返回",
