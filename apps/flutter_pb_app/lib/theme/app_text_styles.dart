@@ -100,4 +100,16 @@ class AppTextStyles {
     height: 1.2,
     color: colors.onSurfaceMuted,
   );
+
+  TextStyle get numericDisplay =>
+      display.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+  TextStyle get numericTitle =>
+      title.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+  TextStyle get numericContent =>
+      content.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+
+  double get trackingDisplay => 0;
+  double get trackingHeading => 0;
+  double get trackingLabel => 0;
+  double get trackingCaption => 0;
 }

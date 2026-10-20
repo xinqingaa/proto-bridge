@@ -10,6 +10,7 @@
 | PBWork 原型设计与制作、Token/Theme/DS、Workbench/Capture UI | `.agents/skills/pbwork/SKILL.md` | Skill 按任务加载对应 reference |
 | 通用视觉方向、构图、字体和审美探索 | `.agents/skills/frontend-design/SKILL.md` | 视觉任务的真实业务 brief |
 | Target 还原验收：五维对照复查与完成报告 | `.agents/skills/acceptance/SKILL.md` | 实施完成，准备 `summarize_reconstruction_review` 前 |
+| Flutter target 脚手架、MCP target 绑定 | `.agents/skills/proto-bridge/SKILL.md` | `docs/guides/flutter-target-scaffold.md` |
 
 `frontend-design` 是仓库内 vendored 的通用视觉设计方法，由 `pbwork` 编排。新原型、新视觉方向、风格草稿、整页重构和用户对视觉不满意时必须读取并应用它，PBWork 对它的覆盖规则见 `pbwork` 的 `prototype-design` reference；普通 Token、组件、Contract、Workbench 和缺陷维护不默认调用。新原型或新视觉方向先做需求采访：用户提示信息不足时必须提问，不能用 PBWork 现有外观填补。PBWork 之外的通用产品设计不由本仓库 Skill 负责，应在目标项目中定义自己的产品工作流。
 

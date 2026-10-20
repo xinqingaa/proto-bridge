@@ -24,6 +24,8 @@
 
 `workspace init` 可用 `--target` 写入该字段；省略时模板默认 `apps/flutter_pb_app`，该字面量只出现在 init，不作为 deliver / MCP / PBWork 运行时默认。Target 工程可以在仓库外，只要路径存在且像 Flutter 工程（`pubspec.yaml` + `lib/`）。
 
+创建独立产品 target 后用 `pnpm pb:target use <dir>` 切换该字段；它会把路径写成相对配置文件的 `delivery.targetRoot`，并提示重启。`pnpm pb:new:flutter <name>` 生成新目录，完整流程见 [Flutter Target 脚手架](../guides/flutter-target-scaffold.md)。
+
 `workspace init` 默认把 `runtime.baseUrl` 的 origin 写入
 `service.allowedOrigins`，因为 PBWork 浏览器是 Local Service 的调用方。
 配置完成后可用 `pnpm pb:doctor` 检查 origin、Store Workspace、交付目标、浏览器和本地端口。更改 `delivery.targetRoot` 后必须重启 `pnpm pb:up` 和 MCP。

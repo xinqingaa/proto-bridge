@@ -30,7 +30,7 @@ class HubPage extends ConsumerWidget {
           Text('入口', style: TS.textStyle.titleSm),
           SizedBox(height: TS.spacing.sm),
           Text(
-            'Demo 为组件对照；各原型对应 pbwork prototypes，供后续落页。',
+            'Demo 为组件对照；业务页面由 PBWork Handoff 按 Screen 落页。',
             style: TS.textStyle.caption,
           ),
           SizedBox(height: TS.spacing.lg),
@@ -39,13 +39,6 @@ class HubPage extends ConsumerWidget {
             subtitle: 'widgets / theme / AppPop',
             icon: CommonIconName.home,
             route: AppRoutes.demo,
-          ),
-          SizedBox(height: TS.spacing.sm),
-          _HubEntry(
-            title: '冷链异常',
-            subtitle: '异常队列 / 运输详情 / 处置表单',
-            icon: CommonIconName.thermometer,
-            route: AppRoutes.coldChainExceptions,
           ),
         ],
       ),

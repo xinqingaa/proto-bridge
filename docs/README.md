@@ -21,6 +21,7 @@ ProtoBridge（PB）把可交互原型转化为可追溯、可固定引用的 Evi
 | 了解产品与边界 | [产品总览](./product/overview.md) → [完整工作流](./product/workflow.md) |
 | 安装并跑通闭环 | [快速上手](./guides/getting-started.md) |
 | 使用本地操作脚本 | [本地操作脚本](./guides/operator-scripts.md) |
+| 创建新的 Flutter target | [Flutter Target 脚手架](./guides/flutter-target-scaffold.md) |
 | 使用 PBWork 采集 | [PBWork 与 PB 协作](./guides/pbwork-and-pb.md) |
 | 让 Agent 消费 Evidence | [Agent 消费指南](./guides/agent-consumption.md) |
 | 理解 PB 实现 | [系统架构](./architecture/overview.md) → [ProtoBridge 实现](./architecture/proto-bridge.md) |

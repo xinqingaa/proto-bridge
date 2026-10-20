@@ -8,9 +8,10 @@
 flutter pub get
 flutter analyze
 flutter test
+cd ../.. && pnpm ds:theme:verify
 ```
 
-修改公共组件、路由或 Theme 时，必须至少运行完整的 `flutter analyze` 和 `flutter test`。
+修改公共组件、路由或 Theme 时，必须至少运行完整的 `flutter analyze` 和 `flutter test`。主题批次先跑 `ds:theme:verify` 确认 153 个 Token；组件仍 pending 时不要用 `ds:target-sync:verify` 的失败误判为主题回退。
 
 ## Widget 场景
 

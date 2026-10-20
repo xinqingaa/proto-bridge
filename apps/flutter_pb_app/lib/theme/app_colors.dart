@@ -41,6 +41,13 @@ class AppColors {
     required this.onSuccess,
     required this.onWarning,
     required this.onInfo,
+    required this.glassTint,
+    required this.glassClear,
+    required this.glassEdge,
+    required this.primaryTabsSelectionTint,
+    required this.tabbarSelectionTint,
+    required this.buttonGlassPrimaryTint,
+    required this.iconButtonGlassPrimaryTint,
   });
 
   final Color background;
@@ -81,6 +88,13 @@ class AppColors {
   final Color onSuccess;
   final Color onWarning;
   final Color onInfo;
+  final Color glassTint;
+  final Color glassClear;
+  final Color glassEdge;
+  final Color primaryTabsSelectionTint;
+  final Color tabbarSelectionTint;
+  final Color buttonGlassPrimaryTint;
+  final Color iconButtonGlassPrimaryTint;
 
   static const light = AppColors(
     background: Color(0xFFF7F8FA),
@@ -121,6 +135,13 @@ class AppColors {
     onSuccess: Color(0xFFFFFFFF),
     onWarning: Color(0xFF251A00),
     onInfo: Color(0xFFFFFFFF),
+    glassTint: Color(0x73FFFFFF),
+    glassClear: Color(0x24FFFFFF),
+    glassEdge: Color(0xA6FFFFFF),
+    primaryTabsSelectionTint: Color(0xCCFFFFFF),
+    tabbarSelectionTint: Color(0x99FFFFFF),
+    buttonGlassPrimaryTint: Color(0xE6202124),
+    iconButtonGlassPrimaryTint: Color(0xE62F73D2),
   );
 
   static const dark = AppColors(
@@ -162,5 +183,12 @@ class AppColors {
     onSuccess: Color(0xFF17181A),
     onWarning: Color(0xFF17181A),
     onInfo: Color(0xFF17181A),
+    glassTint: Color(0x66252B38),
+    glassClear: Color(0x24202630),
+    glassEdge: Color(0x33FFFFFF),
+    primaryTabsSelectionTint: Color(0x2EA0AEC0),
+    tabbarSelectionTint: Color(0x24FFFFFF),
+    buttonGlassPrimaryTint: Color(0xE6F1F3F5),
+    iconButtonGlassPrimaryTint: Color(0xEB8DBAFF),
   );
 }

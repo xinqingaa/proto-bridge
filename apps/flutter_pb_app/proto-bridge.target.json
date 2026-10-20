@@ -199,616 +199,769 @@
   },
   "tokens": {
     "color.background": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.background",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-background": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.onBackground",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.surface": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.surface",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-surface": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.onSurface",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-surface-muted": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.onSurfaceMuted",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.surface-variant": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.surfaceVariant",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.surface-recessed": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.surfaceRecessed",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.surface-selected": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.surfaceSelected",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.surface-raised": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.surfaceRaised",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.inverse-surface": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.toast",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-inverse-surface": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.onToast",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.primary": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.primary",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.primary-soft": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.primarySoft",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-primary": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.onPrimary",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.action": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.action",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.action-soft": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.actionSoft",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-action": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.onAction",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.secondary": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.secondary",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.secondary-soft": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.secondarySoft",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-secondary": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.onSecondary",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.error": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.error",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.error-soft": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.errorSoft",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-error": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.onError",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.success": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.success",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.success-soft": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.successSoft",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-success": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.onSuccess",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.warning": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.warning",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.warning-soft": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.warningSoft",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-warning": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.onWarning",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.info": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.info",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-info": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.onInfo",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.border": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.border",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.outline": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.outline",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.divider": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.divider",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.disabled": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.disabled",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.scrim": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.scrim",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.display": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.textStyle.display",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.headline": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.textStyle.headline",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.title-lg": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.textStyle.titleLg",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.title": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.textStyle.title",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.title-sm": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.textStyle.titleSm",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.subtitle": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.textStyle.subtitle",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.body-lg": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.textStyle.bodyLg",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.content": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.textStyle.content",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.body-sm": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.textStyle.bodySm",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.label": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.textStyle.label",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.caption": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.textStyle.caption",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.caption-strong": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.textStyle.captionStrong",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.micro": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.textStyle.micro",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.numeric-display": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.textStyle.numericDisplay",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.numeric-title": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.textStyle.numericTitle",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.numeric-content": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.textStyle.numericContent",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "radius.mark": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.radius.xs",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "radius.control-compact": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.radius.sm",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "radius.control": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.radius.md",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "radius.surface": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.radius.lg",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "radius.overlay": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.radius.xl",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "radius.pill": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.radius.full",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.control-compact": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.controlSm",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.control": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.controlMd",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.control-large": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.controlLg",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.touch": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.touch",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.icon-inline": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.iconSm",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.icon-compact": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.iconCompact",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.icon": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.iconMd",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.icon-prominent": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.iconLg",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.avatar-compact": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.avatarSm",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.avatar": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.avatarMd",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.avatar-large": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.avatarLg",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.navigation-bar": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.bottomNavigation",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.stroke": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.progressStroke",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.indicator": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.indicatorThickness",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.caret": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.caret",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.marker": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.stepDot",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "border.width": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.border.widthHairline",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "border.width-strong": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.border.widthStrong",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "border.width-accent": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.border.accentWidth",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "border.hairline": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.border.hairline",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "border.default": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.border.defaultBorder",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "border.focus": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.border.focus",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "elevation.surface": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.elevation.surface",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "elevation.raised": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.elevation.raised",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "elevation.floating": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.elevation.glass",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "elevation.menu": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.elevation.menu",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "elevation.overlay": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.elevation.overlay",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "opacity.disabled": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.opacity.disabled",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "opacity.translucent": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.opacity.translucent",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "opacity.hover": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.opacity.hover",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "opacity.pressed": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.opacity.pressed",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "motion.duration-short": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.motion.durationFast",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "motion.duration-medium": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.motion.durationNormal",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "motion.duration-long": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.motion.durationSlow",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "motion.easing-standard": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.motion.easingStandard",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "motion.easing-emphasized": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.motion.easingEmphasized",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "motion.easing-gentle": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.motion.easingGentle",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "motion.press-scale": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.motion.scalePressed",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "motion.press-scale-strong": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.motion.scalePressedStrong",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "surface.glass-backdrop": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.effect.glassBackdropBlur",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "asset.brand-mark": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.assets.brandMark",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "asset.brand-wordmark": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.assets.brandWordmark",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "asset.launch-image": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.assets.launchImage",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "asset.empty-illustration": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.assets.emptyIllustration",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "spacing.xs": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.spacing.xs",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "spacing.sm": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.spacing.sm",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "spacing.md": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.spacing.md",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "spacing.lg": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.spacing.lg",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "spacing.xxs": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.spacing.xxs",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "spacing.sm-plus": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.spacing.smPlus",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "spacing.lg-plus": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.spacing.lgPlus",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "spacing.2xl": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.spacing.xxl",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "bottom-sheet.duration": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.motion.durationSheet",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "flow-sheet.gap": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.spacing.xsPlus",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "flow-sheet.duration": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.motion.durationSheet",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "menu.menu-item-height": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.menuItem",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "menu.offset": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.spacing.xsPlus",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "primary-tabs.active-color": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.sectionTabActive",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "progress.gap": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.spacing.xsPlus",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "progress.track-height": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.progressTrack",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "scrollable-data-list.action-min-width": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.refreshActionMinWidth",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "scrollable-data-list.action-height": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.refreshActionHeight",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "secondary-tabs.active-color": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.sectionTabActive",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "secondary-tabs.indicator": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.sectionTabActive",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "tab-viewport.duration": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.motion.durationTabViewport",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "tabbar.active": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.colors.navigationActive",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "textarea.rows": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.sizing.textareaRows",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "toast.gap": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.spacing.toastGap",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "toast.duration": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "accessor": "TS.motion.durationToast",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.panel-medium": {
-      "status": "pending",
-      "reason": "PBWork 新增受控面板高度档位；Flutter 待按主题表适配。"
+      "accessor": "TS.sizing.panelMedium",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.panel-large": {
-      "status": "pending",
-      "reason": "PBWork 新增受控面板高度档位；Flutter 待按主题表适配。"
+      "accessor": "TS.sizing.panelLarge",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "badge.label-size": {
-      "status": "pending",
-      "reason": "PBWork 紧凑 Badge 显式固定既有字号；本轮未适配 Flutter，需按 Producer Contract 复核。"
+      "accessor": "TS.sizing.badgeLabelSize",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.glass-tint": {
-      "status": "pending",
-      "reason": "PBWork 新增材质/数据展示语义键；Flutter accessor 与视觉实现待适配。"
+      "accessor": "TS.colors.glassTint",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.glass-clear": {
-      "status": "pending",
-      "reason": "PBWork 新增材质/数据展示语义键；Flutter accessor 与视觉实现待适配。"
+      "accessor": "TS.colors.glassClear",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.glass-edge": {
-      "status": "pending",
-      "reason": "PBWork 新增材质/数据展示语义键；Flutter accessor 与视觉实现待适配。"
+      "accessor": "TS.colors.glassEdge",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "border.glass": {
-      "status": "pending",
-      "reason": "PBWork 新增材质/数据展示语义键；Flutter accessor 与视觉实现待适配。"
+      "accessor": "TS.border.glass",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "elevation.glass": {
-      "status": "pending",
-      "reason": "PBWork 新增材质/数据展示语义键；Flutter accessor 与视觉实现待适配。"
+      "accessor": "TS.elevation.glass",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.brand": {
-      "status": "pending",
-      "reason": "PBWork 新增材质/数据展示语义键；Flutter accessor 与视觉实现待适配。"
+      "accessor": "TS.sizing.brand",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.plot": {
-      "status": "pending",
-      "reason": "PBWork 新增材质/数据展示语义键；Flutter accessor 与视觉实现待适配。"
+      "accessor": "TS.sizing.plot",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.ring": {
-      "status": "pending",
-      "reason": "PBWork 新增材质/数据展示语义键；Flutter accessor 与视觉实现待适配。"
+      "accessor": "TS.sizing.ring",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "tabbar.selection-tint": {
-      "status": "pending",
-      "reason": "PBWork 新增玻璃控件主题色，Flutter 尚待映射当前主题取值。"
+      "accessor": "TS.colors.tabbarSelectionTint",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "primary-tabs.selection-tint": {
-      "status": "pending",
-      "reason": "PBWork 新增玻璃控件主题色，Flutter 尚待映射当前主题取值。"
+      "accessor": "TS.colors.primaryTabsSelectionTint",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "button.glass-primary-tint": {
-      "status": "pending",
-      "reason": "PBWork 新增玻璃控件主题色，Flutter 尚待映射当前主题取值。"
+      "accessor": "TS.colors.buttonGlassPrimaryTint",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "icon-button.glass-primary-tint": {
-      "status": "pending",
-      "reason": "PBWork 新增玻璃控件主题色，Flutter 尚待映射当前主题取值。"
+      "accessor": "TS.colors.iconButtonGlassPrimaryTint",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "tracking.display": {
-      "status": "pending",
-      "reason": "Producer 新增通用字距、操作尺寸和图形投影角色；Flutter 尚未实现对应映射。"
+      "accessor": "TS.textStyle.trackingDisplay",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "tracking.heading": {
-      "status": "pending",
-      "reason": "Producer 新增通用字距、操作尺寸和图形投影角色；Flutter 尚未实现对应映射。"
+      "accessor": "TS.textStyle.trackingHeading",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "tracking.label": {
-      "status": "pending",
-      "reason": "Producer 新增通用字距、操作尺寸和图形投影角色；Flutter 尚未实现对应映射。"
+      "accessor": "TS.textStyle.trackingLabel",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "tracking.caption": {
-      "status": "pending",
-      "reason": "Producer 新增通用字距、操作尺寸和图形投影角色；Flutter 尚未实现对应映射。"
+      "accessor": "TS.textStyle.trackingCaption",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.action-min-inline": {
-      "status": "pending",
-      "reason": "Producer 新增通用字距、操作尺寸和图形投影角色；Flutter 尚未实现对应映射。"
+      "accessor": "TS.sizing.actionMinInline",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "effect.artwork-shadow": {
-      "status": "pending",
-      "reason": "Producer 新增通用字距、操作尺寸和图形投影角色；Flutter 尚未实现对应映射。"
+      "accessor": "TS.effect.artworkShadow",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "opacity.data-low": {
-      "status": "pending",
-      "reason": "新增三档数据强度/紧凑选择控件取值，Flutter尚未同步。"
+      "accessor": "TS.opacity.dataLow",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "opacity.data-medium": {
-      "status": "pending",
-      "reason": "新增三档数据强度/紧凑选择控件取值，Flutter尚未同步。"
+      "accessor": "TS.opacity.dataMedium",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "opacity.data-high": {
-      "status": "pending",
-      "reason": "新增三档数据强度/紧凑选择控件取值，Flutter尚未同步。"
+      "accessor": "TS.opacity.dataHigh",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "segmented-control.compact-height": {
-      "status": "pending",
-      "reason": "新增三档数据强度/紧凑选择控件取值，Flutter尚未同步。"
+      "accessor": "TS.sizing.compactHeight",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "segmented-control.compact-selection-height": {
-      "status": "pending",
-      "reason": "新增三档数据强度/紧凑选择控件取值，Flutter尚未同步。"
+      "accessor": "TS.sizing.compactSelectionHeight",
+      "import": "lib/theme/proto_bridge_tokens.dart",
+      "definition": "lib/theme/proto_bridge_tokens.dart"
     }
   },
   "queryExclusions": []

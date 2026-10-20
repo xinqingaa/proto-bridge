@@ -15,10 +15,11 @@ proto-bridge-mcp \
 
 ```bash
 pnpm pb:mcp
+pnpm pb:mcp -- --target /absolute/path/to/flutter_app
 pnpm pb:mcp -- --print-config
 ```
 
-第二个命令只打印 Cursor/Codex 可使用的 stdio 配置材料，不启动 server。成功的 `tools/call` 对声明了 `outputSchema` 的工具同时返回 JSON 文本 `content` 与等价的 `structuredContent`。
+`--target` 覆盖本次 wrapper 的 `delivery.targetRoot`，用于临时绑定仓库外或并行 target；生成目录使用自己的 `tool/mcp.mjs`，不需要用户拼绝对路径。`--print-config` 只打印 Cursor/Codex 可使用的 stdio 配置材料，不启动 server。成功的 `tools/call` 对声明了 `outputSchema` 的工具同时返回 JSON 文本 `content` 与等价的 `structuredContent`。
 
 当前 MCP Tool Contract version 为 3；`summarize_reconstruction_review` 使用严格 observation 输入和 Review completeness 输出，不兼容旧的空依据 Review 语义。Consumer 必须先通过 `inspect_evidence_workspace` 核对版本与 capabilities。
 

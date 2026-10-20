@@ -40,8 +40,11 @@
 ```bash
 flutter analyze
 flutter test
+cd ../.. && pnpm ds:theme:verify
 cd ../.. && pnpm ds:target-sync:verify
 ```
+
+主题批次用 `ds:theme:verify` 检查 153 个 Token 的 concrete mapping；组件仍 pending 时 `ds:target-sync:verify` 会继续失败，这是批次状态，不是主题回退。组件清单确认后再恢复完整同步。
 
 视觉验证遵循 [testing.md](docs/testing.md)。最终报告必须包含固定引用、原始风险、修改文件、验证结果、已知偏差和剩余风险。
 

@@ -12,7 +12,7 @@
 
 ## Token mapping
 
-新目录的 148 个可绑定主题键均在根目录 `proto-bridge.target.json` 声明为 pending；不可绑定 enum、字阶派生部件与实现常量不建立 Target 映射。`lib/theme/proto_bridge_tokens.dart` 仍是迁移前的可执行使用点；待本轮适配完成后，再由 resolver 同时验证“声明存在”和“当前 Dart API 可访问”。这份 Target 映射不等于恢复 MCP 完整 Catalog 读取；Agent 仍按当前任务读取必要的 Producer Contract、文档和源码。
+新目录的 153 个可绑定主题键已在根目录 `proto-bridge.target.json` 建立 concrete mapping，并由 `lib/theme/proto_bridge_tokens.dart` 提供可执行 accessor；47 个组件的映射仍按组件批次保持 pending，不能把主题映射当作组件已适配。不可绑定 enum、字阶派生部件与实现常量不建立 Target 映射。待组件适配完成后，再由 resolver 验证“组件声明存在”和“当前 Dart API 可访问”。这份 Target 映射不等于恢复 MCP 完整 Catalog 读取；Agent 仍按当前任务读取必要的 Producer Contract、文档和源码。
 
 `transparent` 与 `none` 是绑定字面量，不是 Foundation Token，也不得生成 `TS.*` accessor 或 Target token obligation。
 
@@ -22,7 +22,7 @@ Target 只翻译语义，不复制 Web 表达：例如百分比映射为 Flutter
 
 1. 根目录 `proto-bridge.target.json` 是精确映射，本文解释策略，Dart 公开 API 是可执行事实；三者不一致时 resolver 必须返回 `stale` 或 `conflict`。
 2. 根目录 `proto-bridge.sync.json` 记录最后一次已确认同步的 Producer surface fingerprint、分区/逐组件 digest 与计数；清单元数据必须整体一致，不能只手改总 digest。
-3. `pnpm ds:target-sync:verify` 比较 Component/Token/Theme Schema、Contract、role、Catalog、Theme、Bind 池、同步清单和 Flutter resolver（要求每个键为 `resolved` 或条目 `pending`）；任一协议或 Target API 漂移都会失败并列出变化项，条目 `pending` 在成功输出末尾列出。
+3. `pnpm ds:target-sync:verify` 比较 Component/Token/Theme Schema、Contract、role、Catalog、Theme、Bind 池、同步清单和 Flutter resolver（要求每个键为 `resolved` 或条目 `pending`）；任一协议或 Target API 漂移都会失败并列出变化项，条目 `pending` 在成功输出末尾列出。组件批次尚未确认时，用 `pnpm ds:theme:verify` 单独检查 153 个 Token 的 concrete mapping，不要把批次 `pending` 误判为主题回退。
 4. DS 连续迭代期间可以暂缓 Flutter 视觉精修，但必须把清单状态改为 `pending` 并记录原因；稳定后统一恢复 `synced`。不得靠记忆或口头提醒维持同步。
 
 本节出现两个不同的 `pending`，必须分开命名：

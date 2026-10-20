@@ -96,6 +96,19 @@ pnpm pb -- deliver \
 
 所有根脚本和参数见[本地操作脚本](./operator-scripts.md)。
 
+## 创建新的 Flutter target
+
+`apps/flutter_pb_app` 是参考 target，不是每个产品的共享库。新项目用：
+
+```bash
+pnpm pb:new:flutter <product_name>
+pnpm pb:target use ../<product_name>
+```
+
+生成目录默认与 proto-bridge 同级，带 Bootstrap 空壳、项目内 MCP launcher、Agent 文档和 153 个 Token 的 target 映射；`lib/features/` 为空。完整命名、复制范围、MCP 和验证见 [Flutter Target 脚手架](./flutter-target-scaffold.md)。
+
+组件批次仍 pending 时，生成目录的 `node tool/ds-theme.mjs` 应通过，`node tool/ds-sync.mjs` 会因批次状态失败；这是预期状态。
+
 ## 清理本地状态
 
 ```bash

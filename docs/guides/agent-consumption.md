@@ -17,10 +17,13 @@ Handoff 是固定 Evidence 索引，不是实现计划。Agent 必须使用 Hand
 ```bash
 node /absolute/path/to/proto-bridge/packages/mcp-server/dist/index.js \
   --store-root /absolute/path/to/.proto-bridge/store \
-  --workspace pbwork-local
+  --workspace pbwork-local \
+  --target-root /absolute/path/to/target
 ```
 
-也可以使用 `PB_STORE_ROOT` 和 `PB_WORKSPACE_ID`。Store 与 Workspace 必须和 Producer 创建 Handoff 时一致。
+也可以使用 `PB_STORE_ROOT`、`PB_WORKSPACE_ID` 和 `PB_DELIVERY_TARGET_ROOT`。Store 与 Workspace 必须和 Producer 创建 Handoff 时一致；Target 必须与提示词中的目标路径一致。仓库 wrapper 可用 `pnpm pb:mcp -- --target /absolute/path/to/target` 临时覆盖。
+
+生成目录（`pnpm pb:new:flutter`）使用自己的 `tool/mcp.mjs` 读取 `.pb-scaffold.json`，客户端不需要写 proto-bridge 绝对路径；见 [Flutter Target 脚手架](./flutter-target-scaffold.md)。
 
 MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过 shell 遍历 Store 代替 MCP。
 

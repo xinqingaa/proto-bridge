@@ -14,6 +14,10 @@
 | `pnpm pb:clean` | 停止受管 PB 进程，删除默认配置和整个 `.proto-bridge` | 是；不可恢复 |
 | `pnpm pb -- <args>` | 从仓库根目录调用正式 CLI（含 `deliver`） | 由具体 CLI 命令决定 |
 | `pnpm pb:mcp` | 从配置解析 Store/Workspace/`delivery.targetRoot` 并启动 stdio MCP | 否 |
+| `pnpm pb:target` | 查看或切换 Workspace 的 `delivery.targetRoot` | 是（仅配置） |
+| `pnpm pb:new:flutter` | 从 flutter_pb_app 生成独立 Flutter target | 是（新目录） |
+| `pnpm ds:theme:verify` | 只验证 153 个 Token 的 Target concrete mapping | 否 |
+| `pnpm ds:target-sync:verify` | 完整 DS Component/Token/Theme 同步门禁 | 否 |
 
 ## Doctor
 
@@ -127,6 +131,29 @@ pnpm pb:mcp -- --print-config
 
 输出只包含命令、参数、Workspace、Store 和交付目标，不启动 MCP。
 Agent 客户端应使用输出中的直接 `node scripts/pb-mcp.mjs` 命令，避免包管理器的生命周期日志进入 stdio。MCP 启动不会隐式构建；构建缺失时先运行 `pnpm build`。
+
+## DS Token 与 Target 验证
+
+```bash
+pnpm ds:theme:verify
+pnpm ds:target-sync:verify
+```
+
+`ds:theme:verify` 只解析 153 个可绑定 Token，报告 concrete mapping 是否全部为 `resolved`；它不检查组件，也不读取 `proto-bridge.sync.json` 的批次状态。组件仍按清单 pending 时用它确认主题层没有回退。
+
+`ds:target-sync:verify` 是完整门禁：组件、Token、Theme Schema、Catalog、Bind 池和同步基线全部参与。组件批次未确认时它会因 `status: pending` 继续失败，这是预期状态；不要把该失败误报为主题回退。
+
+## Target 切换与生成
+
+```bash
+pnpm pb:target show
+pnpm pb:target use ../cold_chain_app --yes
+pnpm pb:new:flutter cold_chain_app
+```
+
+`pb:target use` 校验目标含 `pubspec.yaml` + `lib/`，把绝对路径写成相对 `proto-bridge.json` 的 `delivery.targetRoot`；之后重启 `pnpm pb:up` 和 MCP。`--json` 输出机器可读结果。
+
+`pb:new:flutter <name>` 默认在 proto-bridge 同级创建目录，复制 Flutter 底座但排除 `features`，生成 Bootstrap、项目内 `tool/mcp.mjs`、客户端 MCP 配置和 Agent 文档。项目名必填，不再默认 `flutter_pb_example`；完整说明见 [Flutter Target 脚手架](./flutter-target-scaffold.md)。
 
 ## Deliver（产品主路径）
 

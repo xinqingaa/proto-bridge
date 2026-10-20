@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import path from "node:path";
 import {
   loadWorkspaceConfig,
+  optionValue,
   requireBuilt,
   repoRoot,
   shellQuote,
@@ -15,6 +16,10 @@ import {
 
 const argv = userArgv();
 const workspace = await loadWorkspaceConfig(argv);
+const targetArg = optionValue(argv, "--target");
+const targetOverride = targetArg
+  ? path.resolve(process.cwd(), targetArg)
+  : undefined;
 
 if (argv.includes("--print-config")) {
   const command = process.execPath;
@@ -23,18 +28,21 @@ if (argv.includes("--print-config")) {
     ...(workspace.configPath === path.join(repoRoot, "proto-bridge.json")
       ? []
       : ["--config", workspace.configPath]),
+    ...(targetOverride ? ["--target", targetOverride] : []),
   ];
   process.stdout.write(
     `${JSON.stringify(
       {
         workspaceId: workspace.workspaceId,
         storeRoot: workspace.storeRoot,
-        deliveryTargetRoot: workspace.value?.delivery?.targetRoot
-          ? path.resolve(
-              path.dirname(workspace.configPath),
-              workspace.value.delivery.targetRoot,
-            )
-          : undefined,
+        deliveryTargetRoot:
+          targetOverride ??
+          (workspace.value?.delivery?.targetRoot
+            ? path.resolve(
+                path.dirname(workspace.configPath),
+                workspace.value.delivery.targetRoot,
+              )
+            : undefined),
         stdio: { command, args, cwd: repoRoot },
         cursor: {
           mcpServers: {
@@ -61,7 +69,7 @@ await requireBuilt([
 ]);
 await validateWorkspaceConfigWithCore(workspace);
 const launch = await resolveWorkspaceServiceLaunch(workspace);
-const deliveryTargetRoot = launch.deliveryTargetRoot;
+const deliveryTargetRoot = targetOverride ?? launch.deliveryTargetRoot;
 
 process.stderr.write(
   `ProtoBridge MCP: workspace=${workspace.workspaceId} store=${workspace.storeRoot} target=${deliveryTargetRoot}\n`,

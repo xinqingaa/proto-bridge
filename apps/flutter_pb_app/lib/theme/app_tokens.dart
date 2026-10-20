@@ -18,6 +18,9 @@ class AppSpacing {
   double get lgPlus => 40;
   double get xxl => 48;
   double get xxxl => 64;
+
+  /// Producer `toast.gap` 的 10px 垂直内边距；不并入 4/8 刻度。
+  double get toastGap => 10;
 }
 
 /// 对齐 pbwork `sizing.*` token。
@@ -46,6 +49,17 @@ class AppSizing {
   double get refreshActionMinWidth => 96;
   double get stepDot => 6;
   int get textareaRows => 3;
+
+  /// 面板高度档位按视口比例消费（Producer 的 50dvh / 86dvh）。
+  double get panelMedium => 0.5;
+  double get panelLarge => 0.86;
+  double get ring => 112;
+  double get brand => 72;
+  double get plot => 160;
+  double get actionMinInline => 0;
+  double get compactHeight => 36;
+  double get compactSelectionHeight => 30;
+  double get badgeLabelSize => 10;
 }
 
 /// 对齐 pbwork `radius.*` token。
@@ -73,8 +87,12 @@ class AppOpacity {
   double get pressed => 0.14;
   double get overlay => 0.6;
   double get glass => isDark ? 0.8 : 0.76;
+  double get translucent => 0.76;
   double get hidden => 0;
   double get visible => 1;
+  double get dataLow => 0.3;
+  double get dataMedium => 0.65;
+  double get dataHigh => 1;
 }
 
 /// 对齐 pbwork `motion.*` token。
@@ -121,6 +139,29 @@ class AppElevation {
   double get level3 => 6;
   double get level4 => 8;
   double get level5 => 12;
+
+  BoxShadow get menu => BoxShadow(
+    color: const Color.fromRGBO(15, 23, 42, 0.14),
+    blurRadius: 20,
+    offset: const Offset(0, 8),
+  );
+  BoxShadow get overlay => BoxShadow(
+    color: const Color.fromRGBO(15, 23, 42, 0.2),
+    blurRadius: 48,
+    offset: const Offset(0, 22),
+  );
+  List<BoxShadow> get surface => const [
+    BoxShadow(
+      color: Color.fromRGBO(15, 23, 42, 0.08),
+      blurRadius: 2,
+      offset: Offset(0, 1),
+    ),
+    BoxShadow(
+      color: Color.fromRGBO(15, 23, 42, 0.06),
+      blurRadius: 24,
+      offset: Offset(0, 8),
+    ),
+  ];
 }
 
 /// 对齐组件实际消费的 `border.*` token。
@@ -133,7 +174,9 @@ class AppBorderTokens {
   BorderSide get strong => BorderSide(color: colors.outline, width: 2);
   BorderSide get focus => BorderSide(color: colors.primary, width: 2);
   BorderSide get hairline => BorderSide(color: colors.divider);
+  BorderSide get glass => BorderSide(color: colors.glassEdge);
   double get widthHairline => 1;
+  double get widthStrong => 2;
   double get accentWidth => 4;
 }
 
@@ -177,4 +220,17 @@ class AppEffectTokens {
 
   /// Flutter 近似 CSS `blur(12px) saturate(1.06)` 的 blur sigma。
   double get glassBackdropBlur => 12;
+
+  /// Producer 的基础包没有图形投影；保留空列表作为显式“无效果”。
+  List<BoxShadow> get artworkShadow => const [];
+}
+
+/// Producer `asset.*` 在当前 target 尚未绑定真实文件；空值表示显式未提供。
+class AppAssets {
+  const AppAssets();
+
+  String? get brandMark => null;
+  String? get brandWordmark => null;
+  String? get emptyIllustration => null;
+  String? get launchImage => null;
 }

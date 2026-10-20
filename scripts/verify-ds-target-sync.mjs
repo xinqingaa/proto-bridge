@@ -16,17 +16,21 @@ import {
 } from "../packages/core/dist/target/query.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const targetArg = optionValue(process.argv, "--target");
+const targetRoot = targetArg
+  ? path.resolve(process.cwd(), targetArg)
+  : path.join(repoRoot, "apps/flutter_pb_app");
+const syncPath = path.join(targetRoot, "proto-bridge.sync.json");
+const targetMappingPath = path.join(targetRoot, "proto-bridge.target.json");
+const printBaseline = process.argv.includes("--print-baseline");
+const tokensOnly = process.argv.includes("--tokens-only");
+const errors = [];
+const pendingEntries = [];
+
 const contractRoot = path.join(
   repoRoot,
   "apps/pbwork/src/design-system/components/contracts",
 );
-const targetRoot = path.join(repoRoot, "apps/flutter_pb_app");
-const syncPath = path.join(targetRoot, "proto-bridge.sync.json");
-const targetMappingPath = path.join(targetRoot, "proto-bridge.target.json");
-const printBaseline = process.argv.includes("--print-baseline");
-const errors = [];
-const pendingEntries = [];
-
 const contracts = await readContracts();
 const rawCatalog = await readJson("apps/pbwork/src/design-system/theme/key-catalog.json");
 const catalog = ThemeKeyCatalog.parse({ ...rawCatalog, keys: [
@@ -43,7 +47,7 @@ for (const diagnostic of validateThemePacks({ keyCatalog: catalog, constants, pa
 const componentSchema = await readJson("apps/pbwork/src/design-system/schemas/component.schema.json");
 const themeProtocolSchema = await readFile(path.join(repoRoot, "packages/core/src/v2/theme/schema.ts"), "utf8");
 const bindTokenIds = tokens.map((key) => key.id).sort();
-const targetMapping = await readJson("apps/flutter_pb_app/proto-bridge.target.json");
+const targetMapping = JSON.parse(await readFile(targetMappingPath, "utf8"));
 const tokenIds = new Set(tokens.map((token) => token.id));
 const literalIds = new Set(TOKEN_BINDING_LITERALS);
 const boundTokenIds = new Set();
@@ -69,7 +73,7 @@ const surfaceDigest = digest(sectionDigests);
 const baseline = {
   version: 1,
   producer: "apps/pbwork",
-  target: "apps/flutter_pb_app",
+  target: path.relative(repoRoot, targetRoot) || ".",
   status: "synced",
   surfaceDigest,
   sectionDigests,
@@ -83,8 +87,8 @@ const baseline = {
   },
 };
 
-await verifyResolver();
-if (!printBaseline) await verifyRecordedBaseline();
+await verifyResolver(tokensOnly);
+if (!printBaseline && !tokensOnly) await verifyRecordedBaseline();
 
 if (errors.length > 0) {
   process.stderr.write(
@@ -95,6 +99,10 @@ if (errors.length > 0) {
   process.exitCode = 1;
 } else if (printBaseline) {
   process.stdout.write(`${JSON.stringify(baseline, null, 2)}\n`);
+} else if (tokensOnly) {
+  process.stdout.write(
+    `DS → Target token verification verified: ${tokenIds.size}/${tokens.length} bindable theme keys mapped; components remain pending by scope.\n`,
+  );
 } else {
   process.stdout.write(
     `DS → Target sync verified: ${contracts.length}/${declaredTargetComponentIds.length} current components, ${tokenIds.size}/${tokens.length} bindable theme keys mapped, surface ${surfaceDigest}${pendingSummary()}\n`,
@@ -306,16 +314,18 @@ function verifyTargetMappingCoverage() {
   }
 }
 
-async function verifyResolver() {
-  const componentBatch = await resolveTargetComponents({
-    targetRoot,
-    ids: declaredTargetComponentIds,
-  });
+async function verifyResolver(tokensOnly = false) {
+  const componentBatch = tokensOnly
+    ? undefined
+    : await resolveTargetComponents({
+        targetRoot,
+        ids: declaredTargetComponentIds,
+      });
   const tokenBatch = await resolveTargetTokens({
     targetRoot,
     ids: [...tokenIds].sort(),
   });
-  for (const resolution of [...componentBatch.resolutions, ...tokenBatch.resolutions]) {
+  for (const resolution of [...(componentBatch?.resolutions ?? []), ...tokenBatch.resolutions]) {
     if (resolution.status === "pending") {
       pendingEntries.push({
         kind: resolution.kind,
@@ -326,7 +336,7 @@ async function verifyResolver() {
       errors.push(`${resolution.kind} ${resolution.id} resolved as ${resolution.status}.`);
     }
   }
-  for (const warning of [...componentBatch.warnings, ...tokenBatch.warnings]) {
+  for (const warning of [...(componentBatch?.warnings ?? []), ...tokenBatch.warnings]) {
     errors.push(`Target resolver warning: ${warning}`);
   }
 }
@@ -336,7 +346,7 @@ async function verifyRecordedBaseline() {
   try {
     recorded = JSON.parse(await readFile(syncPath, "utf8"));
   } catch {
-    errors.push("Missing apps/flutter_pb_app/proto-bridge.sync.json.");
+    errors.push(`Missing ${path.relative(repoRoot, syncPath)}.`);
     return;
   }
   if (recorded.status !== "synced") {
@@ -356,6 +366,14 @@ async function verifyRecordedBaseline() {
   errors.push(
     `Producer surface or recorded Target metadata drifted from the synced baseline (sections: ${changedSections.join(", ") || "metadata/counts"}; components: ${[...changedComponents, ...removedComponents.map((id) => `${id} (removed)`) ].join(", ") || "none"}).`,
   );
+}
+
+function optionValue(argv, name) {
+  const index = argv.indexOf(name);
+  if (index === -1) return undefined;
+  const value = argv[index + 1];
+  if (!value || value.startsWith("--")) throw new Error(`${name} requires a value.`);
+  return value;
 }
 
 function canonical(value) {

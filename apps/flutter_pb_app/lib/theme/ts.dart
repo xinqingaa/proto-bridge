@@ -58,6 +58,7 @@ class ThemeService {
   final AppLayoutTokens layout = const AppLayoutTokens();
   final AppLayerTokens layer = const AppLayerTokens();
   final AppEffectTokens effect = const AppEffectTokens();
+  final AppAssets assets = const AppAssets();
 
   ThemeData toThemeData() {
     final scheme = ColorScheme(
@@ -148,6 +149,7 @@ abstract final class TS {
   static AppLayoutTokens get layout => _service.layout;
   static AppLayerTokens get layer => _service.layer;
   static AppEffectTokens get effect => _service.effect;
+  static AppAssets get assets => _service.assets;
 
   /// 绑定当前亮度（App 根节点 / 主题切换时调用）。
   static void bind(Brightness brightness) {

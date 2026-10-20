@@ -20,7 +20,11 @@ flutter pub get
 flutter analyze
 flutter test
 flutter run
+cd ../.. && pnpm ds:theme:verify
+# 组件批次确认后再跑完整门禁
 cd ../.. && pnpm ds:target-sync:verify
 ```
+
+主题批次先跑 `ds:theme:verify` 确认 153 个 Token；组件仍 pending 时完整 `ds:target-sync:verify` 会继续失败，这是批次状态，不是主题回退。
 
 仓库不因实验 Flutter MCP 固定 Flutter SDK；目标工程使用当前开发环境中的 Flutter。仓库根 `pnpm verify` 会执行上述 Flutter 静态分析与完整测试，以及 Producer/Target 同步和产品端到端门禁。

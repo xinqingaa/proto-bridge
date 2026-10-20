@@ -11,13 +11,12 @@
 
 ## 参数
 
-需要参数时通过 `RouteSettings.arguments` 传递，并在目标页面集中解析；不要在多个 widget 中重复解析同一参数。当前业务路由：
+需要参数时通过 `RouteSettings.arguments` 传递，并在目标页面集中解析；不要在多个 widget 中重复解析同一参数。当前路由：
 
 - `/` Hub
 - `/demo` Demo 对照
-- `/cold-chain/exceptions` 异常队列，参数 `ExceptionQueueArgs.variantId`
-- `/cold-chain/shipment` 运输详情，参数 `ShipmentDetailArgs`
-- `/cold-chain/resolution` 处置表单，参数 `ResolutionFormArgs`
+
+业务页面由固定 PBWork Handoff 按 Screen 新增；新增时同时补路由常量、注册、参数解析和 Widget test，不把页面私有解析散落到多个 widget。
 
 ## 新增路由检查表
 
