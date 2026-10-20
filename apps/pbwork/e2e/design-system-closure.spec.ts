@@ -298,7 +298,7 @@ test("sheet surfaces keep semantic radius and FlowSheet clips adjacent pages", a
   const flowSheet = page.locator(".pb-flow-sheet");
   await expect(flowSheet).toBeVisible();
   const layout = await flowSheet.evaluate((element) => {
-    const body = element.querySelector<HTMLElement>(".pb-flow-sheet-body")!;
+    const body = element.querySelector<HTMLElement>(".pb-flow-sheet-viewport")!;
     const pages = Array.from(
       element.querySelectorAll<HTMLElement>(".pb-flow-sheet-track > *"),
     );
@@ -315,9 +315,17 @@ test("sheet surfaces keep semantic radius and FlowSheet clips adjacent pages", a
   });
   expect(layout.radius).toBe("16px 16px 0px 0px");
   expect(layout.padding).toBe("0px");
-  expect(layout.overflow).toBe("hidden");
+  expect(layout.overflow).toBe("clip");
   expect(layout.firstWidth).toBeCloseTo(layout.bodyWidth, 1);
   expect(layout.secondLeft).toBeCloseTo(layout.bodyRight, 1);
+
+  const indicator = await flowSheet.evaluate(element => {
+    const content=element.querySelector('.pb-flow-sheet-body')!.getBoundingClientRect();
+    const dots=element.querySelector('.pb-flow-sheet-dots')!.getBoundingClientRect();
+    const actions=element.querySelector('.pb-flow-sheet-actions')?.getBoundingClientRect();
+    return {belowContent:dots.top>=content.bottom-1,aboveActions:!actions||dots.bottom<=actions.top+1};
+  });
+  expect(indicator).toEqual({belowContent:true,aboveActions:true});
 
   const flowBody = flowSheet.locator(".pb-flow-sheet-body");
   await flowBody.evaluate((element) => {

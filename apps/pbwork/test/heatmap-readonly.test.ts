@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
 import { h, shallowRef } from "vue";
 import Heatmap from "@/design-system/components/display/Heatmap.vue";
-import YikeHabitYear from "@/prototypes/yike/components/YikeHabitYear.vue";
 import {
   ThemeTableKey,
   resolveRuntimeTheme,
@@ -10,7 +9,7 @@ import {
 const global = {
   provide: {
     [ThemeTableKey as symbol]: shallowRef(
-      resolveRuntimeTheme("yike", "water", "light"),
+      resolveRuntimeTheme("pbwork-base", "default", "light"),
     ),
   },
 };
@@ -73,40 +72,6 @@ describe("Heatmap只读展示", () => {
     expect(result.max).toBe(1);
     expect(wrapper.text()).toContain("业务图例");
     expect(wrapper.find(".legend").exists()).toBe(false);
-    wrapper.unmount();
-  });
-  it("yike年度图组合公共Heatmap，完成优先于归档，边界与缺失各自表达", () => {
-    const wrapper = mount(YikeHabitYear, {
-      global,
-      props: {
-        inspectId: "habit.year",
-        face: "water",
-        today: "2024-03-01",
-        createdOn: "2024-02-27",
-        completeness: "partial",
-        days: [{ date: "2024-02-28", completed: true }],
-        archived: [{ from: "2024-02-28", to: "2024-02-29" }],
-      },
-    });
-    expect(wrapper.findComponent(Heatmap).exists()).toBe(true);
-    expect(
-      wrapper.get('[data-date="2024-02-26"]').attributes("data-state"),
-    ).toBe("before");
-    expect(
-      wrapper.get('[data-date="2024-02-28"]').attributes("data-state"),
-    ).toBe("done");
-    expect(
-      wrapper.get('[data-date="2024-02-29"]').attributes("data-state"),
-    ).toBe("archived");
-    expect(
-      wrapper.get('[data-date="2024-03-01"]').attributes("data-state"),
-    ).toBe("missing");
-    expect(
-      wrapper.get('[data-date="2024-03-02"]').attributes("data-state"),
-    ).toBe("future");
-    expect(wrapper.findAll("button")).toHaveLength(0);
-    expect(wrapper.text()).toContain("最近365天完成 1 次");
-    expect(wrapper.get(".axis span").text()).toBe("2023-03-03");
     wrapper.unmount();
   });
 });

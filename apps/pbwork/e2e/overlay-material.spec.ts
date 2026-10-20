@@ -51,9 +51,6 @@ for (const component of ["bottom-sheet", "flow-sheet", "confirm"]) {
     expect(
       await glass.evaluate((n) => getComputedStyle(n).backgroundColor),
     ).toBe(fallback);
-    await page.screenshot({
-      path: `../../output/yike-resource-check/${component}-reduced-transparency.png`,
-    });
     if (component === "confirm") {
       await panel.getByRole("button", { name: "取消", exact: true }).click();
     } else {

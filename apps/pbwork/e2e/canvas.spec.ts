@@ -206,3 +206,47 @@ test("fullscreen expands the canvas in the current workbench", async ({
   await page.getByRole("button", { name: "退出全屏画布" }).click();
   await expect(page.locator(".phone-canvas")).not.toHaveClass(/is-fullscreen/);
 });
+
+
+test("Workbench accepts in-prototype appearance changes without reverting the iframe", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto(
+    "/workbench/prototypes/yike/screens/settings?variant=default&theme=mechanical&mode=light",
+  );
+  const frame = page.frameLocator("iframe");
+  await frame.getByRole("radio", { name: "深色", exact: true }).click();
+  await expect(page).toHaveURL(/mode=dark/);
+  await expect(
+    frame.getByRole("radio", { name: "深色", exact: true }),
+  ).toBeChecked();
+  await frame.getByRole("button", { name: "水位表盘", exact: true }).click();
+  await expect(page).toHaveURL(/theme=water/);
+  await expect(
+    frame.getByRole("button", { name: "水位表盘", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await frame.getByRole("radio", { name: "浅色", exact: true }).click();
+  await expect(page).toHaveURL(/mode=light/);
+  await expect(
+    frame.getByRole("radio", { name: "浅色", exact: true }),
+  ).toBeChecked();
+  await frame.getByRole("radio", { name: "跟随系统", exact: true }).click();
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(page).toHaveURL(/mode=dark/);
+  await expect(
+    frame.getByRole("radio", { name: "跟随系统", exact: true }),
+  ).toBeChecked();
+  await page.reload();
+  await expect(
+    frame.getByRole("radio", { name: "跟随系统", exact: true }),
+  ).toBeChecked();
+  await expect(
+    frame.getByRole("button", { name: "水位表盘", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    page
+      .getByRole("navigation", { name: "工作台导航" })
+      .getByRole("link", { name: "新建或编辑习惯", exact: true }),
+  ).toHaveCount(0);
+});

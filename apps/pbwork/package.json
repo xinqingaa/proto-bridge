@@ -15,6 +15,7 @@
     "test": "vitest run",
     "pretest:e2e": "pnpm build",
     "test:e2e": "playwright test",
+    "test:e2e:yike": "playwright test --config e2e/yike.config.ts",
     "pretest:e2e:capture": "pnpm build",
     "test:e2e:capture": "playwright test e2e/runtime-capture.spec.ts e2e/authoring-tools.spec.ts",
     "pretest:e2e:console": "pnpm --filter @proto-bridge/local-service build && pnpm build",

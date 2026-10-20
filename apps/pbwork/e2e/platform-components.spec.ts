@@ -209,3 +209,66 @@ test("GroupedList demo writes controlled toggle state back to its groups", async
     page.getByRole("status").filter({ hasText: "已更新列表开关" }),
   ).toHaveText("已更新列表开关");
 });
+
+
+for (const pack of ["base", "sample"] as const)
+for (const mode of ["light", "dark"] as const) {
+test(`generic wheel preview: ${pack}/${mode}, one to three independent columns`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 1440, height: 1000 });
+      await page.addInitScript(
+        ({ pack, mode }) =>
+          localStorage.setItem(
+            "pbwork:preview-preferences:v1",
+            JSON.stringify({
+              layout: "single",
+              selections: {
+                A: {
+                  contextId:
+                    pack === "base"
+                      ? "foundation:pbwork-base"
+                      : "sample:pbwork-sample",
+                  theme: pack === "base" ? "default" : "garden",
+                  mode,
+                },
+              },
+            }),
+          ),
+        { pack, mode },
+      );
+      await page.goto("/workbench/components/duration-picker");
+      const stage = page.locator("[data-primary-preview]");
+      await expect(stage.getByRole("listbox")).toHaveCount(2);
+      const primary = stage.getByRole("listbox").first();
+      await primary.press("End");
+      await expect(primary.getByRole("option", { selected: true })).toHaveText(
+        "3",
+      );
+      await primary.hover();
+      await page.mouse.wheel(0, -120);
+      await expect(
+        primary.getByRole("option", { selected: true }),
+      ).not.toHaveText("3");
+      for (const [state, count] of [
+        ["single", 1],
+        ["triple", 3],
+      ] as const) {
+        const exhibit = page.locator(`[data-exhibit="type.${state}"]`).first();
+        await expect(exhibit.getByRole("listbox")).toHaveCount(count);
+        const wheel = exhibit.getByRole("listbox").last();
+        await wheel.press("End");
+        await expect(wheel.getByRole("option", { selected: true })).toHaveText(
+          count === 1 ? "选项三" : "5",
+        );
+        if (count === 3) {
+          await expect(
+            exhibit
+              .getByRole("listbox")
+              .first()
+              .getByRole("option", { selected: true }),
+          ).toHaveText("1");
+        }
+      }
+    });
+}
