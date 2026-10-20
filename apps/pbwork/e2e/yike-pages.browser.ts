@@ -133,7 +133,7 @@ test("D3: custom countdown validates, cancels without mutation, and starts its c
     sheet
       .getByRole("listbox", { name: "分钟", exact: true })
       .getByRole("option", { name: "00", exact: true }),
-  ).toHaveCount(0);
+  ).toHaveCount(1);
   await shot(page, "focus-custom-validation");
   await sheet.getByRole("button", { name: "关闭", exact: true }).click();
   await settle(page);
@@ -146,7 +146,8 @@ test("D3: custom countdown validates, cancels without mutation, and starts its c
   await page.getByRole("button", { name: "自定义", exact: true }).click();
   const minutes = sheet.getByRole("listbox", { name: "分钟", exact: true });
   await minutes.press("Home");
-  for (let i = 0; i < 6; i++) await minutes.press("ArrowDown");
+  for (let i = 0; i < 7; i++) await minutes.press("ArrowDown");
+  await sheet.getByRole("listbox", { name: "秒", exact: true }).press("Home");
   await sheet.getByRole("button", { name: "确认时长", exact: true }).click();
   await settle(page);
   await page.getByRole("button", { name: "开始 7 分钟", exact: true }).click();
@@ -331,7 +332,8 @@ test("short records use a configurable confirmation threshold without losing the
     exact: true,
   });
   await minutes.press("Home");
-  for (let i = 0; i < 6; i++) await minutes.press("ArrowDown");
+  for (let i = 0; i < 7; i++) await minutes.press("ArrowDown");
+  await sheet.getByRole("listbox", { name: "秒", exact: true }).press("Home");
   await shot(page, "record-threshold-custom");
   await sheet.getByRole("button", { name: "确认", exact: true }).click();
   await expect(

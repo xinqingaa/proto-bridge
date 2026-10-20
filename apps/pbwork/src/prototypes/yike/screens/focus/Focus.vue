@@ -28,7 +28,7 @@ const root = ref<HTMLElement | null>(null);
 useYikeScroll(root, "focus");
 const commands = useYikeSession();
 const mode = commands.mode;
-const countdownMinutes = commands.countdownMinutes;
+const countdownSeconds = commands.countdownSeconds;
 const pendingMode = commands.pendingMode;
 const shortRecordOpen = computed(
   () =>
@@ -41,23 +41,23 @@ function resolveShortRecord(value: boolean) {
 }
 const confirmAbandon = ref(route.query.variant === "abandon-confirm");
 const customOpen = ref(route.query.variant === "custom-duration");
-const customMinutes = ref(countdownMinutes.value);
+const customSeconds = ref(countdownSeconds.value);
 const customError = ref("");
 function openCustom() {
-  customMinutes.value = countdownMinutes.value;
+  customSeconds.value = countdownSeconds.value;
   customError.value = "";
   customOpen.value = true;
 }
 function saveCustom() {
   if (
-    !Number.isInteger(customMinutes.value) ||
-    customMinutes.value < 1 ||
-    customMinutes.value > 1439
+    !Number.isInteger(customSeconds.value) ||
+    customSeconds.value < 1 ||
+    customSeconds.value > 86399
   ) {
-    customError.value = "请选择 1 分钟至 23 小时 59 分钟";
+    customError.value = "请选择 1 秒至 23 小时 59 分 59 秒";
     return;
   }
-  countdownMinutes.value = customMinutes.value;
+  countdownSeconds.value = customSeconds.value;
   customOpen.value = false;
   syncVariant();
 }
@@ -187,11 +187,11 @@ function abandon() {
     >
       <div class="yike-sheet-content">
         <DurationPicker
-          v-model="customMinutes"
+          v-model="customSeconds"
           label="倒计时时长"
-          :minute-step="1"
+          precision="second"
           :min="1"
-          :max="1439"
+          :max="86399"
           inspect-id="yike.focus.custom-duration"
         />
         <p v-if="customError" role="alert">{{ customError }}</p>

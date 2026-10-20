@@ -341,3 +341,34 @@ Review中的类型分布与记录图标改为直接img，移除主题mask及colo
 - 实看`output/yike-controls/countdown-mechanical-light.png`、`countdown-water-dark.png`、`countdown-sundial-light.png`及`corrupt-confirm-sundial-dark.png`，预设不抢主操作、窄屏单行可达、确认面板沿用玻璃与固定操作。Experience为quick-checked，仅代表本批局部复查，未代替D阶段用户复核。
 - `pnpm docs:verify`通过156份Markdown。`pnpm ds:target-sync:verify`仍未通过，报告components/iconAssets/tokenCatalog/themes/bindPool漂移，保留原有Target pending及基线，不把本批Web适配描述成Flutter同步完成。
 - 本批仅更改一刻现有主题与业务调用、对应测试和三份原型文档；DS实现、SVG、Capture/Store和生命周期未修改，无Git提交。
+
+
+## 秒级计时四项增量（2026-10-20）
+
+用户批准四项范围，独立实现/验收节点为：focus.custom-duration/custom-save及primary-action、settings.threshold-duration/threshold-save、review.record/day-total、倒计时到点记录与提前结束确认。既有Screen/Variant、节点ID、Actions与准备入口复用，不新增页面或计时模式。
+
+- 已有YikeDurationPicker局部包装增加second精度，调用共享WheelPicker的三列能力；番茄配置仍用默认分钟。既有局部实现直接维护，不登记新的DS组件或扩展。
+- 倒计时草稿改为整数秒；预设、读数与主操作文案同步换算，模型仍使用原毫秒会话/秒数记录。自然完整完成倒计时在保存及确认两处共享判断，提前结束仍按阈值确认；追加不拆分记录。
+- 阈值自定义直接读写整数秒，修复向上取整分钟的实现遗漏。回顾精确格式只用于当日记录和合计，概览与图表保持现状。
+- 三份模式SVG与DS BottomSheet实现不变；未新增Token、公共Contract、Schema或更改Capture/Store和生命周期。验证结果随后记录；D阶段仍待用户复核。
+
+### 本批验证
+
+- 类型检查与静态authoring lint通过；计时引擎/会话/模型/统计/秒级选择器相关30项检查通过，既有资源及Flex门禁8项通过，共38项。包括1秒边界、5秒完整完成、提前结束确认与取消、追加合并去重、跨午夜0.5秒分配、分钟步长与上下限。
+- 新增4项浏览器流程通过：机械浅色390×844、水位深色360×640、日影浅色390×844下，设置5秒→自然完成→再次设置95秒→回顾显示两条记录和1分40秒合计；15秒自定义阈值重开/刷新保持。
+- 另11项既有浏览器回归通过：六主题模式组合的分钟预设、键盘/自定义；原有分钟配置边界、倒计时取消/启动、阈值分钟设置、短记录取消保留会话、FlowSheet浅深草稿/焦点/底部稳定性。共15项浏览器检查，未扩大为全仓库回归。
+- 实看`output/yike-seconds/picker-water-dark.png`和`records-sundial-light.png`，三列滚轮在360宽度下可读，确认入口可达；秒数明细列对齐、合计与记录一致，沿用原sheet结构。Experience=quick-checked，仅为本批局部检查，D阶段仍待用户复核。
+- `pnpm docs:verify`通过156份Markdown，`git diff --check`通过。同步design/resources/implementation；DS、主题、公共Schema未变，既有Target漂移不在本批处理，未刷新同步基线，无Git提交。
+
+
+## 专注操作区排版修订（2026-10-20）
+
+用户确认后修正局部布局。独立验收节点：focus.primary-action、append、finish/abandon、skip-break、completion-feedback。主操作维持既有位置与强调胶囊；append用公开quiet类型，在下方居中。提示音说明迁到support区域的显式status节点，底部不再重复到点或将提示与按钮拼在同排。暂停/番茄完成沿用居中轻操作组，休息结束隐藏不适用的跳过入口。
+
+仅修改FocusPanel使用处与对应文档/检查，不修改DS、主题、表盘资产、导航、计时或记录算法；前一批秒级改动保留。验证结果随后记录，D阶段继续待用户复核。
+
+### 本批验证结果
+
+- 类型检查和静态authoring lint通过。3项针对性浏览器检查通过（7.7秒），每项覆盖倒计时运行/暂停/到点、番茄完成与休息结束；机械/日影390×844浅色、水位360×640深色，共15个代表态。五态间主按钮纵向偏差小于1逻辑像素，全部居中，次操作均为quiet且触控高度不小于44，追加后主按钮位置保持，休息结束可进入下一轮。
+- 实看`output/yike-focus-actions/`中的三主题due截图、日影paused及水位break-finished共5张，核对单个最高强调、轻操作轴线、状态提示分离、窄屏和根导航无遮挡。Experience=accepted（本批Focused Experience Gate的Agent局部复查通过），不代表用户已完成D阶段复核或原型已定稿。
+- 同步design/resources/implementation，未改公共组件、Token/Theme、表盘绘制或SVG。类型/语义及实际Runtime启动验证无新增阻断；本批未运行完整仓库回归，未刷新Target同步基线、未提交Git。

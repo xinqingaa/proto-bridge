@@ -7,6 +7,7 @@ import {
   completeTimer,
   createTimerSession,
   lapTimer,
+  isCompletedCountdown,
   elapsedMs,
   pauseTimer,
   resumeTimer,
@@ -17,7 +18,7 @@ import {
 /** One command surface for all pages; clock injection makes demos repeatable. */
 export function createYikeSession(store: YikeStore, now = () => Date.now()) {
   const mode = ref<YikeTimerMode>(store.data.session?.mode ?? "pomodoro");
-  const countdownMinutes = ref(5);
+  const countdownSeconds = ref(300);
   const pendingMode = ref<YikeTimerMode | null>(null);
   const dismissedCompletion = new Set<string>();
   const pendingRecord = ref<{
@@ -29,6 +30,7 @@ export function createYikeSession(store: YikeStore, now = () => Date.now()) {
     return Boolean(
       current &&
       (current.phase ?? "focus") === "focus" &&
+      !isCompletedCountdown(current) &&
       current.recordDecision === undefined &&
       !store.data.focusRecords.some((record) => record.id === current.id) &&
       elapsedMs(current, at) > 0 &&
@@ -72,9 +74,9 @@ export function createYikeSession(store: YikeStore, now = () => Date.now()) {
             mode: mode.value,
             now: at,
             targetMs:
-              (mode.value === "pomodoro"
-                ? p.pomodoroMinutes
-                : countdownMinutes.value) * 60_000,
+              mode.value === "pomodoro"
+                ? p.pomodoroMinutes * 60_000
+                : countdownSeconds.value * 1000,
             breakAfter:
               (store.data.completedRounds + 1) % p.longBreakEvery === 0
                 ? "long-break"
@@ -162,7 +164,7 @@ export function createYikeSession(store: YikeStore, now = () => Date.now()) {
     pendingRecord,
     resolveRecord,
     mode,
-    countdownMinutes,
+    countdownSeconds,
     pendingMode,
     tick,
     toggle,

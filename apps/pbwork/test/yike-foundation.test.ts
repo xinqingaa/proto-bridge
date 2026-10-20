@@ -144,7 +144,7 @@ describe("一刻最小演示业务基础", () => {
     const store = createYikeStore({ storage: null, now: () => new Date(at) });
     const timer = createYikeSession(store, () => at);
     timer.requestMode("countdown");
-    timer.countdownMinutes.value = 1;
+    timer.countdownSeconds.value = 60;
     timer.toggle();
     at += 60_000;
     timer.tick();

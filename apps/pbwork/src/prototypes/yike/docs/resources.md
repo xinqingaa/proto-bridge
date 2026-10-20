@@ -251,3 +251,15 @@ Review以SVG alpha mask读取相同路径，尺寸为size.icon-prominent，绘�
 - 既有FocusPanel倒计时预设局部节点沿用原生按钮语义，不新增组件、手势或选择仲裁。公开Button/SegmentedControl尚无适合此处的轻品牌选中形态，本批仅修复已有局部Token样式：primary/primary-soft、control-compact圆角、size.touch、border.focus；保留按Tab遍历、Enter/空格激活与aria-pressed。Evidence随实际选中前景、底和描边同步。自定义是无选中态的文字入口。
 - yike/semantic显式映射secondary→on-surface、secondary-soft→surface-recessed、on-secondary→surface；沿用DS IconButton公开语义，六组合经Core对比度门禁。无新增Token、Contract、Registry或DS API。
 - 空态新建与归档恢复补齐公开shape=pill；失效对象返回和存储异常入口使用Button kind=quiet，异常按钮提供稳定业务inspectId。损坏确认仅补BottomSheet material=glass及取消kind=quiet。共享组件源码不变，普通公开props不登记为独立资源。
+
+
+### 秒级时长（2026-10-20）
+
+既有YikeDurationPicker继续组合DS WheelPicker，局部precision=second时模型值为整数秒并显示三列；默认仍以分钟为单位显示时/分，分钟步长及上下限保留。列选项由当前前缀及有效范围算出，不枚举全天86400项；滚动、键盘、焦点与触摸仍由共享滚轮承接。仅倒计时与自定义记录阈值启用秒列，未修改DS组件API、Contract或主题。
+
+倒计时草稿内部统一countdownSeconds，创建会话时换算毫秒，分钟快捷项换算为秒后比较和选择；记录原有durationSeconds及跨日intervals结构不变。preciseDurationLabel仅用于倒计时开始文案和回顾当日记录/合计，概览继续durationLabel。自然完成倒计时的识别共用timer-engine谓词，保存门禁与确认入口使用同一判断。
+
+
+### 专注主次操作排版（2026-10-20）
+
+沿用YikeAction→DS Button公开kind配置，将倒计时append从secondary改为quiet，不修改共享组件。FocusPanel将completion-feedback作为显式status节点放入既有support区，声明caption/muted Token，移除按钮行重复的到点提示；secondary-actions占满可用宽度并居中排列轻操作，保留原主按钮和次操作最小高度。完成后的休息不再展示无效的跳过入口。

@@ -74,14 +74,8 @@ const thresholdDraft = ref<string | number>(
     : 10,
 );
 const thresholdStep = ref(route.query.variant === "threshold-custom" ? 1 : 0);
-const customThresholdMinutes = ref(
-  Math.max(
-    1,
-    Math.min(
-      1439,
-      Math.ceil(preference.value.shortRecordThresholdSeconds / 60),
-    ),
-  ),
+const customThresholdSeconds = ref(
+  Math.max(1, Math.min(86399, preference.value.shortRecordThresholdSeconds)),
 );
 const thresholdOptions = thresholds.map((value) => ({
   value,
@@ -96,10 +90,7 @@ function thresholdLabel(seconds: number) {
 function openThreshold() {
   const seconds = preference.value.shortRecordThresholdSeconds;
   thresholdDraft.value = thresholds.includes(seconds) ? seconds : 10;
-  customThresholdMinutes.value = Math.max(
-    1,
-    Math.min(1439, Math.ceil(seconds / 60)),
-  );
+  customThresholdSeconds.value = Math.max(1, Math.min(86399, seconds));
   thresholdStep.value = thresholds.includes(
     preference.value.shortRecordThresholdSeconds,
   )
@@ -111,14 +102,14 @@ function openThreshold() {
 function saveThreshold() {
   const seconds =
     thresholdStep.value === 1
-      ? customThresholdMinutes.value * 60
+      ? customThresholdSeconds.value
       : Number(thresholdDraft.value);
   if (
     !store.updatePreferences({
       shortRecordThresholdSeconds: seconds,
     })
   ) {
-    thresholdError.value = "请选择 1–1439 分钟";
+    thresholdError.value = "请选择 1–86399 秒";
     return;
   }
   feedback.value = `短时记录确认阈值已设为 ${thresholdLabel(seconds)}。`;
@@ -139,12 +130,9 @@ watch(
     )
       ? preference.value.shortRecordThresholdSeconds
       : 10;
-    customThresholdMinutes.value = Math.max(
+    customThresholdSeconds.value = Math.max(
       1,
-      Math.min(
-        1439,
-        Math.ceil(preference.value.shortRecordThresholdSeconds / 60),
-      ),
+      Math.min(86399, preference.value.shortRecordThresholdSeconds),
     );
     thresholdStep.value = route.query.variant === "threshold-custom" ? 1 : 0;
     thresholdError.value = "";
@@ -357,9 +345,10 @@ async function reset() {
       </section>
       <section :inert="thresholdStep !== 1" :aria-hidden="thresholdStep !== 1">
         <DurationPicker
-          v-model="customThresholdMinutes"
+          v-model="customThresholdSeconds"
+          precision="second"
           :min="1"
-          :max="1439"
+          :max="86399"
           label="自定义时长"
           inspect-id="yike.settings.threshold-duration"
         />

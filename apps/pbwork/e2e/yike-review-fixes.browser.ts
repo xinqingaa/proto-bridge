@@ -77,7 +77,7 @@ test("PhoneShell reserves safe insets once and calendar placeholders keep the sa
       expect(Math.abs(row[col]! - rows[0]![col]!)).toBeLessThan(1);
 });
 
-test("setting duration cannot select zero or exceed bounds; threshold uses a single wheel and custom minutes", async ({
+test("setting duration cannot select zero or exceed bounds; threshold uses presets and second-precision custom duration", async ({
   page,
 }) => {
   await open(page, "settings", "configuration-open");
@@ -122,6 +122,10 @@ test("setting duration cannot select zero or exceed bounds; threshold uses a sin
   });
   await custom.press("Home");
   await custom.press("ArrowDown");
+  await custom.press("ArrowDown");
+  await threshold
+    .getByRole("listbox", { name: "秒", exact: true })
+    .press("Home");
   await expect(custom.getByRole("option", { selected: true })).toHaveText("02");
   await threshold.getByRole("button", { name: "确认", exact: true }).click();
   await expect(
@@ -259,7 +263,7 @@ for (const mode of ["light", "dark"]) {
       sheet.getByRole("listbox", { name: "小时", exact: true }),
     ).toBeFocused();
     await minutes.press("Home");
-    for (let i = 0; i < 6; i++) await minutes.press("ArrowDown");
+    for (let i = 0; i < 7; i++) await minutes.press("ArrowDown");
     await sheet.getByRole("button", { name: "返回", exact: true }).click();
     await expect(preset.getByRole("option", { selected: true })).toHaveText(
       "5 秒",

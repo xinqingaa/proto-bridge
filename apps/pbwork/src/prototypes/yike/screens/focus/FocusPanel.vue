@@ -10,6 +10,7 @@ import { yikeNavigation } from "../../navigation";
 import ScrollableDataList from "@/design-system/components/data/ScrollableDataList.vue";
 import YikeDial from "../../components/YikeDial.vue";
 import YikeAction from "../../components/YikeAction.vue";
+import { preciseDurationLabel } from "../../statistics";
 import roundArtwork from "../../components/round-artwork.json";
 import { scope } from "./screen";
 const props = defineProps<{ mode: YikeTimerMode }>();
@@ -21,7 +22,7 @@ const store = useYikeStore(),
   commands = useYikeSession(),
   now = useClock();
 const face = computed(() => store.data.preferences.face);
-const countdownMinutes = commands.countdownMinutes;
+const countdownSeconds = commands.countdownSeconds;
 const session = computed(() =>
   store.data.session?.mode === mode.value ? store.data.session : null,
 );
@@ -47,7 +48,7 @@ const total = computed(
     (mode.value === "pomodoro"
       ? store.data.preferences.pomodoroMinutes * 60_000
       : mode.value === "countdown"
-        ? countdownMinutes.value * 60_000
+        ? countdownSeconds.value * 1000
         : 0),
 );
 const remaining = computed(() => Math.max(0, total.value - elapsed.value));
@@ -171,6 +172,14 @@ function appendMinute() {
       />
     </div>
     <div class="yike-support">
+      <p
+        v-if="status === 'finished' && store.data.preferences.sound"
+        class="yike-completion-feedback"
+        role="status"
+        v-pb="scope.node('completion-feedback', 'status', {
+          tokens: { typography: 'typography.caption', color: 'color.on-surface-muted' },
+        })"
+      >提示音已开启</p>
       <div
         v-if="mode === 'pomodoro'"
         class="yike-round"
@@ -204,21 +213,25 @@ function appendMinute() {
           v-for="minutes in [3, 5, 10, 20]"
           :key="minutes"
           type="button"
-          :class="{ 'is-active': countdownMinutes === minutes }"
-          :aria-pressed="countdownMinutes === minutes"
+          :class="{ 'is-active': countdownSeconds === minutes * 60 }"
+          :aria-pressed="countdownSeconds === minutes * 60"
           v-pb="
             scope.node('preset', 'button', {
               key: `minutes-${minutes}`,
               tokens: {
                 typography: 'typography.content',
                 color:
-                  countdownMinutes === minutes
+                  countdownSeconds === minutes * 60
                     ? 'color.primary'
                     : 'color.on-surface-muted',
-                background: countdownMinutes === minutes
-                  ? 'color.primary-soft' : 'color.background',
-                border: countdownMinutes === minutes
-                  ? 'color.primary' : 'color.border',
+                background:
+                  countdownSeconds === minutes * 60
+                    ? 'color.primary-soft'
+                    : 'color.background',
+                border:
+                  countdownSeconds === minutes * 60
+                    ? 'color.primary'
+                    : 'color.border',
                 radius: 'radius.control-compact',
                 size: 'size.touch',
                 padding: 'spacing.sm',
@@ -226,7 +239,7 @@ function appendMinute() {
               },
             })
           "
-          @click="countdownMinutes = minutes"
+          @click="countdownSeconds = minutes * 60"
         >
           {{ minutes }}分
         </button>
@@ -314,7 +327,7 @@ function appendMinute() {
                   : mode === 'stopwatch'
                     ? '开始计时'
                     : mode === 'countdown'
-                      ? `开始 ${countdownMinutes} 分钟`
+                      ? `开始 ${preciseDurationLabel(countdownSeconds)}`
                       : '开始专注'
           "
           @click="status === 'finished' ? finish() : toggle()"
@@ -336,11 +349,6 @@ function appendMinute() {
           专注 {{ store.data.preferences.pomodoroMinutes }} 分钟 · 短休
           {{ store.data.preferences.shortBreakMinutes }} 分钟
         </p>
-        <p v-if="status === 'finished'" class="yike-total" role="status">
-          {{
-            store.data.preferences.sound ? "到点了 · 提示音已开启" : "到点了"
-          }}
-        </p>
         <YikeAction
           v-if="
             store.recoveryAvailable.value &&
@@ -355,7 +363,7 @@ function appendMinute() {
         <YikeAction
           v-if="session?.status === 'due'"
           label="再计 1 分钟"
-          kind="secondary"
+          kind="quiet"
           inspect-id="yike.focus.append"
           @click="appendMinute"
         />
@@ -374,7 +382,7 @@ function appendMinute() {
           @click="confirmAbandon = true"
         />
         <YikeAction
-          v-if="fullRound || isBreak"
+          v-if="fullRound || (isBreak && status !== 'finished')"
           label="跳过休息"
           kind="quiet"
           inspect-id="yike.focus.skip-break"
@@ -463,6 +471,7 @@ function appendMinute() {
   inline-size: var(--pb-layout-fill);
 }
 .yike-secondary-actions {
+  inline-size: var(--pb-layout-fill);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -470,8 +479,12 @@ function appendMinute() {
   gap: var(--pb-spacing-xs);
   min-block-size: var(--pb-size-control-large);
 }
-.yike-hint,
-.yike-total {
+.yike-completion-feedback {
+  margin: var(--pb-layout-zero);
+  font: var(--pb-typography-caption);
+  color: var(--pb-color-on-surface-muted);
+}
+.yike-hint {
   margin: var(--pb-layout-zero);
   padding-block: var(--pb-spacing-sm-plus);
   font: var(--pb-typography-caption);

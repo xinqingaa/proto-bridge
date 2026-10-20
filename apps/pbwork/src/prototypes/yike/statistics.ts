@@ -71,3 +71,22 @@ export function durationLabel(seconds: number) {
     ? `${Math.floor(minutes / 60)} 小时 ${minutes % 60} 分钟`
     : `${minutes} 分钟`;
 }
+
+/** Exact active duration for day records; period summaries retain their compact format. */
+export function preciseDurationLabel(seconds: number) {
+  const total = Number(
+    Math.max(0, Number.isFinite(seconds) ? seconds : 0).toFixed(1),
+  );
+  if (total < 60) return total > 0 ? `${total} 秒` : "0 分钟";
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const remainder = Number((total % 60).toFixed(1));
+  if (!remainder) return durationLabel(total);
+  return [
+    hours ? `${hours} 小时` : "",
+    minutes ? `${minutes} 分` : "",
+    `${remainder} 秒`,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}

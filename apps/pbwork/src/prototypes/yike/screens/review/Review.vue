@@ -27,6 +27,7 @@ import YikeMonthCalendar from "../../components/YikeMonthCalendar.vue";
 import { useYikeStore } from "../../model";
 import {
   durationLabel,
+  preciseDurationLabel,
   reviewPeriod,
   reviewSummary,
   shiftReviewPeriod,
@@ -491,7 +492,7 @@ onBeforeUnmount(() => chartObserver?.disconnect());
                 },
               })
             "
-            >{{ durationLabel(selectedSeconds) }}</span
+            >{{ preciseDurationLabel(selectedSeconds) }}</span
           >
         </div>
         <div
@@ -547,7 +548,7 @@ onBeforeUnmount(() => chartObserver?.disconnect());
                 })
               }}</time>
               <span class="record-mode">{{ modeLabels[record.mode] }}</span>
-              <strong>{{ durationLabel(record.seconds) }}</strong>
+              <strong>{{ preciseDurationLabel(record.seconds) }}</strong>
             </li>
           </ul>
           <p

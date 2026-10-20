@@ -11,6 +11,8 @@ export default defineConfig({
     "yike-experience.browser.ts",
     "yike-review-sheet.browser.ts",
     "yike-controls.browser.ts",
+    "yike-seconds.browser.ts",
+    "yike-focus-actions.browser.ts",
   ],
   use: {
     baseURL: `http://127.0.0.1:${port}`,

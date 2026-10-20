@@ -205,6 +205,16 @@ export function restoreTimerAfterReload(
   return { ...session, status: "paused", startedAt: null };
 }
 
+/** An intentionally completed countdown records even below the confirmation threshold. */
+export function isCompletedCountdown(session: YikeTimerSession) {
+  return (
+    session.mode === "countdown" &&
+    session.targetMs > 0 &&
+    (session.status === "due" || session.status === "finished") &&
+    session.accumulatedMs >= session.targetMs
+  );
+}
+
 export function shouldPersistFocusRecord(
   session: YikeTimerSession,
   thresholdSeconds = 10,
@@ -214,6 +224,7 @@ export function shouldPersistFocusRecord(
     ? session.accumulatedMs > 0 &&
         session.recordDecision !== false &&
         (session.recordDecision === true ||
+          isCompletedCountdown(session) ||
           session.accumulatedMs >= thresholdSeconds * 1000)
     : false;
 }
