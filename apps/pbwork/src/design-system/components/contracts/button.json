@@ -14,7 +14,8 @@
     "loading 时不可点，spinner 与文案同时可见，不得用加载图标替换文字",
     "loading 阻止重复触发但保留强调度；只有 disabled 使用 opacity.disabled",
     "material=glass 复用共享玻璃材质，与操作类型独立；降低透明度时使用清晰实色表面。",
-    "accent用于开始/保存等品牌强调；danger用于删除/重置等危险动作；quiet用于跳过/辅助取消，不替代图标关闭或导航。"
+    "accent用于开始/保存等品牌强调；danger用于删除/重置等危险动作；quiet用于跳过/辅助取消，不替代图标关闭或导航。",
+    "按压与释放使用主题缩放和短过渡；默认label切换淡入淡出并轻移，不改变操作轴线；减少动态效果时直接显示结果。"
   ],
   "propsSchema": {
     "type": "object",
@@ -199,7 +200,8 @@
     "glassSecondary": "color.on-surface",
     "glassPrimaryTint": "button.glass-primary-tint",
     "tracking": "tracking.label",
-    "actionMinInline": "size.action-min-inline"
+    "actionMinInline": "size.action-min-inline",
+    "labelOffset": "spacing.xxs"
   },
   "playground": {
     "presentation": "interactive"

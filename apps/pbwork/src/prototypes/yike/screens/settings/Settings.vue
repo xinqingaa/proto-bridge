@@ -30,7 +30,7 @@ const route = useRoute(),
   router = useRouter();
 const { store, session } = useYikeRuntime();
 const nav = () => yikeNavigation(router, route, store);
-/** 切表盘/模式时让页面颜色在 260ms 内过渡，而不是瞬间换一套。 */
+/** 切表盘/模式时让页面颜色在 标准时长 内过渡，而不是瞬间换一套。 */
 const theming = ref(false);
 let themingTimer: number | undefined;
 function applyTheme(face: YikeFace, next: "light" | "dark" | "system") {

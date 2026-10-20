@@ -13,6 +13,7 @@ export default defineConfig({
     "yike-controls.browser.ts",
     "yike-seconds.browser.ts",
     "yike-focus-actions.browser.ts",
+    "yike-palette-motion.browser.ts",
   ],
   use: {
     baseURL: `http://127.0.0.1:${port}`,

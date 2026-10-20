@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, useId } from "vue";
-import { useToken } from "@/design-system/theme/runtime-theme";
+import { computed, useId, ref, watch, inject } from "vue";
+import { useToken, ThemeTableKey } from "@/design-system/theme/runtime-theme";
 import { themeAssetUrl } from "@/design-system/theme/sources";
 import type { ResolvedThemeAsset } from "@proto-bridge/core/v2";
+import YikeReadout from "./YikeReadout.vue";
 import artwork from "./dial-artwork.json";
 const props = withDefaults(
   defineProps<{
@@ -10,6 +11,8 @@ const props = withDefaults(
     /** 0–1 of one 60-minute revolution; the same amount on every face. */
     fraction: number;
     digits: string;
+    /** Reserve the longest reading of this session to keep its type size stable. */
+    readoutSlots?: number;
     caption: string;
     note?: string;
     tone?: "idle" | "run" | "paused" | "break" | "done";
@@ -25,6 +28,32 @@ const props = withDefaults(
   }>(),
   { tone: "idle", elapsedMs: 0, scale: "hour" },
 );
+const themeTable = inject(ThemeTableKey)!;
+const waterInkToken = computed(() =>
+  props.tone === "break" || themeTable.value.identity.mode === "light"
+    ? "color.on-surface"
+    : "color.on-inverse-surface",
+);
+const waterInk = useToken(waterInkToken);
+const readoutDirection = ref<"up" | "down" | "crossfade">("crossfade");
+const secondsOf = (value: string) =>
+  value.split(":").reduce((sum, part) => sum * 60 + Number(part), 0);
+watch(
+  () => props.digits,
+  (value, previous) => {
+    const delta = secondsOf(value) - secondsOf(previous);
+    readoutDirection.value =
+      value.length === previous.length &&
+      Math.abs(delta) === 1 &&
+      !document.hidden
+        ? delta > 0
+          ? "up"
+          : "down"
+        : "crossfade";
+  },
+  { flush: "sync" },
+);
+const reservedSlots = computed(() => props.readoutSlots ?? props.digits.length);
 const mark = useToken("asset.brand-mark");
 const image = computed(() => {
   const asset = mark.value as ResolvedThemeAsset;
@@ -40,6 +69,13 @@ const ratio = computed(() =>
   Number.isFinite(props.fraction)
     ? Math.min(artwork.full, Math.max(artwork.zero, props.fraction))
     : artwork.zero,
+);
+const captionRevision = ref(artwork.zero);
+watch(
+  () => props.caption,
+  () => {
+    captionRevision.value += artwork.full;
+  },
 );
 const captionText = computed(() =>
   props.note ? `${props.caption} · ${props.note}` : props.caption,
@@ -119,10 +155,7 @@ const shadowParts = computed(() => {
   ];
 });
 const grip = computed(() =>
-  point(
-    ratio.value,
-    artwork.mechanical.radius + artwork.mechanical.gripOffset,
-  ),
+  point(ratio.value, artwork.mechanical.radius + artwork.mechanical.gripOffset),
 );
 const waterTop = computed(
   () => artwork.water.height * (artwork.full - ratio.value),
@@ -138,7 +171,9 @@ const shadowOpacity = computed(() => {
   return Math.min(
     1,
     base +
-      (props.tone === "run" ? artwork.beat.shadowSecond * beat.value.second : 0),
+      (props.tone === "run"
+        ? artwork.beat.shadowSecond * beat.value.second
+        : 0),
   );
 });
 </script>
@@ -308,7 +343,7 @@ const shadowOpacity = computed(() => {
         :opacity="gnomonRing.opacity"
       />
     </template>
-    <text
+    <YikeReadout
       class="digits"
       :data-pb-id="`${inspectId}.digits`"
       data-pb-role="text"
@@ -317,14 +352,18 @@ const shadowOpacity = computed(() => {
         tone === 'done' ? 'color.primary' : 'color.on-surface'
       "
       data-pb-token-tracking="tracking.display"
+      data-pb-token-duration="motion.duration-short"
+      data-pb-token-easing="motion.easing-standard"
       :x="geometry.cx"
+      :value="digits"
+      :slots="reservedSlots"
+      :direction="readoutDirection"
       :y="geometry.readoutY"
-      text-anchor="middle"
-    >
-      {{ digits }}
-    </text>
+    />
     <text
       class="caption"
+      :key="captionRevision"
+      :class="{ 'is-changing': captionRevision > artwork.zero }"
       :data-pb-id="`${inspectId}.caption`"
       data-pb-role="text"
       :data-pb-token-typography="
@@ -345,20 +384,21 @@ const shadowOpacity = computed(() => {
       :clip-path="`url(#${clipId}-water)`"
       aria-hidden="true"
       class="submerged"
-      :data-pb-token-color="
-        tone === 'break' ? 'color.on-surface' : 'color.on-inverse-surface'
-      "
+      :data-pb-token-color="waterInkToken"
+      :style="{ color: String(waterInk) }"
     >
-      <text
+      <YikeReadout
         class="digits"
+        :value="digits"
+        :slots="reservedSlots"
+        :direction="readoutDirection"
         :x="geometry.cx"
         :y="geometry.readoutY"
-        text-anchor="middle"
-      >
-        {{ digits }}
-      </text>
+      />
       <text
         class="caption"
+        :key="captionRevision"
+        :class="{ 'is-changing': captionRevision > artwork.zero }"
         :x="geometry.cx"
         :y="geometry.captionY"
         text-anchor="middle"
@@ -387,10 +427,10 @@ const shadowOpacity = computed(() => {
   transition: opacity var(--pb-motion-duration-short) linear;
 }
 .layer {
-  opacity: 0;
+  opacity: var(--pb-opacity-hidden);
 }
 .layer.is-on {
-  opacity: 1;
+  opacity: var(--pb-opacity-visible);
 }
 .ripple,
 .gnomon {
@@ -430,15 +470,16 @@ const shadowOpacity = computed(() => {
 }
 .is-paused > .caption,
 .is-done > .digits {
+  color: var(--pb-color-primary);
   fill: var(--pb-color-primary);
 }
 .submerged .digits,
 .submerged .caption {
-  fill: var(--pb-color-on-inverse-surface);
+  fill: currentColor;
 }
 .is-break .submerged .digits,
 .is-break .submerged .caption {
-  fill: var(--pb-color-on-surface);
+  fill: currentColor;
 }
 .shadow-mask {
   mask-type: alpha;
@@ -463,10 +504,12 @@ const shadowOpacity = computed(() => {
 @keyframes yike-settle {
   0%,
   100% {
-    transform: scale(1);
+    transform: none;
   }
   35% {
-    transform: scale(1.015);
+    transform: scale(
+      calc(var(--pb-layout-flex-grow) / var(--pb-motion-press-scale))
+    );
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -476,6 +519,26 @@ const shadowOpacity = computed(() => {
     transition: none;
   }
   .is-done {
+    animation: none;
+  }
+}
+</style>
+
+<style scoped>
+.caption.is-changing {
+  animation: yike-caption-appear var(--pb-motion-duration-short)
+    var(--pb-motion-easing-standard);
+}
+@keyframes yike-caption-appear {
+  from {
+    opacity: var(--pb-opacity-hidden);
+  }
+  to {
+    opacity: var(--pb-opacity-visible);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .caption.is-changing {
     animation: none;
   }
 }

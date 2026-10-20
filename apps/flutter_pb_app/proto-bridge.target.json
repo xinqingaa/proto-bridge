@@ -26,7 +26,7 @@
     },
     "button": {
       "status": "pending",
-      "reason": "公共Button新增shape=rounded/pill公开形状与动态radius绑定；Flutter尚待同步。"
+      "reason": "公共Button的shape=rounded/pill、动态radius绑定及按压释放/label短过渡已更新；新增labelOffset绑定，Flutter尚待同步。"
     },
     "card": {
       "status": "pending",

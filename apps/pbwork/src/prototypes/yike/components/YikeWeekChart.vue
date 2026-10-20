@@ -309,24 +309,4 @@ button:focus-visible {
 .is-sundial svg {
   color: var(--pb-color-primary);
 }
-.bars {
-  transform-origin: 50% 100%;
-  animation: yike-bars-grow var(--pb-motion-duration-medium)
-    var(--pb-motion-easing-emphasized) both;
-}
-@keyframes yike-bars-grow {
-  from {
-    transform: scaleY(0.001);
-    opacity: var(--pb-opacity-hidden);
-  }
-  to {
-    transform: scaleY(1);
-    opacity: 1;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .bars {
-    animation: none;
-  }
-}
 </style>

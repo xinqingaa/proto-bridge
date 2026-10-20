@@ -367,6 +367,38 @@ for (const theme of ["mechanical", "water", "sundial"])
       ).toHaveCount(1);
       if (theme === "water") {
         await expect(day.locator("circle.vessel")).toHaveCount(1);
+        // Height is a fixed data tier, independent of light/dark fill opacity.
+        for (const [date, ratio] of [
+          ["16", 1 / 3],
+          ["17", 1 / 2],
+          ["18", 1],
+          ["20", 0],
+        ] as const) {
+          const geometry = await page
+            .locator(
+              `[data-date="2026-10-${date}"] [data-pb-id="yike.review.chart.mark"]`,
+            )
+            .evaluate((svg) => {
+              const fill = svg.querySelector(":scope > rect[clip-path]")!;
+              const clip = svg.querySelector("clipPath rect")!;
+              const vessel = svg.querySelector("circle.vessel")!;
+              return {
+                height: Number(fill.getAttribute("height")),
+                clipHeight: Number(clip.getAttribute("height")),
+                y: Number(fill.getAttribute("y")),
+                clipY: Number(clip.getAttribute("y")),
+                side: Number(vessel.getAttribute("r")) * 2,
+                bottom:
+                  Number(vessel.getAttribute("cy")) +
+                  Number(vessel.getAttribute("r")),
+              };
+            });
+          expect(geometry.height / geometry.side).toBeCloseTo(ratio);
+          expect(geometry.clipHeight).toBeCloseTo(geometry.height);
+          expect(geometry.clipY).toBeCloseTo(geometry.y);
+          expect(geometry.y + geometry.height).toBeCloseTo(geometry.bottom);
+        }
+
         await expect(day.locator(".submerged-number")).toHaveCount(1);
         expect(
           await day

@@ -33,7 +33,7 @@ export const componentRecords = [
   {
     id: "button",
     label: "Button",
-    description: "表单与决策区操作；中性、品牌强调、危险与轻量层级。",
+    description: "表单与决策区操作；中性、品牌强调、危险与轻量层级，按压释放与标签短过渡。",
     category: "action",
     view: "action/Button.vue",
     contract: "contracts/button.json",

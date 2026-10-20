@@ -6,7 +6,7 @@
     "cx": 156,
     "cy": 156,
     "radius": 116.48,
-    "knob": 74.88,
+    "knob": 82,
     "readoutY": 172,
     "captionY": 195,
     "gripRadius": 5.2,
@@ -59,8 +59,14 @@
     "rippleFlatten": 0.16,
     "rippleMinuteOpacity": 0.5,
     "surfaceRest": 0.72,
-    "surfaceSecond": 0.28,
+    "surfaceSecond": 0.12,
     "shadowSecond": 0.06,
     "gnomonOpacity": 0.4
+  },
+  "readout": {
+    "shortSlots": 5,
+    "hourSlots": 7,
+    "hourScale": 0.74,
+    "longScale": 0.64
   }
 }

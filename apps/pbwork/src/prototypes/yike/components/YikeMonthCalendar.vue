@@ -77,8 +77,9 @@ function numberColor(date: string) {
     ? "color.on-primary"
     : "color.on-surface";
 }
+const waterLevel = (date: string) => artwork.waterLevels[band(date)];
 const waterY = (date: string) =>
-  artwork.cell.edge + artwork.cell.side * (1 - level(date));
+  artwork.cell.edge + artwork.cell.side * (artwork.full - waterLevel(date));
 const aboveWaterColor = (date: string) =>
   minutes(date) > 0 ? "color.on-surface" : "color.on-surface-muted";
 const select = (date: string) =>
@@ -153,7 +154,7 @@ const dayLabels = computed(() =>
                 :x="artwork.cell.edge"
                 :y="waterY(date)"
                 :width="artwork.cell.side"
-                :height="artwork.cell.side * level(date)"
+                :height="artwork.cell.side * waterLevel(date)"
               />
             </clipPath>
             <clipPath :id="`${id}-${date}`">
@@ -184,7 +185,7 @@ const dayLabels = computed(() =>
               :x="artwork.cell.edge"
               :y="waterY(date)"
               :width="artwork.cell.side"
-              :height="artwork.cell.side * level(date)"
+              :height="artwork.cell.side * waterLevel(date)"
               fill="currentColor"
               :fill-opacity="level(date)"
               :clip-path="`url(#${id}-${date})`"
@@ -227,7 +228,12 @@ const dayLabels = computed(() =>
               :r="artwork.cell.radius"
             />
           </template>
-          <image v-if="face === 'mechanical'" :href="mechanicalBezel" :width="artwork.cell.size" :height="artwork.cell.size" />
+          <image
+            v-if="face === 'mechanical'"
+            :href="mechanicalBezel"
+            :width="artwork.cell.size"
+            :height="artwork.cell.size"
+          />
           <text
             class="number"
             :x="artwork.cell.cx"

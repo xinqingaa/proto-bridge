@@ -1,5 +1,11 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { validateThemePacks } from "@proto-bridge/core/v2";
+import {
+  compositeOver,
+  contrastRatio,
+  parseThemeColor,
+  validateThemePacks,
+} from "@proto-bridge/core/v2";
 import {
   createRuntimeThemeRegistry,
   runtimeThemeSources,
@@ -85,7 +91,7 @@ describe("一刻主题矩阵", () => {
   });
 
   it.each([
-    ["mechanical", 18, 12, 32, 700, 54, 700, 312],
+    ["mechanical", 18, 12, 32, 700, 48, 700, 312],
     ["water", 22, 14, 32, 300, 76, 200, 228],
     ["sundial", 6, 4, 32, 400, 58, 400, 278],
   ] as const)(
@@ -167,7 +173,50 @@ it("布局节奏与禁用透明度继承基础包，动效按 calm 性格取值"
       expect(own["motion.duration-short"]).toBe(160);
       expect(own["motion.duration-medium"]).toBe(260);
       expect(own["motion.duration-long"]).toBe(400);
-      expect(own["motion.press-scale"]).toBe(0.99);
+      expect(own["motion.press-scale"]).toBe(0.98);
     }
   }
+});
+
+it("收敛机械 neutral/persimmon、水位 clear 与淡暖纸日影，浅深读数均可读", () => {
+  const expected = {
+    mechanical: { light: ["#f0f2f0", "#b1492e"], dark: ["#151819", "#da6a47"] },
+    water: { light: ["#f5f5f2", "#3c484d"], dark: ["#171b1d", "#dce3e5"] },
+    sundial: { light: ["#eeede8", "#2f4a80"], dark: ["#161619", "#93a9db"] },
+  };
+  for (const theme of ["mechanical", "water", "sundial"] as const)
+    for (const mode of ["light", "dark"] as const) {
+      const values = resolveRuntimeTheme("yike", theme, mode).values;
+      expect([values["color.background"], values["color.primary"]]).toEqual(
+        expected[theme][mode],
+      );
+      if (theme !== "water") continue;
+      const svg = readFileSync(
+        `src/prototypes/yike/theme/assets/water-${mode}.svg`,
+        "utf8",
+      );
+      const gradient = svg.match(
+        /<linearGradient id="water-tone"[^>]*>(.*?)<\/linearGradient>/,
+      )![1]!;
+      const opacity = Number(
+        svg.match(/fill="url\(#water-tone\)" fill-opacity="([^"]+)"/)![1],
+      );
+      const paper = parseThemeColor(String(values["color.surface"]))!;
+      const foreground = parseThemeColor(
+        String(
+          values[
+            mode === "light" ? "color.on-surface" : "color.on-inverse-surface"
+          ],
+        ),
+      )!;
+      for (const [, color] of gradient.matchAll(/stop-color="([^"]+)"/g)) {
+        const water = parseThemeColor(color!)!;
+        expect(
+          contrastRatio(
+            foreground,
+            compositeOver({ ...water, a: water.a * opacity }, paper),
+          ),
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    }
 });

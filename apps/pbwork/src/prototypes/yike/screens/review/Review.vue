@@ -55,6 +55,19 @@ watch(selected, async () => {
 });
 useYikeScroll(root, "review");
 const period = computed(() => reviewPeriod(anchor.value, range.value));
+const periodOffset = ref("var(--pb-layout-zero)");
+watch(
+  () => `${range.value}:${period.value.start}`,
+  (value, previous) => {
+    periodOffset.value =
+      value.split(":")[0] !== previous.split(":")[0]
+        ? "var(--pb-layout-zero)"
+        : value > previous
+          ? "var(--pb-spacing-sm)"
+          : "var(--pb-layout-inset-sm-negative)";
+  },
+  { flush: "sync" },
+);
 const summary = computed(() =>
   reviewSummary(store.data, period.value.start, period.value.end),
 );
@@ -170,6 +183,7 @@ onBeforeUnmount(() => chartObserver?.disconnect());
 <template>
   <div
     class="yike-review"
+    :style="{ '--yike-review-offset': periodOffset }"
     ref="root"
     v-pb="
       scope.node('root', 'page', {
@@ -223,22 +237,25 @@ onBeforeUnmount(() => chartObserver?.disconnect());
           inspect-id="yike.review.previous"
           @click="move(-1)"
         />
-        <span
-          aria-live="polite"
-          v-pb="
-            scope.node('period', 'text', {
-              tokens: {
-                typography: 'typography.caption',
-                color: 'color.on-surface-muted',
-              },
-            })
-          "
-          >{{
-            range === "month"
-              ? `${period.start.slice(0, 4)} 年 ${Number(period.start.slice(5, 7))} 月`
-              : `${Number(period.start.slice(5, 7))}月${Number(period.start.slice(8))}日 – ${period.start.slice(0, 7) === period.end.slice(0, 7) ? "" : `${Number(period.end.slice(5, 7))}月`}${Number(period.end.slice(8))}日`
-          }}</span
-        >
+        <Transition name="review-period">
+          <span
+            :key="`${range}-${period.start}`"
+            aria-live="polite"
+            v-pb="
+              scope.node('period', 'text', {
+                tokens: {
+                  typography: 'typography.caption',
+                  color: 'color.on-surface-muted',
+                },
+              })
+            "
+            >{{
+              range === "month"
+                ? `${period.start.slice(0, 4)} 年 ${Number(period.start.slice(5, 7))} 月`
+                : `${Number(period.start.slice(5, 7))}月${Number(period.start.slice(8))}日 – ${period.start.slice(0, 7) === period.end.slice(0, 7) ? "" : `${Number(period.end.slice(5, 7))}月`}${Number(period.end.slice(8))}日`
+            }}</span
+          >
+        </Transition>
         <IconButton
           ariaLabel="下一期"
           icon="chevron-right"
@@ -844,16 +861,44 @@ header {
 @keyframes review-appear {
   from {
     opacity: var(--pb-opacity-hidden);
+    transform: translateX(var(--yike-review-offset));
   }
   to {
     opacity: var(--pb-opacity-visible);
+    transform: none;
   }
+}
+.period {
+  position: relative;
+}
+.review-period-enter-active,
+.review-period-leave-active {
+  transition:
+    opacity var(--pb-motion-duration-short) var(--pb-motion-easing-standard),
+    transform var(--pb-motion-duration-short) var(--pb-motion-easing-standard);
+}
+.review-period-leave-active {
+  position: absolute;
+  inset-inline: var(--pb-size-touch);
+  pointer-events: none;
+}
+.review-period-enter-from {
+  opacity: var(--pb-opacity-hidden);
+  transform: translateX(var(--yike-review-offset));
+}
+.review-period-leave-to {
+  opacity: var(--pb-opacity-hidden);
+  transform: translateX(
+    calc(var(--pb-layout-zero) - var(--yike-review-offset))
+  );
 }
 .distribution b {
   text-align: end;
   font-variant-numeric: tabular-nums;
 }
 @media (prefers-reduced-motion: reduce) {
+  .review-period-enter-active,
+  .review-period-leave-active,
   .chart-stage {
     transition: none;
   }

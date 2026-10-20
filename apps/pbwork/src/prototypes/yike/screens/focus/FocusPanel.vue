@@ -57,7 +57,9 @@ const frameNow = useFrameClock(
 );
 /** Running sessions read the frame clock; everything else the second clock. */
 const clockNow = computed(() =>
-  session.value?.status === "running" ? frameNow.value : now.value,
+  session.value?.status === "running" && !reducedMotion.value
+    ? frameNow.value
+    : now.value,
 );
 const elapsed = computed(() =>
   session.value ? elapsedMs(session.value, clockNow.value.getTime()) : 0,
@@ -183,6 +185,7 @@ function repeatLastCountdown() {
         :elapsed-ms="reducedMotion ? 0 : elapsed"
         :scale="mode === 'countdown' ? 'session' : 'hour'"
         :digits="display"
+        :readout-slots="formatClock(Math.max(total, elapsed)).length"
         :caption="caption"
         :tone="
           isBreak
@@ -575,6 +578,13 @@ function repeatLastCountdown() {
   font: var(--pb-typography-content);
   color: var(--pb-color-on-surface-muted);
   cursor: pointer;
+  transition:
+    background-color var(--pb-motion-duration-short)
+      var(--pb-motion-easing-standard),
+    border-color var(--pb-motion-duration-short)
+      var(--pb-motion-easing-standard),
+    color var(--pb-motion-duration-short) var(--pb-motion-easing-standard),
+    transform var(--pb-motion-duration-short) var(--pb-motion-easing-standard);
 }
 .yike-presets button.is-active {
   background: var(--pb-color-primary-soft);
@@ -633,5 +643,16 @@ function repeatLastCountdown() {
 }
 .yike-laps .is-current b {
   color: var(--pb-color-primary);
+}
+</style>
+
+<style scoped>
+@media (prefers-reduced-motion: reduce) {
+  .yike-presets button {
+    transition: none;
+  }
+  .yike-presets button:active {
+    transform: none;
+  }
 }
 </style>

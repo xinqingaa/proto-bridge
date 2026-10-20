@@ -296,6 +296,7 @@ small {
 .drop,
 .stamp-dot {
   transition:
+    transform var(--pb-motion-duration-short) var(--pb-motion-easing-standard),
     background-color var(--pb-motion-duration-short)
       var(--pb-motion-easing-standard),
     color var(--pb-motion-duration-short) var(--pb-motion-easing-standard),
@@ -309,21 +310,48 @@ small {
 .today.is-done svg,
 .today.is-done > span {
   transform-origin: center;
-  animation: yike-mark-pop var(--pb-motion-duration-long)
+  animation: yike-punch var(--pb-motion-duration-medium)
     var(--pb-motion-easing-emphasized);
 }
-@keyframes yike-mark-pop {
-  0% {
-    transform: scale(0.72);
+.is-water .day.is-today.is-on svg,
+.is-water .today.is-done svg {
+  animation-name: yike-drop;
+}
+.is-sundial .day.is-today.is-on svg,
+.is-sundial .today.is-done > span {
+  animation-name: yike-stamp;
+}
+@keyframes yike-punch {
+  from {
+    transform: translateY(var(--pb-layout-inset-xs-negative));
     opacity: var(--pb-opacity-hidden);
   }
-  55% {
-    transform: scale(1.08);
-    opacity: 1;
+  to {
+    transform: none;
+    opacity: var(--pb-opacity-visible);
   }
-  100% {
-    transform: scale(1);
-    opacity: 1;
+}
+@keyframes yike-drop {
+  from {
+    transform: translateY(var(--pb-layout-inset-sm-negative))
+      scale(var(--pb-motion-press-scale-strong));
+    opacity: var(--pb-opacity-hidden);
+  }
+  to {
+    transform: none;
+    opacity: var(--pb-opacity-visible);
+  }
+}
+@keyframes yike-stamp {
+  from {
+    transform: scale(
+      calc(var(--pb-layout-flex-grow) / var(--pb-motion-press-scale-strong))
+    );
+    opacity: var(--pb-opacity-hidden);
+  }
+  to {
+    transform: none;
+    opacity: var(--pb-opacity-visible);
   }
 }
 @media (prefers-reduced-motion: reduce) {

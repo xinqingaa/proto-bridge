@@ -66,3 +66,7 @@
 品牌强调使用color.primary/on-primary，危险使用color.error，轻量使用color.on-surface-muted。字距来自tracking.label，accent最小宽度来自size.action-min-inline；调用方不得换绑颜色。玻璃accent保留足够的品牌染色和对应前景，danger保留危险轮廓；quiet通常使用实色材质并让背景透明。
 
 `shape="rounded"`保留默认控件圆角；`shape="pill"`用于胶囊操作，绑定`radius.pill`。形状与kind、size和material独立，加载及禁用行为相同。
+
+## 状态过渡
+
+按压与释放使用主题的motion.press-scale和短过渡；默认label更新时保留同一操作轴线，以轻微上下位移和淡入淡出衔接，不延迟click或提交。颜色与边框同步过渡。调用方自定义default slot时自行负责其内容过渡。系统开启减少动态效果时关闭按压缩放和过渡，直接显示当前结果。位移消费spacing.xxs，实现反向位移使用PBWork常量；无新增自由样式参数。

@@ -20,6 +20,34 @@ const global = {
   },
 };
 describe("公共按钮操作层级", () => {
+  it.each([
+    ["pbwork-base", "default", "light"],
+    ["pbwork-base", "default", "dark"],
+    ["pbwork-sample", "garden", "light"],
+    ["pbwork-sample", "garden", "dark"],
+  ])(
+    "%s/%s/%s更新标签后保持当前操作名称及禁用语义",
+    async (pack, theme, mode) => {
+      const wrapper = mount(Button, {
+        global: {
+          ...global,
+          provide: {
+            [ThemeTableKey as symbol]: shallowRef(
+              resolveRuntimeTheme(pack!, theme!, mode as "light" | "dark"),
+            ),
+          },
+        },
+        props: { label: "开始", kind: "accent" },
+      });
+      await wrapper.setProps({ label: "暂停" });
+      expect(wrapper.get("button").attributes("aria-label")).toBe("暂停");
+      await wrapper.setProps({ label: "完成", disabled: true });
+      expect(wrapper.get("button").attributes("aria-label")).toBe("完成");
+      await wrapper.get("button").trigger("click");
+      expect(wrapper.emitted("click")).toBeUndefined();
+      wrapper.unmount();
+    },
+  );
   it("保留中性默认，品牌/危险/轻量使用固定语义配对", () => {
     expect(resolveButtonColorsFromKind().bgColor).toBe("color.action");
     expect(resolveButtonColorsFromKind("accent")).toEqual({

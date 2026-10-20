@@ -104,6 +104,7 @@ usePbInspect({
       duration: "motion.duration-short",
       easing: "motion.easing-standard",
       pressedScale: "motion.press-scale",
+      labelOffset: "spacing.xxs",
       loaderSize: "size.icon-inline",
       loaderStroke: "size.stroke",
     };
@@ -126,6 +127,7 @@ usePbInspect({
       "motion.duration-short",
       "motion.easing-standard",
       "motion.press-scale",
+      "spacing.xxs",
       "size.icon-inline",
       "size.stroke",
     ];
@@ -146,6 +148,7 @@ usePbInspect({
     :elevation="NO_ELEVATION"
     :disabled="isUnavailable"
     :aria-busy="loading ? 'true' : undefined"
+    :aria-label="slots.default ? undefined : label"
     :class="{
       'is-loading': loading ?? false,
       'is-glass': material === 'glass',
@@ -164,7 +167,13 @@ usePbInspect({
           :color="undefined"
         />
       </span>
-      <slot>{{ label }}</slot>
+      <slot
+        ><span class="pb-button-label"
+          ><Transition name="pb-button-label"
+            ><span :key="label">{{ label }}</span></Transition
+          ></span
+        ></slot
+      >
     </span>
     <template v-if="slots.prepend" #prepend><slot name="prepend" /></template>
     <template v-if="slots.append" #append><slot name="append" /></template>
@@ -190,6 +199,11 @@ usePbInspect({
   letter-spacing: var(--pb-tracking-label);
   box-shadow: var(--pb-component-shadow, var(--pb-elevation-none)) !important;
   transition:
+    background-color var(--pb-motion-duration-short)
+      var(--pb-motion-easing-standard),
+    border-color var(--pb-motion-duration-short)
+      var(--pb-motion-easing-standard),
+    color var(--pb-motion-duration-short) var(--pb-motion-easing-standard),
     box-shadow var(--pb-motion-duration-short) var(--pb-motion-easing-standard),
     transform var(--pb-motion-duration-short) var(--pb-motion-easing-standard),
     opacity var(--pb-motion-duration-short) var(--pb-motion-easing-standard);
@@ -238,6 +252,29 @@ usePbInspect({
 .pb-button__loader :deep(.v-progress-circular) {
   color: currentColor;
 }
+.pb-button-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.pb-button-label-enter-active,
+.pb-button-label-leave-active {
+  transition:
+    opacity var(--pb-motion-duration-short) var(--pb-motion-easing-standard),
+    transform var(--pb-motion-duration-short) var(--pb-motion-easing-standard);
+}
+.pb-button-label-leave-active {
+  position: absolute;
+}
+.pb-button-label-enter-from {
+  opacity: var(--pb-opacity-hidden);
+  transform: translateY(var(--pb-spacing-xxs));
+}
+.pb-button-label-leave-to {
+  opacity: var(--pb-opacity-hidden);
+  transform: translateY(var(--pb-layout-inset-xs-negative));
+}
 .pb-button:active:not(.v-btn--disabled) {
   transform: scale(var(--pb-motion-press-scale));
 }
@@ -246,6 +283,16 @@ usePbInspect({
 }
 .pb-button.is-loading.v-btn--disabled {
   opacity: var(--pb-opacity-visible) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pb-button,
+  .pb-button-label-enter-active,
+  .pb-button-label-leave-active {
+    transition: none;
+  }
+  .pb-button:active:not(.v-btn--disabled) {
+    transform: none;
+  }
 }
 </style>
 
