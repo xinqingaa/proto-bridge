@@ -82,17 +82,17 @@ test("C1-C3: direct paused fixture, mode confirmation and explicit due fixture",
     "/prototype/yike/focus?variant=countdown-due&theme=mechanical&mode=light",
   );
   await expect(
-    focus.getByRole("button", { name: "再计 1 分钟", exact: true }),
+    focus.getByRole("button", { name: "再计25分", exact: true }),
   ).toBeVisible();
-  await focus.getByRole("button", { name: "再计 1 分钟", exact: true }).click();
-  await page.clock.fastForward(60_000);
+  await focus.getByRole("button", { name: "再计25分", exact: true }).click();
+  await page.clock.fastForward(25 * 60_000);
   await expect(
     focus.getByRole("button", { name: "完成", exact: true }),
   ).toBeVisible();
   await focus.getByRole("button", { name: "完成", exact: true }).click();
   await page.getByRole("tab", { name: "回顾", exact: true }).click();
   await expect(page.locator('[data-pb-id="yike.review.root"]')).toContainText(
-    "26 分钟",
+    "50 分钟",
   );
 });
 
@@ -395,14 +395,14 @@ test("C3: countdown due retains its identity on tab return and reload; missing o
     "/prototype/yike/focus?variant=countdown-due&theme=mechanical&mode=light",
   );
   await page
-    .getByRole("button", { name: "再计 1 分钟", exact: true })
+    .getByRole("button", { name: "再计25分", exact: true })
     .waitFor();
   await page.getByRole("tab", { name: "打卡", exact: true }).click();
   await page.getByRole("tab", { name: "专注", exact: true }).click();
   await expect(page).toHaveURL(/variant=countdown-due/);
   await page.reload();
   await expect(
-    page.getByRole("button", { name: "再计 1 分钟", exact: true }),
+    page.getByRole("button", { name: "再计25分", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("tab", { name: "倒计时", exact: true }),

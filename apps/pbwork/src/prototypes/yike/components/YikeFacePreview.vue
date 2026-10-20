@@ -22,8 +22,7 @@ provide(ThemeTableKey, table);
   <span class="face-preview" :style="cssVars"
     ><YikeDial
       :face="face"
-      :minutes="12.57"
-      :total="25"
+      :fraction="12.57 / 60"
       digits="12:34"
       caption=""
       :inspect-id="inspectId"

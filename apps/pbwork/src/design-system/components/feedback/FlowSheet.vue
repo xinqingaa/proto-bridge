@@ -202,13 +202,6 @@ watch(stepCount, (count) => {
           ><slot name="header-start"
         /></template>
       </SheetHeader>
-      <div class="pb-flow-sheet-dots" aria-hidden="true">
-        <span
-          v-for="index in stepCount"
-          :key="index"
-          :class="{ active: index - 1 === safeStep }"
-        />
-      </div>
       <v-card-text
         class="pb-flow-sheet-body"
         :class="{
@@ -225,15 +218,24 @@ watch(stepCount, (count) => {
         @touchcancel="swipeGesture.onTouchCancel"
         @click.capture="swipeGesture.onClickCapture"
       >
-        <div
-          ref="bodyRef"
-          class="pb-flow-sheet-track"
-          :class="{ 'is-dragging': swipeGesture.dragging.value }"
-          :style="trackStyle"
-        >
-          <slot />
+        <div class="pb-flow-sheet-viewport">
+          <div
+            ref="bodyRef"
+            class="pb-flow-sheet-track"
+            :class="{ 'is-dragging': swipeGesture.dragging.value }"
+            :style="trackStyle"
+          >
+            <slot />
+          </div>
         </div>
       </v-card-text>
+      <div class="pb-flow-sheet-dots" aria-hidden="true">
+        <span
+          v-for="index in stepCount"
+          :key="index"
+          :class="{ active: index - 1 === safeStep }"
+        />
+      </div>
       <footer v-if="$slots.actions" class="pb-flow-sheet-actions">
         <slot name="actions" />
       </footer>
@@ -257,7 +259,7 @@ watch(stepCount, (count) => {
   display: flex;
   justify-content: center;
   gap: var(--pb-flow-sheet-gap);
-  padding: var(--pb-spacing-sm) var(--pb-layout-zero) var(--pb-layout-zero);
+  padding: var(--pb-spacing-sm) var(--pb-layout-zero);
 }
 .pb-flow-sheet-dots span {
   width: var(--pb-size-marker);
@@ -282,6 +284,9 @@ watch(stepCount, (count) => {
 }
 .pb-flow-sheet-body.is-dragging {
   cursor: grabbing;
+}
+.pb-flow-sheet-viewport {
+  overflow: clip;
 }
 .pb-flow-sheet-track {
   display: flex;

@@ -2,7 +2,7 @@
   "version": 1,
   "producer": "apps/pbwork",
   "target": "apps/flutter_pb_app",
-  "status": "synced",
+  "status": "pending",
   "surfaceDigest": "sha256:1588dc04af0d23bd04bcb67fc17caef7a258696af24987a0c121f5344a3b3b55",
   "sectionDigests": {
     "components": "sha256:52874ea64994ae77b7a176d975abf8e20a723ce61a9d2edb0d6188739524d59b",

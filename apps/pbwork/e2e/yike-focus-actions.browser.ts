@@ -25,7 +25,7 @@ for (const [theme, mode, width, height] of [
     for (const [variant, label, secondary] of [
       ["countdown-running", "暂停", ["取消计时"]],
       ["countdown-paused", "继续", ["结束并记录", "取消计时"]],
-      ["countdown-due", "完成", ["再计 1 分钟"]],
+      ["countdown-due", "完成", ["再计25分"]],
       ["finished", "开始休息", ["跳过休息"]],
       ["short-break-finished", "准备下一轮", []],
     ] as const) {
@@ -63,7 +63,7 @@ for (const [theme, mode, width, height] of [
           animations: "disabled",
         });
         await page
-          .getByRole("button", { name: "再计 1 分钟", exact: true })
+          .getByRole("button", { name: "再计25分", exact: true })
           .click();
         await expect(primary).toHaveText("暂停");
         await expect(feedback).not.toBeVisible();

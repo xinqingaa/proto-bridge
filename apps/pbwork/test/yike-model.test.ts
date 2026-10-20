@@ -8,7 +8,7 @@ import {
 } from "@/prototypes/yike/model";
 import {
   advanceTimer,
-  appendCountdownMinute,
+  repeatCountdown,
   createTimerSession,
   pauseTimer,
   startTimer,
@@ -30,30 +30,48 @@ function memoryStorage(initial?: string, failWrites = false) {
 }
 
 describe("Yike 本机业务状态", () => {
-  it("旧存档补入10秒阈值，保存自定义值后重新打开仍保留", () => {
+  it("不兼容旧存档：缺少常用倒计时槽位即视为损坏", () => {
     const initial = createInitialYikeState("2026-10-18");
     const legacy = JSON.parse(JSON.stringify(initial));
-    delete legacy.preferences.shortRecordThresholdSeconds;
+    delete legacy.preferences.countdownPresets;
     const memory = memoryStorage(
       JSON.stringify({ schemaVersion: YIKE_SCHEMA_VERSION, value: legacy }),
     );
     const store = createYikeStore({ storage: memory.storage });
-    expect(store.storageIssue.value).toBeNull();
-    expect(store.data.preferences.shortRecordThresholdSeconds).toBe(10);
-    expect(store.updatePreferences({ shortRecordThresholdSeconds: 7 })).toBe(
-      true,
-    );
+    expect(store.storageIssue.value).toBe("corrupt");
+  });
+
+  it("常用倒计时默认四项，可修改、可清空并保存", () => {
+    const memory = memoryStorage();
+    const store = createYikeStore({ storage: memory.storage });
+    expect(store.data.preferences.countdownPresets).toEqual([
+      180, 300, 600, 1200,
+    ]);
+    expect(
+      store.updatePreferences({ countdownPresets: [45, 300, null, 1200] }),
+    ).toBe(true);
     expect(
       createYikeStore({ storage: memory.storage }).data.preferences
-        .shortRecordThresholdSeconds,
-    ).toBe(7);
-    expect(store.updatePreferences({ shortRecordThresholdSeconds: 0 })).toBe(
+        .countdownPresets,
+    ).toEqual([45, 300, null, 1200]);
+    // 重复、越界、数量不对都不接受
+    expect(
+      store.updatePreferences({ countdownPresets: [45, 45, null, null] }),
+    ).toBe(false);
+    expect(
+      store.updatePreferences({ countdownPresets: [0, 300, null, null] }),
+    ).toBe(false);
+    expect(store.updatePreferences({ countdownPresets: [45, 300, null] })).toBe(
       false,
     );
-    expect(store.updatePreferences({ shortRecordThresholdSeconds: 1.5 })).toBe(
-      false,
-    );
+    // 重置回默认
+    store.updatePreferences({ countdownPresets: [null, null, null, null] });
+    store.reset();
+    expect(store.data.preferences.countdownPresets).toEqual([
+      180, 300, 600, 1200,
+    ]);
   });
+
   it("只在首次初始化创建批准的四个习惯与零历史默认值", () => {
     const initial = createInitialYikeState("2026-10-18");
     expect(
@@ -133,7 +151,7 @@ describe("Yike 本机业务状态", () => {
     expect(YIKE_STORAGE_KEY).toContain("yike");
   });
 
-  it("倒计时追加及取消只更新同一条记录，并按保存点暂停恢复", () => {
+  it("再计倒计时取消不影响上一条记录，并按保存点暂停恢复", () => {
     const memory = memoryStorage();
     const store = createYikeStore({
       storage: memory.storage,
@@ -155,19 +173,19 @@ describe("Yike 本机业务状态", () => {
     store.setSession(due);
     store.setSession(due);
     expect(store.data.focusRecords).toHaveLength(1);
-    const appended = appendCountdownMinute(due, now + 70_000);
-    const paused = pauseTimer(appended, now + 100_000);
+    const repeated = repeatCountdown(due, now + 70_000, "countdown-2");
+    const paused = pauseTimer(repeated, now + 100_000);
     store.setSession(abandonTimer(paused, now + 110_000));
     expect(store.data.focusRecords).toHaveLength(1);
-    expect(store.data.focusRecords[0]?.durationSeconds).toBe(90);
-    store.setSession(appended);
+    expect(store.data.focusRecords[0]?.durationSeconds).toBe(60);
+    store.setSession(repeated);
     const reopened = createYikeStore({ storage: memory.storage });
     expect(reopened.data.session?.status).toBe("paused");
-    expect(reopened.data.session?.accumulatedMs).toBe(60_000);
+    expect(reopened.data.session?.accumulatedMs).toBe(0);
     expect(reopened.recoveryNeeded.value).toBe(true);
     const reopenedAgain = createYikeStore({ storage: memory.storage });
     expect(reopenedAgain.recoveryNeeded.value).toBe(false);
-    expect(reopenedAgain.data.session?.accumulatedMs).toBe(60_000);
+    expect(reopenedAgain.data.session?.accumulatedMs).toBe(0);
   });
 
   it("完整番茄只累计一次，休息不写记录，长休结束回第一轮", () => {

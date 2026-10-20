@@ -57,8 +57,7 @@ describe("一刻正式资源", () => {
     const wrapper = mount(YikeDial, {
       props: {
         face: "mechanical",
-        minutes: 0,
-        total: 25,
+        fraction: 0,
         digits: "00:00",
         caption: "剩余",
         inspectId: "test.dial",
@@ -66,9 +65,9 @@ describe("一刻正式资源", () => {
       global: { provide: { [ThemeTableKey as symbol]: table } },
     });
     expect(wrapper.find("g.wedge").exists()).toBe(false);
-    await wrapper.setProps({ minutes: 25 });
+    await wrapper.setProps({ fraction: 25 / 60 });
     const arc = wrapper.findAll("clipPath").at(-1)!.get("path").attributes("d");
-    await wrapper.setProps({ total: 90 });
+    await wrapper.setProps({ fraction: 25 / 60 });
     expect(
       wrapper.findAll("clipPath").at(-1)!.get("path").attributes("d"),
     ).toBe(arc);
@@ -80,15 +79,16 @@ describe("一刻正式资源", () => {
     expect(wrapper.get(".digits").attributes("data-pb-token-color")).toBe(
       "color.primary",
     );
-    await wrapper.setProps({ minutes: 60 });
+    await wrapper.setProps({ fraction: 1 });
     expect(wrapper.findAll("clipPath").at(-1)!.find("circle").exists()).toBe(
       true,
     );
-    await wrapper.setProps({ minutes: 90, digits: "90:00" });
+    await wrapper.setProps({ fraction: 1 / 60 });
     expect(wrapper.findAll("clipPath").at(-1)!.find("circle").exists()).toBe(
       false,
     );
-    expect(wrapper.attributes("aria-label")).toBe("剩余 · 另有 1 小时 90:00");
+    await wrapper.setProps({ note: "另有 30 分钟" });
+    expect(wrapper.attributes("aria-label")).toBe("剩余 · 另有 30 分钟 00:00");
     wrapper.unmount();
   });
 
@@ -97,8 +97,7 @@ describe("一刻正式资源", () => {
     const options = {
       props: {
         face: "water" as const,
-        minutes: 12.5,
-        total: 25,
+        fraction: 0.5,
         digits: "12:30",
         caption: "专注中",
         inspectId: "test.water",
@@ -120,7 +119,7 @@ describe("一刻正式资源", () => {
     expect(first.get("clipPath rect").attributes("height")).toBe("184");
     const ids = pair.findAll("clipPath").map((node) => node.attributes("id"));
     expect(new Set(ids).size).toBe(ids.length);
-    await first.setProps({ minutes: 0 });
+    await first.setProps({ fraction: 0 });
     expect(first.get("clipPath rect").attributes("height")).toBe("0");
     first.unmount();
     pair.unmount();

@@ -15,7 +15,8 @@
     "size.action-min-inline": 200,
     "opacity.data-low": 0.18,
     "opacity.data-medium": 0.38,
-    "opacity.data-high": 0.62
+    "opacity.data-high": 0.62,
+    "motion.personality": "calm"
   },
   "modes": {
     "dark": {
@@ -246,7 +247,7 @@
         "radius.control": 14,
         "radius.overlay": 22,
         "radius.mark": 4,
-        "size.plot": 236,
+        "size.plot": 228,
         "color.border": "rgba(30, 41, 37, 0.12)",
         "color.divider": "rgba(30, 41, 37, 0.12)",
         "color.scrim": "rgba(18, 26, 22, 0.32)",
@@ -369,7 +370,7 @@
         "radius.control": 4,
         "radius.overlay": 6,
         "radius.mark": 1,
-        "size.plot": 316,
+        "size.plot": 278,
         "color.border": "rgba(28, 27, 25, 0.12)",
         "color.divider": "rgba(28, 27, 25, 0.12)",
         "color.scrim": "rgba(20, 19, 17, 0.32)",

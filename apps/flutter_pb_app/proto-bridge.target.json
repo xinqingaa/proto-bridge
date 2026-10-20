@@ -62,7 +62,7 @@
     },
     "flow-sheet": {
       "status": "pending",
-      "reason": "新增首步 header-start 入口、固定操作区与返回焦点；Flutter 待按当前 Contract 适配。"
+      "reason": "新增首步 header-start 入口、固定操作区与返回焦点；步骤指示器固定在内容下方、操作区上方，横向裁剪与纵向滚动分层避免焦点滚动错位；Flutter 待按当前 Contract 适配。"
     },
     "icon": {
       "status": "pending",

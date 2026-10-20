@@ -152,3 +152,54 @@ test("custom threshold preserves an arbitrary second value across close and relo
     animations: "disabled",
   });
 });
+
+for (const [theme, mode, seconds] of [
+  ["mechanical", "light", 300],
+  ["water", "dark", 90],
+] as const) {
+  test(`repeat countdown retains the last duration and separate records (${theme}/${mode})`, async ({
+    page,
+  }) => {
+    await page.goto(
+      `/prototype/yike/focus?variant=countdown-setup&theme=${theme}&mode=${mode}`,
+    );
+    if (seconds === 90) {
+      const sheet = await setDuration(page, seconds);
+      await sheet
+        .getByRole("button", { name: "确认时长", exact: true })
+        .click();
+    }
+    const start = seconds === 90 ? "开始 1 分 30 秒" : "开始 5 分钟";
+    const repeat = seconds === 90 ? "再计1分30秒" : "再计5分";
+    await page.getByRole("button", { name: start, exact: true }).click();
+    await page.clock.fastForward(seconds * 1000);
+    const again = page.getByRole("button", { name: repeat, exact: true });
+    await expect(again).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "完成", exact: true }),
+    ).toBeVisible();
+    await settle(page);
+    await page.screenshot({
+      path: `../../output/yike-repeat/due-${theme}-${mode}.png`,
+      animations: "disabled",
+    });
+    await again.click();
+    await expect(
+      page.getByRole("button", { name: "暂停", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.locator('[data-pb-id="yike.focus.timer"]:visible'),
+    ).toContainText(seconds === 90 ? "01:30" : "05:00");
+    await page.clock.fastForward(seconds * 1000);
+    await expect(again).toBeVisible();
+    await page.getByRole("button", { name: "完成", exact: true }).click();
+    await page.getByRole("tab", { name: "回顾", exact: true }).click();
+    await page
+      .locator('[data-pb-id="yike.review.chart.day"][aria-current="date"]')
+      .click();
+    const detail = page.locator('[data-pb-id="yike.review.day-detail"]');
+    await expect(detail.locator(".day-focus-records strong")).toHaveText(
+      seconds === 90 ? ["1 分 30 秒", "1 分 30 秒"] : ["5 分钟", "5 分钟"],
+    );
+  });
+}

@@ -3,9 +3,16 @@ import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { vPb } from "@/authoring/pb-style";
 import { useClock } from "@/runtime/useClock";
+import { useReducedMotion } from "@/runtime/useReducedMotion";
 import { useYikeStore } from "../../model";
+import { useFrameClock } from "../../frame-clock";
 import { useYikeSession } from "../../session";
 import { elapsedMs, type YikeTimerMode } from "../../timer-engine";
+import {
+  dialReading,
+  formatClock,
+  formatDurationLabel,
+} from "../../timer-readout";
 import { yikeNavigation } from "../../navigation";
 import ScrollableDataList from "@/design-system/components/data/ScrollableDataList.vue";
 import YikeDial from "../../components/YikeDial.vue";
@@ -20,9 +27,15 @@ const route = useRoute(),
   router = useRouter();
 const store = useYikeStore(),
   commands = useYikeSession(),
-  now = useClock();
+  now = useClock(),
+  reducedMotion = useReducedMotion();
 const face = computed(() => store.data.preferences.face);
 const countdownSeconds = commands.countdownSeconds;
+const presets = computed(() =>
+  store.data.preferences.countdownPresets.filter(
+    (value): value is number => typeof value === "number",
+  ),
+);
 const session = computed(() =>
   store.data.session?.mode === mode.value ? store.data.session : null,
 );
@@ -39,8 +52,15 @@ const status = computed(() =>
     ? "finished"
     : (session.value?.status ?? "idle"),
 );
+const frameNow = useFrameClock(
+  () => session.value?.status === "running" && !reducedMotion.value,
+);
+/** Running sessions read the frame clock; everything else the second clock. */
+const clockNow = computed(() =>
+  session.value?.status === "running" ? frameNow.value : now.value,
+);
 const elapsed = computed(() =>
-  session.value ? elapsedMs(session.value, now.value.getTime()) : 0,
+  session.value ? elapsedMs(session.value, clockNow.value.getTime()) : 0,
 );
 const total = computed(
   () =>
@@ -52,16 +72,22 @@ const total = computed(
         : 0),
 );
 const remaining = computed(() => Math.max(0, total.value - elapsed.value));
-const display = computed(() => {
-  const milliseconds =
+const display = computed(() =>
+  formatClock(
     mode.value === "stopwatch"
       ? elapsed.value
       : status.value === "idle"
         ? total.value
-        : remaining.value;
-  const seconds = Math.max(0, Math.ceil(milliseconds / 1000));
-  return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-});
+        : remaining.value,
+  ),
+);
+const reading = computed(() =>
+  dialReading({
+    mode: mode.value,
+    elapsedMs: elapsed.value,
+    totalMs: total.value,
+  }),
+);
 const isBreak = computed(() =>
   Boolean(session.value?.phase && session.value.phase !== "focus"),
 );
@@ -137,8 +163,8 @@ function lapLabel(ms: number) {
   const seconds = Math.floor(ms / 1000);
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
-function appendMinute() {
-  commands.append();
+function repeatLastCountdown() {
+  commands.repeat();
   syncVariant();
 }
 </script>
@@ -152,8 +178,10 @@ function appendMinute() {
       <YikeDial
         class="yike-focus-dial"
         :face="face"
-        :minutes="(mode === 'stopwatch' ? elapsed : remaining) / 60_000"
-        :total="total / 60_000"
+        :fraction="reading.fraction"
+        :note="reading.note"
+        :elapsed-ms="reducedMotion ? 0 : elapsed"
+        :scale="mode === 'countdown' ? 'session' : 'hour'"
         :digits="display"
         :caption="caption"
         :tone="
@@ -167,7 +195,6 @@ function appendMinute() {
                   ? 'done'
                   : 'idle'
         "
-        :counting-up="mode === 'stopwatch'"
         inspect-id="yike.focus.timer"
       />
     </div>
@@ -176,10 +203,17 @@ function appendMinute() {
         v-if="status === 'finished' && store.data.preferences.sound"
         class="yike-completion-feedback"
         role="status"
-        v-pb="scope.node('completion-feedback', 'status', {
-          tokens: { typography: 'typography.caption', color: 'color.on-surface-muted' },
-        })"
-      >提示音已开启</p>
+        v-pb="
+          scope.node('completion-feedback', 'status', {
+            tokens: {
+              typography: 'typography.caption',
+              color: 'color.on-surface-muted',
+            },
+          })
+        "
+      >
+        提示音已开启
+      </p>
       <div
         v-if="mode === 'pomodoro'"
         class="yike-round"
@@ -195,11 +229,26 @@ function appendMinute() {
         <span>{{ roundLabel }}</span>
         <span class="yike-pips" aria-hidden="true">
           <svg
-            v-for="round in store.data.preferences.longBreakEvery" :key="round"
+            v-for="round in store.data.preferences.longBreakEvery"
+            :key="round"
             :viewBox="roundArtwork.viewBox"
-            :class="{ 'is-done': round <= store.data.completedRounds, 'is-current': status !== 'idle' && !fullRound && !isBreak && round === store.data.completedRounds + 1 }"
-            v-pb="scope.node('round-marker', 'image', { key: `round-${round}`, tokens: { width: 'size.icon-inline', color: 'color.primary' } })"
-          ><path :d="roundArtwork[face]" /></svg>
+            :class="{
+              'is-done': round <= store.data.completedRounds,
+              'is-current':
+                status !== 'idle' &&
+                !fullRound &&
+                !isBreak &&
+                round === store.data.completedRounds + 1,
+            }"
+            v-pb="
+              scope.node('round-marker', 'image', {
+                key: `round-${round}`,
+                tokens: { width: 'size.icon-inline', color: 'color.primary' },
+              })
+            "
+          >
+            <path :d="roundArtwork[face]" />
+          </svg>
         </span>
       </div>
       <div
@@ -210,26 +259,26 @@ function appendMinute() {
         data-no-swipe
       >
         <button
-          v-for="minutes in [3, 5, 10, 20]"
-          :key="minutes"
+          v-for="(seconds, index) in presets"
+          :key="`preset-${index}`"
           type="button"
-          :class="{ 'is-active': countdownSeconds === minutes * 60 }"
-          :aria-pressed="countdownSeconds === minutes * 60"
+          :class="{ 'is-active': countdownSeconds === seconds }"
+          :aria-pressed="countdownSeconds === seconds"
           v-pb="
             scope.node('preset', 'button', {
-              key: `minutes-${minutes}`,
+              key: `preset-${index}`,
               tokens: {
                 typography: 'typography.content',
                 color:
-                  countdownSeconds === minutes * 60
+                  countdownSeconds === seconds
                     ? 'color.primary'
                     : 'color.on-surface-muted',
                 background:
-                  countdownSeconds === minutes * 60
+                  countdownSeconds === seconds
                     ? 'color.primary-soft'
                     : 'color.background',
                 border:
-                  countdownSeconds === minutes * 60
+                  countdownSeconds === seconds
                     ? 'color.primary'
                     : 'color.border',
                 radius: 'radius.control-compact',
@@ -239,9 +288,9 @@ function appendMinute() {
               },
             })
           "
-          @click="countdownSeconds = minutes * 60"
+          @click="countdownSeconds = seconds"
         >
-          {{ minutes }}分
+          {{ formatDurationLabel(seconds) }}
         </button>
         <button
           type="button"
@@ -362,10 +411,10 @@ function appendMinute() {
         />
         <YikeAction
           v-if="session?.status === 'due'"
-          label="再计 1 分钟"
+          :label="`再计${formatDurationLabel(total / 1000)}`"
           kind="quiet"
-          inspect-id="yike.focus.append"
-          @click="appendMinute"
+          inspect-id="yike.focus.repeat"
+          @click="repeatLastCountdown"
         />
         <YikeAction
           v-if="status === 'paused' && !isBreak"
@@ -437,6 +486,9 @@ function appendMinute() {
   );
   min-block-size: var(--pb-layout-zero);
 }
+.yike-support:has(.yike-presets) {
+  min-block-size: min-content;
+}
 .yike-round {
   display: flex;
   align-items: center;
@@ -449,11 +501,28 @@ function appendMinute() {
   display: flex;
   gap: var(--pb-spacing-xs);
 }
-.yike-pips svg { inline-size: var(--pb-size-icon-inline); block-size: var(--pb-size-icon-inline); overflow: visible; }
-.yike-pips path { fill: var(--pb-color-outline); stroke: transparent; stroke-width: var(--pb-border-width); }
-.yike-pips .is-done path { fill: var(--pb-color-primary); }
-.yike-pips .is-current path { fill: var(--pb-color-background); stroke: var(--pb-color-primary); }
-[data-face="water"] .yike-pips .is-current path, [data-face="sundial"] .yike-pips .is-current path { fill: var(--pb-color-primary-soft); }
+.yike-pips svg {
+  inline-size: var(--pb-size-icon-inline);
+  block-size: var(--pb-size-icon-inline);
+  overflow: visible;
+}
+.yike-pips path {
+  fill: var(--pb-color-outline);
+  stroke: transparent;
+  stroke-width: var(--pb-border-width);
+}
+.yike-pips .is-done path {
+  fill: var(--pb-color-primary);
+}
+.yike-pips .is-current path {
+  fill: var(--pb-color-background);
+  stroke: var(--pb-color-primary);
+  stroke-width: var(--pb-border-width-strong);
+}
+[data-face="water"] .yike-pips .is-current path,
+[data-face="sundial"] .yike-pips .is-current path {
+  fill: var(--pb-color-primary-soft);
+}
 .yike-actions {
   flex: none;
   display: flex;

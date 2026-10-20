@@ -321,8 +321,7 @@ onBeforeUnmount(() => chartObserver?.disconnect());
           <div class="empty-object">
             <YikeDial
               :face="face"
-              :minutes="0"
-              :total="25"
+              :fraction="0"
               digits=""
               caption=""
               inspect-id="yike.review.empty-object"

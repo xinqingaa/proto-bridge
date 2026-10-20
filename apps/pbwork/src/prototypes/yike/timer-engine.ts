@@ -17,8 +17,6 @@ export type YikeTimerSession = {
   laps?: number[];
 };
 
-export const COUNTDOWN_APPEND_MS = 60_000;
-
 export function createTimerSession(input: {
   id: string;
   mode: YikeTimerMode;
@@ -141,18 +139,22 @@ export function advanceTimer(
   };
 }
 
-export function appendCountdownMinute(
+/** Repeat a completed countdown as an independent session of the same duration. */
+export function repeatCountdown(
   session: YikeTimerSession,
   now: number,
+  id: string,
 ): YikeTimerSession {
   if (session.mode !== "countdown" || session.status !== "due") return session;
-  return {
-    ...session,
-    status: "running",
-    startedAt: now,
-    targetMs: session.targetMs + COUNTDOWN_APPEND_MS,
-    recordedSeconds: Math.floor(session.targetMs / 1000),
-  };
+  return startTimer(
+    createTimerSession({
+      id,
+      mode: "countdown",
+      now,
+      targetMs: session.targetMs,
+    }),
+    now,
+  );
 }
 
 export function completeTimer(

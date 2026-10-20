@@ -40,7 +40,7 @@ Runtime 当前登记 7 个 Screen、19 条 Scenario；三档日期新增 intensi
 | B2 DS 适配与专属内容 | 返工复验通过 | 导航/切换/操作复用公共DS；三表盘、卡行、周图/月历/年度图六组合代表状态与行为检查通过，日期数字可读性与365天轴已修；旧独立登记为空，资源直接服务页面。正式逐页业务接入属于D阶段 |
 | B3 公共组合资源 | 已验收 | 复用现有公共输入、BottomSheet、配置列表、确认与Toast；六组合新建校验/保存/取消、失败保留、配置确认、删除取消/确认、打卡撤销、关闭焦点返回和A/B实例数据隔离通过；窄屏缩短高度的键盘/滚动/保存/复位通过。正式业务接线归C/D，不扩大玻璃适配 |
 | C1 业务状态与保存 | 已验收 | 共享习惯/打卡/记录/会话/配置与轻量本机保存；新建、编辑、归档恢复、删除、撤销、重置已接入真实跨页旅程，取消不污染，刷新沿用保存；首次零历史与内存样例分离。不扩展生产级迁移/损坏恢复。 |
-| C2 计时与统计 | 已验收 | 开始/暂停/继续/结束、短长休、轮次、正计时计圈、倒计时追加及切模式确认接通；同一会话幂等入账，记录驱动回顾。可控时钟验证暂停、跨日180/120秒切分、恢复及追加，不承诺生产级后台/时区可靠性。 |
+| C2 计时与统计 | 已验收 | 开始/暂停/继续/结束、短长休、轮次、正计时计圈、倒计时按原时长再计及切模式确认接通；同一会话幂等入账，记录驱动回顾。可控时钟验证暂停、跨日180/120秒切分、恢复及再计，不承诺生产级后台/时区可靠性。 |
 | C3 共享壳/导航/主题偏好 | 导航职责复核通过 | 共享根壳/TabViewport与公共导航/Overlay；详情、编辑、设置进入返回和缺失对象回退可用；跨Tab和栈页计时/局部状态连续，三主题与浅深/系统偏好生效；七Screen全部46个Variant的prepare/readiness/snapshot/reset及19条Scenario通过；根导航保持规范instant/无横滑，专注页内模式使用公共分页动效。 |
 | D1 启动 | 返工已复验，待用户复核 | 品牌组居中、底部本机保存说明及required boundary已修；真实冷启动单独检查，不保证同步加载时品牌帧能被看见，详见R23。 |
 | D2 设置 | 返工已复验，待用户复核 | 任务标题、三枚真实表盘预览、紧凑分组、左标签开关和独立重置行已恢复；六组合、配置确认、焦点返回和窄屏滚动通过。 |
@@ -372,3 +372,120 @@ Review中的类型分布与记录图标改为直接img，移除主题mask及colo
 - 类型检查和静态authoring lint通过。3项针对性浏览器检查通过（7.7秒），每项覆盖倒计时运行/暂停/到点、番茄完成与休息结束；机械/日影390×844浅色、水位360×640深色，共15个代表态。五态间主按钮纵向偏差小于1逻辑像素，全部居中，次操作均为quiet且触控高度不小于44，追加后主按钮位置保持，休息结束可进入下一轮。
 - 实看`output/yike-focus-actions/`中的三主题due截图、日影paused及水位break-finished共5张，核对单个最高强调、轻操作轴线、状态提示分离、窄屏和根导航无遮挡。Experience=accepted（本批Focused Experience Gate的Agent局部复查通过），不代表用户已完成D阶段复核或原型已定稿。
 - 同步design/resources/implementation，未改公共组件、Token/Theme、表盘绘制或SVG。类型/语义及实际Runtime启动验证无新增阻断；本批未运行完整仓库回归，未刷新Target同步基线、未提交Git。
+
+
+## 表盘量程统一与运行节奏（2026-10-20，用户批准）
+
+用户确认「一圈 = 60 分钟、三主题共用」、接受短计时小比例，并要求运行中每秒微反馈、每分钟略重反馈。本批取代此前的双量程实现，产品口径见 design.md 文末同名结论。
+
+### 独立实现/验收节点
+
+| 节点 | 本批事实 |
+| --- | --- |
+| 量程 | `timer-readout.ts` 成为唯一读数来源：剩余类 `min(剩余/60, 1)`，正计时从 0 累加满圈回绕；>60 分钟显示满圈 + 「另有 X」/「已满 N 小时」。`YikeDial` 只接收 `fraction`，三主题不再各自计算比例。 |
+| 读数 | `formatClock` 在一小时处切换 `h:mm:ss`；`design.md:204` 的小时位要求补齐。 |
+| 尺寸 | 水位 236→228、日影 316→278，按各自纵横比在舞台内 1:1 渲染，消除此前的隐藏缩水；机械保持 312。 |
+| 水位对比 | 浅色水体由 `#7e977d` 改为 `#5b755c → #4a6350` 竖向渐变，白色读数由 2.9:1 提升到 4.7–6.0:1；深色同步加渐变。 |
+| 日影影子 | `#shadow` 由「渐变灰环」改为从晷针投出的连续软影；环形渐变的两端透明停止点移除，影子不再呈甜甜圈并盖住刻度。 |
+| 运行节奏 | 新增共享帧时钟 `frame-clock.ts`（约 30fps、`document.hidden` 暂停、仅运行中订阅）；表盘逐帧更新。每秒钟级反馈：机械指针末端轻跳、水面微光、日影轻呼吸；每分钟级：指针回弹、水面涟漪、晷针微光圈；阶段结束：整体落定脉冲。减少动态效果时帧时钟与三级反馈全部停用，只保留数字变化。 |
+| 状态过渡 | 机械三段扇面改为图层交叉淡入（`motion.duration-medium`），水位在水体/休息色之间交叉淡入，日影 `opacity` 过渡；不再硬切。 |
+| 动效性格 | 主题包设 `motion.personality: calm`（160/260/400ms、按压 0.99），全站含 DS 组件同步变柔和。 |
+| 写库与时钟 | 引擎 `tick` 只在阶段边界写库（不再每秒写 localStorage）；`useClock` 改为共享单例秒时钟，7 个独立 interval 收敛为 1 个。 |
+
+### 同步范围
+
+只改一刻原型：`YikeDial`、`FocusPanel`、`timer-readout`、`frame-clock`、`session.tick`、`useClock`、`previews/DialPreview`、`Brand`、`Review` 表盘调用、一秒主题值与水位/日影资产。未改 DS 组件、Contract、Registry、Schema、Capture/Store 与生命周期；`motion.personality` 是既有语义键，不新增 Token。
+
+### 本批验证
+
+| 检查 | 结果 | 范围/限制 |
+| --- | --- | --- |
+| `pnpm --filter @proto-bridge/pbwork typecheck` | 通过 | Core build、authoring lint、vue-tsc |
+| `vitest run test/yike` | 11 文件 / 56 测试通过 | 新增 `yike-timer-readout.test.ts`（5 项）覆盖 25/5/90/120 分钟与正计时 61 分钟；同步修订表盘与主题测试 |
+| `playwright yike-composition` | 7 通过 | 六组合 B3 旅程与窄屏 |
+| `playwright yike-foundation/experience/controls/review-sheet` | 49 通过 / 3 失败 | 3 项失败均为 `path.outline` 旧选择器（组件已改为圆形），改选择器后 `yike-experience` 20 项全部通过 |
+| `playwright yike-rework` | 20 通过 / 1 失败 | 失败项断言 `.editor-context`，该节点在当前实现中不存在，属既有陈旧用例，本批未改编辑面板 |
+| 像素采样 | 通过 | 运行两帧机械 195–270px、水位 985px、日影 701px 有变化；暂停后 3 秒 0 变化；reduced motion 下不订阅帧时钟 |
+| 截图 | `output/yike-scale-motion/` | 三主题 × 浅深 × 待开始/运行/5 分钟；对照条 `after-25min.png`、`after-5min.png`、`after-running.png` |
+
+Experience：quick-checked（本批局部复查）。正式固定采集、D 阶段用户复核与 P3（打卡/回顾/设置反馈）仍待后续；`yike-rework` 的陈旧用例保留并记录，不伪造全绿。
+
+
+### 追加：水杯材质、轮次标记与清理（同日）
+
+- 水位资产增加 `#glass` 图层：左侧受光、右侧背光、杯沿高光三种软渐变，由组件在液体与水波之上叠加；空杯和半杯都能看出杯壁，深色同步。
+- 轮次标记的"当前"态描边改为 `border-width-strong`，深色水位下可辨。
+- 打卡：今日孔位与打卡按钮在完成时播放一次 400ms 落定（`motion.duration-long` + `emphasized`），撤销时同样触发；减少动态效果时关闭。先做三主题共用的落定，机械打孔/水滴/盖章的专属形变留待后续。
+- 删除已停用的 `screens/focus/YikeDial.vue` 与 `components/mode-artwork.json`；`YikeFocusModes` 去掉未使用的 `face` 参数；`resources.md` 同步。
+
+验证补充：`vitest run test/yike` 仍为 11 文件 / 56 项通过；`yike-pages`、`yike-rework`、`yike-controls` 共 22 项通过、1 项既有陈旧用例失败（`.editor-context`）；`docs:verify` 156 份通过。截图：`output/yike-scale-motion/glass-*.png`。
+
+### P3 页面反馈与最终验证（2026-10-20）
+
+- 回顾周图：七列柱体在范围或周期切换时从基线长起（`motion.duration-medium` + emphasized，260ms）；减少动态效果时直接呈现结果。柱体仍按 125 分钟量程与三档规则绘制，不改数据口径。
+- 设置：切换表盘或外观时，该页在 260ms 内过渡背景、文字、边框与图形描边（`is-theming` 只在设置页生效），不再瞬间换色；减少动态效果时关闭。表盘预览各自持有独立主题表，切换时不重绘。
+- 启动页顶部横带经核实来自 Runtime 手机外壳的安全区，不是页面背景错误；不改应用层。
+- 打卡完成/撤销的落定见上一节；机械打孔、水滴落下、印章盖下的专属形变仍作为后续可选批次，不在本批承诺。
+
+### 最终验证（P4）
+
+| 检查 | 结果 | 范围/限制 |
+| --- | --- | --- |
+| `typecheck`（含 Core build、authoring lint、vue-tsc） | 通过 | 原型与测试类型 |
+| `vitest run test/yike` | 11 文件 / 56 项通过 | 含新增读数测试与更新后的表盘/主题断言 |
+| 全量 `playwright e2e/yike-composition.config.ts` | 95 项，94 通过 | 唯一失败为既有 `.editor-context` 陈旧选择器，与编辑面板无关，本批未改且不掩盖 |
+| `pnpm docs:verify` | 157 份通过 | design/implementation/resources 已同步 |
+| 控制台 | 七页 × 三主题无 error/warning | 真实 Router 页面 |
+| 动效采样 | 运行中逐帧有变化；暂停后零变化；reduced motion 关闭帧时钟与三级反馈 | 机械/水位/日影各测 |
+
+截图（`output/yike-scale-motion/`）：`after-25min.png`、`after-5min.png`、`after-25min-dark.png`、`after-5min-dark.png`、`after-running.png`、`after-running-dark.png`、`glass3-light.png`、`glass3-dark.png`、`checkin-done.png`。
+
+**Experience：accepted（局部，待用户复核）。** 本批覆盖 P0–P3 的表盘量程、读数、资产、运行节奏与三页反馈；固定 Capture/Handoff、Flutter 同步（I11）与用户最终验收不在本批范围。
+
+## 倒计时量程与常用项（2026-10-20，用户批准）
+
+用户确认倒计时一圈 = 所选时长，并把固定 3 / 5 / 10 / 20 分钟改为四个可编辑的常用槽位；不兼容旧存档，反馈强度与声音本轮不做。
+
+### 独立实现/验收节点
+
+| 节点 | 本批事实 |
+| --- | --- |
+| 量程 | `timer-readout` 新增 countdown 分支：`fraction = 剩余 / 所选时长`，满圈起、倒空止，超过一小时也不改用「另有」。番茄、休息、正计时保持 60 分钟一圈。 |
+| 机械表盘 | 新增 `mechanical-{light,dark}-plain.svg`：从原资产移除 6 个数字文本，其余刻度与三帧不变。`YikeDial` 新增 `scale`，`session` 时按文件名约定加载无数字版本；专注页只在倒计时传入。 |
+| 数据 | 偏好新增 `countdownPresets`（4 槽位，秒或 `null`），默认 `[180, 300, 600, 1200]`；校验数量、1–86399 范围与非空去重。`YIKE_SCHEMA_VERSION` 升到 3，删除 v1/v2 兼容分支：旧存档按损坏提示重置。 |
+| 设置 | 新增「倒计时」分组与「常用倒计时」FlowSheet：列表与专注页快捷项共用带单位时长标签，逐项进入时间选择、可清空、可恢复默认，重复与越界就近报错；留空槽位不出现，最多四项。 |
+| 专注页 | 快捷项来自非空槽位，带单位标签（`45秒` / `5分` / `1分30秒` / `1小时30分`）；默认仍选中 5 分钟（不在常用项时取第一个非空项）；自定义入口保留。 |
+| 会话 | 打开会话时按常用项选择初始倒计时；修改常用项不影响正在使用的自定义时长。 |
+
+### 本批验证
+
+| 检查 | 结果 |
+| --- | --- |
+| `typecheck`（Core build、authoring lint、vue-tsc） | 通过 |
+| `vitest run test/yike` | 11 文件 / 59 项通过（新增倒计时读数、HH:MM:SS 与紧凑标签、槽位默认/清空/去重/越界/不兼容用例） |
+| 全量 `playwright e2e/yike-composition.config.ts` | 96 项，95 通过；唯一失败仍是 `.editor-context` 陈旧用例 |
+| 新增浏览器用例 | 「常用倒计时可改、可清空，并出现在专注页」通过（45 秒写入、第 4 项清空、专注页剩三项） |
+| `pnpm docs:verify` | 156 份通过 |
+| 截图 | `output/yike-countdown/`：scales-{mechanical,water,sundial}-light、run5s-themes-{light,dark}、5s/1min/5min × 三主题 × 浅深 |
+
+Experience：quick-checked（本批局部复查）。倒计时的秒级动效强度与声音仍按用户要求暂缓。
+
+## 常用时长、设置文案与 FlowSheet 修正（2026-10-20）
+
+- 独立检查节点：常用项四行/空槽位、秒/分/小时标签、时长编辑滚轮、公共步骤指示器、固定操作区、专注页长标签换行。
+- 设置列表与专注页快捷项共用 `formatDurationLabel`，省略零值单位；数字计时读数和时长数据规则不变。快捷项区域按内容最小高度撑开，四个长标签在窄屏换行时不再压到表盘。
+- 去除常用项面板的操作说明、设置页表盘影响范围说明，提示音状态反馈简化；保留本机保存说明、错误反馈。
+- 公共 FlowSheet 指示器移到内容下方、操作区上方；新增不可横滚的裁剪层，隔离主体纵滚，修复切步动画期间滚轮聚焦使父容器横滚、回列表后页面错位。Vue、Contract、Registry、组件手册、Flutter pending 原因同步。
+- 相关单测 13 文件 / 118 项通过（yike、组件 Inspector Contract、Prototype Runtime）；类型检查、静态 authoring lint 与 Vite 构建通过。
+- 浏览器：六主题模式组合的倒计时快捷项/键盘/自定义、常用项修改与清空、浅深模式的阈值草稿/返回焦点/底栏稳定性共 9 项通过；新增 360×640 浅深两项通过，覆盖四个跨小时长标签、两步指示器位置、滚轮焦点、返回列表对齐和表盘无遮挡。Runtime Capture 与 Overlay 材质回归另 11 项通过。
+- Experience：`quick-checked`（局部维护）。实看 `output/yike-controls/preset-list-light.png`、`preset-edit-dark.png`、`preset-long-focus-light.png`、`preset-long-focus-dark.png`、`preset-list-dark.png`，确认无说明文案、指示器底置、滚轮完整，长标签可读且与表盘分离；不代表全原型重新验收。
+- 交付门禁仍有既存未通过项：Flex/Token 原型检查报告 14 处，来自 YikeDial/YikeHabitCard/YikeWeekChart 既有动效及 Settings 的 `260ms` 注释；本批修改的 DS 样式检查通过。DS→Target 基线在本批前已存在多组件、资产、Token 和主题漂移，本批不重写其它组件基线；FlowSheet 标记待 Flutter 适配，批次状态如实改为 `pending`。完整 Delivery Gate 尚未通过。
+
+## 倒计时按上次时长再计（2026-10-20，用户批准）
+
+- 验收节点：`yike.focus.repeat`、刚结束会话的目标时长、新会话身份与零进度、上一轮独立记录、连续点击保护与新一轮取消。
+- 到点保留完成主按钮，轻操作显示带单位的上次时长（如「再计5分」「再计1分30秒」）。引擎用 `repeatCountdown` 创建新会话；命令先幂等结算上一轮，再以其 `targetMs` 开始新一轮。旧追加一分钟 API 移除。
+- Action/Scenario 更名为 `repeat` / `repeat-countdown`，到点 Variant 的 required boundary 加入再计按钮；Registry 断言与既有浏览器回归同步。历史章节中的追加合并描述以本节及当前 design.md 为准。
+- 单测 12 文件 / 93 项通过，覆盖 1秒、90秒、5分、90分、23小时59分59秒；验证等待时间不入账、常用项改变不影响再计时长、重复点击不生成新身份、两次完成各记一条、第三次取消保留前两条。模型回归覆盖新一轮取消和刷新暂停恢复。
+- 7 项浏览器检查通过，覆盖三主题操作层级、到点跨 Tab/刷新、5分钟及自定义90秒独立再计后回顾两条记录；另 2 项全原型 Runtime 回归通过，遍历已声明 Variant 的 prepare/readiness/semantic-snapshot/reset，并执行所有已声明交互 Scenario 与 Checkpoint（含 repeat-countdown）。类型检查、authoring lint、docs:verify 通过。
+- Experience=`quick-checked`：实看 `output/yike-repeat/due-mechanical-light.png` 与 `due-water-dark.png`，完成/再计层级和位置保持，文字完整。水位材质未修改。完整 Delivery Gate 的既存 Flex/Token 违规与 DS→Target pending 边界见上一批记录，本批未扩大验收声明。

@@ -24,6 +24,17 @@ async function shot(page: Page, name: string) {
         '[class*="-enter-active"], [class*="-leave-active"]',
       ),
   );
+  await page.waitForFunction(() => {
+    const body = document.querySelector(".pb-flow-sheet-body");
+    const current = body?.querySelector('section[aria-hidden="false"]');
+    return (
+      !current ||
+      Math.abs(
+        current.getBoundingClientRect().left -
+          body!.getBoundingClientRect().left,
+      ) < 1
+    );
+  });
   await page.screenshot({
     path: `../../output/yike-controls/${name}.png`,
     animations: "disabled",
@@ -212,3 +223,147 @@ test("failed saves can be retried using the shared quiet action", async ({
     ),
   ).toBeTruthy();
 });
+
+test("常用倒计时可改、可清空，并出现在专注页", async ({ page }) => {
+  await open(page, "settings", "default", "mechanical");
+  await page.getByText("常用倒计时", { exact: true }).click();
+  const sheet = page.locator('[data-pb-id="yike.settings.presets-sheet"]');
+  await expect(sheet).toBeVisible();
+  await expect(
+    sheet.getByRole("button", { name: "第 1 项：3分" }),
+  ).toBeVisible();
+
+  await sheet.getByRole("button", { name: /第 1 项/ }).click();
+  const seconds = sheet.getByRole("listbox", { name: "秒", exact: true });
+  await sheet.getByRole("listbox", { name: "小时", exact: true }).press("Home");
+  await sheet.getByRole("listbox", { name: "分钟", exact: true }).press("Home");
+  await seconds.press("Home");
+  for (let index = 1; index < 45; index++) await seconds.press("ArrowDown");
+  await sheet.getByRole("button", { name: "保存", exact: true }).click();
+  await expect(
+    sheet.getByRole("button", { name: "第 1 项：45秒" }),
+  ).toBeVisible();
+
+  await sheet.getByRole("button", { name: /第 4 项/ }).click();
+  await sheet.getByRole("button", { name: "清空", exact: true }).click();
+  await expect(
+    sheet.getByRole("button", { name: "第 4 项：未设置" }),
+  ).toBeVisible();
+
+  await open(page, "focus", "default", "mechanical");
+  await page.getByRole("tab", { name: "倒计时", exact: true }).click();
+  await expect(page.locator(".yike-presets").getByRole("button")).toHaveText([
+    "45秒",
+    "5分",
+    "10分",
+    "自定义",
+  ]);
+});
+
+for (const mode of ["light", "dark"]) {
+  test(`常用时长跨小时统一且 FlowSheet 指示器固定底部 (${mode})`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 640 });
+    await open(page, "settings", "default", "mechanical", mode);
+    await expect(
+      page.getByText(
+        "表盘决定整个一刻的配色和签名图形，打卡页的打孔卡布局不变。",
+        { exact: true },
+      ),
+    ).toHaveCount(0);
+    await page.getByText("常用倒计时", { exact: true }).click();
+    const sheet = page.locator('[data-pb-id="yike.settings.presets-sheet"]');
+    await expect(
+      sheet.getByText(
+        "最多四项，可改可清空；留空的不会出现在倒计时的常用项里。",
+        { exact: true },
+      ),
+    ).toHaveCount(0);
+    async function expectBottomIndicator() {
+      await expect
+        .poll(() =>
+          sheet.evaluate((element) => {
+            const body = element
+              .querySelector(".pb-flow-sheet-body")!
+              .getBoundingClientRect();
+            const dots = element
+              .querySelector(".pb-flow-sheet-dots")!
+              .getBoundingClientRect();
+            const actions = element
+              .querySelector(".pb-flow-sheet-actions")!
+              .getBoundingClientRect();
+            return (
+              dots.top >= body.bottom - 1 && dots.bottom <= actions.top + 1
+            );
+          }),
+        )
+        .toBe(true);
+      await expect(sheet.locator(".pb-flow-sheet-dots")).toBeInViewport();
+      await expect(sheet.locator(".pb-flow-sheet-actions")).toBeInViewport();
+    }
+    await expectBottomIndicator();
+    await page.waitForFunction(
+      () =>
+        !document.querySelector(
+          '[class*="-enter-active"], [class*="-leave-active"]',
+        ),
+    );
+    const dotsBefore = await sheet.locator(".pb-flow-sheet-dots").boundingBox();
+    for (let slot = 1; slot <= 4; slot++) {
+      await sheet
+        .getByRole("button", { name: new RegExp(`第 ${slot} 项：`) })
+        .click();
+      await expectBottomIndicator();
+      const dotsAfter = await sheet
+        .locator(".pb-flow-sheet-dots")
+        .boundingBox();
+      expect(Math.abs(dotsAfter!.y - dotsBefore!.y)).toBeLessThan(1);
+      await expect(
+        sheet.getByRole("listbox", { name: "小时", exact: true }),
+      ).toBeFocused();
+      await sheet
+        .getByRole("listbox", { name: "小时", exact: true })
+        .press("End");
+      await sheet
+        .getByRole("listbox", { name: "分钟", exact: true })
+        .press("End");
+      const seconds = sheet.getByRole("listbox", { name: "秒", exact: true });
+      await seconds.press("End");
+      for (let offset = 0; offset < slot; offset++)
+        await seconds.press("ArrowUp");
+      if (slot === 1) await shot(page, `preset-edit-${mode}`);
+      await sheet.getByRole("button", { name: "保存", exact: true }).click();
+      await expect(
+        sheet.getByRole("button", {
+          name: `第 ${slot} 项：23小时59分${59 - slot}秒`,
+        }),
+      ).toBeVisible();
+    }
+    await shot(page, `preset-list-${mode}`);
+    await sheet.getByRole("button", { name: "完成", exact: true }).click();
+    await open(page, "focus", "default", "mechanical", mode);
+    await page.getByRole("tab", { name: "倒计时", exact: true }).click();
+    const choices = page.locator(".yike-presets");
+    await expect(choices.getByRole("button")).toHaveText([
+      "23小时59分58秒",
+      "23小时59分57秒",
+      "23小时59分56秒",
+      "23小时59分55秒",
+      "自定义",
+    ]);
+    for (const button of await choices.getByRole("button").all()) {
+      await expect(button).toBeInViewport();
+      expect(
+        await button.evaluate((el) => el.scrollWidth <= el.clientWidth),
+      ).toBe(true);
+    }
+    const dial = await choices
+      .locator("xpath=ancestor::main[1]")
+      .locator(".yike-focus-dial")
+      .boundingBox();
+    const labels = await choices.boundingBox();
+    expect(labels!.y).toBeGreaterThanOrEqual(dial!.y + dial!.height);
+    await shot(page, `preset-long-focus-${mode}`);
+  });
+}

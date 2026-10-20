@@ -84,7 +84,7 @@
 | 归档列表 | 打卡、详情 | DS BottomSheet + GroupedList/ListCell 内容 | 空/非空、恢复、关闭；恢复不产生打卡 |
 | 放弃/取消/删除/重置/恢复 | 专注、详情、设置 | DS ConfirmDialog / ActionSheet / BottomSheet 公开容器 + 业务内容 | 取消/确认、危险范围、焦点返回、冻结恢复、后台计时；机制不自造 |
 | 撤销与保存失败 | 打卡与全局 | 共享 Toast/TransientNotice 机制 + 业务撤销/重试状态 | 当前操作/替换/过期/换日、持续失败提示；提示只补充真实内容变化 |
-| 周/月总结、记录行 | 回顾、详情 | 回顾使用GlassSurface及业务文字；详情三项概况为本地语义dl组合，数字统一numeric-title | DS Metric仅提供numeric-display且无公开紧凑尺寸，水位76字阶不适合窄屏三列；不覆盖DS私有样式、不改DS实例绑定，局部组合逐项显式Evidence。零/非零、跨日/追加后的同一记录、仅打卡遵循真实统计 |
+| 周/月总结、记录行 | 回顾、详情 | 回顾使用GlassSurface及业务文字；详情三项概况为本地语义dl组合，数字统一numeric-title | DS Metric仅提供numeric-display且无公开紧凑尺寸，水位76字阶不适合窄屏三列；不覆盖DS私有样式、不改DS实例绑定，局部组合逐项显式Evidence。零/非零、跨日/再计后的独立记录、仅打卡遵循真实统计 |
 | 周图 / `.y-chart*` | 回顾 | 先核对 DS MiniBars；三主题的块柱/试管/墨线不能公开表达时用自有图形 | 0/选中/今天/未来、分钟尺度与日期一致；不复制只改颜色的通用柱图当作全部风格 |
 | 月历 / ReviewScreen.vue | 回顾 | 先核对 DS MonthCalendar；水杯/印点等单元用公开 slot 或自有图形 | 月份边界/前后翻页/今天/选中/未来禁用；回顾通过公开showHeader=false只保留外层受控周期导航，dayAppearance=custom由业务提供紧凑圆形/水杯/方印及今天/选中标记，共享日历计算、禁用与键盘，不自造手势 |
 | 年度图 / HabitDetailScreen.vue | 详情 | 先核对 DS Heatmap 真实日期 API；主题符号通过合法扩展或自有绘制 | 零历史、创建前、已归档、未来与真实完成日期；不复制草稿随机热力样例 |
@@ -92,15 +92,15 @@
 ## 预览与正式证据边界
 
 - 用现有 Workbench 手机预览选择真实包/主题/模式；主题来源表检查真实值和继承，不自建第二套主题编辑器。
-- 原型专属内容可放在本地 `components/`，不要求新增 `previews/` 或 `preview-resources.ts`；DS 变体在对应组件下展示。既有源码、预览与夹具保留，独立登记清空，后续按页面接入整理。原有表盘、打孔卡行、文字导航、模式、品牌操作、习惯表单与周图独立登记现已清空；实现及预览均已存在。screens/focus/YikeDial.vue 仍是旧页面局部实现，该旧文件已停用，Focus 已接入 components/YikeDial.vue，不能把资源进展记作页面验收。
+- 原型专属内容可放在本地 `components/`，不要求新增 `previews/` 或 `preview-resources.ts`；DS 变体在对应组件下展示。既有源码、预览与夹具保留，独立登记清空，后续按页面接入整理。原有表盘、打孔卡行、文字导航、模式、品牌操作、习惯表单与周图独立登记现已清空；实现及预览均已存在。旧页面局部表盘 screens/focus/YikeDial.vue 已删除，Focus 统一接入 components/YikeDial.vue，不能把资源进展记作页面验收。
 - 仅组合 DS 公开 props/slots 不登记为原型新增变体。确需登记的 DS 变体遵守[预览工作流](../../../../docs/workbench-preview.md)。
 - 预览通过后，业务实例另加稳定 inspectId / 显式 data-pb-id、role、key 和 Token bindings，页面声明 required boundary 与关键交互场景。预览不进入 Capture/Handoff。
 
 ## 已落地资源与剩余适配
 
-- `components/YikeDial.vue`：输入 minutes/total/digits/caption/tone；机械图形以60分钟为固定尺度，水位以会话比例裁切，零值不画扇面，整小时画完整圆，超过一小时按小时余量绘制并补充“另有/已满 N 小时”；数字仍显示实际时长。水位重复读数用于水下前景并 aria-hidden；休息态使用 color.on-surface 以适配浅休息水色，普通态保留 color.on-inverse-surface，CSS 与 Evidence 同步。静态图形与绘制色位于六份 `theme/assets/*.svg`，以 asset.brand-mark 固定包身份和摘要；受控几何位于 dial-artwork.json。
+- `components/YikeDial.vue`：输入 fraction（一圈比例）、digits、caption、note、tone、elapsedMs 与 scale；三主题共用同一比例，不再各自计算量程。scale=hour 用于番茄、休息与正计时（机械显示 0–60 数字）；scale=session 用于倒计时（一圈=所选时长，机械改用无数字的 `mechanical-*-plain.svg`）。水位重复读数用于水下前景并 aria-hidden；休息态使用 color.on-surface 以适配浅休息水色，普通态保留 color.on-inverse-surface，CSS 与 Evidence 同步。静态图形与绘制色位于 `theme/assets/*.svg`（六份完整表盘 + 两份机械无数字版本），以 asset.brand-mark 固定包身份和摘要；受控几何与运行节奏位于 dial-artwork.json。
 - `components/YikeTextNavigation.vue`：已改为DS Tabbar的目的地配置包装，使用图标和文字；正式壳已连接共享导航/TabViewport。
-- `components/YikeFocusModes.vue`：组合 DS PrimaryTabs 与番茄/正计时/倒计时具名页面，各页由 `screens/focus/FocusPanel.vue` 展示同一会话模型。滑动选择、分页过渡和横滑来自共享组件；旧 mode-artwork.json 仅保留存量。
+- `components/YikeFocusModes.vue`：组合 DS PrimaryTabs 与番茄/正计时/倒计时具名页面，各页由 `screens/focus/FocusPanel.vue` 展示同一会话模型。滑动选择、分页过渡和横滑来自共享组件；模式不再渲染图标，旧 mode-artwork.json 已删除，theme/assets 三份 SVG 原样保留。
 - `components/YikeFacePreview.vue`：缩略图复用 YikeDial，使用明确的 12:34 示例读数和对应剩余量，保留机械扇面、水位与日影。
 - `components/round-artwork.json`：集中三主题轮次几何；完成/当前/未来分别表达，不用同一种实心圆代替全部状态。
 - `components/YikeHabitCard.vue`：名称与今日按钮各发独立事件；过去/未来记录只读，未来不显示完成。七日数据由调用方提供，不生成历史。六种习惯图标共用 YikeHabitGlyph，来源为 Lucide 公开组件，尺寸/描边从主题读取。
@@ -263,3 +263,17 @@ Review以SVG alpha mask读取相同路径，尺寸为size.icon-prominent，绘�
 ### 专注主次操作排版（2026-10-20）
 
 沿用YikeAction→DS Button公开kind配置，将倒计时append从secondary改为quiet，不修改共享组件。FocusPanel将completion-feedback作为显式status节点放入既有support区，声明caption/muted Token，移除按钮行重复的到点提示；secondary-actions占满可用宽度并居中排列轻操作，保留原主按钮和次操作最小高度。完成后的休息不再展示无效的跳过入口。
+
+## 倒计时常用项（2026-10-20）
+
+- 设置页「倒计时」分组复用 GroupedList；「常用倒计时」面板复用 FlowSheet（两步：列表 → 时间选择）与 YikeDurationPicker 的秒精度三列滚轮，不新增 DS 能力或组件登记。
+- 四个槽位来自偏好 `countdownPresets`（秒或留空），专注页快捷项按非空槽位渲染；清空后不占位，最多四项。
+- 机械无数字表盘 `mechanical-light-plain.svg` / `mechanical-dark-plain.svg` 由原资产去掉 6 个数字文本生成，仍以 asset.brand-mark 的包身份加载，按文件名约定选择；不新增 Token 或资源登记。
+
+### 常用时长展示与公共面板修正（2026-10-20）
+
+设置列表与专注页快捷项共用 `formatDurationLabel`，不再分别使用固定三段时钟与混合缩写。FlowSheet 在 DS 层统一底部指示器，并分离不可横滚的裁剪层与主体纵向滚动，避免切步中键盘操作导致内容错位；yike 两处调用共同受益，未新增私有覆盖或公开组件变体。Contract、Registry、组件手册、浏览器回归与 Flutter pending 原因同步更新。
+
+### 按上次时长再计（2026-10-20）
+
+沿用 YikeAction 的 quiet 类型和底部轻操作位置，业务节点与 Action 更名为 `repeat`，Scenario 更名为 `repeat-countdown`。按钮共用 `formatDurationLabel`。计时引擎 `repeatCountdown` 创建独立会话；会话命令先结算旧记录再启动新会话。无需新增 DS 组件、主题 Token 或资产。

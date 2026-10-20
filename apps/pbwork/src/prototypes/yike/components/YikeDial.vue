@@ -7,54 +7,83 @@ import artwork from "./dial-artwork.json";
 const props = withDefaults(
   defineProps<{
     face: "mechanical" | "water" | "sundial";
-    minutes: number;
-    total: number;
+    /** 0–1 of one 60-minute revolution; the same amount on every face. */
+    fraction: number;
     digits: string;
     caption: string;
+    note?: string;
     tone?: "idle" | "run" | "paused" | "break" | "done";
     inspectId: string;
-    countingUp?: boolean;
-    compact?: boolean;
+    /** Session elapsed time, used only for the per-second / per-minute beat. */
+    elapsedMs?: number;
+    /**
+     * `hour` prints the 0–60 minute scale (pomodoro, breaks, stopwatch).
+     * `session` drops the numbers because the revolution is the chosen
+     * countdown length, where printed minutes would lie.
+     */
+    scale?: "hour" | "session";
   }>(),
-  { tone: "idle" },
+  { tone: "idle", elapsedMs: 0, scale: "hour" },
 );
 const mark = useToken("asset.brand-mark");
 const image = computed(() => {
   const asset = mark.value as ResolvedThemeAsset;
-  return asset && typeof asset === "object"
-    ? themeAssetUrl(asset.packId, asset.file)
-    : undefined;
+  if (!asset || typeof asset !== "object") return undefined;
+  const plain =
+    props.face === "mechanical" && props.scale === "session"
+      ? asset.file.replace(/\.svg$/, "-plain.svg")
+      : asset.file;
+  return themeAssetUrl(asset.packId, plain);
 });
 const geometry = computed(() => artwork[props.face]);
 const ratio = computed(() =>
-  props.countingUp
-    ? dialRatio.value
-    : props.total > 0 && Number.isFinite(props.minutes)
-      ? Math.min(
-          artwork.full,
-          Math.max(artwork.zero, props.minutes / props.total),
-        )
-      : artwork.zero,
-);
-const minutes = computed(() =>
-  Number.isFinite(props.minutes)
-    ? Math.max(artwork.zero, props.minutes)
+  Number.isFinite(props.fraction)
+    ? Math.min(artwork.full, Math.max(artwork.zero, props.fraction))
     : artwork.zero,
 );
-const dialRatio = computed(() =>
-  minutes.value > artwork.zero &&
-  minutes.value % artwork.minuteScale === artwork.zero
-    ? artwork.full
-    : (minutes.value % artwork.minuteScale) / artwork.minuteScale,
-);
-const hourNote = computed(() =>
-  minutes.value >= artwork.minuteScale
-    ? `${minutes.value % artwork.minuteScale === artwork.zero ? "已满" : "另有"} ${Math.floor(minutes.value / artwork.minuteScale)} 小时`
-    : "",
-);
 const captionText = computed(() =>
-  hourNote.value ? `${props.caption} · ${hourNote.value}` : props.caption,
+  props.note ? `${props.caption} · ${props.note}` : props.caption,
 );
+/** Running only: seconds phase drives the beat, silence otherwise. */
+const beat = computed(() => {
+  if (props.tone !== "run") return { second: 0, minute: 0, phase: 0 };
+  const milliseconds = Math.max(0, props.elapsedMs);
+  const seconds = milliseconds / 1000;
+  const phase = seconds - Math.floor(seconds);
+  const minutePhase = (milliseconds % 60_000) / 60_000;
+  return {
+    phase,
+    second: Math.max(0, 1 - phase / artwork.beat.secondWindow),
+    minute: Math.max(0, 1 - minutePhase / artwork.beat.minuteWindow),
+  };
+});
+const gripRadius = computed(
+  () =>
+    artwork.mechanical.gripRadius *
+    (1 +
+      artwork.beat.gripSecond * beat.value.second +
+      artwork.beat.gripMinute * beat.value.minute),
+);
+/** The surface shimmers every second; a ripple rings once a minute. */
+const ripple = computed(() => ({
+  radius:
+    artwork.beat.rippleMinRadius +
+    (artwork.beat.rippleMaxRadius - artwork.beat.rippleMinRadius) *
+      Math.min(1, (1 - beat.value.minute) * 1.4),
+  opacity: Math.max(0, beat.value.minute) * artwork.beat.rippleMinuteOpacity,
+}));
+const surfaceOpacity = computed(() =>
+  shut.value
+    ? 0
+    : artwork.beat.surfaceRest + artwork.beat.surfaceSecond * beat.value.second,
+);
+const gnomonRing = computed(() => ({
+  radius:
+    artwork.beat.gnomonSecondRadius +
+    (artwork.beat.gnomonMinuteRadius - artwork.beat.gnomonSecondRadius) *
+      Math.min(1, beat.value.phase * 1.6),
+  opacity: Math.min(1, beat.value.minute * artwork.beat.gnomonOpacity),
+}));
 const clipId = `dial-${useId().replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 function point(fraction: number, radius: number) {
   const g = geometry.value;
@@ -70,7 +99,7 @@ function sector(fraction: number, start = artwork.zero) {
   const end = point(fraction, g.radius);
   return `M${g.cx} ${g.cy}L${from.x} ${from.y}A${g.radius} ${g.radius} 0 ${fraction - start > artwork.half ? 1 : 0} 1 ${end.x} ${end.y}Z`;
 }
-const wedge = computed(() => sector(dialRatio.value));
+const wedge = computed(() => sector(ratio.value));
 const shadowParts = computed(() => {
   const fade = Math.min(
     ratio.value,
@@ -91,7 +120,7 @@ const shadowParts = computed(() => {
 });
 const grip = computed(() =>
   point(
-    dialRatio.value,
+    ratio.value,
     artwork.mechanical.radius + artwork.mechanical.gripOffset,
   ),
 );
@@ -99,12 +128,25 @@ const waterTop = computed(
   () => artwork.water.height * (artwork.full - ratio.value),
 );
 const waterHeight = computed(() => artwork.water.height * ratio.value);
+const shut = computed(() => props.tone === "paused" || props.tone === "done");
+/** Sundial: the shadow brightens a hair each second, a ring marks each minute. */
+const shadowOpacity = computed(() => {
+  const base =
+    props.tone === "paused" || props.tone === "break"
+      ? artwork.sundial.subduedOpacity
+      : artwork.sundial.restOpacity;
+  return Math.min(
+    1,
+    base +
+      (props.tone === "run" ? artwork.beat.shadowSecond * beat.value.second : 0),
+  );
+});
 </script>
 
 <template>
   <svg
     class="yike-dial"
-    :class="[`is-${face}`, `is-${tone}`, { 'is-compact': compact }]"
+    :class="[`is-${face}`, `is-${tone}`]"
     :viewBox="geometry.viewBox"
     role="img"
     :aria-label="`${captionText} ${digits}`"
@@ -112,7 +154,6 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
     data-pb-role="image"
     data-pb-token-artwork="asset.brand-mark"
     data-pb-token-width="size.plot"
-    :data-pb-token-compact-inset="compact ? 'spacing.lg' : undefined"
     data-pb-token-color="color.on-surface"
     data-pb-token-filter="effect.artwork-shadow"
   >
@@ -150,7 +191,7 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
       </mask>
       <clipPath :id="`${clipId}-sector`">
         <circle
-          v-if="dialRatio === artwork.full"
+          v-if="ratio === artwork.full"
           :cx="geometry.cx"
           :cy="geometry.cy"
           :r="geometry.radius"
@@ -161,22 +202,33 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
     <template v-if="face === 'mechanical'">
       <image :href="image" :width="geometry.width" :height="geometry.height" />
       <g
-        v-if="dialRatio > artwork.zero"
+        v-if="ratio > artwork.zero"
         class="wedge"
         :clip-path="`url(#${clipId}-sector)`"
       >
         <image
-          :href="`${image}#${tone === 'break' ? 'rest' : tone === 'paused' ? 'paused' : 'progress'}`"
+          class="layer"
+          :class="{ 'is-on': tone !== 'paused' && tone !== 'break' }"
+          :href="`${image}#progress`"
+          :width="geometry.width"
+          :height="geometry.height"
+        />
+        <image
+          class="layer"
+          :class="{ 'is-on': tone === 'paused' }"
+          :href="`${image}#paused`"
+          :width="geometry.width"
+          :height="geometry.height"
+        />
+        <image
+          class="layer"
+          :class="{ 'is-on': tone === 'break' }"
+          :href="`${image}#rest`"
           :width="geometry.width"
           :height="geometry.height"
         />
       </g>
-      <circle
-        class="grip"
-        :cx="grip.x"
-        :cy="grip.y"
-        :r="artwork.mechanical.gripRadius"
-      />
+      <circle class="grip" :cx="grip.x" :cy="grip.y" :r="gripRadius" />
       <circle
         class="knob"
         :cx="geometry.cx"
@@ -189,18 +241,46 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
         <path class="vessel" :d="artwork.water.vessel" />
         <g :clip-path="`url(#${clipId}-water)`">
           <image
-            :href="tone === 'break' ? `${image}#rest` : image"
+            class="layer"
+            :class="{ 'is-on': tone !== 'break' }"
+            :href="image"
+            :width="geometry.width"
+            :height="geometry.height"
+          />
+          <image
+            class="layer"
+            :class="{ 'is-on': tone === 'break' }"
+            :href="`${image}#rest`"
             :width="geometry.width"
             :height="geometry.height"
           />
         </g>
+        <g
+          v-if="ratio > artwork.zero && ripple.opacity > artwork.zero"
+          :clip-path="`url(#${clipId}-water)`"
+        >
+          <ellipse
+            class="ripple"
+            :cx="geometry.cx"
+            :cy="waterTop"
+            :rx="ripple.radius"
+            :ry="ripple.radius * artwork.beat.rippleFlatten"
+            :opacity="ripple.opacity"
+          />
+        </g>
         <image
-          v-if="ratio > artwork.zero && tone !== 'paused'"
+          class="wave"
+          :style="{ opacity: surfaceOpacity }"
           :href="`${image}#wave`"
           preserveAspectRatio="none"
           :y="waterTop"
           :width="geometry.width"
           :height="artwork.water.waveHeight"
+        />
+        <image
+          :href="`${image}#glass`"
+          :width="geometry.width"
+          :height="geometry.height"
         />
       </g>
     </template>
@@ -209,13 +289,9 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
       <g
         v-if="ratio > artwork.zero"
         class="shadow"
+        :style="{ opacity: shadowOpacity }"
         :filter="`url(#${clipId}-blur)`"
         :mask="`url(#${clipId}-shadow)`"
-        :opacity="
-          tone === 'paused' || tone === 'break'
-            ? artwork.sundial.subduedOpacity
-            : artwork.full
-        "
       >
         <image
           :href="`${image}#shadow`"
@@ -223,6 +299,14 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
           :height="artwork.sundial.shadowViewHeight"
         />
       </g>
+      <circle
+        v-if="tone === 'run' && beat.minute > artwork.zero"
+        class="gnomon"
+        :cx="geometry.cx"
+        :cy="geometry.cy"
+        :r="gnomonRing.radius"
+        :opacity="gnomonRing.opacity"
+      />
     </template>
     <text
       class="digits"
@@ -294,11 +378,29 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
   overflow: visible;
   color: var(--pb-color-on-surface);
 }
-.yike-dial.is-compact {
-  inline-size: calc(
-    var(--pb-size-plot) - var(--pb-spacing-lg) - var(--pb-spacing-lg) -
-      var(--pb-spacing-lg)
-  );
+.layer,
+.shadow {
+  transition: opacity var(--pb-motion-duration-medium)
+    var(--pb-motion-easing-standard);
+}
+.wave {
+  transition: opacity var(--pb-motion-duration-short) linear;
+}
+.layer {
+  opacity: 0;
+}
+.layer.is-on {
+  opacity: 1;
+}
+.ripple,
+.gnomon {
+  fill: none;
+  stroke: var(--pb-color-on-inverse-surface);
+  stroke-width: var(--pb-border-width);
+}
+.gnomon {
+  stroke: var(--pb-color-primary);
+  stroke-width: var(--pb-border-width);
 }
 .grip {
   fill: var(--pb-color-surface);
@@ -311,7 +413,7 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
 .knob,
 .vessel {
   fill: var(--pb-color-surface);
-  stroke: var(--pb-color-border);
+  stroke: var(--pb-color-outline);
   stroke-width: var(--pb-border-width);
 }
 .digits {
@@ -346,11 +448,35 @@ const waterHeight = computed(() => artwork.water.height * ratio.value);
 <style scoped>
 .yike-dial {
   filter: var(--pb-effect-artwork-shadow);
+  transform-origin: center;
 }
 .digits {
   letter-spacing: var(--pb-tracking-display);
 }
 .caption {
   letter-spacing: var(--pb-tracking-caption);
+}
+.is-done {
+  animation: yike-settle var(--pb-motion-duration-long)
+    var(--pb-motion-easing-emphasized);
+}
+@keyframes yike-settle {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.015);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .layer,
+  .shadow,
+  .wave {
+    transition: none;
+  }
+  .is-done {
+    animation: none;
+  }
 }
 </style>

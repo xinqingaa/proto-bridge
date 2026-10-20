@@ -255,6 +255,15 @@ for (const mode of ["light", "dark"]) {
     await preset.press("Home");
     const footer = sheet.getByRole("button", { name: "确认", exact: true });
     const firstBounds = await footer.boundingBox();
+    const dots = sheet.locator(".pb-flow-sheet-dots");
+    const firstDots = await dots.boundingBox();
+    expect(firstDots!.y + firstDots!.height).toBeLessThanOrEqual(
+      firstBounds!.y,
+    );
+    expect(firstDots!.y).toBeGreaterThan(
+      (await sheet.locator(".pb-flow-sheet-body").boundingBox())!.y,
+    );
+
     await sheet
       .getByRole("button", { name: "自定义时长", exact: true })
       .click();
@@ -275,6 +284,9 @@ for (const mode of ["light", "dark"]) {
       "07",
     );
     const secondBounds = await footer.boundingBox();
+    expect(Math.abs((await dots.boundingBox())!.y - firstDots!.y)).toBeLessThan(
+      1,
+    );
     expect(Math.abs(secondBounds!.y - firstBounds!.y)).toBeLessThan(1);
     await expect(footer).toBeInViewport();
     await expect

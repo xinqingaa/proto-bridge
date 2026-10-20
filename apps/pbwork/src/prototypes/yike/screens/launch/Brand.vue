@@ -25,8 +25,7 @@ defineProps<{ face: YikeFace }>();
         >
           <YikeDial
             :face="face"
-            :minutes="25"
-            :total="25"
+            :fraction="25 / 60"
             digits=""
             caption=""
             :inspect-id="scope.id('dial')"

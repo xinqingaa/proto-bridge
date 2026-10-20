@@ -139,7 +139,7 @@ describe("一刻最小演示业务基础", () => {
     expect(summary.focusCount).toBe(1);
     expect(store.data.focusRecords[0]?.durationSeconds).toBe(70);
   });
-  it("到点追加合并、配置仅影响新阶段、休息不写专注记录", () => {
+  it("到点再计独立记录、配置仅影响新阶段、休息不写专注记录", () => {
     let at = new Date("2026-10-19T12:00:00").getTime();
     const store = createYikeStore({ storage: null, now: () => new Date(at) });
     const timer = createYikeSession(store, () => at);
@@ -149,12 +149,14 @@ describe("一刻最小演示业务基础", () => {
     at += 60_000;
     timer.tick();
     expect(store.data.session?.status).toBe("due");
-    timer.append();
+    timer.repeat();
     at += 60_000;
     timer.tick();
     timer.finish();
-    expect(store.data.focusRecords).toHaveLength(1);
-    expect(store.data.focusRecords[0]?.durationSeconds).toBe(120);
+    expect(store.data.focusRecords).toHaveLength(2);
+    expect(
+      store.data.focusRecords.map((record) => record.durationSeconds),
+    ).toEqual([60, 60]);
     timer.requestMode("pomodoro");
     store.updatePreferences({ pomodoroMinutes: 1 });
     timer.toggle();
@@ -169,7 +171,7 @@ describe("一刻最小演示业务基础", () => {
     at += 5 * 60_000;
     timer.tick();
     timer.finish();
-    expect(store.data.focusRecords).toHaveLength(2);
+    expect(store.data.focusRecords).toHaveLength(3);
     expect(store.data.session).toBeNull();
     timer.toggle();
     expect(store.data.session?.targetMs).toBe(120_000);

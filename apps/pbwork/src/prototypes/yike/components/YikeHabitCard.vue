@@ -305,12 +305,38 @@ small {
 .today:active:not(:disabled) {
   transform: scale(var(--pb-motion-press-scale));
 }
+.day.is-today.is-on svg,
+.today.is-done svg,
+.today.is-done > span {
+  transform-origin: center;
+  animation: yike-mark-pop var(--pb-motion-duration-long)
+    var(--pb-motion-easing-emphasized);
+}
+@keyframes yike-mark-pop {
+  0% {
+    transform: scale(0.72);
+    opacity: var(--pb-opacity-hidden);
+  }
+  55% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .today,
   .hole,
   .drop,
   .stamp-dot {
     transition: none;
+  }
+  .day.is-today.is-on svg,
+  .today.is-done svg,
+  .today.is-done > span {
+    animation: none;
   }
 }
 </style>

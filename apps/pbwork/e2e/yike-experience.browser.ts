@@ -78,7 +78,7 @@ test("month cells stay compact, selection preserves data, and type tracks share 
   await open(page, "review", "month");
   const cell = page.locator('[data-date="2026-10-19"]');
   expect((await cell.boundingBox())!.height).toBeLessThanOrEqual(48);
-  await expect(cell.locator("svg path.outline")).toHaveCount(1);
+  await expect(cell.locator("svg circle.outline")).toHaveCount(1);
   const before = await cell
     .locator(".number")
     .getAttribute("data-pb-token-color");
@@ -340,7 +340,7 @@ for (const theme of ["mechanical", "water", "sundial"])
       }
       const day = page.locator('[data-date="2026-10-16"]');
       if (theme === "mechanical")
-        await expect(day.locator("path.outline")).toHaveCount(1);
+        await expect(day.locator("circle.outline")).toHaveCount(1);
       const today = page.locator('[data-date="2026-10-19"]');
       await expect(today.locator(".today-mark")).toHaveAttribute(
         "data-face",

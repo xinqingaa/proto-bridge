@@ -60,11 +60,13 @@ export type YikeState = {
     longBreakEvery: number;
     sound: boolean;
     shortRecordThresholdSeconds: number;
+    /** 四个常用倒计时槽位，秒；null 表示留空，前端不展示。 */
+    countdownPresets: Array<number | null>;
   };
 };
 
 export const YIKE_STORAGE_KEY = "pbwork.prototype.yike.data";
-export const YIKE_SCHEMA_VERSION = 2;
+export const YIKE_SCHEMA_VERSION = 3;
 const defaultHabits = (today: string): YikeHabit[] => [
   {
     id: "habit-water",
@@ -125,6 +127,7 @@ export function createInitialYikeState(today: string): YikeState {
       longBreakEvery: 4,
       sound: true,
       shortRecordThresholdSeconds: 10,
+      countdownPresets: [180, 300, 600, 1200],
     },
   };
 }
@@ -238,7 +241,14 @@ export function isYikeState(value: unknown): value is YikeState {
       numberIn(p.longBreakMinutes, 1, 60) &&
       numberIn(p.longBreakEvery, 2, 8) &&
       typeof p.sound === "boolean" &&
-      numberIn(p.shortRecordThresholdSeconds, 1, 86399),
+      numberIn(p.shortRecordThresholdSeconds, 1, 86399) &&
+      Array.isArray(p.countdownPresets) &&
+      p.countdownPresets.length === 4 &&
+      p.countdownPresets.every(
+        (value) => value === null || numberIn(value, 1, 86399),
+      ) &&
+      new Set(p.countdownPresets.filter((value) => value !== null)).size ===
+        p.countdownPresets.filter((value) => value !== null).length,
     )
   );
 }
@@ -282,27 +292,6 @@ export function createYikeStore(
           schemaVersion?: number;
           value?: unknown;
         };
-        if (
-          envelope.schemaVersion === 1 &&
-          envelope.value &&
-          typeof envelope.value === "object"
-        ) {
-          const legacy = envelope.value as Partial<YikeState>;
-          legacy.initializedOn ??= Array.isArray(legacy.habits)
-            ? (legacy.habits
-                .map((habit) => habit.createdOn)
-                .filter((date) => Boolean(parseDay(date)))
-                .sort()[0] ?? today())
-            : today();
-          envelope.schemaVersion = YIKE_SCHEMA_VERSION;
-        }
-        const savedPreferences = (envelope.value as Partial<YikeState> | null)
-          ?.preferences;
-        if (
-          savedPreferences &&
-          savedPreferences.shortRecordThresholdSeconds === undefined
-        )
-          savedPreferences.shortRecordThresholdSeconds = 10;
         if (
           envelope.schemaVersion !== YIKE_SCHEMA_VERSION ||
           !isYikeState(envelope.value)

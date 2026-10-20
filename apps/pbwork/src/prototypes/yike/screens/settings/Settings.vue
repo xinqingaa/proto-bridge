@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, nextTick } from "vue";
+import { computed, ref, watch, nextTick, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { vPb } from "@/authoring/pb-style";
 import PrototypeShell from "@/runtime/prototype/PrototypeShell.vue";
@@ -18,6 +18,8 @@ import {
 import AppBar from "@/design-system/components/navigation/AppBar.vue";
 import YikeActionRows from "../../components/YikeActionRows.vue";
 import YikeFacePreview from "../../components/YikeFacePreview.vue";
+import Icon from "@/design-system/components/action/Icon.vue";
+import { formatDurationLabel } from "../../timer-readout";
 import { useYikeRuntime } from "../../runtime";
 import { yikeNavigation } from "../../navigation";
 import type { YikeFace } from "../../model";
@@ -28,6 +30,21 @@ const route = useRoute(),
   router = useRouter();
 const { store, session } = useYikeRuntime();
 const nav = () => yikeNavigation(router, route, store);
+/** 切表盘/模式时让页面颜色在 260ms 内过渡，而不是瞬间换一套。 */
+const theming = ref(false);
+let themingTimer: number | undefined;
+function applyTheme(face: YikeFace, next: "light" | "dark" | "system") {
+  theming.value = true;
+  if (themingTimer !== undefined) window.clearTimeout(themingTimer);
+  themingTimer = window.setTimeout(() => {
+    theming.value = false;
+    themingTimer = undefined;
+  }, 320);
+  nav().theme(face, next);
+}
+onBeforeUnmount(() => {
+  if (themingTimer !== undefined) window.clearTimeout(themingTimer);
+});
 const preference = computed(() => store.data.preferences);
 const systemMode = useSystemThemeMode();
 const faces: Array<{ id: YikeFace; label: string }> = [
@@ -82,6 +99,81 @@ const thresholdOptions = thresholds.map((value) => ({
   label: thresholdLabel(value),
 }));
 const thresholdError = ref("");
+
+/** 四个常用倒计时槽位：可改、可清空，留空的不出现在专注页。 */
+const presetsOpen = ref(
+  ["countdown-presets", "countdown-preset-edit"].includes(
+    String(route.query.variant),
+  ),
+);
+const presetValues = computed(() => preference.value.countdownPresets);
+const presetStep = ref(route.query.variant === "countdown-preset-edit" ? 1 : 0);
+const presetSlot = ref(0);
+const presetDraft = ref(
+  typeof presetValues.value[0] === "number" ? presetValues.value[0] : 300,
+);
+const presetError = ref("");
+const presetCount = computed(
+  () => presetValues.value.filter((value) => typeof value === "number").length,
+);
+function presetLabel(index: number) {
+  const value = presetValues.value[index];
+  return typeof value === "number" ? formatDurationLabel(value) : "未设置";
+}
+function openPresets() {
+  presetStep.value = 0;
+  presetError.value = "";
+  presetsOpen.value = true;
+}
+function editPreset(index: number) {
+  presetSlot.value = index;
+  presetDraft.value =
+    typeof presetValues.value[index] === "number"
+      ? (presetValues.value[index] as number)
+      : 300;
+  presetError.value = "";
+  presetStep.value = 1;
+}
+function savePreset() {
+  const seconds = Math.round(presetDraft.value);
+  if (seconds < 1 || seconds > 86399) {
+    presetError.value = "请选择 1 秒至 23:59:59";
+    return;
+  }
+  if (
+    presetValues.value.some(
+      (value, index) => index !== presetSlot.value && value === seconds,
+    )
+  ) {
+    presetError.value = "和其他常用项重复";
+    return;
+  }
+  const next = [...presetValues.value];
+  next[presetSlot.value] = seconds;
+  if (!store.updatePreferences({ countdownPresets: next })) {
+    presetError.value = "暂时无法保存";
+    return;
+  }
+  presetStep.value = 0;
+  feedback.value = "已更新常用倒计时。";
+}
+function clearPreset() {
+  const next = [...presetValues.value];
+  next[presetSlot.value] = null;
+  if (!store.updatePreferences({ countdownPresets: next })) {
+    presetError.value = "暂时无法保存";
+    return;
+  }
+  presetStep.value = 0;
+  feedback.value = "已清空这一项。";
+}
+function restorePresets() {
+  if (!store.updatePreferences({ countdownPresets: [180, 300, 600, 1200] })) {
+    presetError.value = "暂时无法保存";
+    return;
+  }
+  feedback.value = "已恢复默认常用项。";
+}
 function thresholdLabel(seconds: number) {
   return seconds < 60 || seconds % 60
     ? `${seconds} 秒`
@@ -158,6 +250,19 @@ const groups = computed(() => [
     ],
   },
   {
+    id: "countdown",
+    title: "倒计时",
+    items: [
+      {
+        id: "countdown-presets",
+        title: "常用倒计时",
+        description: "",
+        icon: "",
+        value: presetCount.value ? `${presetCount.value} 项` : "未设置",
+      },
+    ],
+  },
+  {
     id: "recording",
     title: "记录与反馈",
     items: [
@@ -181,6 +286,10 @@ const groups = computed(() => [
   },
 ]);
 function chooseSetting({ itemId }: { itemId: string }) {
+  if (itemId === "countdown-presets") {
+    openPresets();
+    return;
+  }
   if (itemId === "record-threshold") {
     openThreshold();
     return;
@@ -203,7 +312,7 @@ function saveSetting() {
 async function reset() {
   store.reset();
   session.sync();
-  nav().theme("mechanical", "system");
+  applyTheme("mechanical", "system");
   resetOpen.value = false;
   // Let Runtime stamp the new theme before issuing the final destination.
   await nextTick();
@@ -230,6 +339,7 @@ async function reset() {
     <div
       :key="store.presentation.revision"
       class="yike-stack"
+      :class="{ 'is-theming': theming }"
       v-pb="
         scope.node('root', 'page', {
           tokens: { padding: 'spacing.lg', background: 'color.background' },
@@ -257,7 +367,7 @@ async function reset() {
                 },
               })
             "
-            @click="nav().theme(face.id, preference.mode)"
+            @click="applyTheme(face.id, preference.mode)"
           >
             <YikeFacePreview
               :face="face.id"
@@ -267,9 +377,6 @@ async function reset() {
             <span>{{ face.label }}</span>
           </button>
         </div>
-        <p class="muted">
-          表盘决定整个一刻的配色和签名图形，打卡页的打孔卡布局不变。
-        </p>
         <h3 class="setting-label">显示模式</h3>
         <SegmentedControl
           :model-value="preference.mode"
@@ -283,7 +390,7 @@ async function reset() {
           :inspect-id="scope.id('mode')"
           @update:model-value="
             (value) =>
-              nav().theme(preference.face, value as 'light' | 'dark' | 'system')
+              applyTheme(preference.face, value as 'light' | 'dark' | 'system')
           "
         />
       </section>
@@ -294,9 +401,7 @@ async function reset() {
         @select="chooseSetting"
         @toggle="
           store.updatePreferences({ sound: $event.value });
-          feedback = $event.value
-            ? '提示音已开启，到点以可见反馈演示。'
-            : '提示音已关闭。';
+          feedback = $event.value ? '提示音已开启。' : '提示音已关闭。';
         "
       />
       <p v-if="feedback" role="status">{{ feedback }}</p>
@@ -362,6 +467,92 @@ async function reset() {
           size="lg"
           inspect-id="yike.settings.threshold-save"
           @click="saveThreshold"
+        />
+      </template>
+    </FlowSheet>
+    <FlowSheet
+      v-model="presetsOpen"
+      v-model:step="presetStep"
+      :step-count="2"
+      :swipe="false"
+      :title="presetStep === 1 ? `第 ${presetSlot + 1} 项` : '常用倒计时'"
+      material="glass"
+      inspect-id="yike.settings.presets-sheet"
+    >
+      <template #header-start>
+        <IconButton
+          v-if="presetStep === 1"
+          icon="chevron-left"
+          ariaLabel="返回常用倒计时"
+          inspect-id="yike.settings.presets-back"
+          size="sm"
+          @click="presetStep = 0"
+        />
+      </template>
+      <section :inert="presetStep !== 0" :aria-hidden="presetStep !== 0">
+        <div class="yike-preset-list">
+          <button
+            v-for="(value, index) in presetValues"
+            :key="index"
+            type="button"
+            class="yike-preset-row"
+            :data-pb-id="`yike.settings.presets.${index}`"
+            data-pb-role="button"
+            :aria-label="`第 ${index + 1} 项：${presetLabel(index)}`"
+            @click="editPreset(index)"
+          >
+            <span>第 {{ index + 1 }} 项</span>
+            <b :class="{ 'is-empty': typeof value !== 'number' }">{{
+              presetLabel(index)
+            }}</b>
+            <Icon name="chevron-right" size="sm" tone="muted" />
+          </button>
+        </div>
+        <Button
+          label="恢复默认"
+          kind="quiet"
+          shape="pill"
+          inspect-id="yike.settings.presets-restore"
+          @click="restorePresets"
+        />
+      </section>
+      <section :inert="presetStep !== 1" :aria-hidden="presetStep !== 1">
+        <DurationPicker
+          v-model="presetDraft"
+          precision="second"
+          :min="1"
+          :max="86399"
+          label="这一项的时长"
+          inspect-id="yike.settings.presets-duration"
+        />
+        <p v-if="presetError" role="alert">{{ presetError }}</p>
+      </section>
+      <template #actions>
+        <Button
+          v-if="presetStep === 1"
+          label="清空"
+          kind="quiet"
+          shape="pill"
+          inspect-id="yike.settings.presets-clear"
+          @click="clearPreset"
+        />
+        <Button
+          v-if="presetStep === 1"
+          label="保存"
+          kind="accent"
+          shape="pill"
+          size="lg"
+          inspect-id="yike.settings.presets-save"
+          @click="savePreset"
+        />
+        <Button
+          v-else
+          label="完成"
+          kind="accent"
+          shape="pill"
+          size="lg"
+          inspect-id="yike.settings.presets-done"
+          @click="presetsOpen = false"
         />
       </template>
     </FlowSheet>
@@ -492,5 +683,54 @@ async function reset() {
 .faces button:focus-visible {
   outline: var(--pb-border-focus);
   outline-offset: var(--pb-spacing-xxs);
+}
+
+.yike-stack.is-theming,
+.yike-stack.is-theming :deep(*) {
+  transition:
+    background-color var(--pb-motion-duration-medium)
+      var(--pb-motion-easing-standard),
+    color var(--pb-motion-duration-medium) var(--pb-motion-easing-standard),
+    border-color var(--pb-motion-duration-medium)
+      var(--pb-motion-easing-standard),
+    fill var(--pb-motion-duration-medium) var(--pb-motion-easing-standard),
+    stroke var(--pb-motion-duration-medium) var(--pb-motion-easing-standard) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .yike-stack.is-theming,
+  .yike-stack.is-theming :deep(*) {
+    transition: none !important;
+  }
+}
+
+.yike-preset-list {
+  display: flex;
+  flex-direction: column;
+}
+.yike-preset-row {
+  display: flex;
+  align-items: center;
+  gap: var(--pb-spacing-sm);
+  min-block-size: var(--pb-size-touch);
+  padding-block: var(--pb-spacing-sm);
+  border-block-end: var(--pb-border-hairline);
+  color: var(--pb-color-on-surface);
+  text-align: start;
+}
+.yike-preset-row span {
+  flex: none;
+  inline-size: var(--pb-size-avatar-large);
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-body-sm);
+}
+.yike-preset-row b {
+  flex: var(--pb-layout-flex-fill);
+  min-inline-size: var(--pb-layout-zero);
+  font: var(--pb-typography-numeric-content);
+  font-variant-numeric: tabular-nums;
+}
+.yike-preset-row b.is-empty {
+  color: var(--pb-color-on-surface-muted);
+  font: var(--pb-typography-body-sm);
 }
 </style>

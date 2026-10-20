@@ -86,8 +86,8 @@ describe("一刻主题矩阵", () => {
 
   it.each([
     ["mechanical", 18, 12, 32, 700, 54, 700, 312],
-    ["water", 22, 14, 32, 300, 76, 200, 236],
-    ["sundial", 6, 4, 32, 400, 58, 400, 316],
+    ["water", 22, 14, 32, 300, 76, 200, 228],
+    ["sundial", 6, 4, 32, 400, 58, 400, 278],
   ] as const)(
     "保留 %s 的形状、标题与数字比例且浅深模式等价",
     (
@@ -149,19 +149,25 @@ it("签名资源消费的主题变量在六组合中均有真实值", () => {
   }
 });
 
-it("布局节奏、公共动效与禁用透明度主动继承基础包", () => {
+it("布局节奏与禁用透明度继承基础包，动效按 calm 性格取值", () => {
   for (const theme of ["mechanical", "water", "sundial"]) {
     for (const mode of ["light", "dark"]) {
       const base = resolveRuntimeTheme("pbwork-base", "default", mode).values;
       const own = resolveRuntimeTheme("yike", theme, mode).values;
-      const keys = Object.keys(base).filter(
+      const inherited = Object.keys(base).filter(
         (key) =>
-          /^(spacing\.|motion\.|opacity\.)/.test(key) &&
+          /^(spacing\.|opacity\.)/.test(key) &&
           !key.startsWith("opacity.data-"),
       );
-      expect(keys.length).toBeGreaterThan(10);
-      for (const key of keys)
+      expect(inherited.length).toBeGreaterThan(10);
+      for (const key of inherited)
         expect(own[key], `${theme}/${mode}: ${key}`).toEqual(base[key]);
+      // 一刻是安静克制的物件，动效使用 calm 档位（160 / 260 / 400）。
+      expect(own["motion.personality"]).toBe("calm");
+      expect(own["motion.duration-short"]).toBe(160);
+      expect(own["motion.duration-medium"]).toBe(260);
+      expect(own["motion.duration-long"]).toBe(400);
+      expect(own["motion.press-scale"]).toBe(0.99);
     }
   }
 });

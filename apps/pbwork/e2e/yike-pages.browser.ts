@@ -11,7 +11,7 @@ test("D3: timer completion, breaks, laps and confirmations have readable page st
     ["finished", "mechanical", "light", "开始休息"],
     ["long-break", "water", "dark", "暂停"],
     ["stopwatch-running", "sundial", "light", "计圈"],
-    ["countdown-due", "mechanical", "dark", "再计 1 分钟"],
+    ["countdown-due", "mechanical", "dark", "再计25分"],
     ["abandon-confirm", "water", "light", "确认放弃"],
   ]) {
     await open(page, "focus", variant!, face!, mode!);

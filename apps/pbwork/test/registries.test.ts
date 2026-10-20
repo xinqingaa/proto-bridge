@@ -242,7 +242,7 @@ describe("design contracts", () => {
       "start-focus",
       "pause-focus",
       "record-stopwatch",
-      "append-countdown",
+      "repeat-countdown",
       "start-break",
       "lap-stopwatch",
     ]);

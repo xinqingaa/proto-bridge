@@ -805,7 +805,7 @@ export const componentRecords = [
   {
     id: "flow-sheet",
     label: "Flow Sheet",
-    description: "底部多步面板；顶栏为返回、标题和关闭。",
+    description: "底部多步面板；顶栏为返回、标题和关闭，步骤指示器固定在内容下方、操作区上方。",
     category: "feedback",
     view: "feedback/FlowSheet.vue",
     contract: "contracts/flow-sheet.json",

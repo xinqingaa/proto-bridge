@@ -11,7 +11,7 @@ import {
 } from "@/prototypes/yike/statistics";
 
 describe("second precision in Yike", () => {
-  it("completes a five-second countdown below the threshold, appends to the same record and never duplicates it", () => {
+  it("completes a five-second countdown below the threshold, repeats as another five-second record without duplicates", () => {
     let at = new Date("2026-10-20T12:00:00+08:00").getTime();
     const store = createYikeStore({ storage: null, now: () => new Date(at) });
     const timer = createYikeSession(store, () => at);
@@ -25,15 +25,65 @@ describe("second precision in Yike", () => {
     expect(store.data.focusRecords).toHaveLength(1);
     expect(store.data.focusRecords[0]?.durationSeconds).toBe(5);
     timer.tick();
-    timer.append();
-    at += 60_000;
+    timer.repeat();
+    at += 5000;
     timer.tick();
     timer.finish();
     timer.finish();
-    expect(store.data.focusRecords).toHaveLength(1);
-    expect(store.data.focusRecords[0]?.durationSeconds).toBe(65);
+    expect(store.data.focusRecords).toHaveLength(2);
+    expect(
+      store.data.focusRecords.map((record) => record.durationSeconds),
+    ).toEqual([5, 5]);
     expect(timer.countdownSeconds.value).toBe(5);
   });
+
+  it.each([1, 90, 300, 5400, 86399])(
+    "repeats %i seconds independently even if the selected preset changes",
+    (seconds) => {
+      let at = new Date("2026-10-20T12:00:00+08:00").getTime();
+      const store = createYikeStore({ storage: null, now: () => new Date(at) });
+      const timer = createYikeSession(store, () => at);
+      timer.requestMode("countdown");
+      timer.countdownSeconds.value = seconds;
+      timer.toggle();
+      at += seconds * 1000;
+      timer.tick();
+      const original = structuredClone(
+        JSON.parse(JSON.stringify(store.data.focusRecords[0])),
+      );
+      const originalId = store.data.session!.id;
+      timer.countdownSeconds.value = 5;
+      at += 12_000; // Waiting at the result never counts toward the new round.
+      timer.repeat();
+      const repeatedId = store.data.session!.id;
+      expect(repeatedId).not.toBe(originalId);
+      expect(store.data.session).toMatchObject({
+        status: "running",
+        targetMs: seconds * 1000,
+        accumulatedMs: 0,
+        intervals: [],
+        recordedSeconds: 0,
+        sessionStartedAt: at,
+      });
+      expect(timer.countdownSeconds.value).toBe(seconds);
+      timer.repeat();
+      expect(store.data.session!.id).toBe(repeatedId);
+      expect(store.data.focusRecords).toEqual([original]);
+      at += seconds * 1000;
+      timer.tick();
+      timer.tick();
+      expect(
+        store.data.focusRecords.map((record) => record.durationSeconds),
+      ).toEqual([seconds, seconds]);
+      expect(store.data.focusRecords[0]).toEqual(original);
+      timer.repeat();
+      timer.abandon();
+      expect(
+        store.data.focusRecords.map((record) => record.durationSeconds),
+      ).toEqual([seconds, seconds]);
+      expect(timer.pendingRecord.value).toBeNull();
+    },
+  );
 
   it("still asks before an early short finish; cancelling preserves the paused session", () => {
     let at = new Date("2026-10-20T12:00:00+08:00").getTime();

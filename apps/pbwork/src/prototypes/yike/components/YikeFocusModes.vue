@@ -4,7 +4,6 @@ export type YikeFocusMode = "pomodoro" | "stopwatch" | "countdown";
 defineProps<{
   modelValue: YikeFocusMode;
   inspectId: string;
-  face?: string;
   disabled?: boolean;
 }>();
 const emit = defineEmits<{ "update:modelValue": [YikeFocusMode] }>();

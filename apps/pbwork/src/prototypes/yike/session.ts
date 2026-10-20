@@ -2,8 +2,8 @@ import { ref, inject, type InjectionKey } from "vue";
 import { useYikeStore, type YikeStore } from "./model";
 import {
   abandonTimer,
-  appendCountdownMinute,
-  checkpointTimer,
+  advanceTimer,
+  repeatCountdown,
   completeTimer,
   createTimerSession,
   lapTimer,
@@ -18,7 +18,14 @@ import {
 /** One command surface for all pages; clock injection makes demos repeatable. */
 export function createYikeSession(store: YikeStore, now = () => Date.now()) {
   const mode = ref<YikeTimerMode>(store.data.session?.mode ?? "pomodoro");
-  const countdownSeconds = ref(300);
+  // 沿用 5 分钟的默认选中；它不在常用项里时取第一个非空槽位。
+  const countdownPresets = store.data.preferences.countdownPresets;
+  const firstPreset = countdownPresets.find(
+    (value): value is number => typeof value === "number",
+  );
+  const countdownSeconds = ref(
+    countdownPresets.includes(300) ? 300 : (firstPreset ?? 300),
+  );
   const pendingMode = ref<YikeTimerMode | null>(null);
   const dismissedCompletion = new Set<string>();
   const pendingRecord = ref<{
@@ -58,8 +65,13 @@ export function createYikeSession(store: YikeStore, now = () => Date.now()) {
   }
   function tick(at = now()) {
     const current = store.data.session;
-    if (current?.status === "running")
-      store.setSession(checkpointTimer(current, at));
+    if (current?.status === "running") {
+      // Only a stage boundary changes stored state; running time is derived
+      // from the wall clock, so a second-by-second checkpoint would just
+      // rewrite local storage for the whole session.
+      const advanced = advanceTimer(current, at);
+      if (advanced !== current) store.setSession(advanced);
+    }
     queueCompletion();
   }
   function toggle() {
@@ -176,9 +188,15 @@ export function createYikeSession(store: YikeStore, now = () => Date.now()) {
       if (store.data.session)
         store.setSession(lapTimer(store.data.session, now()));
     },
-    append() {
-      if (store.data.session)
-        store.setSession(appendCountdownMinute(store.data.session, now()));
+    repeat() {
+      const current = store.data.session;
+      if (current?.mode !== "countdown" || current.status !== "due") return;
+      const at = now();
+      // Settle the old record before replacing it; the store deduplicates by id.
+      store.setSession(completeTimer(current, at));
+      countdownSeconds.value = current.targetMs / 1000;
+      mode.value = "countdown";
+      store.setSession(repeatCountdown(current, at, crypto.randomUUID()));
     },
     skipBreak() {
       store.leaveBreak();

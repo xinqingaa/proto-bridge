@@ -25,11 +25,7 @@ export default defineScreen({
     {
       id: "day-detail",
       label: "当日记录面板",
-      requiredFragments: [
-        scope.ref("chart"),
-        scope.ref("day-detail"),
-        scope.ref("day-title"),
-      ],
+      requiredFragments: [scope.ref("day-detail"), scope.ref("day-title")],
     },
     ...[
       { id: "only-checkins", label: "仅打卡" },

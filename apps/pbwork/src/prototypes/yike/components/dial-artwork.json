@@ -38,12 +38,29 @@
     "shadowViewHeight": 316,
     "fadeDegrees": 16,
     "fadeSteps": 16,
-    "subduedOpacity": 0.5
+    "subduedOpacity": 0.5,
+    "restOpacity": 0.94
   },
   "circleDegrees": 360,
   "halfDegrees": 180,
   "minuteScale": 60,
   "zero": 0,
   "half": 0.5,
-  "full": 1
+  "full": 1,
+  "beat": {
+    "secondWindow": 0.35,
+    "minuteWindow": 0.02,
+    "gripSecond": 0.22,
+    "gripMinute": 0.3,
+    "rippleMinRadius": 8,
+    "rippleMaxRadius": 78,
+    "gnomonSecondRadius": 8,
+    "gnomonMinuteRadius": 30,
+    "rippleFlatten": 0.16,
+    "rippleMinuteOpacity": 0.5,
+    "surfaceRest": 0.72,
+    "surfaceSecond": 0.28,
+    "shadowSecond": 0.06,
+    "gnomonOpacity": 0.4
+  }
 }

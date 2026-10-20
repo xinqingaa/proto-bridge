@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   advanceTimer,
-  appendCountdownMinute,
+  repeatCountdown,
   completeTimer,
   createTimerSession,
   elapsedMs,
@@ -50,7 +50,7 @@ describe("Yike deterministic timer transitions", () => {
     expect(elapsedMs(restored, 900_000)).toBe(45_000);
   });
 
-  it("clamps at due, appends repeated countdown minutes to the same elapsed session", () => {
+  it("clamps at due and repeats with a fresh identity and elapsed time", () => {
     const timer = createTimerSession({
       id: "s1",
       mode: "countdown",
@@ -64,13 +64,13 @@ describe("Yike deterministic timer transitions", () => {
     expect(due.status).toBe("due");
     expect(due.accumulatedMs).toBe(60_000);
     expect(advanceTimer(due, 90_000)).toBe(due);
-    const appended = appendCountdownMinute(due, 100_000);
-    expect(appended.id).toBe("s1");
-    expect(appended.targetMs).toBe(120_000);
-    expect(elapsedMs(appended, 130_000)).toBe(90_000);
-    const dueAgain = advanceTimer(appended, 160_000);
+    const repeated = repeatCountdown(due, 100_000, "s2");
+    expect(repeated.id).toBe("s2");
+    expect(repeated.targetMs).toBe(60_000);
+    expect(elapsedMs(repeated, 130_000)).toBe(30_000);
+    const dueAgain = advanceTimer(repeated, 160_000);
     expect(dueAgain.status).toBe("due");
-    expect(dueAgain.accumulatedMs).toBe(120_000);
+    expect(dueAgain.accumulatedMs).toBe(60_000);
     expect(shouldPersistFocusRecord(dueAgain)).toBe(true);
   });
 
