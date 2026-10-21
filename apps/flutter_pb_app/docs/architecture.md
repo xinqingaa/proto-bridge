@@ -39,7 +39,7 @@ theme    -> storage（仅主题偏好）
 
 ## 本地存储
 
-只通过 `AppPrefs` 访问 MMKV。生产实现为 `MmkvAppPrefs`，启动时初始化并 override `appPrefsProvider`。测试使用 `test/support/fake_app_prefs.dart`，不加载原生存储。当前偏好 key：
+只通过 `AppPrefs` 访问 MMKV。生产实现为 `MmkvAppPrefs`，由 `AppStartup` 等待初始化成功后 override `appPrefsProvider`。测试使用 `test/support/fake_app_prefs.dart`，不加载原生存储。当前偏好 key：
 
 - `theme_mode`：`light` | `dark`
 - `theme_pack`：已注册的类型化主题包 ID

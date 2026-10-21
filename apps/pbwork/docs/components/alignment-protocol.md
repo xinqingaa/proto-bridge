@@ -96,10 +96,10 @@ Role 表达跨组件的产品职责，`componentId` 表达精确组件身份。`
 
 ## 图标
 
-DS 基础 `icon` 承载 **PBWork 自绘 SVG** 策展清单，保留既有稳定 icon id；接收调用方组件的导航仍兼容 Lucide，不能将调用方图形误标成自绘。图形定义位于 `_shared/glyph-artwork.json`，预览和下载复用同一源；SVG 坐标及笔画是受控图形资产，不是实例自由样式。Playground 仅对 `icon`、`icon-button` 使用 `gallery` 平铺。Flutter 换 `lucide_icons`（或同类）属 P1.5。
+DS 基础 `icon` 承载 **PBWork 自绘 SVG** 策展清单，保留既有稳定 icon id；接收调用方组件的导航仍兼容 Lucide，不能将调用方图形误标成自绘。原型新增图标统一收录到 DS，使用原生 SVG 元素并登记 owner，具体制作与按原型同步规则见 [Icon](action/icon.md)。图形定义位于 `_shared/glyphs/` 的独立 SVG，`glyph-artwork.json` 仅登记图标元数据，预览和下载复用原 SVG；SVG 坐标及笔画是受控图形资产，不是实例自由样式。Icon 资源入口使用手机框外的目录与预览，Icon Button 保留组件样板。Flutter 从同源 SVG 导出 PNG；以同名字体图标替换原图形属于偏离。
 
 ## 非目标
 
 - 不要求 Vue propsSchema ↔ Dart API 同名同构
-- 不做 tokens.json → Dart codegen；Target 维护语义 accessor 映射
+- Core 不生成 Dart 组件 API 或决定 Target 结构；主题值由目标导出器根据 Core 解析表生成，语义 accessor 映射由 Target 维护
 - 不把产品 `Common*` 表硬编码进 Core

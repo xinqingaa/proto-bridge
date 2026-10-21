@@ -66,7 +66,6 @@ usePbInspect({
     "typography.caption",
     "typography.subtitle",
     "radius.surface",
-    "radius.control",
     "border.focus",
     "typography.caption-strong",
     "size.icon",
@@ -74,7 +73,7 @@ usePbInspect({
   getTokenBindings: () => ({
     selectionTint: "tabbar.selection-tint",
     radius: "radius.surface",
-    selectionRadius: "radius.control",
+    selectionRadius: "radius.surface",
     inset: "spacing.xs",
     outerInset: "spacing.md",
     duration: "motion.duration-long",
@@ -192,7 +191,10 @@ usePbInspect({
   left: var(--pb-layout-zero);
   width: var(--pb-selection-width);
   transform: translateX(var(--pb-selection-left));
-  border-radius: var(--pb-radius-control);
+  border-radius: max(
+    var(--pb-layout-zero),
+    calc(var(--pb-radius-surface) - var(--pb-spacing-xs))
+  );
   pointer-events: none;
   opacity: var(--pb-opacity-hidden);
 }
@@ -218,7 +220,10 @@ usePbInspect({
   min-height: var(--pb-size-navigation-bar);
   padding: var(--pb-spacing-xs) var(--pb-spacing-md);
   border: none;
-  border-radius: var(--pb-radius-control);
+  border-radius: max(
+    var(--pb-layout-zero),
+    calc(var(--pb-radius-surface) - var(--pb-spacing-xs))
+  );
   background: transparent;
   color: var(--pb-color-on-surface-muted);
   font: var(--pb-typography-caption);

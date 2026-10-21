@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { Plus } from "lucide-vue-next";
+import Icon from "@/design-system/components/action/Icon.vue";
 import { useRoute, useRouter } from "vue-router";
 import { vPb } from "@/authoring/pb-style";
 import { yikeNavigation } from "../../navigation";
@@ -190,7 +190,7 @@ function resetCorruptData() {
           })
         "
       >
-        <Plus aria-hidden="true" />
+        <Icon name="plus" />
       </button>
     </header>
     <p

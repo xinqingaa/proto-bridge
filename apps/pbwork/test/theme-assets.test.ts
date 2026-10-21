@@ -37,3 +37,39 @@ it("hashes exact asset bytes in pack and prototype namespaces, including inherit
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+it("maps centralized SVG bytes to stable theme identities and watches the actual source", () => {
+  const root = mkdtempSync(join(tmpdir(), "pb-theme-glyphs-"));
+  try {
+    const source = "src/design-system/components/_shared/glyphs/demo/dial.svg";
+    const catalog = "src/prototypes/demo/theme/artwork.json";
+    const bytes = Buffer.from('<svg color="#b94c30"><circle r="4"/></svg>');
+    for (const file of [source, catalog])
+      mkdirSync(join(root, file, ".."), { recursive: true });
+    writeFileSync(join(root, source), bytes);
+    writeFileSync(
+      join(root, catalog),
+      JSON.stringify({
+        assets: [{ file: "assets/dial.svg", sourceFile: "demo/dial.svg" }],
+      }),
+    );
+    const watched: string[] = [];
+    expect(collectThemeAssetHashes(root, (file) => watched.push(file))).toEqual(
+      {
+        "/src/prototypes/demo/theme/assets/dial.svg": createHash("sha1")
+          .update(bytes)
+          .digest("hex"),
+      },
+    );
+    expect(watched).toContain(join(root, source));
+    expect(watched).toContain(join(root, catalog));
+    writeFileSync(join(root, source), Buffer.from('<svg color="#112233"/>'));
+    expect(
+      collectThemeAssetHashes(root)[
+        "/src/prototypes/demo/theme/assets/dial.svg"
+      ],
+    ).not.toBe(createHash("sha1").update(bytes).digest("hex"));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

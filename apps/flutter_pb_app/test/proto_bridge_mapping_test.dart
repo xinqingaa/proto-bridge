@@ -372,7 +372,7 @@ void main() {
     );
   });
 
-  test('PBWork icons retain one 3x asset for every public identity', () {
+  test('PBWork icons retain one 8x asset for every public identity', () {
     for (final name in CommonIconName.values) {
       expect(File(name.assetPath).existsSync(), isTrue);
     }

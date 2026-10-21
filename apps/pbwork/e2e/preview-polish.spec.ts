@@ -47,36 +47,72 @@ test("source lists every actual theme independently, pins the name column and pe
   await page.screenshot({ path: "/tmp/pbwork-polish-source-matrix.png" });
 });
 
-test("icons export their rendered original vectors and selected transparent PNG dimensions", async ({
+test("icons preserve original SVG bytes and export colored 3x PNG outside the phone", async ({
   page,
 }) => {
   await page.goto("/workbench/components/icon");
-  await page.getByRole("button", { name: "选择 home", exact: true }).click();
+  await expect(page.locator("[data-preview-device]")).toHaveCount(0);
+  await page
+    .getByRole("button", {
+      name: "选择 yike-mechanical-focus-high",
+      exact: true,
+    })
+    .click();
   const [svg] = await Promise.all([
     page.waitForEvent("download"),
-    page.getByRole("button", { name: "下载 SVG" }).click(),
+    page.getByRole("button", { name: "下载 SVG", exact: true }).click(),
   ]);
-  const xml = readFileSync((await svg.path())!, "utf8");
-  expect(xml).toContain('viewBox="0 0 24 24"');
-  expect(xml).toContain("M3.5 10.5 12 3");
-  expect(svg.suggestedFilename()).toBe("pbwork-home.svg");
-  await page
-    .getByRole("group", { name: "导出格式" })
-    .getByRole("button", { name: "PNG", exact: true })
-    .click();
-  await page
-    .getByRole("group", { name: "导出倍率" })
-    .getByRole("button", { name: "3×", exact: true })
-    .click();
+  const original = readFileSync(
+    "src/design-system/components/_shared/glyphs/yike/yike-mechanical-focus-high.svg",
+  );
+  expect(readFileSync((await svg.path())!)).toEqual(original);
+  await expect(page.locator(".large-preview svg")).toHaveAttribute(
+    "color",
+    "#b94c30",
+  );
   const [png] = await Promise.all([
     page.waitForEvent("download"),
-    page.getByRole("button", { name: "下载 PNG" }).click(),
+    page.getByRole("button", { name: "下载 PNG", exact: true }).click(),
   ]);
   const bytes = readFileSync((await png.path())!);
-  const expected = Number(xml.match(/width="(\d+)"/)![1]) * 3;
-  expect(bytes.readUInt32BE(16)).toBe(expected);
-  expect(bytes.readUInt32BE(20)).toBe(expected);
+  expect(bytes.readUInt32BE(16)).toBe(44 * 3);
+  expect(bytes.readUInt32BE(20)).toBe(44 * 3);
   expect(bytes[25]).toBe(6);
+  expect(png.suggestedFilename()).toBe(
+    "pbwork-yike-mechanical-focus-high@3x.png",
+  );
+});
+
+test("theme artwork exposes session variants and exports the selected SVG layer", async ({
+  page,
+}) => {
+  await page.goto("/workbench/components/icon");
+  await page.getByRole("button", { name: "主题图形", exact: true }).click();
+  await expect(page.locator(".icon-options button")).toHaveCount(8);
+  await page.getByRole("button", { name: "选择 机械 · 浅色", exact: true }).click();
+  const [originalSize] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "下载 PNG", exact: true }).click(),
+  ]);
+  const originalPixels = readFileSync((await originalSize.path())!);
+  expect(originalPixels.readUInt32BE(16)).toBe(300);
+  expect(originalPixels.readUInt32BE(20)).toBe(300);
+  expect(originalSize.suggestedFilename()).toBe("pbwork-yike-mechanical-light@1x.png");
+  await page
+    .getByRole("button", { name: "选择 机械 · 浅色 · 专注过程", exact: true })
+    .click();
+  await page.locator(".export-panel .wb-select").click();
+  await page.getByRole("option", { name: "进度", exact: true }).click();
+  const [svg] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "下载 SVG", exact: true }).click(),
+  ]);
+  expect(readFileSync((await svg.path())!, "utf8")).toContain(
+    'viewBox="0 300 300 300"',
+  );
+  expect(svg.suggestedFilename()).toBe(
+    "pbwork-yike-mechanical-light-plain--progress.svg",
+  );
 });
 
 test("glass filters the backdrop, follows host contours and respects reduced transparency", async ({

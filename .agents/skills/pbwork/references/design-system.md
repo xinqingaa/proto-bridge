@@ -50,7 +50,7 @@ Follow `apps/pbwork/docs/components/alignment-protocol.md`:
 
 Check the JSON Contract, Vue implementation, `components/registry.ts`, relevant
 `components/scenarios.ts`, component documentation, and tests. Do not change
-only Vue or only documentation when semantics changed. Use the stable PBWork SVG registry for DS icons; caller-supplied Lucide components remain supported. Declare the actual icon pack.
+only Vue or only documentation when semantics changed. Use the stable PBWork SVG registry for DS icons; new prototype icons follow [Icon authoring and sync](../../../../apps/pbwork/docs/components/action/icon.md), using native SVG and explicit ownership. Theme SVG files share the same canonical glyphs storage; theme catalogs hold references only. Follow that document for paths and export policy instead of duplicating rules here. Existing caller-supplied Lucide components remain supported. Declare the actual icon pack.
 Check `apps/pbwork/docs/components/audit-large-types.md` for suspiciously large type.
 
 ## Token and Theme atomicity

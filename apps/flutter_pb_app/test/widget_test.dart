@@ -19,33 +19,41 @@ Future<void> start(WidgetTester tester, FakeAppPrefs prefs) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> enterGallery(WidgetTester tester) async {
-  await tester.tap(find.text('开始'));
-  await tester.pump();
-  await tester.pumpAndSettle();
-}
-
 void main() {
-  testWidgets(
-    'startup fills the viewport and replaces itself with the gallery',
-    (tester) async {
-      addTearDown(() => tester.binding.setSurfaceSize(null));
-      await start(tester, FakeAppPrefs());
-      expect(tester.getSize(find.byType(CommonLaunchScreen)).width, 390);
-      await enterGallery(tester);
-      expect(find.byType(CommonBottomNav), findsOneWidget);
-      expect(find.text('主题与外观'), findsOneWidget);
-      final context = tester.element(find.byType(CommonBottomNav));
-      expect(Navigator.of(context).canPop(), isFalse);
-    },
-  );
+  testWidgets('authored colored icons bypass theme tinting', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: TS(brightness: Brightness.dark).toThemeData(),
+        home: const Scaffold(
+          body: CommonIcon(
+            name: CommonIconName.yikeMechanicalFocusHigh,
+            tone: CommonIconTone.primary,
+          ),
+        ),
+      ),
+    );
+    final image = tester.widget<Image>(find.byType(Image));
+    expect(image.color, isNull);
+    expect(image.filterQuality, FilterQuality.high);
+  });
+
+  testWidgets('ready app enters the gallery directly without a launch route', (
+    tester,
+  ) async {
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await start(tester, FakeAppPrefs());
+    expect(find.byType(CommonLaunchScreen), findsNothing);
+    expect(find.byType(CommonBottomNav), findsOneWidget);
+    expect(find.text('主题与外观'), findsOneWidget);
+    final context = tester.element(find.byType(CommonBottomNav));
+    expect(Navigator.of(context).canPop(), isFalse);
+  });
   testWidgets(
     'settings select real themes and modes and restore them after app restart',
     (tester) async {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       final prefs = FakeAppPrefs();
       await start(tester, prefs);
-      await enterGallery(tester);
       await tester.tap(find.byTooltip('展示设置'));
       await tester.pump();
       await tester.pumpAndSettle();
@@ -70,7 +78,6 @@ void main() {
       expect(prefs.readThemeMode(), 'dark');
       await tester.pumpWidget(const SizedBox.shrink());
       await start(tester, prefs);
-      await enterGallery(tester);
       final restored = TS.of(tester.element(find.byType(CommonBottomNav)));
       expect(restored.pack.id, 'yike/water');
       expect(restored.isDark, isTrue);
@@ -81,7 +88,6 @@ void main() {
     (tester) async {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await start(tester, FakeAppPrefs());
-      await enterGallery(tester);
       await tester.tap(find.text('组件').last);
       await tester.pump();
       await tester.tap(find.text('Stepper'));

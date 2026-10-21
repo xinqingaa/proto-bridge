@@ -47,7 +47,9 @@ function extensionFor(device: import("./model").PreviewDeviceSession) {
       requested ? `${requested.ownerPrototypeId} · 自有组件` : 'DS 基础组件'
     "
   >
+    <IconCatalog v-if="componentId === 'icon'" />
     <PreviewComparison
+      v-else
       :key="componentId"
       :resource-id="componentId"
       :token-ids="tokenIds"
@@ -64,9 +66,7 @@ function extensionFor(device: import("./model").PreviewDeviceSession) {
           "
           :device="sample.device"
           :attach="sample.attach"
-          :table="sample.table" /><IconCatalog
-          v-else-if="componentId === 'icon'"
-          :device="sample.device" /><GlassSample
+          :table="sample.table" /><GlassSample
           v-else-if="componentId === 'glass-surface'" /><LaunchPreview
           v-else-if="componentId === 'launch-screen'"
           :device="sample.device" /><TabbarPreview

@@ -6,6 +6,7 @@ import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { createHash } from "node:crypto";
 import { flutterThemeSource } from "./lib/flutter-theme-source.mjs";
+import { parseSvgArtwork, svgForView } from "../apps/pbwork/src/design-system/components/_shared/svg-artwork.mjs";
 import { repoRoot, optionValue } from "./lib/pb-script-utils.mjs";
 import { parseThemeColor } from "../packages/core/dist/v2/theme/index.js";
 const q = (value) => JSON.stringify(value).replaceAll("$", "\\$");
@@ -198,6 +199,35 @@ export async function exportFlutterThemes({
   } finally {
     await rm(temp, { recursive: true, force: true });
   }
+  const artwork = {};
+  for (const packId of selected) {
+    const catalog = source.artwork.get(packId);
+    if (!catalog) continue;
+    if (catalog.packId !== packId) throw new Error(`Artwork owner mismatch: ${packId}`);
+    for (const entry of catalog.assets) {
+      if (!source.packs.get(packId).files[entry.file]) throw new Error(`Unregistered artwork file: ${entry.file}`);
+      const svg = await readFile(source.assetFiles.get(packId).get(entry.file), "utf8");
+      const parsed = parseSvgArtwork(svg);
+      if (entry.views.length !== parsed.views.length || entry.views.some(view => !parsed.views.some(actual => actual.id === view.id && actual.viewBox === view.viewBox))) throw new Error(`Artwork view mismatch: ${entry.id}`);
+      const prefix = `assets/themes/${packId}/${entry.file.replace(/\.svg$/, "")}`;
+      // Keep the source canvas and cover the largest authored dial at DPR 3.
+      const displayWidth = Math.max(parsed.width, ...tables
+        .filter(t => t.identity.packId === packId && t.identity.theme === entry.theme)
+        .map(t => Number(t.values["size.plot"]) || 0));
+      const scale = 3 * displayWidth / parsed.width;
+      const layers = {};
+      const layerEntry = entry.layerAsset ? catalog.assets.find(a => a.id === entry.layerAsset) : entry;
+      if (!layerEntry || entry.views.some(v => !layerEntry.views.some(other => other.id === v.id && other.viewBox === v.viewBox))) throw new Error(`Invalid shared layers: ${entry.id}`);
+      for (const view of [{id: "", viewBox: parsed.viewBox}, ...entry.views]) {
+        const viewPrefix = view.id ? `assets/themes/${packId}/${layerEntry.file.replace(/\.svg$/, "")}` : prefix;
+        const target = `${viewPrefix}${view.id ? "--" + view.id : ""}.png`;
+        const [, , width, height] = view.viewBox.split(/\s+/).map(Number);
+        if (!view.id || !entry.layerAsset) assets.set(target, {packId, file: entry.file, view: view.id, viewBox: view.viewBox, width, height, scale});
+        if (view.id) layers[view.id] = {file: target, viewBox: view.viewBox, width, height};
+      }
+      artwork[`${packId}/${entry.id}`] = {...entry, packId, source: {packId, file: entry.sourceFile, sha1: source.packs.get(packId).files[entry.file]}, raster: `${prefix}.png`, width: parsed.width, height: parsed.height, scale, layers};
+    }
+  }
   const metadata = {
     schemaVersion: 1,
     scope: prototype ? { prototype } : { all: true },
@@ -210,6 +240,7 @@ export async function exportFlutterThemes({
         .update(JSON.stringify(t.values))
         .digest("hex"),
     })),
+    artwork,
     assets: Object.fromEntries(
       [...assets].map(([target, a]) => [
         target,
@@ -228,8 +259,10 @@ export async function exportFlutterThemes({
       throw new Error(
         "Flutter theme implementations or scope drifted. Regenerate selected themes.",
       );
-    for (const target of assets.keys())
-      await readFile(path.join(targetRoot, target));
+    for (const [target, asset] of assets) {
+      const bytes = await readFile(path.join(targetRoot, target));
+      if (asset.width && (bytes.readUInt32BE(16) !== Math.round(asset.width * asset.scale) || bytes.readUInt32BE(20) !== Math.round(asset.height * asset.scale))) throw new Error(`Artwork raster size mismatch: ${target}`);
+    }
     return metadata;
   }
   await rm(path.join(targetRoot, "assets/themes"), {
@@ -260,24 +293,26 @@ export async function exportFlutterThemes({
       const page = await browser.newPage();
       for (const [target, a] of assets) {
         const bytes = await readFile(
-          path.join(source.roots.get(a.packId), a.file),
+          source.assetFiles.get(a.packId).get(a.file),
         );
         let png = bytes;
         if (a.file.endsWith(".svg")) {
-          const raw = await page.evaluate(async (svg) => {
+          const rendered = svgForView(bytes.toString("utf8"), a.viewBox);
+          const dimensions = parseSvgArtwork(rendered);
+          const raw = await page.evaluate(async ({svg, width, height, scale}) => {
             const img = new Image();
             img.src =
               "data:image/svg+xml;base64," +
               btoa(unescape(encodeURIComponent(svg)));
             await img.decode();
             const canvas = document.createElement("canvas");
-            canvas.width = (img.naturalWidth || 300) * 3;
-            canvas.height = (img.naturalHeight || 300) * 3;
+            canvas.width = Math.round(width * scale);
+            canvas.height = Math.round(height * scale);
             canvas
               .getContext("2d")
               .drawImage(img, 0, 0, canvas.width, canvas.height);
             return canvas.toDataURL("image/png").split(",")[1];
-          }, bytes.toString("utf8"));
+          }, {svg: rendered, width: dimensions.width, height: dimensions.height, scale: a.scale ?? 3});
           png = Buffer.from(raw, "base64");
         }
         await mkdir(path.dirname(path.join(targetRoot, target)), {

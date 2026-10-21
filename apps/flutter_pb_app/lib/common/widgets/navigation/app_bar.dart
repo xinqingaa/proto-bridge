@@ -51,7 +51,10 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       forceMaterialTransparency: transparent,
       flexibleSpace: glass
-          ? const CommonGlassSurface(child: SizedBox.expand())
+          ? const CommonGlassSurface(
+              edges: CommonGlassEdges.bottom,
+              child: SizedBox.expand(),
+            )
           : null,
       toolbarHeight: preferredSize.height,
       title: title.trim().isEmpty
@@ -66,7 +69,16 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: elevated ? ts.elevation.card : ts.elevation.none,
       backgroundColor: transparent ? Colors.transparent : ts.colors.surface,
       foregroundColor: ts.colors.onSurface,
-      shape: Border(bottom: ts.border.hairline),
+      systemOverlayStyle: ts.overlayStyleFor(
+        glass
+            ? Color.alphaBlend(ts.colors.glassTint, ts.colors.background)
+            : transparent
+            ? ts.colors.background
+            : ts.colors.surface,
+      ),
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: ts.elevation.none,
+      shape: glass ? null : Border(bottom: ts.border.hairline),
       leading: showBack
           ? CommonIconButton(
               name: CommonIconName.chevronRight,

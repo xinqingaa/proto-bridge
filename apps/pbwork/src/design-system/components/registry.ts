@@ -81,7 +81,7 @@ export const componentRecords = [
   {
     id: "icon",
     label: "Icon",
-    description: "PBWork 自绘 SVG 图标；按稳定 name 渲染，尺寸与颜色走 Token。",
+    description: "原始 SVG 图标；尺寸走 Token，单色随主题，自带颜色保留原稿。",
     category: "action",
     view: "action/Icon.vue",
     contract: "contracts/icon.json",

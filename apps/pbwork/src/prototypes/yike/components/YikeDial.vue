@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import themeArtwork from "../theme/artwork.json";
 import { computed, useId, ref, watch, inject } from "vue";
 import { useToken, ThemeTableKey } from "@/design-system/theme/runtime-theme";
 import { themeAssetUrl } from "@/design-system/theme/sources";
@@ -58,11 +59,16 @@ const mark = useToken("asset.brand-mark");
 const image = computed(() => {
   const asset = mark.value as ResolvedThemeAsset;
   if (!asset || typeof asset !== "object") return undefined;
-  const plain =
+  const base = themeArtwork.assets.find((entry) => entry.file === asset.file);
+  const sessionId =
+    base && "sessionAsset" in base ? base.sessionAsset : undefined;
+  const session = themeArtwork.assets.find((entry) => entry.id === sessionId);
+  const file =
     props.face === "mechanical" && props.scale === "session"
-      ? asset.file.replace(/\.svg$/, "-plain.svg")
+      ? session?.file
       : asset.file;
-  return themeAssetUrl(asset.packId, plain);
+  if (!file) throw new Error("Missing registered session artwork");
+  return themeAssetUrl(asset.packId, file);
 });
 const geometry = computed(() => artwork[props.face]);
 const ratio = computed(() =>

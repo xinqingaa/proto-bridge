@@ -1477,7 +1477,7 @@
     {
       "identity": {
         "packId": "yike",
-        "packDigest": "sha1:8b7897141e6f35ce242872e44a1af3dd043ddf6d",
+        "packDigest": "sha1:d90b4ecdd9e55ec9620b59a75d6d6353530ff5c2",
         "mode": "light",
         "theme": "mechanical"
       },
@@ -2215,7 +2215,7 @@
     {
       "identity": {
         "packId": "yike",
-        "packDigest": "sha1:8b7897141e6f35ce242872e44a1af3dd043ddf6d",
+        "packDigest": "sha1:d90b4ecdd9e55ec9620b59a75d6d6353530ff5c2",
         "mode": "light",
         "theme": "water"
       },
@@ -2953,7 +2953,7 @@
     {
       "identity": {
         "packId": "yike",
-        "packDigest": "sha1:8b7897141e6f35ce242872e44a1af3dd043ddf6d",
+        "packDigest": "sha1:d90b4ecdd9e55ec9620b59a75d6d6353530ff5c2",
         "mode": "light",
         "theme": "sundial"
       },
@@ -3691,7 +3691,7 @@
     {
       "identity": {
         "packId": "yike",
-        "packDigest": "sha1:8b7897141e6f35ce242872e44a1af3dd043ddf6d",
+        "packDigest": "sha1:d90b4ecdd9e55ec9620b59a75d6d6353530ff5c2",
         "mode": "dark",
         "theme": "mechanical"
       },
@@ -4429,7 +4429,7 @@
     {
       "identity": {
         "packId": "yike",
-        "packDigest": "sha1:8b7897141e6f35ce242872e44a1af3dd043ddf6d",
+        "packDigest": "sha1:d90b4ecdd9e55ec9620b59a75d6d6353530ff5c2",
         "mode": "dark",
         "theme": "water"
       },
@@ -5167,7 +5167,7 @@
     {
       "identity": {
         "packId": "yike",
-        "packDigest": "sha1:8b7897141e6f35ce242872e44a1af3dd043ddf6d",
+        "packDigest": "sha1:d90b4ecdd9e55ec9620b59a75d6d6353530ff5c2",
         "mode": "dark",
         "theme": "sundial"
       },
@@ -5903,35 +5903,635 @@
       "digest": "17e458fc0e87494c8bb0af48a0e5933cff63cd2db8150a72a6fc221ed61e543c"
     }
   ],
+  "artwork": {
+    "yike/mechanical-light": {
+      "id": "mechanical-light",
+      "label": "机械 · 浅色",
+      "file": "assets/mechanical-light.svg",
+      "theme": "mechanical",
+      "mode": "light",
+      "usage": "品牌与表盘基础图形",
+      "views": [
+        {
+          "id": "progress",
+          "label": "进度",
+          "viewBox": "0 300 300 300"
+        },
+        {
+          "id": "rest",
+          "label": "休息",
+          "viewBox": "0 600 300 300"
+        },
+        {
+          "id": "paused",
+          "label": "暂停",
+          "viewBox": "0 900 300 300"
+        }
+      ],
+      "sessionAsset": "mechanical-light-plain",
+      "sourceFile": "yike/mechanical-light.svg",
+      "packId": "yike",
+      "source": {
+        "packId": "yike",
+        "file": "yike/mechanical-light.svg",
+        "sha1": "62617b3b8c62a9cb3f1d72b97d9b633002f58ddc"
+      },
+      "raster": "assets/themes/yike/assets/mechanical-light.png",
+      "width": 300,
+      "height": 300,
+      "scale": 3.12,
+      "layers": {
+        "progress": {
+          "file": "assets/themes/yike/assets/mechanical-light--progress.png",
+          "viewBox": "0 300 300 300",
+          "width": 300,
+          "height": 300
+        },
+        "rest": {
+          "file": "assets/themes/yike/assets/mechanical-light--rest.png",
+          "viewBox": "0 600 300 300",
+          "width": 300,
+          "height": 300
+        },
+        "paused": {
+          "file": "assets/themes/yike/assets/mechanical-light--paused.png",
+          "viewBox": "0 900 300 300",
+          "width": 300,
+          "height": 300
+        }
+      }
+    },
+    "yike/mechanical-light-plain": {
+      "id": "mechanical-light-plain",
+      "label": "机械 · 浅色 · 专注过程",
+      "file": "assets/mechanical-light-plain.svg",
+      "theme": "mechanical",
+      "mode": "light",
+      "usage": "专注过程表盘，无外围装饰",
+      "views": [
+        {
+          "id": "progress",
+          "label": "进度",
+          "viewBox": "0 300 300 300"
+        },
+        {
+          "id": "rest",
+          "label": "休息",
+          "viewBox": "0 600 300 300"
+        },
+        {
+          "id": "paused",
+          "label": "暂停",
+          "viewBox": "0 900 300 300"
+        }
+      ],
+      "layerAsset": "mechanical-light",
+      "sourceFile": "yike/mechanical-light-plain.svg",
+      "packId": "yike",
+      "source": {
+        "packId": "yike",
+        "file": "yike/mechanical-light-plain.svg",
+        "sha1": "87a857d16d3aace972339d7053de6d75de6c9ca8"
+      },
+      "raster": "assets/themes/yike/assets/mechanical-light-plain.png",
+      "width": 300,
+      "height": 300,
+      "scale": 3.12,
+      "layers": {
+        "progress": {
+          "file": "assets/themes/yike/assets/mechanical-light--progress.png",
+          "viewBox": "0 300 300 300",
+          "width": 300,
+          "height": 300
+        },
+        "rest": {
+          "file": "assets/themes/yike/assets/mechanical-light--rest.png",
+          "viewBox": "0 600 300 300",
+          "width": 300,
+          "height": 300
+        },
+        "paused": {
+          "file": "assets/themes/yike/assets/mechanical-light--paused.png",
+          "viewBox": "0 900 300 300",
+          "width": 300,
+          "height": 300
+        }
+      }
+    },
+    "yike/mechanical-dark": {
+      "id": "mechanical-dark",
+      "label": "机械 · 深色",
+      "file": "assets/mechanical-dark.svg",
+      "theme": "mechanical",
+      "mode": "dark",
+      "usage": "品牌与表盘基础图形",
+      "views": [
+        {
+          "id": "progress",
+          "label": "进度",
+          "viewBox": "0 300 300 300"
+        },
+        {
+          "id": "rest",
+          "label": "休息",
+          "viewBox": "0 600 300 300"
+        },
+        {
+          "id": "paused",
+          "label": "暂停",
+          "viewBox": "0 900 300 300"
+        }
+      ],
+      "sessionAsset": "mechanical-dark-plain",
+      "sourceFile": "yike/mechanical-dark.svg",
+      "packId": "yike",
+      "source": {
+        "packId": "yike",
+        "file": "yike/mechanical-dark.svg",
+        "sha1": "caa6ec16df0c3e4e4619f22b9735e17a453d7caa"
+      },
+      "raster": "assets/themes/yike/assets/mechanical-dark.png",
+      "width": 300,
+      "height": 300,
+      "scale": 3.12,
+      "layers": {
+        "progress": {
+          "file": "assets/themes/yike/assets/mechanical-dark--progress.png",
+          "viewBox": "0 300 300 300",
+          "width": 300,
+          "height": 300
+        },
+        "rest": {
+          "file": "assets/themes/yike/assets/mechanical-dark--rest.png",
+          "viewBox": "0 600 300 300",
+          "width": 300,
+          "height": 300
+        },
+        "paused": {
+          "file": "assets/themes/yike/assets/mechanical-dark--paused.png",
+          "viewBox": "0 900 300 300",
+          "width": 300,
+          "height": 300
+        }
+      }
+    },
+    "yike/mechanical-dark-plain": {
+      "id": "mechanical-dark-plain",
+      "label": "机械 · 深色 · 专注过程",
+      "file": "assets/mechanical-dark-plain.svg",
+      "theme": "mechanical",
+      "mode": "dark",
+      "usage": "专注过程表盘，无外围装饰",
+      "views": [
+        {
+          "id": "progress",
+          "label": "进度",
+          "viewBox": "0 300 300 300"
+        },
+        {
+          "id": "rest",
+          "label": "休息",
+          "viewBox": "0 600 300 300"
+        },
+        {
+          "id": "paused",
+          "label": "暂停",
+          "viewBox": "0 900 300 300"
+        }
+      ],
+      "layerAsset": "mechanical-dark",
+      "sourceFile": "yike/mechanical-dark-plain.svg",
+      "packId": "yike",
+      "source": {
+        "packId": "yike",
+        "file": "yike/mechanical-dark-plain.svg",
+        "sha1": "1dffce8e323d18cb70619830b2a698fbc2f30e0c"
+      },
+      "raster": "assets/themes/yike/assets/mechanical-dark-plain.png",
+      "width": 300,
+      "height": 300,
+      "scale": 3.12,
+      "layers": {
+        "progress": {
+          "file": "assets/themes/yike/assets/mechanical-dark--progress.png",
+          "viewBox": "0 300 300 300",
+          "width": 300,
+          "height": 300
+        },
+        "rest": {
+          "file": "assets/themes/yike/assets/mechanical-dark--rest.png",
+          "viewBox": "0 600 300 300",
+          "width": 300,
+          "height": 300
+        },
+        "paused": {
+          "file": "assets/themes/yike/assets/mechanical-dark--paused.png",
+          "viewBox": "0 900 300 300",
+          "width": 300,
+          "height": 300
+        }
+      }
+    },
+    "yike/water-light": {
+      "id": "water-light",
+      "label": "水位 · 浅色",
+      "file": "assets/water-light.svg",
+      "theme": "water",
+      "mode": "light",
+      "usage": "品牌与表盘基础图形",
+      "views": [
+        {
+          "id": "rest",
+          "label": "休息",
+          "viewBox": "0 368 236 368"
+        },
+        {
+          "id": "wave",
+          "label": "波纹",
+          "viewBox": "0 736 240 12"
+        },
+        {
+          "id": "glass",
+          "label": "玻璃",
+          "viewBox": "0 752 236 368"
+        }
+      ],
+      "sourceFile": "yike/water-light.svg",
+      "packId": "yike",
+      "source": {
+        "packId": "yike",
+        "file": "yike/water-light.svg",
+        "sha1": "8403063d5647e00e0b92c57867e4342651ba35c7"
+      },
+      "raster": "assets/themes/yike/assets/water-light.png",
+      "width": 236,
+      "height": 368,
+      "scale": 3,
+      "layers": {
+        "rest": {
+          "file": "assets/themes/yike/assets/water-light--rest.png",
+          "viewBox": "0 368 236 368",
+          "width": 236,
+          "height": 368
+        },
+        "wave": {
+          "file": "assets/themes/yike/assets/water-light--wave.png",
+          "viewBox": "0 736 240 12",
+          "width": 240,
+          "height": 12
+        },
+        "glass": {
+          "file": "assets/themes/yike/assets/water-light--glass.png",
+          "viewBox": "0 752 236 368",
+          "width": 236,
+          "height": 368
+        }
+      }
+    },
+    "yike/water-dark": {
+      "id": "water-dark",
+      "label": "水位 · 深色",
+      "file": "assets/water-dark.svg",
+      "theme": "water",
+      "mode": "dark",
+      "usage": "品牌与表盘基础图形",
+      "views": [
+        {
+          "id": "rest",
+          "label": "休息",
+          "viewBox": "0 368 236 368"
+        },
+        {
+          "id": "wave",
+          "label": "波纹",
+          "viewBox": "0 736 240 12"
+        },
+        {
+          "id": "glass",
+          "label": "玻璃",
+          "viewBox": "0 752 236 368"
+        }
+      ],
+      "sourceFile": "yike/water-dark.svg",
+      "packId": "yike",
+      "source": {
+        "packId": "yike",
+        "file": "yike/water-dark.svg",
+        "sha1": "d7a7a4f0b4b6c616a5a5cc47779b5350ba7deec5"
+      },
+      "raster": "assets/themes/yike/assets/water-dark.png",
+      "width": 236,
+      "height": 368,
+      "scale": 3,
+      "layers": {
+        "rest": {
+          "file": "assets/themes/yike/assets/water-dark--rest.png",
+          "viewBox": "0 368 236 368",
+          "width": 236,
+          "height": 368
+        },
+        "wave": {
+          "file": "assets/themes/yike/assets/water-dark--wave.png",
+          "viewBox": "0 736 240 12",
+          "width": 240,
+          "height": 12
+        },
+        "glass": {
+          "file": "assets/themes/yike/assets/water-dark--glass.png",
+          "viewBox": "0 752 236 368",
+          "width": 236,
+          "height": 368
+        }
+      }
+    },
+    "yike/sundial-light": {
+      "id": "sundial-light",
+      "label": "日影 · 浅色",
+      "file": "assets/sundial-light.svg",
+      "theme": "sundial",
+      "mode": "light",
+      "usage": "品牌与表盘基础图形",
+      "views": [
+        {
+          "id": "shadow",
+          "label": "阴影",
+          "viewBox": "0 404 316 316"
+        }
+      ],
+      "sourceFile": "yike/sundial-light.svg",
+      "packId": "yike",
+      "source": {
+        "packId": "yike",
+        "file": "yike/sundial-light.svg",
+        "sha1": "3e186032a837381e6557473b25ad032fe34c3779"
+      },
+      "raster": "assets/themes/yike/assets/sundial-light.png",
+      "width": 316,
+      "height": 404,
+      "scale": 3,
+      "layers": {
+        "shadow": {
+          "file": "assets/themes/yike/assets/sundial-light--shadow.png",
+          "viewBox": "0 404 316 316",
+          "width": 316,
+          "height": 316
+        }
+      }
+    },
+    "yike/sundial-dark": {
+      "id": "sundial-dark",
+      "label": "日影 · 深色",
+      "file": "assets/sundial-dark.svg",
+      "theme": "sundial",
+      "mode": "dark",
+      "usage": "品牌与表盘基础图形",
+      "views": [
+        {
+          "id": "shadow",
+          "label": "阴影",
+          "viewBox": "0 404 316 316"
+        }
+      ],
+      "sourceFile": "yike/sundial-dark.svg",
+      "packId": "yike",
+      "source": {
+        "packId": "yike",
+        "file": "yike/sundial-dark.svg",
+        "sha1": "d3815a5767511a46eef359303dd094a1aad84dd7"
+      },
+      "raster": "assets/themes/yike/assets/sundial-dark.png",
+      "width": 316,
+      "height": 404,
+      "scale": 3,
+      "layers": {
+        "shadow": {
+          "file": "assets/themes/yike/assets/sundial-dark--shadow.png",
+          "viewBox": "0 404 316 316",
+          "width": 316,
+          "height": 316
+        }
+      }
+    }
+  },
   "assets": {
     "assets/themes/yike/assets/mechanical-light.png": {
       "packId": "yike",
       "file": "assets/mechanical-light.svg",
+      "view": "",
+      "viewBox": "0 0 300 300",
+      "width": 300,
+      "height": 300,
+      "scale": 3.12,
       "sha1": "62617b3b8c62a9cb3f1d72b97d9b633002f58ddc"
     },
     "assets/themes/yike/assets/mechanical-dark.png": {
       "packId": "yike",
       "file": "assets/mechanical-dark.svg",
+      "view": "",
+      "viewBox": "0 0 300 300",
+      "width": 300,
+      "height": 300,
+      "scale": 3.12,
       "sha1": "caa6ec16df0c3e4e4619f22b9735e17a453d7caa"
     },
     "assets/themes/yike/assets/water-light.png": {
       "packId": "yike",
       "file": "assets/water-light.svg",
+      "view": "",
+      "viewBox": "0 0 236 368",
+      "width": 236,
+      "height": 368,
+      "scale": 3,
       "sha1": "8403063d5647e00e0b92c57867e4342651ba35c7"
     },
     "assets/themes/yike/assets/water-dark.png": {
       "packId": "yike",
       "file": "assets/water-dark.svg",
+      "view": "",
+      "viewBox": "0 0 236 368",
+      "width": 236,
+      "height": 368,
+      "scale": 3,
       "sha1": "d7a7a4f0b4b6c616a5a5cc47779b5350ba7deec5"
     },
     "assets/themes/yike/assets/sundial-light.png": {
       "packId": "yike",
       "file": "assets/sundial-light.svg",
+      "view": "",
+      "viewBox": "0 0 316 404",
+      "width": 316,
+      "height": 404,
+      "scale": 3,
       "sha1": "3e186032a837381e6557473b25ad032fe34c3779"
     },
     "assets/themes/yike/assets/sundial-dark.png": {
       "packId": "yike",
       "file": "assets/sundial-dark.svg",
+      "view": "",
+      "viewBox": "0 0 316 404",
+      "width": 316,
+      "height": 404,
+      "scale": 3,
+      "sha1": "d3815a5767511a46eef359303dd094a1aad84dd7"
+    },
+    "assets/themes/yike/assets/mechanical-light--progress.png": {
+      "packId": "yike",
+      "file": "assets/mechanical-light.svg",
+      "view": "progress",
+      "viewBox": "0 300 300 300",
+      "width": 300,
+      "height": 300,
+      "scale": 3.12,
+      "sha1": "62617b3b8c62a9cb3f1d72b97d9b633002f58ddc"
+    },
+    "assets/themes/yike/assets/mechanical-light--rest.png": {
+      "packId": "yike",
+      "file": "assets/mechanical-light.svg",
+      "view": "rest",
+      "viewBox": "0 600 300 300",
+      "width": 300,
+      "height": 300,
+      "scale": 3.12,
+      "sha1": "62617b3b8c62a9cb3f1d72b97d9b633002f58ddc"
+    },
+    "assets/themes/yike/assets/mechanical-light--paused.png": {
+      "packId": "yike",
+      "file": "assets/mechanical-light.svg",
+      "view": "paused",
+      "viewBox": "0 900 300 300",
+      "width": 300,
+      "height": 300,
+      "scale": 3.12,
+      "sha1": "62617b3b8c62a9cb3f1d72b97d9b633002f58ddc"
+    },
+    "assets/themes/yike/assets/mechanical-light-plain.png": {
+      "packId": "yike",
+      "file": "assets/mechanical-light-plain.svg",
+      "view": "",
+      "viewBox": "0 0 300 300",
+      "width": 300,
+      "height": 300,
+      "scale": 3.12,
+      "sha1": "87a857d16d3aace972339d7053de6d75de6c9ca8"
+    },
+    "assets/themes/yike/assets/mechanical-dark--progress.png": {
+      "packId": "yike",
+      "file": "assets/mechanical-dark.svg",
+      "view": "progress",
+      "viewBox": "0 300 300 300",
+      "width": 300,
+      "height": 300,
+      "scale": 3.12,
+      "sha1": "caa6ec16df0c3e4e4619f22b9735e17a453d7caa"
+    },
+    "assets/themes/yike/assets/mechanical-dark--rest.png": {
+      "packId": "yike",
+      "file": "assets/mechanical-dark.svg",
+      "view": "rest",
+      "viewBox": "0 600 300 300",
+      "width": 300,
+      "height": 300,
+      "scale": 3.12,
+      "sha1": "caa6ec16df0c3e4e4619f22b9735e17a453d7caa"
+    },
+    "assets/themes/yike/assets/mechanical-dark--paused.png": {
+      "packId": "yike",
+      "file": "assets/mechanical-dark.svg",
+      "view": "paused",
+      "viewBox": "0 900 300 300",
+      "width": 300,
+      "height": 300,
+      "scale": 3.12,
+      "sha1": "caa6ec16df0c3e4e4619f22b9735e17a453d7caa"
+    },
+    "assets/themes/yike/assets/mechanical-dark-plain.png": {
+      "packId": "yike",
+      "file": "assets/mechanical-dark-plain.svg",
+      "view": "",
+      "viewBox": "0 0 300 300",
+      "width": 300,
+      "height": 300,
+      "scale": 3.12,
+      "sha1": "1dffce8e323d18cb70619830b2a698fbc2f30e0c"
+    },
+    "assets/themes/yike/assets/water-light--rest.png": {
+      "packId": "yike",
+      "file": "assets/water-light.svg",
+      "view": "rest",
+      "viewBox": "0 368 236 368",
+      "width": 236,
+      "height": 368,
+      "scale": 3,
+      "sha1": "8403063d5647e00e0b92c57867e4342651ba35c7"
+    },
+    "assets/themes/yike/assets/water-light--wave.png": {
+      "packId": "yike",
+      "file": "assets/water-light.svg",
+      "view": "wave",
+      "viewBox": "0 736 240 12",
+      "width": 240,
+      "height": 12,
+      "scale": 3,
+      "sha1": "8403063d5647e00e0b92c57867e4342651ba35c7"
+    },
+    "assets/themes/yike/assets/water-light--glass.png": {
+      "packId": "yike",
+      "file": "assets/water-light.svg",
+      "view": "glass",
+      "viewBox": "0 752 236 368",
+      "width": 236,
+      "height": 368,
+      "scale": 3,
+      "sha1": "8403063d5647e00e0b92c57867e4342651ba35c7"
+    },
+    "assets/themes/yike/assets/water-dark--rest.png": {
+      "packId": "yike",
+      "file": "assets/water-dark.svg",
+      "view": "rest",
+      "viewBox": "0 368 236 368",
+      "width": 236,
+      "height": 368,
+      "scale": 3,
+      "sha1": "d7a7a4f0b4b6c616a5a5cc47779b5350ba7deec5"
+    },
+    "assets/themes/yike/assets/water-dark--wave.png": {
+      "packId": "yike",
+      "file": "assets/water-dark.svg",
+      "view": "wave",
+      "viewBox": "0 736 240 12",
+      "width": 240,
+      "height": 12,
+      "scale": 3,
+      "sha1": "d7a7a4f0b4b6c616a5a5cc47779b5350ba7deec5"
+    },
+    "assets/themes/yike/assets/water-dark--glass.png": {
+      "packId": "yike",
+      "file": "assets/water-dark.svg",
+      "view": "glass",
+      "viewBox": "0 752 236 368",
+      "width": 236,
+      "height": 368,
+      "scale": 3,
+      "sha1": "d7a7a4f0b4b6c616a5a5cc47779b5350ba7deec5"
+    },
+    "assets/themes/yike/assets/sundial-light--shadow.png": {
+      "packId": "yike",
+      "file": "assets/sundial-light.svg",
+      "view": "shadow",
+      "viewBox": "0 404 316 316",
+      "width": 316,
+      "height": 316,
+      "scale": 3,
+      "sha1": "3e186032a837381e6557473b25ad032fe34c3779"
+    },
+    "assets/themes/yike/assets/sundial-dark--shadow.png": {
+      "packId": "yike",
+      "file": "assets/sundial-dark.svg",
+      "view": "shadow",
+      "viewBox": "0 404 316 316",
+      "width": 316,
+      "height": 316,
+      "scale": 3,
       "sha1": "d3815a5767511a46eef359303dd094a1aad84dd7"
     }
   }

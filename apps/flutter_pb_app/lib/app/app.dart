@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:unified_popups/unified_popups.dart';
 
@@ -25,9 +26,11 @@ class PbApp extends ConsumerWidget {
       themeMode: mode,
       navigatorKey: appNavigatorKey,
       navigatorObservers: [Pop.routeObserver],
-      builder: (context, child) =>
-          Pop.hostBuilder(context, child ?? const SizedBox.shrink()),
-      initialRoute: AppRoutes.launch,
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: TS.of(context).overlayStyleFor(TS.of(context).colors.background),
+        child: Pop.hostBuilder(context, child ?? const SizedBox.shrink()),
+      ),
+      initialRoute: AppRoutes.demo,
       routes: appRoutes,
     );
   }

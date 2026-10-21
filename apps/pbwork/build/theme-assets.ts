@@ -6,8 +6,10 @@ import type { Plugin } from "vite";
 
 function isThemeAsset(file: string): boolean {
   return (
-    file.includes("/assets/") &&
-    (file.includes("/theme-packs/") || file.includes("/prototypes/"))
+    file.includes("/glyphs/") ||
+    file.endsWith("/artwork.json") ||
+    (file.includes("/assets/") &&
+      (file.includes("/theme-packs/") || file.includes("/prototypes/")))
   );
 }
 
@@ -48,6 +50,27 @@ export function collectThemeAssetHashes(
       const path = resolve(dir, entry.name);
       if (entry.isDirectory()) visit(path);
       else if (
+        entry.name === "artwork.json" &&
+        /\/(?:theme|theme-packs\/[^/]+)\/artwork\.json$/.test(path)
+      ) {
+        onFile(path);
+        const catalog = JSON.parse(readFileSync(path, "utf8"));
+        for (const asset of catalog.assets) {
+          if (!/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*\.svg$/.test(asset.sourceFile))
+            throw new Error(`Invalid SVG source: ${asset.sourceFile}`);
+          const source = resolve(
+            root,
+            "src/design-system/components/_shared/glyphs",
+            asset.sourceFile,
+          );
+          onFile(source);
+          const key = `/${relative(root, resolve(dir, asset.file)).replaceAll("\\", "/")}`;
+          if (hashes[key]) throw new Error(`Duplicate theme asset: ${key}`);
+          hashes[key] = createHash("sha1")
+            .update(readFileSync(source))
+            .digest("hex");
+        }
+      } else if (
         /\/src\/(?:design-system\/theme-packs\/[^/]+|prototypes\/[^/]+\/theme)\/assets\//.test(
           path,
         )

@@ -6,6 +6,7 @@ import { computed, toRefs } from "vue";
 import { usePbInspect, usePbInspectRef } from "@/runtime/inspect/usePbInspect";
 import {
   resolvePbIcon,
+  PB_ICON_ARTWORK,
   type PbIconName,
 } from "@/design-system/components/_shared/icons";
 import type { ComponentSize } from "@/design-system/components/_shared/appearance";
@@ -37,6 +38,9 @@ const rootRef = usePbInspectRef();
 const { name, size, tone, label, inspectId } = toRefs(props);
 
 const iconComponent = computed(() => resolvePbIcon(name.value));
+const intrinsic = computed(
+  () => PB_ICON_ARTWORK.icons[name.value].colorMode === "intrinsic",
+);
 
 const sizeTokenId = computed(() =>
   iconSizeToken(size.value === "sm" ? "sm" : size.value === "lg" ? "lg" : "md"),
@@ -83,8 +87,9 @@ usePbInspect({
   }),
   getTokenBindings: () => ({
     size: sizeTokenId.value,
-    color:
-      tone.value === "inherit" || tone.value === "on-surface"
+    color: intrinsic.value
+      ? "none"
+      : tone.value === "inherit" || tone.value === "on-surface"
         ? "color.on-surface"
         : tone.value === "muted"
           ? "color.on-surface-muted"
@@ -92,11 +97,15 @@ usePbInspect({
   }),
   getTokens: () => [
     sizeTokenId.value,
-    tone.value === "inherit" || tone.value === "on-surface"
-      ? "color.on-surface"
-      : tone.value === "muted"
-        ? "color.on-surface-muted"
-        : `color.${tone.value}`,
+    ...(intrinsic.value
+      ? []
+      : [
+          tone.value === "inherit" || tone.value === "on-surface"
+            ? "color.on-surface"
+            : tone.value === "muted"
+              ? "color.on-surface-muted"
+              : `color.${tone.value}`,
+        ]),
   ],
 });
 </script>

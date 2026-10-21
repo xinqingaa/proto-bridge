@@ -2,44 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/ts.dart';
 
-/// PBWork `icon.name` 的 35 个稳定 PBWork 图形 id。
-enum CommonIconName {
-  more,
-  plus,
-  search,
-  settings,
-  home,
-  list,
-  user,
-  inbox,
-  check,
-  chevronDown,
-  chevronLeft,
-  chevronRight,
-  alertTriangle,
-  alertCircle,
-  clock,
-  refreshCw,
-  calendarCurrent,
-  clipboardCheck,
-  shieldCheck,
-  folderOpen,
-  thermometer,
-  snowflake,
-  copy,
-  fileText,
-  slidersHorizontal,
-  mapPin,
-  radio,
-  truck,
-  dumbbell,
-  eye,
-  eyeOff,
-  footprints,
-  personStanding,
-  sparkles,
-  x,
-}
+part 'generated_icon_names.dart';
 
 enum CommonIconSize { sm, md, lg }
 
@@ -62,6 +25,8 @@ extension CommonIconNameAsset on CommonIconName {
     );
     return 'assets/icons/$id.png';
   }
+
+  bool get preservesSourceColor => _intrinsicColorIcons.contains(this);
 }
 
 /// PBWork `icon` 的 Flutter 实现；使用策展后的稳定图片资源。
@@ -107,11 +72,13 @@ class CommonIcon extends StatelessWidget {
       name.assetPath,
       width: dimension ?? _size(ts),
       height: dimension ?? _size(ts),
-      color:
-          color ??
-          _color(ts) ??
-          IconTheme.of(context).color ??
-          ts.colors.onSurface,
+      color: name.preservesSourceColor
+          ? null
+          : (color ??
+                _color(ts) ??
+                IconTheme.of(context).color ??
+                ts.colors.onSurface),
+      filterQuality: FilterQuality.high,
       colorBlendMode: BlendMode.srcIn,
       excludeFromSemantics: label == null || label!.isEmpty,
       semanticLabel: label,

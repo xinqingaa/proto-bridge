@@ -18,10 +18,4 @@ final Map<String, WidgetBuilder> appRoutes = {
       onStart: () => Navigator.of(context).pop(),
     ),
   ),
-  AppRoutes.launch: (context) => Scaffold(
-    body: CommonLaunchScreen(
-      brandName: 'PBWork',
-      onStart: () => Navigator.of(context).pushReplacementNamed(AppRoutes.demo),
-    ),
-  ),
 };

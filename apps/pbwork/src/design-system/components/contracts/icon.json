@@ -5,11 +5,12 @@
   "semantic": {
     "policy": "decorative"
   },
-  "summary": "PBWork 自绘 SVG 图标；按稳定 name 渲染，尺寸与颜色走 Token。",
+  "summary": "原始 SVG 图标；尺寸走 Token，单色随主题，自带颜色保留原稿。",
   "behavior": [
     "不是按钮；可点操作使用 icon-button",
     "name 仅允许 DS 策展清单内的 PBWork 稳定 id",
-    "无 label 时按装饰图标处理（aria-hidden）"
+    "无 label 时按装饰图标处理（aria-hidden）",
+    "自带颜色的原稿保持颜色、透明度与滤镜；只有 currentColor 单色图形跟随 tone，内在色图形的颜色绑定为 none。"
   ],
   "propsSchema": {
     "type": "object",
@@ -52,12 +53,36 @@
           "person-standing",
           "sparkles",
           "x",
-          "calendar-current"
+          "calendar-current",
+          "yike-mechanical-calendar",
+          "yike-mechanical-focus-high",
+          "yike-mechanical-focus-low",
+          "yike-mechanical-focus-medium",
+          "yike-mode-countdown",
+          "yike-mode-pomodoro",
+          "yike-mode-stopwatch",
+          "yike-sundial-focus-high",
+          "yike-sundial-focus-low",
+          "yike-sundial-focus-medium",
+          "yike-water-focus-high",
+          "yike-water-focus-low",
+          "yike-water-focus-medium",
+          "circle-check",
+          "chart-column",
+          "book-open",
+          "glass-water",
+          "leaf",
+          "moon",
+          "stretch-horizontal"
         ]
       },
       "size": {
         "type": "string",
-        "enum": ["sm", "md", "lg"]
+        "enum": [
+          "sm",
+          "md",
+          "lg"
+        ]
       },
       "tone": {
         "type": "string",
@@ -76,7 +101,9 @@
         "type": "string"
       }
     },
-    "required": ["name"]
+    "required": [
+      "name"
+    ]
   },
   "defaultProps": {
     "name": "more",
@@ -85,6 +112,14 @@
     "label": ""
   },
   "states": [
+    {
+      "id": "more",
+      "label": "more",
+      "kind": "variant",
+      "props": {
+        "name": "more"
+      }
+    },
     {
       "id": "plus",
       "label": "plus",
@@ -270,6 +305,30 @@
       }
     },
     {
+      "id": "map-pin",
+      "label": "map-pin",
+      "kind": "variant",
+      "props": {
+        "name": "map-pin"
+      }
+    },
+    {
+      "id": "radio",
+      "label": "radio",
+      "kind": "variant",
+      "props": {
+        "name": "radio"
+      }
+    },
+    {
+      "id": "truck",
+      "label": "truck",
+      "kind": "variant",
+      "props": {
+        "name": "truck"
+      }
+    },
+    {
       "id": "dumbbell",
       "label": "dumbbell",
       "kind": "variant",
@@ -332,6 +391,166 @@
       "props": {
         "name": "calendar-current"
       }
+    },
+    {
+      "id": "yike-mechanical-calendar",
+      "label": "yike-mechanical-calendar",
+      "kind": "variant",
+      "props": {
+        "name": "yike-mechanical-calendar"
+      }
+    },
+    {
+      "id": "yike-mechanical-focus-high",
+      "label": "yike-mechanical-focus-high",
+      "kind": "variant",
+      "props": {
+        "name": "yike-mechanical-focus-high"
+      }
+    },
+    {
+      "id": "yike-mechanical-focus-low",
+      "label": "yike-mechanical-focus-low",
+      "kind": "variant",
+      "props": {
+        "name": "yike-mechanical-focus-low"
+      }
+    },
+    {
+      "id": "yike-mechanical-focus-medium",
+      "label": "yike-mechanical-focus-medium",
+      "kind": "variant",
+      "props": {
+        "name": "yike-mechanical-focus-medium"
+      }
+    },
+    {
+      "id": "yike-mode-countdown",
+      "label": "yike-mode-countdown",
+      "kind": "variant",
+      "props": {
+        "name": "yike-mode-countdown"
+      }
+    },
+    {
+      "id": "yike-mode-pomodoro",
+      "label": "yike-mode-pomodoro",
+      "kind": "variant",
+      "props": {
+        "name": "yike-mode-pomodoro"
+      }
+    },
+    {
+      "id": "yike-mode-stopwatch",
+      "label": "yike-mode-stopwatch",
+      "kind": "variant",
+      "props": {
+        "name": "yike-mode-stopwatch"
+      }
+    },
+    {
+      "id": "yike-sundial-focus-high",
+      "label": "yike-sundial-focus-high",
+      "kind": "variant",
+      "props": {
+        "name": "yike-sundial-focus-high"
+      }
+    },
+    {
+      "id": "yike-sundial-focus-low",
+      "label": "yike-sundial-focus-low",
+      "kind": "variant",
+      "props": {
+        "name": "yike-sundial-focus-low"
+      }
+    },
+    {
+      "id": "yike-sundial-focus-medium",
+      "label": "yike-sundial-focus-medium",
+      "kind": "variant",
+      "props": {
+        "name": "yike-sundial-focus-medium"
+      }
+    },
+    {
+      "id": "yike-water-focus-high",
+      "label": "yike-water-focus-high",
+      "kind": "variant",
+      "props": {
+        "name": "yike-water-focus-high"
+      }
+    },
+    {
+      "id": "yike-water-focus-low",
+      "label": "yike-water-focus-low",
+      "kind": "variant",
+      "props": {
+        "name": "yike-water-focus-low"
+      }
+    },
+    {
+      "id": "yike-water-focus-medium",
+      "label": "yike-water-focus-medium",
+      "kind": "variant",
+      "props": {
+        "name": "yike-water-focus-medium"
+      }
+    },
+    {
+      "id": "circle-check",
+      "label": "circle-check",
+      "kind": "variant",
+      "props": {
+        "name": "circle-check"
+      }
+    },
+    {
+      "id": "chart-column",
+      "label": "chart-column",
+      "kind": "variant",
+      "props": {
+        "name": "chart-column"
+      }
+    },
+    {
+      "id": "book-open",
+      "label": "book-open",
+      "kind": "variant",
+      "props": {
+        "name": "book-open"
+      }
+    },
+    {
+      "id": "glass-water",
+      "label": "glass-water",
+      "kind": "variant",
+      "props": {
+        "name": "glass-water"
+      }
+    },
+    {
+      "id": "leaf",
+      "label": "leaf",
+      "kind": "variant",
+      "props": {
+        "name": "leaf"
+      }
+    },
+    {
+      "id": "moon",
+      "label": "moon",
+      "kind": "variant",
+      "props": {
+        "name": "moon"
+      }
+    },
+    {
+      "id": "stretch-horizontal",
+      "label": "stretch-horizontal",
+      "kind": "variant",
+      "props": {
+        "name": "stretch-horizontal"
+      }
     }
   ],
   "slots": [],
@@ -380,7 +599,27 @@
       "person-standing",
       "sparkles",
       "x",
-      "calendar-current"
+      "calendar-current",
+      "yike-mechanical-calendar",
+      "yike-mechanical-focus-high",
+      "yike-mechanical-focus-low",
+      "yike-mechanical-focus-medium",
+      "yike-mode-countdown",
+      "yike-mode-pomodoro",
+      "yike-mode-stopwatch",
+      "yike-sundial-focus-high",
+      "yike-sundial-focus-low",
+      "yike-sundial-focus-medium",
+      "yike-water-focus-high",
+      "yike-water-focus-low",
+      "yike-water-focus-medium",
+      "circle-check",
+      "chart-column",
+      "book-open",
+      "glass-water",
+      "leaf",
+      "moon",
+      "stretch-horizontal"
     ],
     "artwork": "_shared/glyph-artwork.json"
   }

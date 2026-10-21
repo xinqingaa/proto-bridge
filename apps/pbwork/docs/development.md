@@ -147,3 +147,5 @@ pnpm test:e2e:runtime
 ## 制作工具命令
 
 `pnpm pb:new-prototype <id>` 生成 draft 骨架，`pnpm ds:keys:generate` 生成键类型，`pnpm pb:screens:generate` 生成显式 default 完整性边界。两种生成结果都纳入版本管理；单测验证新鲜度，开发启动与构建前自动生成。`pnpm test:e2e:scaffold` 在隔离 Workspace 验证原样骨架的 Preflight、时钟截图一致性和完整定稿，随后移除临时原型。API、目录及模板边界见[制作工具](./prototypes/authoring-tools.md)。
+
+原型制作 icon 时统一遵循 [Icon 制作与同步规范](components/action/icon.md)：原生 SVG 图形进入 DS 策展集合，登记所属原型，业务通过稳定 id 使用；大型主题图形同样集中存于 DS 的 `glyphs/<prototypeId>/`，由主题包登记来源和用途，详见同一规范。

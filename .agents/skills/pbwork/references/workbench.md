@@ -8,10 +8,10 @@ Prototype Screens or their Design System.
 For design-foundation and component resource navigation or preview work, read
 [Workbench preview workflow](../../../../apps/pbwork/docs/workbench-preview.md).
 Theme pack options deduplicate actual pack ids; keep prototype ownership separate and migrate legacy selection aliases without changing theme, mode or sizing.
-Preserve existing categories and detail routes; use phone-contained samples and
+Preserve existing categories and detail routes; Icon uses an outside-phone SVG catalog with enlarged preview and direct downloads; other resources use phone-contained samples and
 opt-in comparison, with ownership separate from preview theme. Distinguish
 manual acceptance rules from implemented multi-device/registration capabilities.
-All 12 foundations, theme modes and 47 registered DS components use `src/workbench/preview/`; extend that
+All foundations, theme modes and registered DS components use `src/workbench/preview/`; extend that
 shared boundary rather than creating another stage. Commit theme identity as one
 validated object and keep device sessions, overlay hosts and scroll isolated.
 Use the source-tab value table for category-scoped full per-value specimens and facts/search; keep samples stable

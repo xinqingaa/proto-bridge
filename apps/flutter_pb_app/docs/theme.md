@@ -17,7 +17,6 @@ Text('标题', style: ts.textStyle.title);
 
 `proto-bridge.themes.json` 记录选择范围、主题与模式矩阵、源摘要和解析值。同步门禁同时核对生成的 Dart 内容和这个矩阵，不能只凭 accessor 存在或源端 fingerprint 声明主题已落地。固定 Handoff 实现仍以其中固定的主题表为准，不读取 active/latest。
 
-
 ## Token 职责
 
 `ts.colors`、`ts.textStyle`、`ts.spacing`、`ts.sizing`、`ts.radius`、`ts.opacity`、`ts.motion`、`ts.elevation`、`ts.border`、`ts.layout`、`ts.layer`、`ts.effect`、`ts.assets` 是组件使用入口。具体设计量只放在主题目录；页面和公共组件不得另建平行常量或复制颜色数值。
@@ -33,3 +32,11 @@ Material Theme 和 TS 使用同一主题包。颜色在主题动画中插值；�
 ## 同步门禁
 
 主题及映射修改运行 `pnpm ds:theme:verify`，组件和完整 surface 运行 `pnpm ds:target-sync:verify`。先验证所选主题矩阵与实际生成实现，再更新同步基线；未完成的部分保持 drift 或 pending 可见。
+
+## 原稿与分层资源
+
+`proto-bridge.themes.json.artwork` 按所属包登记主题图形：`source` 仅记录 PBWork 来源包、相对 DS glyphs/ 的源文件标识和源摘要；`raster` 与 `layers` 记录 Flutter PNG 路径、viewBox、逻辑尺寸及专注过程变体关联。SVG 原稿只在 PBWork 维护，Flutter 同步只生成 PNG，不复制 SVG。
+
+PNG 按原始画布与主题 size.plot 中较大的宽度、3 倍像素密度计算。相同状态图层通过 `layerAsset` 显式共用，元数据指向唯一 PNG。资源按主题包选择范围同步；同步资源不代表已完成业务表盘动画。
+
+PBWork 提供原稿及状态图层的预览和手动下载。主题图形默认 1 倍 PNG，原始 SVG 直接下载；手动下载倍率独立于 Flutter 同步尺寸。同步检查读取 PBWork 源文件及摘要，检查 Flutter 元数据与 PNG 尺寸，不依赖 Target 内的 SVG 副本。

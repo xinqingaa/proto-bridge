@@ -45,6 +45,10 @@ const { exportFlutterThemes } = await import('./export-flutter-themes.mjs');
 try {
   await exportFlutterThemes({targetRoot, check: true, prototype: themeScope.scope?.prototype});
 } catch (error) { errors.push(`Theme implementation coverage: ${error.message}`); }
+const { exportFlutterIcons } = await import('./export-flutter-icons.mjs');
+try {
+  await exportFlutterIcons({targetRoot, check: true, prototype: themeScope.scope?.prototype});
+} catch (error) { errors.push(`Icon implementation coverage: ${error.message}`); }
 const themes = { constants, packs: [...packs.values()].filter(pack => themeScope.packs.includes(pack.manifest.id)) };
 for (const diagnostic of validateThemePacks({ keyCatalog: catalog, constants, packs })) {
   if (diagnostic.severity === "block") errors.push(`${diagnostic.packId}: ${diagnostic.message}`);
@@ -67,7 +71,10 @@ const componentDigests = Object.fromEntries(
 );
 const sectionDigests = {
   components: digest(contracts),
-  iconAssets: digest(await readJson("apps/pbwork/src/design-system/components/_shared/glyph-artwork.json")),
+  iconAssets: digest({
+    catalog: await readJson("apps/pbwork/src/design-system/components/_shared/glyph-artwork.json"),
+    sources: await Promise.all(Object.entries((await readJson("apps/pbwork/src/design-system/components/_shared/glyph-artwork.json")).icons).map(async ([id, entry]) => [id, await readFile(path.join(repoRoot, "apps/pbwork/src/design-system/components/_shared", entry.file), "utf8")])),
+  }),
   roles: digest(SEMANTIC_ROLES),
   protocolSchemas: digest({ componentSchema, themeProtocolSchema }),
   tokenCatalog: digest(catalog),
@@ -139,27 +146,8 @@ async function readJson(relativePath) {
 }
 
 async function readThemePacks() {
-  const directories = [];
-  for (const [parent, suffix] of [["apps/pbwork/src/design-system/theme-packs", ""], ["apps/pbwork/src/prototypes", "/theme"]]) {
-    for (const dir of await readdir(path.join(repoRoot, parent), {withFileTypes:true})) if (dir.isDirectory()) directories.push(`${parent}/${dir.name}${suffix}`);
-  }
-  const packs = new Map();
-  for (const dir of directories) {
-    const optional = async (file) => { try { return await readJson(`${dir}/${file}.json`); } catch (error) { if (error.code === "ENOENT") return undefined; throw error; } };
-    const manifest = await optional("pack");
-    if (!manifest) continue;
-    const files = {};
-    const assets = async (relative) => {
-      let entries; try { entries = await readdir(path.join(repoRoot, dir, relative), {withFileTypes:true}); } catch(error) { if(error.code === "ENOENT") return; throw error; }
-      for (const entry of entries) { const file = `${relative}/${entry.name}`; if(entry.isDirectory()) await assets(file); else files[file] = createHash("sha1").update(await readFile(path.join(repoRoot,dir,file))).digest("hex"); }
-    };
-    await assets("assets");
-    const ownerPrototypeId = /prototypes\/([^/]+)\/theme$/.exec(dir)?.[1];
-    const pack = ThemePackSource.parse({ manifest, primitives: await optional("primitives"), semantic: await optional("semantic"), component: await optional("component"), files, ...(ownerPrototypeId ? { ownerPrototypeId } : {}) });
-    if(packs.has(manifest.id)) errors.push(`Duplicate theme pack ${manifest.id}.`);
-    packs.set(manifest.id,pack);
-  }
-  return packs;
+  const { flutterThemeSource } = await import("./lib/flutter-theme-source.mjs");
+  return (await flutterThemeSource()).packs;
 }
 
 function verifyProducerContracts() {

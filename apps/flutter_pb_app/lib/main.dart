@@ -1,17 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'app/app.dart';
+import 'app/startup.dart';
 import 'storage/mmkv_app_prefs.dart';
-import 'storage/providers.dart';
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  final prefs = await MmkvAppPrefs.open();
-  runApp(
-    ProviderScope(
-      overrides: [appPrefsProvider.overrideWithValue(prefs)],
-      child: const PbApp(),
-    ),
-  );
+  runApp(AppStartup(openPreferences: MmkvAppPrefs.open));
 }

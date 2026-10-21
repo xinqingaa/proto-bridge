@@ -75,7 +75,12 @@ class CommonBottomNav extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: ts.colors.tabbarSelectionTint,
                             border: Border.fromBorderSide(ts.border.glass),
-                            borderRadius: BorderRadius.circular(ts.radius.md),
+                            borderRadius: BorderRadius.circular(
+                              (ts.radius.lg - ts.spacing.xs).clamp(
+                                0.0,
+                                double.infinity,
+                              ),
+                            ),
                           ),
                         ),
                       ),

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, provide, watch, ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { Timer, CircleCheck, ChartNoAxesColumn } from "lucide-vue-next";
+import { resolvePbIcon } from "@/design-system/components/_shared/icons";
+const Timer = resolvePbIcon("yike-mode-stopwatch");
+const CircleCheck = resolvePbIcon("circle-check");
+const ChartNoAxesColumn = resolvePbIcon("chart-column");
 import PrototypeShell from "@/runtime/prototype/PrototypeShell.vue";
 import TabViewport from "@/design-system/components/navigation/TabViewport.vue";
 import ScreenTransition from "@/design-system/components/navigation/ScreenTransition.vue";

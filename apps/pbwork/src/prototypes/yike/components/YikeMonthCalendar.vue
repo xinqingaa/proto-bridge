@@ -6,7 +6,8 @@ import {
   parseDay,
 } from "@/design-system/components/_shared/calendar";
 import artwork from "./date-artwork.json";
-import mechanicalBezel from "../theme/assets/mechanical-calendar-icon.svg?url";
+import { resolvePbIcon } from "@/design-system/components/_shared/icons";
+const MechanicalBezel = resolvePbIcon("yike-mechanical-calendar");
 import {
   compositeOver,
   contrastRatio,
@@ -228,11 +229,9 @@ const dayLabels = computed(() =>
               :r="artwork.cell.radius"
             />
           </template>
-          <image
+          <MechanicalBezel
             v-if="face === 'mechanical'"
-            :href="mechanicalBezel"
-            :width="artwork.cell.size"
-            :height="artwork.cell.size"
+            :size="artwork.cell.size"
           />
           <text
             class="number"

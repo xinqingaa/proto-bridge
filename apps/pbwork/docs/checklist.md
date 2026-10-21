@@ -16,6 +16,7 @@
 - [ ] 新增或改动的 props 已进 contract + registry；触达文档已更新叙事（不以 props 表为权威）
 - [ ] Contract 含 `playground.presentation`；语义变更已补 `summary`/`behavior`/`states[].kind`（适用时）
 - [ ] Contract ↔ Vue ↔ Registry 经校验一致，Inspector 与 JSON Contract 的 token binding 槽位集合完全一致；文档与 Contract 语义不冲突
+- [ ] 新制图标使用原生 SVG、进入 DS 注册源并登记 owner，预览/PNG 导出复用该源；大型主题 SVG 同样集中到 glyphs/<prototypeId>/，仅元数据留在 theme/artwork.json，未混入 Icon 清单；原型和 Flutter 无 SVG 副本
 - [ ] 图标实际来源与 Contract.icons.pack 一致；PBWork 自绘稳定 id 与 Lucide 调用方兼容，不虚报来源
 - [ ] 未用大 type 兼多语义角色（见 alignment-protocol / audit-large-types）
 

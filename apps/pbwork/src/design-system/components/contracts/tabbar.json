@@ -17,7 +17,7 @@
     "summary": "小圆角浮动玻璃底栏保留安全区留白，所有目的地等宽平分。"
   },
   "visualAnatomy": {
-    "summary": "主体使用 radius.surface，选中底使用 radius.control；玻璃材质上以薄选中底、强调色图标与文字指示目的地。"
+    "summary": "主体使用 radius.surface，选中底圆角由 radius.surface 减 spacing.xs 推导且不小于零；玻璃材质上以薄选中底、强调色图标与文字指示目的地。"
   },
   "propsSchema": {
     "type": "object",
@@ -101,7 +101,7 @@
     "outerInset": "spacing.md",
     "duration": "motion.duration-long",
     "easing": "motion.easing-standard",
-    "selectionRadius": "radius.control"
+    "selectionRadius": "radius.surface"
   },
   "playground": {
     "presentation": "interactive"

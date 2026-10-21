@@ -56,20 +56,53 @@
           "footprints",
           "person-standing",
           "sparkles",
-          "x"
+          "x",
+          "calendar-current",
+          "yike-mechanical-calendar",
+          "yike-mechanical-focus-high",
+          "yike-mechanical-focus-low",
+          "yike-mechanical-focus-medium",
+          "yike-mode-countdown",
+          "yike-mode-pomodoro",
+          "yike-mode-stopwatch",
+          "yike-sundial-focus-high",
+          "yike-sundial-focus-low",
+          "yike-sundial-focus-medium",
+          "yike-water-focus-high",
+          "yike-water-focus-low",
+          "yike-water-focus-medium",
+          "circle-check",
+          "chart-column",
+          "book-open",
+          "glass-water",
+          "leaf",
+          "moon",
+          "stretch-horizontal"
         ]
       },
       "size": {
         "type": "string",
-        "enum": ["sm", "md", "lg"]
+        "enum": [
+          "sm",
+          "md",
+          "lg"
+        ]
       },
       "tone": {
         "type": "string",
-        "enum": ["primary", "secondary"]
+        "enum": [
+          "primary",
+          "secondary"
+        ]
       },
       "variant": {
         "type": "string",
-        "enum": ["tonal", "flat", "outlined", "text"]
+        "enum": [
+          "tonal",
+          "flat",
+          "outlined",
+          "text"
+        ]
       },
       "loading": {
         "type": "boolean"
@@ -79,10 +112,15 @@
       },
       "material": {
         "type": "string",
-        "enum": ["solid", "glass"]
+        "enum": [
+          "solid",
+          "glass"
+        ]
       }
     },
-    "required": ["ariaLabel"]
+    "required": [
+      "ariaLabel"
+    ]
   },
   "defaultProps": {
     "ariaLabel": "更多",
@@ -156,7 +194,9 @@
     }
   ],
   "slots": [],
-  "events": ["click"],
+  "events": [
+    "click"
+  ],
   "tokenBindings": {
     "color": "color.secondary",
     "background": "color.secondary-soft",

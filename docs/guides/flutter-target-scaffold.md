@@ -1,6 +1,6 @@
 # Flutter Target 脚手架
 
-`pnpm pb:new:flutter` 从 `apps/flutter_pb_app` 复制一份独立产品 target，去掉 `features` 业务示例，生成 Bootstrap 空壳、项目内 MCP launcher 和 Agent 上下文。生成后的目录默认与 proto-bridge 同级。底座使用 Riverpod 3、MMKV 和远程 unified_popups，主题只使用上下文 ThemeExtension。
+`pnpm pb:new:flutter` 从 `apps/flutter_pb_app` 复制一份独立产品 target，去掉 `features` 业务示例，生成 Bootstrap 空壳、项目内 MCP launcher 和 Agent 上下文。生成后的目录默认与 proto-bridge 同级。底座使用 Riverpod、MMKV 和远程 unified_popups，主题只使用上下文 ThemeExtension。
 
 ## 命名
 
@@ -21,7 +21,7 @@ pnpm pb:new:flutter cold_chain_app
 
 常用参数：
 
-- `--prototype <id>`：只选择该原型绑定的主题包与继承依赖；默认全部。公共基础组件保持共享，业务 features 仍为空。
+- `--prototype <id>`：只选择该原型绑定的主题包与继承依赖，以及公共图标和该原型所属图标；默认全部。公共基础组件保持共享，业务 features 仍为空。
 - `--parent <dir>`：自定义父目录，默认 proto-bridge 同级
 - `--display-name <name>` / `--bundle-id <id>`：覆盖显示名和 bundle id
 - `--yes`：非交互执行；`--dry-run` 只打印计划
@@ -53,6 +53,8 @@ pnpm pb:new:flutter cold_chain_app
 - `test/bootstrap_test.dart`
 - `tool/mcp.mjs`、`tool/target.mjs`、`tool/verify.mjs`、`tool/ds-theme.mjs`、`tool/ds-sync.mjs`
 - `.pb-scaffold.json`
+- `proto-bridge.themes.json`、`proto-bridge.icons.json`：所选主题与图标范围
+- `lib/common/widgets/action/generated_icon_names.dart`：与导出图片一致的图标名称
 - `.cursor/mcp.json`、`.codex/config.toml`、`.mcp.json`、`.agents/mcp.json`
 
 ## 项目内 MCP

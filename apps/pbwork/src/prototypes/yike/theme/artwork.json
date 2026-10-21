@@ -1,0 +1,197 @@
+{
+  "packId": "yike",
+  "assets": [
+    {
+      "id": "mechanical-light",
+      "label": "机械 · 浅色",
+      "file": "assets/mechanical-light.svg",
+      "theme": "mechanical",
+      "mode": "light",
+      "usage": "品牌与表盘基础图形",
+      "views": [
+        {
+          "id": "progress",
+          "label": "进度",
+          "viewBox": "0 300 300 300"
+        },
+        {
+          "id": "rest",
+          "label": "休息",
+          "viewBox": "0 600 300 300"
+        },
+        {
+          "id": "paused",
+          "label": "暂停",
+          "viewBox": "0 900 300 300"
+        }
+      ],
+      "sessionAsset": "mechanical-light-plain",
+      "sourceFile": "yike/mechanical-light.svg"
+    },
+    {
+      "id": "mechanical-light-plain",
+      "label": "机械 · 浅色 · 专注过程",
+      "file": "assets/mechanical-light-plain.svg",
+      "theme": "mechanical",
+      "mode": "light",
+      "usage": "专注过程表盘，无外围装饰",
+      "views": [
+        {
+          "id": "progress",
+          "label": "进度",
+          "viewBox": "0 300 300 300"
+        },
+        {
+          "id": "rest",
+          "label": "休息",
+          "viewBox": "0 600 300 300"
+        },
+        {
+          "id": "paused",
+          "label": "暂停",
+          "viewBox": "0 900 300 300"
+        }
+      ],
+      "layerAsset": "mechanical-light",
+      "sourceFile": "yike/mechanical-light-plain.svg"
+    },
+    {
+      "id": "mechanical-dark",
+      "label": "机械 · 深色",
+      "file": "assets/mechanical-dark.svg",
+      "theme": "mechanical",
+      "mode": "dark",
+      "usage": "品牌与表盘基础图形",
+      "views": [
+        {
+          "id": "progress",
+          "label": "进度",
+          "viewBox": "0 300 300 300"
+        },
+        {
+          "id": "rest",
+          "label": "休息",
+          "viewBox": "0 600 300 300"
+        },
+        {
+          "id": "paused",
+          "label": "暂停",
+          "viewBox": "0 900 300 300"
+        }
+      ],
+      "sessionAsset": "mechanical-dark-plain",
+      "sourceFile": "yike/mechanical-dark.svg"
+    },
+    {
+      "id": "mechanical-dark-plain",
+      "label": "机械 · 深色 · 专注过程",
+      "file": "assets/mechanical-dark-plain.svg",
+      "theme": "mechanical",
+      "mode": "dark",
+      "usage": "专注过程表盘，无外围装饰",
+      "views": [
+        {
+          "id": "progress",
+          "label": "进度",
+          "viewBox": "0 300 300 300"
+        },
+        {
+          "id": "rest",
+          "label": "休息",
+          "viewBox": "0 600 300 300"
+        },
+        {
+          "id": "paused",
+          "label": "暂停",
+          "viewBox": "0 900 300 300"
+        }
+      ],
+      "layerAsset": "mechanical-dark",
+      "sourceFile": "yike/mechanical-dark-plain.svg"
+    },
+    {
+      "id": "water-light",
+      "label": "水位 · 浅色",
+      "file": "assets/water-light.svg",
+      "theme": "water",
+      "mode": "light",
+      "usage": "品牌与表盘基础图形",
+      "views": [
+        {
+          "id": "rest",
+          "label": "休息",
+          "viewBox": "0 368 236 368"
+        },
+        {
+          "id": "wave",
+          "label": "波纹",
+          "viewBox": "0 736 240 12"
+        },
+        {
+          "id": "glass",
+          "label": "玻璃",
+          "viewBox": "0 752 236 368"
+        }
+      ],
+      "sourceFile": "yike/water-light.svg"
+    },
+    {
+      "id": "water-dark",
+      "label": "水位 · 深色",
+      "file": "assets/water-dark.svg",
+      "theme": "water",
+      "mode": "dark",
+      "usage": "品牌与表盘基础图形",
+      "views": [
+        {
+          "id": "rest",
+          "label": "休息",
+          "viewBox": "0 368 236 368"
+        },
+        {
+          "id": "wave",
+          "label": "波纹",
+          "viewBox": "0 736 240 12"
+        },
+        {
+          "id": "glass",
+          "label": "玻璃",
+          "viewBox": "0 752 236 368"
+        }
+      ],
+      "sourceFile": "yike/water-dark.svg"
+    },
+    {
+      "id": "sundial-light",
+      "label": "日影 · 浅色",
+      "file": "assets/sundial-light.svg",
+      "theme": "sundial",
+      "mode": "light",
+      "usage": "品牌与表盘基础图形",
+      "views": [
+        {
+          "id": "shadow",
+          "label": "阴影",
+          "viewBox": "0 404 316 316"
+        }
+      ],
+      "sourceFile": "yike/sundial-light.svg"
+    },
+    {
+      "id": "sundial-dark",
+      "label": "日影 · 深色",
+      "file": "assets/sundial-dark.svg",
+      "theme": "sundial",
+      "mode": "dark",
+      "usage": "品牌与表盘基础图形",
+      "views": [
+        {
+          "id": "shadow",
+          "label": "阴影",
+          "viewBox": "0 404 316 316"
+        }
+      ],
+      "sourceFile": "yike/sundial-dark.svg"
+    }
+  ]
+}

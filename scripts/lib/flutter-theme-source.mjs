@@ -47,8 +47,9 @@ export async function flutterThemeSource() {
   const constants = ThemeConstantTable.parse(
     await json("apps/pbwork/src/design-system/theme/constants.json"),
   );
+  const artwork = new Map();
   const packs = new Map(),
-    roots = new Map();
+    assetFiles = new Map();
   for (const [base, suffix] of [
     ["apps/pbwork/src/design-system/theme-packs", ""],
     ["apps/pbwork/src/prototypes", "/theme"],
@@ -68,7 +69,10 @@ export async function flutterThemeSource() {
       };
       const manifest = await optional("pack");
       if (!manifest) continue;
+      const registered = await optional("artwork");
+      if (registered) artwork.set(manifest.id, registered);
       const files = {};
+      const paths = new Map();
       async function assets(rel) {
         let entries;
         try {
@@ -82,13 +86,21 @@ export async function flutterThemeSource() {
         for (const f of entries) {
           const file = `${rel}/${f.name}`;
           if (f.isDirectory()) await assets(file);
-          else
-            files[file] = createHash("sha1")
-              .update(await readFile(path.join(repoRoot, dir, file)))
-              .digest("hex");
+          else {
+            const physical = path.join(repoRoot, dir, file);
+            paths.set(file, physical);
+            files[file] = createHash("sha1").update(await readFile(physical)).digest("hex");
+          }
         }
       }
       await assets("assets");
+      for (const asset of registered?.assets ?? []) {
+        if (!/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*\.svg$/.test(asset.sourceFile)) throw new Error(`Invalid SVG source: ${asset.sourceFile}`);
+        if (paths.has(asset.file)) throw new Error(`Duplicate theme asset: ${asset.file}`);
+        const physical = path.join(repoRoot, "apps/pbwork/src/design-system/components/_shared/glyphs", asset.sourceFile);
+        paths.set(asset.file, physical);
+        files[asset.file] = createHash("sha1").update(await readFile(physical)).digest("hex");
+      }
       if (packs.has(manifest.id))
         throw new Error(`Duplicate theme pack ${manifest.id}`);
       packs.set(
@@ -102,7 +114,7 @@ export async function flutterThemeSource() {
           ...(suffix ? { ownerPrototypeId: entry.name } : {}),
         }),
       );
-      roots.set(manifest.id, path.join(repoRoot, dir));
+      assetFiles.set(manifest.id, paths);
     }
   }
   const tables = [];
@@ -116,5 +128,5 @@ export async function flutterThemeSource() {
     if (!result.digest) throw new Error(JSON.stringify(result.diagnostics));
     tables.push(...result.tables);
   }
-  return { packs, roots, keyCatalog, constants, tables };
+  return { packs, keyCatalog, constants, tables, artwork, assetFiles };
 }

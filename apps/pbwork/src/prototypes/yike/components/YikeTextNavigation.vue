@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { Timer, CircleCheck, ChartColumn } from "lucide-vue-next";
+import { resolvePbIcon } from "@/design-system/components/_shared/icons";
+const Timer = resolvePbIcon("yike-mode-stopwatch");
+const CircleCheck = resolvePbIcon("circle-check");
+const ChartColumn = resolvePbIcon("chart-column");
 import Tabbar from "@/design-system/components/navigation/Tabbar.vue";
 export type YikeDestination = "focus" | "checkin" | "review";
 defineProps<{

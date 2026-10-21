@@ -192,7 +192,7 @@ it("收敛机械 neutral/persimmon、水位 clear 与淡暖纸日影，浅深读
       );
       if (theme !== "water") continue;
       const svg = readFileSync(
-        `src/prototypes/yike/theme/assets/water-${mode}.svg`,
+        `src/design-system/components/_shared/glyphs/yike/water-${mode}.svg`,
         "utf8",
       );
       const gradient = svg.match(

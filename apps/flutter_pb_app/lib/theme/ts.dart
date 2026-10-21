@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:unified_popups/liquid_glass.dart';
 
@@ -147,6 +148,20 @@ class TS extends ThemeExtension<TS> {
         pressCurve: motion.easingStandard,
       );
 
+  /// System icons follow the effective surface, including transparent AppBars.
+  SystemUiOverlayStyle get systemOverlayStyle =>
+      overlayStyleFor(colors.surface);
+
+  SystemUiOverlayStyle overlayStyleFor(Color surface) {
+    final darkSurface =
+        ThemeData.estimateBrightnessForColor(surface) == Brightness.dark;
+    return SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: darkSurface ? Brightness.light : Brightness.dark,
+      statusBarBrightness: darkSurface ? Brightness.dark : Brightness.light,
+    );
+  }
+
   ThemeData toThemeData() {
     final scheme = ColorScheme(
       brightness: brightness,
@@ -171,6 +186,7 @@ class TS extends ThemeExtension<TS> {
       appBarTheme: AppBarTheme(
         backgroundColor: colors.surface,
         foregroundColor: colors.onSurface,
+        systemOverlayStyle: systemOverlayStyle,
         elevation: elevation.none,
         centerTitle: true,
         titleTextStyle: textStyle.title,

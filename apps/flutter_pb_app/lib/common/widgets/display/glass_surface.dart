@@ -5,6 +5,8 @@ import '../../../theme/ts.dart';
 
 enum CommonSurfaceMaterial { solid, glass }
 
+enum CommonGlassEdges { all, bottom }
+
 /// A material-only container; scrolling, input and navigation belong to its child.
 class CommonGlassSurface extends StatelessWidget {
   const CommonGlassSurface({
@@ -14,6 +16,7 @@ class CommonGlassSurface extends StatelessWidget {
     this.clear = false,
     this.reduceTransparency = false,
     this.tint,
+    this.edges = CommonGlassEdges.all,
   });
 
   final Widget child;
@@ -21,6 +24,7 @@ class CommonGlassSurface extends StatelessWidget {
   final bool clear;
   final bool reduceTransparency;
   final Color? tint;
+  final CommonGlassEdges edges;
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +34,9 @@ class CommonGlassSurface extends StatelessWidget {
       return DecoratedBox(
         decoration: BoxDecoration(
           color: ts.colors.surface,
-          border: Border.fromBorderSide(ts.border.defaultBorder),
+          border: edges == CommonGlassEdges.bottom
+              ? Border(bottom: ts.border.defaultBorder)
+              : Border.fromBorderSide(ts.border.defaultBorder),
           borderRadius: radius,
         ),
         child: ClipRRect(borderRadius: radius, child: child),
@@ -39,18 +45,42 @@ class CommonGlassSurface extends StatelessWidget {
     return LiquidGlass(
       borderRadius: radius,
       edgePainterBuilder: (radius, style) =>
-          _RoundedGlassEdge(borderRadius: radius, style: style),
+          _RoundedGlassEdge(borderRadius: radius, style: style, edges: edges),
       style: ts.glassStyle(clear: clear, tint: tint),
-      enableShadow: true,
+      enableShadow: edges == CommonGlassEdges.all,
       child: child,
     );
   }
 }
 
 class _RoundedGlassEdge extends LiquidGlassEdgePainter {
-  const _RoundedGlassEdge({required super.borderRadius, required super.style});
+  const _RoundedGlassEdge({
+    required super.borderRadius,
+    required super.style,
+    required this.edges,
+  });
+
+  final CommonGlassEdges edges;
+
+  @override
+  bool shouldRepaint(covariant LiquidGlassEdgePainter oldDelegate) =>
+      oldDelegate is! _RoundedGlassEdge ||
+      edges != oldDelegate.edges ||
+      super.shouldRepaint(oldDelegate);
   @override
   void paint(Canvas canvas, Size size) {
+    if (edges == CommonGlassEdges.bottom) {
+      final width = style.source.outlineWidth;
+      if (size.isEmpty || width <= 0) return;
+      canvas.drawLine(
+        Offset(0, size.height - width / 2),
+        Offset(size.width, size.height - width / 2),
+        Paint()
+          ..color = style.borderColor
+          ..strokeWidth = width,
+      );
+      return;
+    }
     final inset =
         (style.source.topStrokeWidth > style.source.outlineWidth
             ? style.source.topStrokeWidth

@@ -59,9 +59,18 @@ const assetModules = import.meta.glob(
   [
     "/src/design-system/theme-packs/*/assets/**/*",
     "/src/prototypes/*/theme/assets/**/*",
+    "/src/design-system/components/_shared/glyphs/**/*.svg",
   ],
   { eager: true, query: "?url", import: "default" },
 ) as Record<string, string>;
+
+const artworkCatalogs = import.meta.glob(
+  [
+    "/src/design-system/theme-packs/*/artwork.json",
+    "/src/prototypes/*/theme/artwork.json",
+  ],
+  { eager: true, import: "default" },
+) as Record<string, { assets: Array<{ file: string; sourceFile: string }> }>;
 
 const assetUrls = new Map<string, string>();
 
@@ -92,7 +101,15 @@ export function loadThemeSources(): BaseThemeSources {
       throw new Error(`DUPLICATE_THEME_PACK:${source.manifest.id}`);
     sources.packs.set(source.manifest.id, source);
     for (const file of Object.keys(files)) {
-      const url = assetModules[`${dir}${file}`];
+      const artwork = artworkCatalogs[`${dir}artwork.json`]?.assets.find(
+        (entry) => entry.file === file,
+      );
+      const url =
+        assetModules[
+          artwork
+            ? `/src/design-system/components/_shared/glyphs/${artwork.sourceFile}`
+            : `${dir}${file}`
+        ];
       if (!url)
         throw new Error(
           `THEME_ASSET_URL_MISSING:${source.manifest.id}/${file}`,

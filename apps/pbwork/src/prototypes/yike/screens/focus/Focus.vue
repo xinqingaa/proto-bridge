@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { Settings2 } from "lucide-vue-next";
+import Icon from "@/design-system/components/action/Icon.vue";
 import { useRoute, useRouter } from "vue-router";
 import { vPb } from "@/authoring/pb-style";
 import { yikeNavigation } from "../../navigation";
@@ -147,7 +147,7 @@ function abandon() {
           })
         "
       >
-        <Settings2 aria-hidden="true" />
+        <Icon name="settings" />
       </button>
     </header>
     <YikeFocusModes

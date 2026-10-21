@@ -98,7 +98,7 @@ PBWork 的数据位于 `src/design-system/theme/` 与 `theme-packs/base/`。`loa
 `design-system/theme/runtime-theme.ts` 提供以下接口，RuntimeLayout 已使用 registry 和响应式表；组件内 JS 已通过 computed 读取：
 
 - `createRuntimeThemeRegistry(sources, assetUrl?)` 为一组来源建立解析缓存；`resolve(packId, theme, mode)` 经 Core 解析全部组合并保留阻断诊断，未知组合直接报错，不回退默认主题。来源更新时创建新 registry。`cssVars(table)` 缓存按类型生成的 CSS。
-- `resolveRuntimeTheme(packId, theme, mode)` 使用当前加载的全部包。`loadThemeSources()` 通过 Vite glob 读取 `theme-packs/*/` 与 `prototypes/*/theme/` 的 pack/primitives/semantic/component JSON；原型目录提供 ownerPrototypeId，重复包 ID 报错。Vite 插件按资产原始字节计算 sha1，经虚拟模块提供 files；`?url` 导入构建后的 URL，`themeAssetUrl` 按拥有资产的 packId 与相对路径查找。
+- `resolveRuntimeTheme(packId, theme, mode)` 使用当前加载的全部包。`loadThemeSources()` 通过 Vite glob 读取 `theme-packs/*/` 与 `prototypes/*/theme/` 的 pack/primitives/semantic/component JSON；原型目录提供 ownerPrototypeId，重复包 ID 报错。Vite 插件按资产原始字节计算 sha1，经虚拟模块提供 files；`?url` 导入构建后的 URL，`themeAssetUrl` 按拥有资产的 packId 与相对路径查找。主题 SVG 的物理文件统一位于 PBWork DS 的 `components/_shared/glyphs/`；主题包 `artwork.json` 的 `file` 保留逻辑资产标识，`sourceFile` 指向相对 glyphs/ 的文件。PBWork 加载层把原始字节摘要与 URL 映射到逻辑标识，Core 仍只消费 files 摘要表，不读取物理目录。资源制作与同步规则见 [Icon 规范](../../apps/pbwork/docs/components/action/icon.md)。
 - `useRuntimeTheme(selection, registry?)` 接受响应式包/主题/模式选择，返回 computed 的 table、CSS 变量、根节点 enum 属性、Vuetify 主题与密度。CSS 与 Vuetify 消费同一张表；不会修改 Workbench 主题。
 - `ThemeTableKey` 用于根节点 provide 响应式表；组件内 `useToken(key)` 和 `useTokenNumber(key)` 返回 computed，缺失 provider、未知键或数字读取类型不符时抛错。JS 响应式读取器在运行时校验键；`v-pb` / `pbStyle()` 的槽键使用生成的键族类型，生成命令与新鲜度检查见 [制作工具](../../apps/pbwork/docs/prototypes/authoring-tools.md)。
 

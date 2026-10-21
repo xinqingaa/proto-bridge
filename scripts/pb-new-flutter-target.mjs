@@ -176,6 +176,8 @@ await writeSkills();
 await writeDocs();
 const { exportFlutterThemes } = await import('./export-flutter-themes.mjs');
 await exportFlutterThemes({targetRoot: resolvedDestination, prototype: selectedPrototype});
+const { exportFlutterIcons } = await import('./export-flutter-icons.mjs');
+await exportFlutterIcons({targetRoot: resolvedDestination, prototype: selectedPrototype});
 // A selected target owns a scope-specific baseline, including only its theme dependencies.
 if (selectedPrototype) {
   const { spawnSync } = await import('node:child_process');
