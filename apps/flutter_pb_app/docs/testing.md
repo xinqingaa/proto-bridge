@@ -41,3 +41,5 @@ xcrun simctl io <udid> screenshot <path>
 ## iOS 依赖
 
 工程通过 CocoaPods 接入原生依赖；依赖要求以 `pubspec.yaml` 和锁文件为准。工具链兼容原因统一记录在 Producer 的 Flutter iOS 决策中，不复制为 Skill 版本限制。`Pods/`、`.symlinks/` 与 `build/` 为生成目录，不提交。
+
+公共组件、Demo 和启动行为的测试同样遵守 Riverpod 状态规范，不使用 StatefulBuilder。单独挂载 Consumer 组件时由测试宿主提供 ProviderScope；启动入口自行建立根作用域，偏好与主题作用域覆盖须覆盖实际依赖。

@@ -142,4 +142,4 @@ node tool/ds-theme.mjs
 
 路径与同步基线按真实目录记录；例如 macOS 的 `/tmp` 与 `/private/tmp` 指向同一目录，完整同步检查会归一化后比较。
 
-生成目录携带 `proto-bridge.themes.json` 和类型化 Dart 主题；主题矩阵检查按记录的选择范围执行。资源同步目录 `assets/themes/` 由生成器管理，产品自有资源放在其它目录。
+生成目录携带 `proto-bridge.themes.json` 和类型化 Dart 主题；主题矩阵检查按记录的选择范围执行。资源按 Target 的 `docs/assets.md` 归属到 `asset/base/` 或 `asset/<prototypeId>/`；同步清单管理生成文件，产品新增资源同样遵循归属规范。

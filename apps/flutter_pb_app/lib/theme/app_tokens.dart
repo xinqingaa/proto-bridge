@@ -274,18 +274,21 @@ class AppElevation {
 
 /// 对齐组件实际消费的 `border.*` token。
 class AppBorderTokens {
-  const AppBorderTokens({required this.colors});
+  const AppBorderTokens({required this.colors, this.scale = 1});
+
+  final double scale;
 
   final AppColors colors;
 
-  BorderSide get defaultBorder => BorderSide(color: colors.border);
-  BorderSide get strong => BorderSide(color: colors.outline, width: 2);
-  BorderSide get focus => BorderSide(color: colors.primary, width: 2);
-  BorderSide get hairline => BorderSide(color: colors.divider);
-  BorderSide get glass => BorderSide(color: colors.glassEdge);
-  double get widthHairline => 1;
-  double get widthStrong => 2;
-  double get accentWidth => 4;
+  BorderSide get defaultBorder =>
+      BorderSide(color: colors.border, width: scale);
+  BorderSide get strong => BorderSide(color: colors.outline, width: 2 * scale);
+  BorderSide get focus => BorderSide(color: colors.primary, width: 2 * scale);
+  BorderSide get hairline => BorderSide(color: colors.divider, width: scale);
+  BorderSide get glass => BorderSide(color: colors.glassEdge, width: scale);
+  double get widthHairline => scale;
+  double get widthStrong => 2 * scale;
+  double get accentWidth => 4 * scale;
 }
 
 /// 对齐跨栈布局语义；值是 Flutter 逻辑像素、比例或 Insets。
@@ -313,6 +316,7 @@ class AppLayoutTokens {
     this.viewportHeight = 1,
     this.chartMinHeight = 154,
     this.chartPlotHeight = 124,
+    this.previewViewportHeight = 128,
   });
 
   final double dialogMaxWidth;
@@ -337,6 +341,7 @@ class AppLayoutTokens {
   final double viewportHeight;
   final double chartMinHeight;
   final double chartPlotHeight;
+  final double previewViewportHeight;
 }
 
 class AppLayerTokens {

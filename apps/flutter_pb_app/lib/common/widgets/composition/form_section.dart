@@ -60,7 +60,8 @@ class CommonFormSection extends StatelessWidget {
             if (actionLabel != null)
               CommonButton(
                 label: actionLabel!,
-                kind: CommonButtonKind.outlined,
+                kind: CommonButtonKind.quiet,
+                size: CommonControlSize.sm,
                 onPressed: onAction,
               ),
           ],

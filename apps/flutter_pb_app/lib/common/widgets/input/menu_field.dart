@@ -67,7 +67,7 @@ class _CommonMenuFieldState<T> extends State<CommonMenuField<T>> {
         ],
       ),
     );
-    if (selected != null) widget.onChanged?.call(selected);
+    if (mounted && selected != null) widget.onChanged?.call(selected);
   }
 
   String? get _selectedLabel {
@@ -116,7 +116,6 @@ class _CommonMenuFieldState<T> extends State<CommonMenuField<T>> {
           child: InputDecorator(
             decoration: InputDecoration(
               labelText: null,
-              hintText: widget.hint,
               errorText: widget.errorText,
               enabled: widget.enabled,
               suffixIcon: _suffix(),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../state/local_value.dart';
 
 import '../../../theme/ts.dart';
 import '../action/icon.dart';
@@ -6,7 +8,7 @@ import '../action/icon.dart';
 /// 对齐 pbwork `SearchBar`。
 ///
 /// 有内容时显示清除按钮，对齐原型 clearable。
-class CommonSearchBar extends StatefulWidget {
+class CommonSearchBar extends ConsumerStatefulWidget {
   const CommonSearchBar({
     super.key,
     this.controller,
@@ -25,12 +27,18 @@ class CommonSearchBar extends StatefulWidget {
   final VoidCallback? onClear;
 
   @override
-  State<CommonSearchBar> createState() => _CommonSearchBarState();
+  ConsumerState<CommonSearchBar> createState() => _CommonSearchBarState();
 }
 
-class _CommonSearchBarState extends State<CommonSearchBar> {
+class _CommonSearchBarState extends ConsumerState<CommonSearchBar> {
   TextEditingController? _owned;
   late TextEditingController _controller;
+  late NotifierProvider<ControllerText, String> _textProvider;
+  void _watchController() {
+    _textProvider = NotifierProvider.autoDispose<ControllerText, String>(
+      () => ControllerText(_controller),
+    );
+  }
 
   TextEditingController get _effective => widget.controller ?? _owned!;
 
@@ -41,35 +49,30 @@ class _CommonSearchBarState extends State<CommonSearchBar> {
       _owned = TextEditingController();
     }
     _controller = _effective;
-    _controller.addListener(_onText);
+    _watchController();
   }
 
   @override
   void didUpdateWidget(covariant CommonSearchBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != widget.controller) {
-      _controller.removeListener(_onText);
+      final previousText = _controller.text;
       if (oldWidget.controller == null) {
         _owned?.dispose();
         _owned = null;
       }
       if (widget.controller == null) {
-        _owned = TextEditingController(text: _controller.text);
+        _owned = TextEditingController(text: previousText);
       }
       _controller = _effective;
-      _controller.addListener(_onText);
+      _watchController();
     }
   }
 
   @override
   void dispose() {
-    _controller.removeListener(_onText);
     _owned?.dispose();
     super.dispose();
-  }
-
-  void _onText() {
-    if (mounted) setState(() {});
   }
 
   void _clear() {
@@ -81,7 +84,7 @@ class _CommonSearchBarState extends State<CommonSearchBar> {
   @override
   Widget build(BuildContext context) {
     final ts = TS.of(context);
-    final hasText = _controller.text.isNotEmpty;
+    final hasText = ref.watch(_textProvider).isNotEmpty;
 
     return SizedBox(
       height: ts.sizing.controlLg,

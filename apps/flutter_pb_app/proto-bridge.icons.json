@@ -11,7 +11,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "more.png"
+      "file": "asset/base/icons/more.png"
     },
     {
       "id": "plus",
@@ -20,7 +20,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "plus.png"
+      "file": "asset/base/icons/plus.png"
     },
     {
       "id": "search",
@@ -29,7 +29,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "search.png"
+      "file": "asset/base/icons/search.png"
     },
     {
       "id": "settings",
@@ -38,7 +38,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "settings.png"
+      "file": "asset/base/icons/settings.png"
     },
     {
       "id": "home",
@@ -47,7 +47,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "home.png"
+      "file": "asset/base/icons/home.png"
     },
     {
       "id": "list",
@@ -56,7 +56,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "list.png"
+      "file": "asset/base/icons/list.png"
     },
     {
       "id": "user",
@@ -65,7 +65,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "user.png"
+      "file": "asset/base/icons/user.png"
     },
     {
       "id": "inbox",
@@ -74,7 +74,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "inbox.png"
+      "file": "asset/base/icons/inbox.png"
     },
     {
       "id": "check",
@@ -83,7 +83,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "check.png"
+      "file": "asset/base/icons/check.png"
     },
     {
       "id": "chevron-down",
@@ -92,7 +92,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "chevron-down.png"
+      "file": "asset/base/icons/chevron-down.png"
     },
     {
       "id": "chevron-left",
@@ -101,7 +101,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "chevron-left.png"
+      "file": "asset/base/icons/chevron-left.png"
     },
     {
       "id": "chevron-right",
@@ -110,7 +110,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "chevron-right.png"
+      "file": "asset/base/icons/chevron-right.png"
     },
     {
       "id": "alert-triangle",
@@ -119,7 +119,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "alert-triangle.png"
+      "file": "asset/base/icons/alert-triangle.png"
     },
     {
       "id": "alert-circle",
@@ -128,7 +128,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "alert-circle.png"
+      "file": "asset/base/icons/alert-circle.png"
     },
     {
       "id": "clock",
@@ -137,7 +137,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "clock.png"
+      "file": "asset/base/icons/clock.png"
     },
     {
       "id": "refresh-cw",
@@ -146,7 +146,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "refresh-cw.png"
+      "file": "asset/base/icons/refresh-cw.png"
     },
     {
       "id": "clipboard-check",
@@ -155,7 +155,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "clipboard-check.png"
+      "file": "asset/base/icons/clipboard-check.png"
     },
     {
       "id": "shield-check",
@@ -164,7 +164,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "shield-check.png"
+      "file": "asset/base/icons/shield-check.png"
     },
     {
       "id": "folder-open",
@@ -173,7 +173,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "folder-open.png"
+      "file": "asset/base/icons/folder-open.png"
     },
     {
       "id": "thermometer",
@@ -182,7 +182,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "thermometer.png"
+      "file": "asset/base/icons/thermometer.png"
     },
     {
       "id": "snowflake",
@@ -191,7 +191,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "snowflake.png"
+      "file": "asset/base/icons/snowflake.png"
     },
     {
       "id": "copy",
@@ -200,7 +200,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "copy.png"
+      "file": "asset/base/icons/copy.png"
     },
     {
       "id": "file-text",
@@ -209,7 +209,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "file-text.png"
+      "file": "asset/base/icons/file-text.png"
     },
     {
       "id": "sliders-horizontal",
@@ -218,7 +218,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "sliders-horizontal.png"
+      "file": "asset/base/icons/sliders-horizontal.png"
     },
     {
       "id": "map-pin",
@@ -227,7 +227,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "map-pin.png"
+      "file": "asset/base/icons/map-pin.png"
     },
     {
       "id": "radio",
@@ -236,7 +236,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "radio.png"
+      "file": "asset/base/icons/radio.png"
     },
     {
       "id": "truck",
@@ -245,7 +245,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "truck.png"
+      "file": "asset/base/icons/truck.png"
     },
     {
       "id": "dumbbell",
@@ -254,7 +254,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "dumbbell.png"
+      "file": "asset/base/icons/dumbbell.png"
     },
     {
       "id": "eye",
@@ -263,7 +263,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "eye.png"
+      "file": "asset/base/icons/eye.png"
     },
     {
       "id": "eye-off",
@@ -272,7 +272,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "eye-off.png"
+      "file": "asset/base/icons/eye-off.png"
     },
     {
       "id": "footprints",
@@ -281,7 +281,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "footprints.png"
+      "file": "asset/base/icons/footprints.png"
     },
     {
       "id": "person-standing",
@@ -290,7 +290,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "person-standing.png"
+      "file": "asset/base/icons/person-standing.png"
     },
     {
       "id": "sparkles",
@@ -299,7 +299,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "sparkles.png"
+      "file": "asset/base/icons/sparkles.png"
     },
     {
       "id": "x",
@@ -308,7 +308,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "x.png"
+      "file": "asset/base/icons/x.png"
     },
     {
       "id": "calendar-current",
@@ -317,7 +317,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "calendar-current.png"
+      "file": "asset/base/icons/calendar-current.png"
     },
     {
       "id": "yike-mechanical-calendar",
@@ -326,7 +326,7 @@
       "height": 44,
       "scale": 3,
       "colorMode": "intrinsic",
-      "file": "yike-mechanical-calendar.png"
+      "file": "asset/yike/icons/yike-mechanical-calendar.png"
     },
     {
       "id": "yike-mechanical-focus-high",
@@ -335,7 +335,7 @@
       "height": 44,
       "scale": 3,
       "colorMode": "intrinsic",
-      "file": "yike-mechanical-focus-high.png"
+      "file": "asset/yike/icons/yike-mechanical-focus-high.png"
     },
     {
       "id": "yike-mechanical-focus-low",
@@ -344,7 +344,7 @@
       "height": 44,
       "scale": 3,
       "colorMode": "intrinsic",
-      "file": "yike-mechanical-focus-low.png"
+      "file": "asset/yike/icons/yike-mechanical-focus-low.png"
     },
     {
       "id": "yike-mechanical-focus-medium",
@@ -353,7 +353,7 @@
       "height": 44,
       "scale": 3,
       "colorMode": "intrinsic",
-      "file": "yike-mechanical-focus-medium.png"
+      "file": "asset/yike/icons/yike-mechanical-focus-medium.png"
     },
     {
       "id": "yike-mode-countdown",
@@ -362,7 +362,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "yike-mode-countdown.png"
+      "file": "asset/yike/icons/yike-mode-countdown.png"
     },
     {
       "id": "yike-mode-pomodoro",
@@ -371,7 +371,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "yike-mode-pomodoro.png"
+      "file": "asset/yike/icons/yike-mode-pomodoro.png"
     },
     {
       "id": "yike-mode-stopwatch",
@@ -380,7 +380,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "yike-mode-stopwatch.png"
+      "file": "asset/yike/icons/yike-mode-stopwatch.png"
     },
     {
       "id": "yike-sundial-focus-high",
@@ -389,7 +389,7 @@
       "height": 44,
       "scale": 3,
       "colorMode": "intrinsic",
-      "file": "yike-sundial-focus-high.png"
+      "file": "asset/yike/icons/yike-sundial-focus-high.png"
     },
     {
       "id": "yike-sundial-focus-low",
@@ -398,7 +398,7 @@
       "height": 44,
       "scale": 3,
       "colorMode": "intrinsic",
-      "file": "yike-sundial-focus-low.png"
+      "file": "asset/yike/icons/yike-sundial-focus-low.png"
     },
     {
       "id": "yike-sundial-focus-medium",
@@ -407,7 +407,7 @@
       "height": 44,
       "scale": 3,
       "colorMode": "intrinsic",
-      "file": "yike-sundial-focus-medium.png"
+      "file": "asset/yike/icons/yike-sundial-focus-medium.png"
     },
     {
       "id": "yike-water-focus-high",
@@ -416,7 +416,7 @@
       "height": 44,
       "scale": 3,
       "colorMode": "intrinsic",
-      "file": "yike-water-focus-high.png"
+      "file": "asset/yike/icons/yike-water-focus-high.png"
     },
     {
       "id": "yike-water-focus-low",
@@ -425,7 +425,7 @@
       "height": 44,
       "scale": 3,
       "colorMode": "intrinsic",
-      "file": "yike-water-focus-low.png"
+      "file": "asset/yike/icons/yike-water-focus-low.png"
     },
     {
       "id": "yike-water-focus-medium",
@@ -434,7 +434,7 @@
       "height": 44,
       "scale": 3,
       "colorMode": "intrinsic",
-      "file": "yike-water-focus-medium.png"
+      "file": "asset/yike/icons/yike-water-focus-medium.png"
     },
     {
       "id": "circle-check",
@@ -443,7 +443,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "circle-check.png"
+      "file": "asset/base/icons/circle-check.png"
     },
     {
       "id": "chart-column",
@@ -452,7 +452,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "chart-column.png"
+      "file": "asset/base/icons/chart-column.png"
     },
     {
       "id": "book-open",
@@ -461,7 +461,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "book-open.png"
+      "file": "asset/base/icons/book-open.png"
     },
     {
       "id": "glass-water",
@@ -470,7 +470,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "glass-water.png"
+      "file": "asset/base/icons/glass-water.png"
     },
     {
       "id": "leaf",
@@ -479,7 +479,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "leaf.png"
+      "file": "asset/base/icons/leaf.png"
     },
     {
       "id": "moon",
@@ -488,7 +488,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "moon.png"
+      "file": "asset/base/icons/moon.png"
     },
     {
       "id": "stretch-horizontal",
@@ -497,7 +497,7 @@
       "height": 24,
       "scale": 3,
       "colorMode": "theme",
-      "file": "stretch-horizontal.png"
+      "file": "asset/base/icons/stretch-horizontal.png"
     }
   ]
 }

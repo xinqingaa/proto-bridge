@@ -9,6 +9,7 @@ import '../storage/app_prefs.dart';
 import 'app_colors.dart';
 import 'app_text_styles.dart';
 import 'app_tokens.dart';
+import 'app_metrics.dart';
 import 'theme_pack.dart';
 
 export 'theme_pack.dart';
@@ -35,10 +36,12 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
 /// 当前亮度（对齐 pbwork light/dark 主题），经 [AppPrefs] 持久化。
 final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
   ThemeModeNotifier.new,
+  dependencies: [appPrefsProvider],
 );
 
 final themePacksProvider = Provider<List<AppThemePack>>(
   (ref) => generatedThemePacks,
+  dependencies: const [],
 );
 
 class ThemePackNotifier extends Notifier<AppThemePack> {
@@ -70,6 +73,7 @@ class ThemePackNotifier extends Notifier<AppThemePack> {
 
 final themePackProvider = NotifierProvider<ThemePackNotifier, AppThemePack>(
   ThemePackNotifier.new,
+  dependencies: [appPrefsProvider, themePacksProvider],
 );
 
 /// ThemeExtension owned by the nearest Material Theme, never a global singleton.
@@ -77,29 +81,36 @@ class TS extends ThemeExtension<TS> {
   TS({
     required this.brightness,
     this.pack = AppThemePack.base,
+    this.metrics = const AppMetrics.identity(),
     AppColors? colors,
   }) : colors = colors ?? pack.colorsFor(brightness);
 
   final Brightness brightness;
   final AppThemePack pack;
+  final AppMetrics metrics;
   final AppColors colors;
   bool get isDark => brightness == Brightness.dark;
   late final AppTextStyles textStyle = AppTextStyles(
     colors: colors,
-    typography: pack.typography,
+    typography: metrics.typography(pack.typography),
   );
-  AppSpacing get spacing => pack.spacing;
-  AppSizing get sizing => pack.sizing;
-  AppRadius get radius => pack.radius;
+  late final AppSpacing spacing = metrics.spacing(pack.spacing);
+  late final AppSizing sizing = metrics.sizing(pack.sizing);
+  late final AppRadius radius = metrics.radii(pack.radius);
   AppOpacity get opacity => isDark ? pack.darkOpacity : pack.lightOpacity;
   AppMotion get motion => pack.motion;
-  AppElevation get elevation =>
-      isDark ? pack.darkElevation : pack.lightElevation;
-  late final AppBorderTokens border = AppBorderTokens(colors: colors);
-  AppLayoutTokens get layout => pack.layout;
+  late final AppElevation elevation = metrics.elevation(
+    isDark ? pack.darkElevation : pack.lightElevation,
+  );
+  late final AppBorderTokens border = AppBorderTokens(
+    colors: colors,
+    scale: metrics.radius,
+  );
+  late final AppLayoutTokens layout = metrics.layout(pack.layout);
   AppLayerTokens get layer => pack.layer;
-  AppEffectTokens get effect =>
-      isDark ? pack.darkEffect ?? pack.effect : pack.effect;
+  late final AppEffectTokens effect = metrics.effect(
+    isDark ? pack.darkEffect ?? pack.effect : pack.effect,
+  );
   AppAssets get assets => isDark ? pack.darkAssets ?? pack.assets : pack.assets;
 
   static TS of(BuildContext context) {
@@ -115,6 +126,7 @@ class TS extends ThemeExtension<TS> {
     AppColors? colors,
   }) => TS(
     brightness: brightness ?? this.brightness,
+    metrics: metrics,
     pack: pack ?? this.pack,
     colors: colors ?? (pack == null && brightness == null ? this.colors : null),
   );
@@ -125,6 +137,7 @@ class TS extends ThemeExtension<TS> {
     final target = t < 0.5 ? this : other;
     return TS(
       brightness: target.brightness,
+      metrics: target.metrics,
       pack: target.pack,
       colors: colors.lerp(other.colors, t),
     );
@@ -183,6 +196,20 @@ class TS extends ThemeExtension<TS> {
       pageTransitionsTheme: PbPageTransitions.theme(),
       scaffoldBackgroundColor: colors.background,
       dividerColor: colors.divider,
+      iconTheme: IconThemeData(size: sizing.iconMd, color: colors.onSurface),
+      textTheme: TextTheme(
+        displayLarge: textStyle.display,
+        headlineMedium: textStyle.headline,
+        titleLarge: textStyle.title,
+        titleMedium: textStyle.subtitle,
+        titleSmall: textStyle.titleSm,
+        bodyLarge: textStyle.bodyLg,
+        bodyMedium: textStyle.content,
+        bodySmall: textStyle.bodySm,
+        labelLarge: textStyle.label,
+        labelMedium: textStyle.captionStrong,
+        labelSmall: textStyle.caption,
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: colors.surface,
         foregroundColor: colors.onSurface,
@@ -201,7 +228,7 @@ class TS extends ThemeExtension<TS> {
         backgroundColor: colors.secondarySoft,
         selectedColor: colors.primarySoft,
         labelStyle: textStyle.captionStrong,
-        side: BorderSide(color: colors.border),
+        side: border.defaultBorder,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radius.full),
         ),
@@ -215,15 +242,15 @@ class TS extends ThemeExtension<TS> {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius.md),
-          borderSide: BorderSide(color: colors.border),
+          borderSide: border.defaultBorder,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius.md),
-          borderSide: BorderSide(color: colors.border),
+          borderSide: border.defaultBorder,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius.md),
-          borderSide: BorderSide(color: colors.primary, width: 2),
+          borderSide: border.focus,
         ),
         labelStyle: textStyle.label.copyWith(color: colors.onSurfaceMuted),
         hintStyle: textStyle.content.copyWith(color: colors.onSurfaceMuted),

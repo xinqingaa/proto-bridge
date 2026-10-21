@@ -7,6 +7,7 @@
 - [工程架构](docs/architecture.md)
 - [公共组件](docs/components.md)
 - [Theme 与 Token](docs/theme.md)
+- [静态资源](docs/assets.md)
 - [路由](docs/routing.md)
 - [测试与视觉验证](docs/testing.md)
 - [ProtoBridge 目标适配](docs/proto-bridge.md)

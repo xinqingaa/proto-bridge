@@ -13,7 +13,7 @@ description: >-
 2. `docs/proto-bridge.md`
 3. 根目录 `proto-bridge.target.json`
 4. 根目录 `proto-bridge.sync.json`
-5. `docs/components.md` 与 `docs/theme.md`
+5. `docs/components.md`、`docs/theme.md` 与 `docs/assets.md`
 6. Producer 的 `../../../../pbwork/docs/components/alignment-protocol.md` 及本批变化 Contract
 
 ## 流程
@@ -23,7 +23,7 @@ description: >-
    图标同步先读 Producer 的 `apps/pbwork/docs/components/action/icon.md`；从同一 DS SVG 源导出图片和 Dart 名称，不手工补 PNG 或枚举；SVG 只在 Producer 维护，Target 只接收 PNG，不能复制原稿或另建参考副本目录。指定原型时同时限制主题与图标范围。
 3. 按 `componentId` 翻译职责、`summary`、`behavior`、state kind、layout、visual anatomy 和 token bindings。Role 只做通用语义回退；例如 `flow-sheet` 仍使用 `sheet` role。
 4. 更新 Target 自己拥有的根目录 `proto-bridge.target.json` 与 Dart 公开 API。允许 API 不同构，但当前登记的 Contract id 与完整 Token Catalog 都必须被 resolver 判定为 `resolved`，或在 `proto-bridge.target.json` 中以带非空 `reason` 的条目 `pending` 显式声明（条目状态，与 `proto-bridge.sync.json` 的批次 `pending` 是两个概念，见 `docs/proto-bridge.md`）；未声明又缺失的键仍然失败，不得保留旧 id 或旧 Dart API 兼容层。
-5. 平台近似必须显式记录；不得在 feature 中复制公共组件或创建平行 Theme。
+5. 平台近似必须显式记录；不得在 feature 中复制公共组件或创建平行 Theme。所有响应式状态按 `docs/architecture.md` 使用 Riverpod，公共组件与 Demo 无例外；弹层按库示例组合，不复制定位算法。
 6. 依赖使用 pub.dev 的 unified_popups，不添加本地 path 或 override；存储只用 MMKV，主题只用类型化 AppThemePack / TS ThemeExtension，不保留旧主题或旧存储实现。
 7. DS 仍在连续迭代时保持 drift/pending 可见；确认稳定后用 verifier 输出更新根目录 `proto-bridge.sync.json`，状态恢复 `synced`。
 

@@ -18,13 +18,7 @@ enum CommonIconTone {
 }
 
 extension CommonIconNameAsset on CommonIconName {
-  String get assetPath {
-    final id = name.replaceAllMapped(
-      RegExp('[A-Z]'),
-      (match) => '-${match[0]!.toLowerCase()}',
-    );
-    return 'assets/icons/$id.png';
-  }
+  String get assetPath => _iconAssetPaths[this]!;
 
   bool get preservesSourceColor => _intrinsicColorIcons.contains(this);
 }
@@ -68,20 +62,24 @@ class CommonIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ts = TS.of(context);
-    return Image.asset(
-      name.assetPath,
-      width: dimension ?? _size(ts),
-      height: dimension ?? _size(ts),
-      color: name.preservesSourceColor
-          ? null
-          : (color ??
-                _color(ts) ??
-                IconTheme.of(context).color ??
-                ts.colors.onSurface),
-      filterQuality: FilterQuality.high,
-      colorBlendMode: BlendMode.srcIn,
-      excludeFromSemantics: label == null || label!.isEmpty,
-      semanticLabel: label,
+    return Center(
+      widthFactor: 1,
+      heightFactor: 1,
+      child: Image.asset(
+        name.assetPath,
+        width: dimension ?? _size(ts),
+        height: dimension ?? _size(ts),
+        color: name.preservesSourceColor
+            ? null
+            : (color ??
+                  _color(ts) ??
+                  IconTheme.of(context).color ??
+                  ts.colors.onSurface),
+        filterQuality: FilterQuality.high,
+        colorBlendMode: BlendMode.srcIn,
+        excludeFromSemantics: label == null || label!.isEmpty,
+        semanticLabel: label,
+      ),
     );
   }
 }

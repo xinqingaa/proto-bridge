@@ -648,13 +648,13 @@ const _theme1 = AppThemePack(
     ],
   ),
   assets: AppAssets(
-    brandMark: "assets/themes/yike/assets/mechanical-light.png",
+    brandMark: "asset/yike/artwork/mechanical-light.png",
     brandWordmark: null,
     emptyIllustration: null,
     launchImage: null,
   ),
   darkAssets: AppAssets(
-    brandMark: "assets/themes/yike/assets/mechanical-dark.png",
+    brandMark: "asset/yike/artwork/mechanical-dark.png",
     brandWordmark: null,
     emptyIllustration: null,
     launchImage: null,
@@ -992,13 +992,13 @@ const _theme2 = AppThemePack(
     ],
   ),
   assets: AppAssets(
-    brandMark: "assets/themes/yike/assets/water-light.png",
+    brandMark: "asset/yike/artwork/water-light.png",
     brandWordmark: null,
     emptyIllustration: null,
     launchImage: null,
   ),
   darkAssets: AppAssets(
-    brandMark: "assets/themes/yike/assets/water-dark.png",
+    brandMark: "asset/yike/artwork/water-dark.png",
     brandWordmark: null,
     emptyIllustration: null,
     launchImage: null,
@@ -1336,13 +1336,13 @@ const _theme3 = AppThemePack(
     ],
   ),
   assets: AppAssets(
-    brandMark: "assets/themes/yike/assets/sundial-light.png",
+    brandMark: "asset/yike/artwork/sundial-light.png",
     brandWordmark: null,
     emptyIllustration: null,
     launchImage: null,
   ),
   darkAssets: AppAssets(
-    brandMark: "assets/themes/yike/assets/sundial-dark.png",
+    brandMark: "asset/yike/artwork/sundial-dark.png",
     brandWordmark: null,
     emptyIllustration: null,
     launchImage: null,

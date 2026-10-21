@@ -340,7 +340,7 @@ abstract final class AppPop {
     required PopupAnchorController anchor,
     required DropMenu<T> menu,
     ValueChanged<T>? onSelected,
-    MenuPlacement placement = MenuPlacement.belowStart,
+    MenuPlacement placement = MenuPlacement.auto,
     CommonSurfaceMaterial material = CommonSurfaceMaterial.solid,
   }) {
     final ts = TS.of(context);
@@ -354,7 +354,9 @@ abstract final class AppPop {
         menuStyle: DropMenuStyle(
           surface: _surface(context, material),
           borderRadius: BorderRadius.circular(ts.radius.md),
-          constraints: BoxConstraints(maxHeight: ts.layout.menuMaxHeight),
+          constraints: const DropMenuStyle().constraints.copyWith(
+            maxHeight: ts.layout.menuMaxHeight,
+          ),
           textColor: ts.colors.onSurface,
           secondaryTextColor: ts.colors.onSurfaceMuted,
           selectedColor: ts.colors.primary,

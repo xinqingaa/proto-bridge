@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../common/state/local_value.dart';
 
 import '../../common/overlay/app_pop.dart';
 import '../../common/widgets.dart';
@@ -6,20 +8,21 @@ import '../../router/routes.dart';
 import '../../theme/ts.dart';
 import 'demo_layout.dart';
 
-class ExtendedDemoSection extends StatefulWidget {
+class ExtendedDemoSection extends ConsumerStatefulWidget {
   const ExtendedDemoSection({super.key, this.only});
   final String? only;
   @override
-  State<ExtendedDemoSection> createState() => _ExtendedDemoSectionState();
+  ConsumerState<ExtendedDemoSection> createState() =>
+      _ExtendedDemoSectionState();
 }
 
-class _ExtendedDemoSectionState extends State<ExtendedDemoSection> {
-  double _goal = 3;
-  List<Object> _wheel = [1, 2];
-  String _month = '2026-07';
-  String _date = '2026-07-16';
-  String _heatmapDate = '2026-07-16';
-  bool _notifications = true;
+class _ExtendedDemoSectionState extends ConsumerState<ExtendedDemoSection> {
+  final _goalProvider = localValueProvider<double>(3);
+  final _wheelProvider = localValueProvider<List<Object>>(const [1, 2]);
+  final _monthProvider = localValueProvider<String>('2026-07');
+  final _dateProvider = localValueProvider<String>('2026-07-16');
+  final _heatmapDateProvider = localValueProvider<String>('2026-07-16');
+  final _notificationsProvider = localValueProvider<bool>(true);
   static const _columns = [
     CommonWheelColumn(
       id: 'first',
@@ -59,22 +62,29 @@ class _ExtendedDemoSectionState extends State<ExtendedDemoSection> {
 
   @override
   Widget build(BuildContext context) {
+    final goal = ref.watch(_goalProvider);
+    final wheel = ref.watch(_wheelProvider);
+    final month = ref.watch(_monthProvider);
+    final date = ref.watch(_dateProvider);
+    final heatmapDate = ref.watch(_heatmapDateProvider);
+    final notifications = ref.watch(_notificationsProvider);
     final ts = TS.of(context);
     final groups = <DemoGroup>[
       DemoGroup(
         title: 'Stepper',
         child: CommonStepper(
           label: '每日目标',
-          value: _goal,
-          onChanged: (value) => setState(() => _goal = value),
+          value: goal,
+          onChanged: (value) => ref.read(_goalProvider.notifier).set(value),
         ),
       ),
       DemoGroup(
         title: 'WheelPicker',
         child: CommonWheelPicker(
           columns: _columns,
-          values: _wheel,
-          onChanged: (values) => setState(() => _wheel = values),
+          values: wheel,
+          onChanged: (values) =>
+              ref.read(_wheelProvider.notifier).set(List.unmodifiable(values)),
         ),
       ),
       DemoGroup(
@@ -108,19 +118,21 @@ class _ExtendedDemoSectionState extends State<ExtendedDemoSection> {
         title: 'Heatmap',
         child: CommonHeatmap(
           days: _days,
-          value: _heatmapDate,
-          onChanged: (date) => setState(() => _heatmapDate = date),
+          value: heatmapDate,
+          onChanged: (date) =>
+              ref.read(_heatmapDateProvider.notifier).set(date),
         ),
       ),
       DemoGroup(
         title: 'MonthCalendar',
         child: CommonMonthCalendar(
-          month: _month,
-          value: _date,
+          month: month,
+          value: date,
           today: '2026-07-16',
           disabledDates: const {'2026-07-15'},
-          onChanged: (date) => setState(() => _date = date),
-          onMonthChanged: (month) => setState(() => _month = month),
+          onChanged: (date) => ref.read(_dateProvider.notifier).set(date),
+          onMonthChanged: (month) =>
+              ref.read(_monthProvider.notifier).set(month),
         ),
       ),
       DemoGroup(
@@ -136,7 +148,7 @@ class _ExtendedDemoSectionState extends State<ExtendedDemoSection> {
                   id: 'notifications',
                   title: '提醒通知',
                   description: '在目标时间提醒',
-                  switchValue: _notifications,
+                  switchValue: notifications,
                 ),
                 const CommonListItem(
                   id: 'details',
@@ -147,7 +159,8 @@ class _ExtendedDemoSectionState extends State<ExtendedDemoSection> {
               ],
             ),
           ],
-          onChanged: (_, _, value) => setState(() => _notifications = value),
+          onChanged: (_, _, value) =>
+              ref.read(_notificationsProvider.notifier).set(value),
           onNavigate: (_, _) => AppPop.toast(context, '打开明细'),
         ),
       ),

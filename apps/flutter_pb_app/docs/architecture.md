@@ -26,14 +26,16 @@ theme    -> storage（仅主题偏好）
 
 ## 状态管理
 
-工程只使用已安装的 `flutter_riverpod`。页面业务状态默认放进该页 feature 的 `Notifier` 或 `AsyncNotifier`，而不是页面 `State` 字段。Target adapter 不推断状态库；本文件是状态管理的权威来源。
+工程只使用已安装的 `flutter_riverpod`。所有驱动界面变化的状态通过 Riverpod 管理。页面业务状态放进该页 feature 的 `Notifier` 或 `AsyncNotifier`，不保存在 Widget 的可变字段中。Target adapter 不推断状态库；本文件是状态管理的权威来源。
 
 - 应用级状态：theme、AppPrefs 读写，放在 `theme/` 或 `storage/`。
 - 页面业务状态：筛选、查询、Case/variant、表单值、校验、加载/空/错误壳，放在同 feature 的 `Notifier` 或 `AsyncNotifier`。
-- Flutter 控制器：`TextEditingController`、`TabController`、`ScrollController` 留在 `ConsumerStatefulWidget`；变更通过 Notifier 同步业务字段。
-- 组件内部状态：仅限 `common/` 组件自有交互，例如清除按钮显隐、`RefreshController` 生命周期。
+- Flutter 控制器：`TextEditingController`、`TabController`、`ScrollController` 由 Widget 生命周期持有和释放；需要 ref 时使用 ConsumerStatefulWidget。纯控制器或派生几何缓存不另建响应式数据源，业务字段变更经 Notifier 同步。
+- 组件内部交互：按压、密码显隐、清除按钮显隐同样使用 Riverpod。简单值可用 `common/state/local_value.dart` 的类型化 Notifier，Provider 身份由所属 ConsumerState 持有，自动释放；不能把所有实例放进一个全局状态表。
+- 异步初始化：启动准备使用 FutureProvider，重试通过 invalidate 重新执行；加载/错误/成功状态由 AsyncValue 决定。
+- 控制器桥接：SearchBar 的 ControllerText Notifier 监听实际 TextEditingController，Provider 负责撤销监听，Widget 负责其自建控制器的释放。受控组件的业务值仍由调用方 Provider 管理。
 
-产品页使用 `ConsumerWidget` 或 `ConsumerStatefulWidget`。只有 `common` 组件和 Demo 对照区可以把 `setState` 当作默认手段。
+产品页、公共组件及 Demo 的响应式状态统一使用 Riverpod；工程代码禁止 `setState`、`StatefulBuilder`，也不引入 ValueNotifier/ChangeNotifier 作为平行状态管理。ConsumerStatefulWidget 仅承载 Provider 身份、Flutter 控制器和订阅等生命周期对象，显示值由 ref.watch 读取。嵌套 ProviderScope 中的偏好和主题依赖必须显式声明 dependencies，保证覆盖在正确作用域生效。
 
 跨页共享只有在至少两个 feature 使用且职责稳定时才提升到 `common` 之外的共享 Provider。不要在单个页面中引入第二套状态库。
 
@@ -64,7 +66,7 @@ theme    -> storage（仅主题偏好）
 
 ## 禁止事项
 
-- 不在产品页用 `StatefulWidget` + `setState` 承载筛选、表单、variant 等业务状态。
+- 不在任何应用代码中以 `setState`、`StatefulBuilder` 或第二套状态机制更新界面；公共组件、Demo 和启动页没有例外。
 - 不在 feature 内复制 `Common*` 组件。
 - 不直接写新的颜色、字号、圆角或间距数字来绕过 `TS`。
 - 不把临时展示数据误写成网络请求或持久化逻辑。

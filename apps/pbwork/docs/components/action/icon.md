@@ -39,7 +39,7 @@ Icon 入口使用手机框外的图形目录：按图标/主题图形、归属�
 
 直接从原始 SVG 生成单份 3 倍 PNG，不经过 JSON 绘图中间件。`proto-bridge.icons.json` 记录归属、颜色策略、逻辑尺寸和实际倍率；Dart 名称及颜色策略同步生成。Flutter 使用 Image.asset，高质量缩放；自带颜色的图形禁用主题染色。`--check` 检查范围、源摘要、Dart 名称和像素尺寸；完整 DS→Target 门禁包含该检查。
 
-主题资源同步读取显式 `theme/artwork.json`：将已登记的原始 SVG 转换为默认视图和交互分层的 PNG（按原始画布与主题 size.plot 中较大的宽度、3 倍像素密度计算），在 `proto-bridge.themes.json.artwork` 记录路径、viewBox、尺寸及专注过程依赖。相同状态图层可用 `layerAsset` 指向同一目录中的图形条目，Flutter 共用其 PNG；SVG 唯一源保留在 PBWork，Target 只接收 `assets/themes/` 下的 PNG；元数据的 `source` 仅记录 PBWork 来源标识和摘要，不指向 Target 文件。需要单个原稿时从 PBWork 预览手动下载。未制作业务动画时不声称位图已实现完整动态表盘。
+主题资源同步读取显式 `theme/artwork.json`：将已登记的原始 SVG 转换为默认视图和交互分层的 PNG（按原始画布与主题 size.plot 中较大的宽度、3 倍像素密度计算），在 `proto-bridge.themes.json.artwork` 记录路径、viewBox、尺寸及专注过程依赖。相同状态图层可用 `layerAsset` 指向同一目录中的图形条目，Flutter 共用其 PNG；SVG 唯一源保留在 PBWork，Target 只接收 `asset/<归属>/artwork/` 下的 PNG；元数据的 `source` 仅记录 PBWork 来源标识和摘要，不指向 Target 文件。需要单个原稿时从 PBWork 预览手动下载。未制作业务动画时不声称位图已实现完整动态表盘。
 
 ## States
 

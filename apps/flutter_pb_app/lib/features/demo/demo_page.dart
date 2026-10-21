@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../common/state/local_value.dart';
 import '../../common/widgets.dart';
 import '../../router/routes.dart';
 import '../../theme/ts.dart';
@@ -11,44 +13,47 @@ import 'feedback_demo_section.dart';
 import 'extended_demo_section.dart';
 import 'theme_settings_page.dart';
 
-class DemoPage extends StatefulWidget {
+class DemoPage extends ConsumerStatefulWidget {
   const DemoPage({super.key});
   @override
-  State<DemoPage> createState() => _DemoPageState();
+  ConsumerState<DemoPage> createState() => _DemoPageState();
 }
 
-class _DemoPageState extends State<DemoPage> {
-  int _index = 0;
+class _DemoPageState extends ConsumerState<DemoPage> {
+  final _indexProvider = localValueProvider<int>(0);
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: CommonAppBar(
-      title: _index == 0 ? '主题' : '组件',
-      showAction: true,
-      actionIcon: CommonIconName.settings,
-      actionLabel: '展示设置',
-      onAction: () => Navigator.of(context).pushNamed(AppRoutes.settings),
-    ),
-    body: IndexedStack(
-      index: _index,
-      children: const [ThemeSettingsContent(), _ComponentCatalog()],
-    ),
-    bottomNavigationBar: CommonBottomNav(
-      currentIndex: _index,
-      onTap: (value) => setState(() => _index = value),
-      items: const [
-        CommonBottomNavItem(
-          value: 'themes',
-          label: '主题',
-          icon: CommonIconName.sparkles,
-        ),
-        CommonBottomNavItem(
-          value: 'components',
-          label: '组件',
-          icon: CommonIconName.inbox,
-        ),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) {
+    final index = ref.watch(_indexProvider);
+    return Scaffold(
+      appBar: CommonAppBar(
+        title: index == 0 ? '主题' : '组件',
+        showAction: true,
+        actionIcon: CommonIconName.settings,
+        actionLabel: '展示设置',
+        onAction: () => Navigator.of(context).pushNamed(AppRoutes.settings),
+      ),
+      body: IndexedStack(
+        index: index,
+        children: const [ThemeSettingsContent(), _ComponentCatalog()],
+      ),
+      bottomNavigationBar: CommonBottomNav(
+        currentIndex: index,
+        onTap: (value) => ref.read(_indexProvider.notifier).set(value),
+        items: const [
+          CommonBottomNavItem(
+            value: 'themes',
+            label: '主题',
+            icon: CommonIconName.sparkles,
+          ),
+          CommonBottomNavItem(
+            value: 'components',
+            label: '组件',
+            icon: CommonIconName.inbox,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ComponentCatalog extends StatelessWidget {

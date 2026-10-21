@@ -1,13 +1,17 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_pb_app/common/widgets.dart';
 import 'package:flutter_pb_app/common/widgets/charts/calendar_dates.dart';
 import 'package:flutter_pb_app/theme/ts.dart';
+import 'package:flutter_pb_app/common/state/local_value.dart';
 
-Widget shell(WidgetBuilder builder) => MaterialApp(
-  theme: TS(brightness: Brightness.light).toThemeData(),
-  home: Scaffold(body: Builder(builder: builder)),
+Widget shell(WidgetBuilder builder) => ProviderScope(
+  child: MaterialApp(
+    theme: TS(brightness: Brightness.light).toThemeData(),
+    home: Scaffold(body: Builder(builder: builder)),
+  ),
 );
 
 void main() {
@@ -38,16 +42,20 @@ void main() {
     tester,
   ) async {
     double value = 1;
+    final valueProvider = localValueProvider<double>(1);
     await tester.pumpWidget(
       shell(
-        (context) => StatefulBuilder(
-          builder: (context, setState) => CommonStepper(
-            value: value,
-            min: 1,
-            max: 8,
-            step: 2,
-            onChanged: (next) => setState(() => value = next),
-          ),
+        (context) => Consumer(
+          builder: (context, ref, _) {
+            value = ref.watch(valueProvider);
+            return CommonStepper(
+              value: value,
+              min: 1,
+              max: 8,
+              step: 2,
+              onChanged: (next) => ref.read(valueProvider.notifier).set(next),
+            );
+          },
         ),
       ),
     );
@@ -73,7 +81,8 @@ void main() {
     'wheel follows external updates and emits independent column values',
     (tester) async {
       var values = <Object>[1, 2];
-      late StateSetter update;
+      final valuesProvider = localValueProvider<List<Object>>(const [1, 2]);
+      late LocalValue<List<Object>> update;
       const columns = [
         CommonWheelColumn(
           id: 'one',
@@ -95,19 +104,20 @@ void main() {
       ];
       await tester.pumpWidget(
         shell(
-          (context) => StatefulBuilder(
-            builder: (context, setState) {
-              update = setState;
+          (context) => Consumer(
+            builder: (context, ref, _) {
+              values = ref.watch(valuesProvider);
+              update = ref.read(valuesProvider.notifier);
               return CommonWheelPicker(
                 columns: columns,
                 values: values,
-                onChanged: (next) => setState(() => values = next),
+                onChanged: (next) => update.set(List.unmodifiable(next)),
               );
             },
           ),
         ),
       );
-      update(() => values = [0, 2]);
+      update.set(const [0, 2]);
       await tester.pump();
       final first = tester.widget<ListWheelScrollView>(
         find.byType(ListWheelScrollView).first,

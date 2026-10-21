@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -8,11 +9,13 @@ import 'package:flutter_pb_app/common/overlay/app_pop.dart';
 import 'package:flutter_pb_app/common/widgets.dart';
 import 'package:flutter_pb_app/theme/ts.dart';
 
-Widget shell(WidgetBuilder builder) => MaterialApp(
-  theme: TS(brightness: Brightness.light).toThemeData(),
-  navigatorObservers: [Pop.routeObserver],
-  builder: Pop.hostBuilder,
-  home: Scaffold(body: Builder(builder: builder)),
+Widget shell(WidgetBuilder builder) => ProviderScope(
+  child: MaterialApp(
+    theme: TS(brightness: Brightness.light).toThemeData(),
+    navigatorObservers: [Pop.routeObserver],
+    builder: Pop.hostBuilder,
+    home: Scaffold(body: Builder(builder: builder)),
+  ),
 );
 
 void main() {

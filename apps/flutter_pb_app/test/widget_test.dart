@@ -22,12 +22,14 @@ Future<void> start(WidgetTester tester, FakeAppPrefs prefs) async {
 void main() {
   testWidgets('authored colored icons bypass theme tinting', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        theme: TS(brightness: Brightness.dark).toThemeData(),
-        home: const Scaffold(
-          body: CommonIcon(
-            name: CommonIconName.yikeMechanicalFocusHigh,
-            tone: CommonIconTone.primary,
+      ProviderScope(
+        child: MaterialApp(
+          theme: TS(brightness: Brightness.dark).toThemeData(),
+          home: const Scaffold(
+            body: CommonIcon(
+              name: CommonIconName.yikeMechanicalFocusHigh,
+              tone: CommonIconTone.primary,
+            ),
           ),
         ),
       ),

@@ -120,7 +120,7 @@ export async function exportFlutterThemes({
     args(groups(v, "assets"), (value) => {
       if (value === "none") return "null";
       if (!value?.file || !value.packId) throw new Error("Invalid theme asset");
-      const relative = `assets/themes/${value.packId}/${value.file.replace(/\.svg$/, ".png")}`;
+      const relative = `asset/${value.packId === "pbwork-base" ? "base" : value.packId}/artwork/${path.posix.basename(value.file).replace(/\.svg$/, ".png")}`;
       assets.set(relative, { packId: value.packId, file: value.file });
       return q(relative);
     });
@@ -209,7 +209,7 @@ export async function exportFlutterThemes({
       const svg = await readFile(source.assetFiles.get(packId).get(entry.file), "utf8");
       const parsed = parseSvgArtwork(svg);
       if (entry.views.length !== parsed.views.length || entry.views.some(view => !parsed.views.some(actual => actual.id === view.id && actual.viewBox === view.viewBox))) throw new Error(`Artwork view mismatch: ${entry.id}`);
-      const prefix = `assets/themes/${packId}/${entry.file.replace(/\.svg$/, "")}`;
+      const prefix = `asset/${packId === "pbwork-base" ? "base" : packId}/artwork/${path.posix.basename(entry.file).replace(/\.svg$/, "")}`;
       // Keep the source canvas and cover the largest authored dial at DPR 3.
       const displayWidth = Math.max(parsed.width, ...tables
         .filter(t => t.identity.packId === packId && t.identity.theme === entry.theme)
@@ -219,7 +219,7 @@ export async function exportFlutterThemes({
       const layerEntry = entry.layerAsset ? catalog.assets.find(a => a.id === entry.layerAsset) : entry;
       if (!layerEntry || entry.views.some(v => !layerEntry.views.some(other => other.id === v.id && other.viewBox === v.viewBox))) throw new Error(`Invalid shared layers: ${entry.id}`);
       for (const view of [{id: "", viewBox: parsed.viewBox}, ...entry.views]) {
-        const viewPrefix = view.id ? `assets/themes/${packId}/${layerEntry.file.replace(/\.svg$/, "")}` : prefix;
+        const viewPrefix = view.id ? `asset/${packId === "pbwork-base" ? "base" : packId}/artwork/${path.posix.basename(layerEntry.file).replace(/\.svg$/, "")}` : prefix;
         const target = `${viewPrefix}${view.id ? "--" + view.id : ""}.png`;
         const [, , width, height] = view.viewBox.split(/\s+/).map(Number);
         if (!view.id || !entry.layerAsset) assets.set(target, {packId, file: entry.file, view: view.id, viewBox: view.viewBox, width, height, scale});
@@ -265,15 +265,17 @@ export async function exportFlutterThemes({
     }
     return metadata;
   }
-  await rm(path.join(targetRoot, "assets/themes"), {
-    recursive: true,
-    force: true,
-  });
+  try {
+    const previous = JSON.parse(await readFile(manifestPath, "utf8"));
+    for (const file of Object.keys(previous.assets)) {
+      if (!assets.has(file)) await rm(path.join(targetRoot, file), {force: true});
+    }
+  } catch (error) { if (error.code !== "ENOENT") throw error; }
   await writeFile(output, dart);
   await writeFile(manifestPath, JSON.stringify(metadata, null, 2) + "\n");
   const pubspecPath = path.join(targetRoot, "pubspec.yaml");
   let pubspec = (await readFile(pubspecPath, "utf8")).replace(
-    /^    - assets\/themes\/.*\n/gm,
+    /^    - (?:assets\/themes\/.*|asset\/[^/]+\/artwork\/)\n/gm,
     "",
   );
   pubspec += [

@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -91,24 +92,26 @@ void main() {
     'Tabbar keeps native icon-label navigation with one moving material',
     (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: TS(brightness: Brightness.light).toThemeData(),
-          home: Scaffold(
-            bottomNavigationBar: CommonBottomNav(
-              currentIndex: 0,
-              onTap: (_) {},
-              items: const [
-                CommonBottomNavItem(
-                  value: 'home',
-                  label: '首页',
-                  icon: CommonIconName.home,
-                ),
-                CommonBottomNavItem(
-                  value: 'tasks',
-                  label: '任务',
-                  icon: CommonIconName.list,
-                ),
-              ],
+        ProviderScope(
+          child: MaterialApp(
+            theme: TS(brightness: Brightness.light).toThemeData(),
+            home: Scaffold(
+              bottomNavigationBar: CommonBottomNav(
+                currentIndex: 0,
+                onTap: (_) {},
+                items: const [
+                  CommonBottomNavItem(
+                    value: 'home',
+                    label: '首页',
+                    icon: CommonIconName.home,
+                  ),
+                  CommonBottomNavItem(
+                    value: 'tasks',
+                    label: '任务',
+                    icon: CommonIconName.list,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -134,16 +137,18 @@ void main() {
     'primary tabs use one glass track and native indicator geometry',
     (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: TS(brightness: Brightness.light).toThemeData(),
-          home: const Scaffold(
-            body: DefaultTabController(
-              length: 2,
-              child: CommonPrimaryTabs(
-                items: [
-                  CommonTabItem(value: 'all', label: '全部'),
-                  CommonTabItem(value: 'done', label: '完成'),
-                ],
+        ProviderScope(
+          child: MaterialApp(
+            theme: TS(brightness: Brightness.light).toThemeData(),
+            home: const Scaffold(
+              body: DefaultTabController(
+                length: 2,
+                child: CommonPrimaryTabs(
+                  items: [
+                    CommonTabItem(value: 'all', label: '全部'),
+                    CommonTabItem(value: 'done', label: '完成'),
+                  ],
+                ),
               ),
             ),
           ),
@@ -184,24 +189,28 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: TS(brightness: Brightness.light).toThemeData(),
-        home: const Scaffold(
-          body: DefaultTabController(
-            length: 2,
-            child: Column(
-              children: [
-                CommonPrimaryTabs(
-                  grow: true,
-                  items: [
-                    CommonTabItem(value: 'all', label: '全部'),
-                    CommonTabItem(value: 'done', label: '完成'),
-                  ],
-                ),
-                Expanded(
-                  child: CommonTabView(children: [Text('全部内容'), Text('完成内容')]),
-                ),
-              ],
+      ProviderScope(
+        child: MaterialApp(
+          theme: TS(brightness: Brightness.light).toThemeData(),
+          home: const Scaffold(
+            body: DefaultTabController(
+              length: 2,
+              child: Column(
+                children: [
+                  CommonPrimaryTabs(
+                    grow: true,
+                    items: [
+                      CommonTabItem(value: 'all', label: '全部'),
+                      CommonTabItem(value: 'done', label: '完成'),
+                    ],
+                  ),
+                  Expanded(
+                    child: CommonTabView(
+                      children: [Text('全部内容'), Text('完成内容')],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -238,19 +247,21 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: TS(brightness: Brightness.light).toThemeData(),
-        home: const Scaffold(
-          body: DefaultTabController(
-            length: 3,
-            initialIndex: 1,
-            child: CommonPrimaryTabs(
-              grow: true,
-              items: [
-                CommonTabItem(value: 'short', label: '短'),
-                CommonTabItem(value: 'middle', label: '较长标签'),
-                CommonTabItem(value: 'long', label: '第三项'),
-              ],
+      ProviderScope(
+        child: MaterialApp(
+          theme: TS(brightness: Brightness.light).toThemeData(),
+          home: const Scaffold(
+            body: DefaultTabController(
+              length: 3,
+              initialIndex: 1,
+              child: CommonPrimaryTabs(
+                grow: true,
+                items: [
+                  CommonTabItem(value: 'short', label: '短'),
+                  CommonTabItem(value: 'middle', label: '较长标签'),
+                  CommonTabItem(value: 'long', label: '第三项'),
+                ],
+              ),
             ),
           ),
         ),
@@ -276,22 +287,24 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: TS(brightness: Brightness.light).toThemeData(),
-        home: const Scaffold(
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              DefaultTabController(
-                length: 2,
-                child: CommonPrimaryTabs(
-                  items: [
-                    CommonTabItem(value: 'short', label: '短'),
-                    CommonTabItem(value: 'long', label: '较长标签'),
-                  ],
+      ProviderScope(
+        child: MaterialApp(
+          theme: TS(brightness: Brightness.light).toThemeData(),
+          home: const Scaffold(
+            body: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DefaultTabController(
+                  length: 2,
+                  child: CommonPrimaryTabs(
+                    items: [
+                      CommonTabItem(value: 'short', label: '短'),
+                      CommonTabItem(value: 'long', label: '较长标签'),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -308,16 +321,18 @@ void main() {
     'secondary tabs use compact label spacing and controlled height',
     (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: TS(brightness: Brightness.light).toThemeData(),
-          home: const Scaffold(
-            body: DefaultTabController(
-              length: 2,
-              child: CommonSecondaryTabs(
-                items: [
-                  CommonTabItem(value: 'all', label: '全部'),
-                  CommonTabItem(value: 'done', label: '完成'),
-                ],
+        ProviderScope(
+          child: MaterialApp(
+            theme: TS(brightness: Brightness.light).toThemeData(),
+            home: const Scaffold(
+              body: DefaultTabController(
+                length: 2,
+                child: CommonSecondaryTabs(
+                  items: [
+                    CommonTabItem(value: 'all', label: '全部'),
+                    CommonTabItem(value: 'done', label: '完成'),
+                  ],
+                ),
               ),
             ),
           ),
@@ -372,12 +387,12 @@ void main() {
     );
   });
 
-  test('PBWork icons retain one 8x asset for every public identity', () {
+  test('PBWork icons retain one 3x asset for every public identity', () {
     for (final name in CommonIconName.values) {
       expect(File(name.assetPath).existsSync(), isTrue);
     }
-    expect(Directory('assets/icons/2.0x').existsSync(), isFalse);
-    expect(Directory('assets/icons/3.0x').existsSync(), isFalse);
+    expect(Directory('asset/base/icons/2.0x').existsSync(), isFalse);
+    expect(Directory('asset/base/icons/3.0x').existsSync(), isFalse);
   });
 
   testWidgets('pull refresh settles at the boundary without a second rebound', (
@@ -385,16 +400,18 @@ void main() {
   ) async {
     var refreshCount = 0;
     await tester.pumpWidget(
-      MaterialApp(
-        theme: TS(brightness: Brightness.light).toThemeData(),
-        home: Scaffold(
-          body: CommonScrollableDataList(
-            itemCount: 20,
-            itemBuilder: (_, index) =>
-                SizedBox(height: 48, child: Text('row $index')),
-            onRefresh: () async {
-              refreshCount += 1;
-            },
+      ProviderScope(
+        child: MaterialApp(
+          theme: TS(brightness: Brightness.light).toThemeData(),
+          home: Scaffold(
+            body: CommonScrollableDataList(
+              itemCount: 20,
+              itemBuilder: (_, index) =>
+                  SizedBox(height: 48, child: Text('row $index')),
+              onRefresh: () async {
+                refreshCount += 1;
+              },
+            ),
           ),
         ),
       ),
@@ -419,14 +436,16 @@ void main() {
     'loading button retains its label and progress uses percent input',
     (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: TS(brightness: Brightness.light).toThemeData(),
-          home: const Scaffold(
-            body: Column(
-              children: [
-                CommonButton(label: '提交中', loading: true),
-                CommonProgress(value: 68),
-              ],
+        ProviderScope(
+          child: MaterialApp(
+            theme: TS(brightness: Brightness.light).toThemeData(),
+            home: const Scaffold(
+              body: Column(
+                children: [
+                  CommonButton(label: '提交中', loading: true),
+                  CommonProgress(value: 68),
+                ],
+              ),
             ),
           ),
         ),
@@ -442,15 +461,17 @@ void main() {
 
   testWidgets('button kinds use action tokens', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        theme: TS(brightness: Brightness.light).toThemeData(),
-        home: const Scaffold(
-          body: Column(
-            children: [
-              CommonButton(label: '主要'),
-              CommonButton(label: '次要', kind: CommonButtonKind.secondary),
-              CommonButton(label: '描边', kind: CommonButtonKind.outlined),
-            ],
+      ProviderScope(
+        child: MaterialApp(
+          theme: TS(brightness: Brightness.light).toThemeData(),
+          home: const Scaffold(
+            body: Column(
+              children: [
+                CommonButton(label: '主要'),
+                CommonButton(label: '次要', kind: CommonButtonKind.secondary),
+                CommonButton(label: '描边', kind: CommonButtonKind.outlined),
+              ],
+            ),
           ),
         ),
       ),
@@ -478,9 +499,11 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
-        theme: TS(brightness: Brightness.light).toThemeData(),
-        home: const Scaffold(body: CommonTextField(hint: '无标题输入')),
+      ProviderScope(
+        child: MaterialApp(
+          theme: TS(brightness: Brightness.light).toThemeData(),
+          home: const Scaffold(body: CommonTextField(hint: '无标题输入')),
+        ),
       ),
     );
 

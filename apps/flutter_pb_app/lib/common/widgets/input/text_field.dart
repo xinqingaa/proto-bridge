@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../state/local_value.dart';
 
 import '../../../theme/ts.dart';
 import '../action/icon.dart';
 
 /// 对齐 pbwork `TextField` — 官方 [TextField]。
-class CommonTextField extends StatefulWidget {
+class CommonTextField extends ConsumerStatefulWidget {
   const CommonTextField({
     super.key,
     this.controller,
@@ -35,16 +37,17 @@ class CommonTextField extends StatefulWidget {
   final ValueChanged<String>? onSubmitted;
 
   @override
-  State<CommonTextField> createState() => _CommonTextFieldState();
+  ConsumerState<CommonTextField> createState() => _CommonTextFieldState();
 }
 
-class _CommonTextFieldState extends State<CommonTextField> {
-  var _revealed = false;
+class _CommonTextFieldState extends ConsumerState<CommonTextField> {
+  final _revealedProvider = localValueProvider(false);
 
   @override
   Widget build(BuildContext context) {
     final ts = TS.of(context);
-    final hidden = widget.obscureText && !_revealed;
+    final revealed = ref.watch(_revealedProvider);
+    final hidden = widget.obscureText && !revealed;
     final field = ConstrainedBox(
       constraints: BoxConstraints(minHeight: ts.sizing.controlMd),
       child: Opacity(
@@ -72,12 +75,14 @@ class _CommonTextFieldState extends State<CommonTextField> {
             focusedBorder: widget.showLabel ? null : InputBorder.none,
             suffixIcon: widget.obscureText && widget.revealable
                 ? IconButton(
-                    tooltip: _revealed ? '隐藏密码' : '显示密码',
+                    tooltip: revealed ? '隐藏密码' : '显示密码',
                     onPressed: widget.enabled
-                        ? () => setState(() => _revealed = !_revealed)
+                        ? () => ref
+                              .read(_revealedProvider.notifier)
+                              .update((value) => !value)
                         : null,
                     icon: CommonIcon(
-                      name: _revealed
+                      name: revealed
                           ? CommonIconName.eyeOff
                           : CommonIconName.eye,
                       dimension: ts.sizing.iconMd,

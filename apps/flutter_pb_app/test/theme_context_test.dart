@@ -28,20 +28,22 @@ void main() {
       },
     );
     await tester.pumpWidget(
-      MaterialApp(
-        theme: TS(brightness: Brightness.light).toThemeData(),
-        home: Column(
-          children: [
-            probe('base-before'),
-            Theme(
-              data: TS(
-                brightness: Brightness.light,
-                pack: customPack,
-              ).toThemeData(),
-              child: probe('custom'),
-            ),
-            probe('base-after'),
-          ],
+      ProviderScope(
+        child: MaterialApp(
+          theme: TS(brightness: Brightness.light).toThemeData(),
+          home: Column(
+            children: [
+              probe('base-before'),
+              Theme(
+                data: TS(
+                  brightness: Brightness.light,
+                  pack: customPack,
+                ).toThemeData(),
+                child: probe('custom'),
+              ),
+              probe('base-after'),
+            ],
+          ),
         ),
       ),
     );

@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_pb_app/common/widgets.dart';
@@ -11,25 +12,27 @@ void main() {
       ) async {
         final ts = TS(brightness: brightness, pack: pack);
         await tester.pumpWidget(
-          MaterialApp(
-            theme: ts.toThemeData(),
-            home: Scaffold(
-              appBar: const CommonAppBar(title: '标题'),
-              bottomNavigationBar: CommonBottomNav(
-                items: const [
-                  CommonBottomNavItem(
-                    value: 'home',
-                    label: '首页',
-                    icon: CommonIconName.home,
-                  ),
-                  CommonBottomNavItem(
-                    value: 'list',
-                    label: '列表',
-                    icon: CommonIconName.list,
-                  ),
-                ],
-                currentIndex: 0,
-                onTap: (_) {},
+          ProviderScope(
+            child: MaterialApp(
+              theme: ts.toThemeData(),
+              home: Scaffold(
+                appBar: const CommonAppBar(title: '标题'),
+                bottomNavigationBar: CommonBottomNav(
+                  items: const [
+                    CommonBottomNavItem(
+                      value: 'home',
+                      label: '首页',
+                      icon: CommonIconName.home,
+                    ),
+                    CommonBottomNavItem(
+                      value: 'list',
+                      label: '列表',
+                      icon: CommonIconName.list,
+                    ),
+                  ],
+                  currentIndex: 0,
+                  onTap: (_) {},
+                ),
               ),
             ),
           ),

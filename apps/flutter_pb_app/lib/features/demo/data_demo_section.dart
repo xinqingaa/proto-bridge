@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../common/state/local_value.dart';
 
 import '../../common/widgets.dart';
 import '../../theme/ts.dart';
 import 'demo_layout.dart';
 
-class DataDemoSection extends StatefulWidget {
+class DataDemoSection extends ConsumerStatefulWidget {
   const DataDemoSection({super.key});
 
   @override
-  State<DataDemoSection> createState() => _DataDemoSectionState();
+  ConsumerState<DataDemoSection> createState() => _DataDemoSectionState();
 }
 
-class _DataDemoSectionState extends State<DataDemoSection> {
-  int _listCount = 12;
-  int _refreshCount = 0;
+class _DataDemoSectionState extends ConsumerState<DataDemoSection> {
+  final _listCountProvider = localValueProvider<int>(12);
+  final _refreshCountProvider = localValueProvider<int>(0);
 
   Widget _row(BuildContext context, int index, String source) {
     final ts = TS.of(context);
@@ -26,23 +28,23 @@ class _DataDemoSectionState extends State<DataDemoSection> {
 
   @override
   Widget build(BuildContext context) {
+    final listCount = ref.watch(_listCountProvider);
+    final refreshCount = ref.watch(_refreshCountProvider);
     final ts = TS.of(context);
     return CommonScrollableDataList(
       padding: EdgeInsets.all(ts.spacing.md),
-      itemCount: _listCount + 1,
-      hasMore: _listCount < 30,
+      itemCount: listCount + 1,
+      hasMore: listCount < 30,
       onRefresh: () async {
         await Future<void>.delayed(const Duration(milliseconds: 800));
         if (!mounted) return;
-        setState(() {
-          _listCount = 12;
-          _refreshCount += 1;
-        });
+        ref.read(_listCountProvider.notifier).set(12);
+        ref.read(_refreshCountProvider.notifier).update((value) => value + 1);
       },
       onLoadMore: () async {
         await Future<void>.delayed(const Duration(milliseconds: 800));
         if (!mounted) return;
-        setState(() => _listCount += 6);
+        ref.read(_listCountProvider.notifier).update((value) => value + 6);
       },
       separatorBuilder: (_, index) => index == 0
           ? const SizedBox.shrink()
@@ -75,7 +77,7 @@ class _DataDemoSectionState extends State<DataDemoSection> {
               title: 'ScrollableDataList',
               description: '下拉刷新、上拉加载和有限回弹由公共组件拥有。',
               child: Text(
-                '已刷新 $_refreshCount 次',
+                '已刷新 $refreshCount 次',
                 key: const ValueKey('data-refresh-count'),
                 style: ts.textStyle.caption,
               ),

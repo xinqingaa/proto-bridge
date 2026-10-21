@@ -5936,25 +5936,25 @@
         "file": "yike/mechanical-light.svg",
         "sha1": "62617b3b8c62a9cb3f1d72b97d9b633002f58ddc"
       },
-      "raster": "assets/themes/yike/assets/mechanical-light.png",
+      "raster": "asset/yike/artwork/mechanical-light.png",
       "width": 300,
       "height": 300,
       "scale": 3.12,
       "layers": {
         "progress": {
-          "file": "assets/themes/yike/assets/mechanical-light--progress.png",
+          "file": "asset/yike/artwork/mechanical-light--progress.png",
           "viewBox": "0 300 300 300",
           "width": 300,
           "height": 300
         },
         "rest": {
-          "file": "assets/themes/yike/assets/mechanical-light--rest.png",
+          "file": "asset/yike/artwork/mechanical-light--rest.png",
           "viewBox": "0 600 300 300",
           "width": 300,
           "height": 300
         },
         "paused": {
-          "file": "assets/themes/yike/assets/mechanical-light--paused.png",
+          "file": "asset/yike/artwork/mechanical-light--paused.png",
           "viewBox": "0 900 300 300",
           "width": 300,
           "height": 300
@@ -5993,25 +5993,25 @@
         "file": "yike/mechanical-light-plain.svg",
         "sha1": "87a857d16d3aace972339d7053de6d75de6c9ca8"
       },
-      "raster": "assets/themes/yike/assets/mechanical-light-plain.png",
+      "raster": "asset/yike/artwork/mechanical-light-plain.png",
       "width": 300,
       "height": 300,
       "scale": 3.12,
       "layers": {
         "progress": {
-          "file": "assets/themes/yike/assets/mechanical-light--progress.png",
+          "file": "asset/yike/artwork/mechanical-light--progress.png",
           "viewBox": "0 300 300 300",
           "width": 300,
           "height": 300
         },
         "rest": {
-          "file": "assets/themes/yike/assets/mechanical-light--rest.png",
+          "file": "asset/yike/artwork/mechanical-light--rest.png",
           "viewBox": "0 600 300 300",
           "width": 300,
           "height": 300
         },
         "paused": {
-          "file": "assets/themes/yike/assets/mechanical-light--paused.png",
+          "file": "asset/yike/artwork/mechanical-light--paused.png",
           "viewBox": "0 900 300 300",
           "width": 300,
           "height": 300
@@ -6050,25 +6050,25 @@
         "file": "yike/mechanical-dark.svg",
         "sha1": "caa6ec16df0c3e4e4619f22b9735e17a453d7caa"
       },
-      "raster": "assets/themes/yike/assets/mechanical-dark.png",
+      "raster": "asset/yike/artwork/mechanical-dark.png",
       "width": 300,
       "height": 300,
       "scale": 3.12,
       "layers": {
         "progress": {
-          "file": "assets/themes/yike/assets/mechanical-dark--progress.png",
+          "file": "asset/yike/artwork/mechanical-dark--progress.png",
           "viewBox": "0 300 300 300",
           "width": 300,
           "height": 300
         },
         "rest": {
-          "file": "assets/themes/yike/assets/mechanical-dark--rest.png",
+          "file": "asset/yike/artwork/mechanical-dark--rest.png",
           "viewBox": "0 600 300 300",
           "width": 300,
           "height": 300
         },
         "paused": {
-          "file": "assets/themes/yike/assets/mechanical-dark--paused.png",
+          "file": "asset/yike/artwork/mechanical-dark--paused.png",
           "viewBox": "0 900 300 300",
           "width": 300,
           "height": 300
@@ -6107,25 +6107,25 @@
         "file": "yike/mechanical-dark-plain.svg",
         "sha1": "1dffce8e323d18cb70619830b2a698fbc2f30e0c"
       },
-      "raster": "assets/themes/yike/assets/mechanical-dark-plain.png",
+      "raster": "asset/yike/artwork/mechanical-dark-plain.png",
       "width": 300,
       "height": 300,
       "scale": 3.12,
       "layers": {
         "progress": {
-          "file": "assets/themes/yike/assets/mechanical-dark--progress.png",
+          "file": "asset/yike/artwork/mechanical-dark--progress.png",
           "viewBox": "0 300 300 300",
           "width": 300,
           "height": 300
         },
         "rest": {
-          "file": "assets/themes/yike/assets/mechanical-dark--rest.png",
+          "file": "asset/yike/artwork/mechanical-dark--rest.png",
           "viewBox": "0 600 300 300",
           "width": 300,
           "height": 300
         },
         "paused": {
-          "file": "assets/themes/yike/assets/mechanical-dark--paused.png",
+          "file": "asset/yike/artwork/mechanical-dark--paused.png",
           "viewBox": "0 900 300 300",
           "width": 300,
           "height": 300
@@ -6163,25 +6163,25 @@
         "file": "yike/water-light.svg",
         "sha1": "8403063d5647e00e0b92c57867e4342651ba35c7"
       },
-      "raster": "assets/themes/yike/assets/water-light.png",
+      "raster": "asset/yike/artwork/water-light.png",
       "width": 236,
       "height": 368,
       "scale": 3,
       "layers": {
         "rest": {
-          "file": "assets/themes/yike/assets/water-light--rest.png",
+          "file": "asset/yike/artwork/water-light--rest.png",
           "viewBox": "0 368 236 368",
           "width": 236,
           "height": 368
         },
         "wave": {
-          "file": "assets/themes/yike/assets/water-light--wave.png",
+          "file": "asset/yike/artwork/water-light--wave.png",
           "viewBox": "0 736 240 12",
           "width": 240,
           "height": 12
         },
         "glass": {
-          "file": "assets/themes/yike/assets/water-light--glass.png",
+          "file": "asset/yike/artwork/water-light--glass.png",
           "viewBox": "0 752 236 368",
           "width": 236,
           "height": 368
@@ -6219,25 +6219,25 @@
         "file": "yike/water-dark.svg",
         "sha1": "d7a7a4f0b4b6c616a5a5cc47779b5350ba7deec5"
       },
-      "raster": "assets/themes/yike/assets/water-dark.png",
+      "raster": "asset/yike/artwork/water-dark.png",
       "width": 236,
       "height": 368,
       "scale": 3,
       "layers": {
         "rest": {
-          "file": "assets/themes/yike/assets/water-dark--rest.png",
+          "file": "asset/yike/artwork/water-dark--rest.png",
           "viewBox": "0 368 236 368",
           "width": 236,
           "height": 368
         },
         "wave": {
-          "file": "assets/themes/yike/assets/water-dark--wave.png",
+          "file": "asset/yike/artwork/water-dark--wave.png",
           "viewBox": "0 736 240 12",
           "width": 240,
           "height": 12
         },
         "glass": {
-          "file": "assets/themes/yike/assets/water-dark--glass.png",
+          "file": "asset/yike/artwork/water-dark--glass.png",
           "viewBox": "0 752 236 368",
           "width": 236,
           "height": 368
@@ -6265,13 +6265,13 @@
         "file": "yike/sundial-light.svg",
         "sha1": "3e186032a837381e6557473b25ad032fe34c3779"
       },
-      "raster": "assets/themes/yike/assets/sundial-light.png",
+      "raster": "asset/yike/artwork/sundial-light.png",
       "width": 316,
       "height": 404,
       "scale": 3,
       "layers": {
         "shadow": {
-          "file": "assets/themes/yike/assets/sundial-light--shadow.png",
+          "file": "asset/yike/artwork/sundial-light--shadow.png",
           "viewBox": "0 404 316 316",
           "width": 316,
           "height": 316
@@ -6299,13 +6299,13 @@
         "file": "yike/sundial-dark.svg",
         "sha1": "d3815a5767511a46eef359303dd094a1aad84dd7"
       },
-      "raster": "assets/themes/yike/assets/sundial-dark.png",
+      "raster": "asset/yike/artwork/sundial-dark.png",
       "width": 316,
       "height": 404,
       "scale": 3,
       "layers": {
         "shadow": {
-          "file": "assets/themes/yike/assets/sundial-dark--shadow.png",
+          "file": "asset/yike/artwork/sundial-dark--shadow.png",
           "viewBox": "0 404 316 316",
           "width": 316,
           "height": 316
@@ -6314,7 +6314,7 @@
     }
   },
   "assets": {
-    "assets/themes/yike/assets/mechanical-light.png": {
+    "asset/yike/artwork/mechanical-light.png": {
       "packId": "yike",
       "file": "assets/mechanical-light.svg",
       "view": "",
@@ -6324,7 +6324,7 @@
       "scale": 3.12,
       "sha1": "62617b3b8c62a9cb3f1d72b97d9b633002f58ddc"
     },
-    "assets/themes/yike/assets/mechanical-dark.png": {
+    "asset/yike/artwork/mechanical-dark.png": {
       "packId": "yike",
       "file": "assets/mechanical-dark.svg",
       "view": "",
@@ -6334,7 +6334,7 @@
       "scale": 3.12,
       "sha1": "caa6ec16df0c3e4e4619f22b9735e17a453d7caa"
     },
-    "assets/themes/yike/assets/water-light.png": {
+    "asset/yike/artwork/water-light.png": {
       "packId": "yike",
       "file": "assets/water-light.svg",
       "view": "",
@@ -6344,7 +6344,7 @@
       "scale": 3,
       "sha1": "8403063d5647e00e0b92c57867e4342651ba35c7"
     },
-    "assets/themes/yike/assets/water-dark.png": {
+    "asset/yike/artwork/water-dark.png": {
       "packId": "yike",
       "file": "assets/water-dark.svg",
       "view": "",
@@ -6354,7 +6354,7 @@
       "scale": 3,
       "sha1": "d7a7a4f0b4b6c616a5a5cc47779b5350ba7deec5"
     },
-    "assets/themes/yike/assets/sundial-light.png": {
+    "asset/yike/artwork/sundial-light.png": {
       "packId": "yike",
       "file": "assets/sundial-light.svg",
       "view": "",
@@ -6364,7 +6364,7 @@
       "scale": 3,
       "sha1": "3e186032a837381e6557473b25ad032fe34c3779"
     },
-    "assets/themes/yike/assets/sundial-dark.png": {
+    "asset/yike/artwork/sundial-dark.png": {
       "packId": "yike",
       "file": "assets/sundial-dark.svg",
       "view": "",
@@ -6374,7 +6374,7 @@
       "scale": 3,
       "sha1": "d3815a5767511a46eef359303dd094a1aad84dd7"
     },
-    "assets/themes/yike/assets/mechanical-light--progress.png": {
+    "asset/yike/artwork/mechanical-light--progress.png": {
       "packId": "yike",
       "file": "assets/mechanical-light.svg",
       "view": "progress",
@@ -6384,7 +6384,7 @@
       "scale": 3.12,
       "sha1": "62617b3b8c62a9cb3f1d72b97d9b633002f58ddc"
     },
-    "assets/themes/yike/assets/mechanical-light--rest.png": {
+    "asset/yike/artwork/mechanical-light--rest.png": {
       "packId": "yike",
       "file": "assets/mechanical-light.svg",
       "view": "rest",
@@ -6394,7 +6394,7 @@
       "scale": 3.12,
       "sha1": "62617b3b8c62a9cb3f1d72b97d9b633002f58ddc"
     },
-    "assets/themes/yike/assets/mechanical-light--paused.png": {
+    "asset/yike/artwork/mechanical-light--paused.png": {
       "packId": "yike",
       "file": "assets/mechanical-light.svg",
       "view": "paused",
@@ -6404,7 +6404,7 @@
       "scale": 3.12,
       "sha1": "62617b3b8c62a9cb3f1d72b97d9b633002f58ddc"
     },
-    "assets/themes/yike/assets/mechanical-light-plain.png": {
+    "asset/yike/artwork/mechanical-light-plain.png": {
       "packId": "yike",
       "file": "assets/mechanical-light-plain.svg",
       "view": "",
@@ -6414,7 +6414,7 @@
       "scale": 3.12,
       "sha1": "87a857d16d3aace972339d7053de6d75de6c9ca8"
     },
-    "assets/themes/yike/assets/mechanical-dark--progress.png": {
+    "asset/yike/artwork/mechanical-dark--progress.png": {
       "packId": "yike",
       "file": "assets/mechanical-dark.svg",
       "view": "progress",
@@ -6424,7 +6424,7 @@
       "scale": 3.12,
       "sha1": "caa6ec16df0c3e4e4619f22b9735e17a453d7caa"
     },
-    "assets/themes/yike/assets/mechanical-dark--rest.png": {
+    "asset/yike/artwork/mechanical-dark--rest.png": {
       "packId": "yike",
       "file": "assets/mechanical-dark.svg",
       "view": "rest",
@@ -6434,7 +6434,7 @@
       "scale": 3.12,
       "sha1": "caa6ec16df0c3e4e4619f22b9735e17a453d7caa"
     },
-    "assets/themes/yike/assets/mechanical-dark--paused.png": {
+    "asset/yike/artwork/mechanical-dark--paused.png": {
       "packId": "yike",
       "file": "assets/mechanical-dark.svg",
       "view": "paused",
@@ -6444,7 +6444,7 @@
       "scale": 3.12,
       "sha1": "caa6ec16df0c3e4e4619f22b9735e17a453d7caa"
     },
-    "assets/themes/yike/assets/mechanical-dark-plain.png": {
+    "asset/yike/artwork/mechanical-dark-plain.png": {
       "packId": "yike",
       "file": "assets/mechanical-dark-plain.svg",
       "view": "",
@@ -6454,7 +6454,7 @@
       "scale": 3.12,
       "sha1": "1dffce8e323d18cb70619830b2a698fbc2f30e0c"
     },
-    "assets/themes/yike/assets/water-light--rest.png": {
+    "asset/yike/artwork/water-light--rest.png": {
       "packId": "yike",
       "file": "assets/water-light.svg",
       "view": "rest",
@@ -6464,7 +6464,7 @@
       "scale": 3,
       "sha1": "8403063d5647e00e0b92c57867e4342651ba35c7"
     },
-    "assets/themes/yike/assets/water-light--wave.png": {
+    "asset/yike/artwork/water-light--wave.png": {
       "packId": "yike",
       "file": "assets/water-light.svg",
       "view": "wave",
@@ -6474,7 +6474,7 @@
       "scale": 3,
       "sha1": "8403063d5647e00e0b92c57867e4342651ba35c7"
     },
-    "assets/themes/yike/assets/water-light--glass.png": {
+    "asset/yike/artwork/water-light--glass.png": {
       "packId": "yike",
       "file": "assets/water-light.svg",
       "view": "glass",
@@ -6484,7 +6484,7 @@
       "scale": 3,
       "sha1": "8403063d5647e00e0b92c57867e4342651ba35c7"
     },
-    "assets/themes/yike/assets/water-dark--rest.png": {
+    "asset/yike/artwork/water-dark--rest.png": {
       "packId": "yike",
       "file": "assets/water-dark.svg",
       "view": "rest",
@@ -6494,7 +6494,7 @@
       "scale": 3,
       "sha1": "d7a7a4f0b4b6c616a5a5cc47779b5350ba7deec5"
     },
-    "assets/themes/yike/assets/water-dark--wave.png": {
+    "asset/yike/artwork/water-dark--wave.png": {
       "packId": "yike",
       "file": "assets/water-dark.svg",
       "view": "wave",
@@ -6504,7 +6504,7 @@
       "scale": 3,
       "sha1": "d7a7a4f0b4b6c616a5a5cc47779b5350ba7deec5"
     },
-    "assets/themes/yike/assets/water-dark--glass.png": {
+    "asset/yike/artwork/water-dark--glass.png": {
       "packId": "yike",
       "file": "assets/water-dark.svg",
       "view": "glass",
@@ -6514,7 +6514,7 @@
       "scale": 3,
       "sha1": "d7a7a4f0b4b6c616a5a5cc47779b5350ba7deec5"
     },
-    "assets/themes/yike/assets/sundial-light--shadow.png": {
+    "asset/yike/artwork/sundial-light--shadow.png": {
       "packId": "yike",
       "file": "assets/sundial-light.svg",
       "view": "shadow",
@@ -6524,7 +6524,7 @@
       "scale": 3,
       "sha1": "3e186032a837381e6557473b25ad032fe34c3779"
     },
-    "assets/themes/yike/assets/sundial-dark--shadow.png": {
+    "asset/yike/artwork/sundial-dark--shadow.png": {
       "packId": "yike",
       "file": "assets/sundial-dark.svg",
       "view": "shadow",

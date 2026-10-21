@@ -18,10 +18,11 @@
 ## 修改边界
 
 - 业务页面和页面模型放在 `lib/features/<feature>/`。
-- 页面业务状态使用 Riverpod `Notifier` / `AsyncNotifier`，不要用 `setState` 承载筛选、表单或 variant。
+- 所有响应式界面状态使用 Riverpod；禁止 `setState` / `StatefulBuilder`，公共组件、Demo 和启动页均无例外。状态归属与控制器生命周期遵循 `docs/architecture.md`。
 - 持久化只走 `AppPrefs`；feature 不得直接使用 `MMKV`。
 - 路由常量和注册表只放在 `lib/router/`。
-- 主题和语义 token 只放在 `lib/theme/`。
+- 主题和语义 token 只放在 `lib/theme/`，尺寸适配遵循 `docs/theme.md`，不得重复缩放。
+- 静态资源按 `docs/assets.md` 放在 `asset/base/` 或 `asset/<prototypeId>/`，不复制 PBWork SVG。
 - 可复用 UI 和共享弹层只放在 `lib/common/`。
 - 不在 feature 中复制公共组件、创建平行 Theme 或绕过既有路由/弹层边界。
 - 只修改 Handoff 实现范围相关文件；发现无关变更时保留并在报告中区分。

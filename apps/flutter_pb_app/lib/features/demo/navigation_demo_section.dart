@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../common/state/local_value.dart';
 
 import '../../common/widgets.dart';
 import '../../theme/ts.dart';
@@ -10,18 +12,20 @@ const _tabItems = [
   CommonTabItem(value: 'done', label: '已完成'),
 ];
 
-class NavigationDemoSection extends StatefulWidget {
+class NavigationDemoSection extends ConsumerStatefulWidget {
   const NavigationDemoSection({super.key});
 
   @override
-  State<NavigationDemoSection> createState() => _NavigationDemoSectionState();
+  ConsumerState<NavigationDemoSection> createState() =>
+      _NavigationDemoSectionState();
 }
 
-class _NavigationDemoSectionState extends State<NavigationDemoSection> {
-  String _filter = 'all';
+class _NavigationDemoSectionState extends ConsumerState<NavigationDemoSection> {
+  final _filterProvider = localValueProvider<String>('all');
 
   @override
   Widget build(BuildContext context) {
+    final filter = ref.watch(_filterProvider);
     final ts = TS.of(context);
     return DemoCategoryPage(
       title: 'Navigation / 导航',
@@ -31,7 +35,7 @@ class _NavigationDemoSectionState extends State<NavigationDemoSection> {
           title: 'Primary Tabs',
           description: '普通 recessed 轨道；只有选中项使用 LiquidGlass。',
           child: SizedBox(
-            height: 128,
+            height: ts.layout.previewViewportHeight,
             child: DefaultTabController(
               length: _tabItems.length,
               child: Column(
@@ -56,7 +60,7 @@ class _NavigationDemoSectionState extends State<NavigationDemoSection> {
           title: 'Secondary Tabs',
           description: '独立控制器、独立视图区，选中态仅使用文字与小三角。',
           child: SizedBox(
-            height: 128,
+            height: ts.layout.previewViewportHeight,
             child: DefaultTabController(
               length: _tabItems.length,
               child: Column(
@@ -85,8 +89,9 @@ class _NavigationDemoSectionState extends State<NavigationDemoSection> {
               CommonFilterItem(value: 'open', label: '进行中'),
               CommonFilterItem(value: 'done', label: '完成'),
             ],
-            selected: _filter,
-            onSelected: (value) => setState(() => _filter = value),
+            selected: filter,
+            onSelected: (value) =>
+                ref.read(_filterProvider.notifier).set(value),
           ),
         ),
       ],

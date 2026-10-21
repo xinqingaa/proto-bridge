@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../state/local_value.dart';
 
 import '../../../theme/ts.dart';
 import '../display/glass_surface.dart';
@@ -9,7 +11,7 @@ enum CommonControlSize { sm, md, lg }
 
 enum CommonButtonShape { rounded, pill }
 
-class CommonButton extends StatefulWidget {
+class CommonButton extends ConsumerStatefulWidget {
   const CommonButton({
     super.key,
     required this.label,
@@ -34,15 +36,16 @@ class CommonButton extends StatefulWidget {
   final CommonSurfaceMaterial material;
 
   @override
-  State<CommonButton> createState() => _CommonButtonState();
+  ConsumerState<CommonButton> createState() => _CommonButtonState();
 }
 
-class _CommonButtonState extends State<CommonButton> {
-  bool _pressed = false;
+class _CommonButtonState extends ConsumerState<CommonButton> {
+  final _pressedProvider = localValueProvider(false);
 
   @override
   Widget build(BuildContext context) {
     final ts = TS.of(context);
+    final pressed = ref.watch(_pressedProvider);
     final enabled =
         !widget.disabled && !widget.loading && widget.onPressed != null;
     final height = switch (widget.size) {
@@ -77,7 +80,7 @@ class _CommonButtonState extends State<CommonButton> {
         child: InkWell(
           onTap: enabled ? widget.onPressed : null,
           onHighlightChanged: (value) {
-            if (value != _pressed) setState(() => _pressed = value);
+            ref.read(_pressedProvider.notifier).set(value);
           },
           borderRadius: radius,
           child: Ink(
@@ -153,7 +156,7 @@ class _CommonButtonState extends State<CommonButton> {
       child: Opacity(
         opacity: widget.disabled ? ts.opacity.disabled : ts.opacity.visible,
         child: AnimatedScale(
-          scale: _pressed && enabled && !reduceMotion
+          scale: pressed && enabled && !reduceMotion
               ? ts.motion.scalePressed
               : ts.opacity.visible,
           duration: reduceMotion ? Duration.zero : ts.motion.durationFast,
