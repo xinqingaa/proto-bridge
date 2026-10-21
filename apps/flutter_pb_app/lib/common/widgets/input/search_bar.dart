@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/ts.dart';
+import '../action/icon.dart';
 
 /// 对齐 pbwork `SearchBar`。
 ///
@@ -80,40 +80,40 @@ class _CommonSearchBarState extends State<CommonSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     final hasText = _controller.text.isNotEmpty;
 
     return SizedBox(
-      height: TS.sizing.controlLg,
+      height: ts.sizing.controlLg,
       child: Opacity(
-        opacity: widget.enabled ? TS.opacity.visible : TS.opacity.disabled,
+        opacity: widget.enabled ? ts.opacity.visible : ts.opacity.disabled,
         child: TextField(
           controller: _controller,
           enabled: widget.enabled,
           onChanged: widget.onChanged,
           onSubmitted: widget.onSubmitted,
           textInputAction: TextInputAction.search,
-          style: TS.textStyle.content,
+          style: ts.textStyle.content,
           decoration: InputDecoration(
             hintText: widget.hint,
-            prefixIcon: Icon(
-              LucideIcons.search,
-              size: TS.sizing.iconCompact,
-              color: TS.colors.onSurfaceMuted,
+            prefixIcon: CommonIcon(
+              name: CommonIconName.search,
+              dimension: ts.sizing.iconCompact,
+              color: ts.colors.onSurfaceMuted,
             ),
             suffixIcon: hasText && widget.enabled
                 ? IconButton(
                     tooltip: '清除',
                     onPressed: _clear,
-                    icon: Icon(
-                      LucideIcons.x,
-                      size: TS.sizing.iconCompact,
-                      color: TS.colors.onSurfaceMuted,
+                    icon: CommonIcon(
+                      name: CommonIconName.x,
+                      dimension: ts.sizing.iconCompact,
+                      color: ts.colors.onSurfaceMuted,
                     ),
                   )
                 : null,
             filled: true,
-            fillColor: TS.colors.surfaceVariant,
+            fillColor: ts.colors.surfaceVariant,
           ),
         ),
       ),

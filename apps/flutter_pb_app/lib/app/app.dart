@@ -11,25 +11,23 @@ class PbApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(themeModeProvider);
+    final pack = ref.watch(themePackProvider);
     final brightness = mode == ThemeMode.dark
         ? Brightness.dark
         : Brightness.light;
-    TS.bind(brightness);
-    final theme = ThemeService.of(brightness).toThemeData();
+    final theme = TS(brightness: brightness, pack: pack).toThemeData();
 
     return MaterialApp(
       title: 'flutter_pb_app',
       debugShowCheckedModeBanner: false,
       theme: theme,
-      darkTheme: ThemeService.of(Brightness.dark).toThemeData(),
+      darkTheme: TS(brightness: Brightness.dark, pack: pack).toThemeData(),
       themeMode: mode,
       navigatorKey: appNavigatorKey,
       navigatorObservers: [Pop.routeObserver],
-      builder: (context, child) => Pop.hostBuilder(
-        context,
-        TsBinder(child: child ?? const SizedBox.shrink()),
-      ),
-      initialRoute: AppRoutes.hub,
+      builder: (context, child) =>
+          Pop.hostBuilder(context, child ?? const SizedBox.shrink()),
+      initialRoute: AppRoutes.demo,
       routes: appRoutes,
     );
   }

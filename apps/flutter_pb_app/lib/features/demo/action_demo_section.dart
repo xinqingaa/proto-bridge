@@ -10,7 +10,7 @@ class ActionDemoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     return DemoCategoryPage(
       title: 'Action / 操作',
       description: 'Button、Icon 与 IconButton 的受控状态和语义档位。',
@@ -18,27 +18,45 @@ class ActionDemoSection extends StatelessWidget {
         DemoGroup(
           title: 'Button / IconButton',
           child: Wrap(
-            spacing: TS.spacing.sm,
-            runSpacing: TS.spacing.sm,
+            spacing: ts.spacing.sm,
+            runSpacing: ts.spacing.sm,
             children: [
               CommonButton(
                 label: '主要',
-                onPressed: () => AppPop.toast('primary'),
+                onPressed: () => AppPop.toast(context, 'primary'),
               ),
               CommonButton(
                 label: '次要',
                 kind: CommonButtonKind.secondary,
-                onPressed: () {},
+                onPressed: () => AppPop.toast(context, '操作已触发'),
               ),
               CommonButton(
                 label: '描边',
                 kind: CommonButtonKind.outlined,
-                onPressed: () {},
+                onPressed: () => AppPop.toast(context, '操作已触发'),
               ),
+              for (final kind in [
+                CommonButtonKind.accent,
+                CommonButtonKind.danger,
+                CommonButtonKind.quiet,
+              ])
+                CommonButton(
+                  label: kind.name,
+                  kind: kind,
+                  onPressed: () => AppPop.toast(context, kind.name),
+                ),
+              CommonButton(
+                label: '玻璃胶囊',
+                material: CommonSurfaceMaterial.glass,
+                shape: CommonButtonShape.pill,
+                onPressed: () => AppPop.toast(context, '玻璃操作'),
+              ),
+              const CommonButton(label: '处理中', loading: true),
+              const CommonButton(label: '不可用', disabled: true),
               CommonIconButton(
                 name: CommonIconName.plus,
                 label: '新增',
-                onPressed: () {},
+                onPressed: () => AppPop.toast(context, '操作已触发'),
               ),
               const CommonIconButton(
                 name: CommonIconName.plus,
@@ -51,8 +69,8 @@ class ActionDemoSection extends StatelessWidget {
         DemoGroup(
           title: 'Icon',
           child: Wrap(
-            spacing: TS.spacing.md,
-            runSpacing: TS.spacing.md,
+            spacing: ts.spacing.md,
+            runSpacing: ts.spacing.md,
             children: const [
               CommonIcon(name: CommonIconName.home, label: '首页'),
               CommonIcon(name: CommonIconName.search, label: '搜索'),

@@ -15,35 +15,35 @@ class CommonBadge extends StatelessWidget {
   final String label;
   final CommonBadgeTone tone;
 
-  Color get _background => switch (tone) {
-    CommonBadgeTone.primary => TS.colors.primary,
-    CommonBadgeTone.error => TS.colors.error,
-    CommonBadgeTone.success => TS.colors.success,
-    CommonBadgeTone.warning => TS.colors.warning,
+  Color _background(TS ts) => switch (tone) {
+    CommonBadgeTone.primary => ts.colors.primary,
+    CommonBadgeTone.error => ts.colors.error,
+    CommonBadgeTone.success => ts.colors.success,
+    CommonBadgeTone.warning => ts.colors.warning,
   };
 
-  Color get _foreground => switch (tone) {
-    CommonBadgeTone.primary => TS.colors.onPrimary,
-    CommonBadgeTone.error => TS.colors.onError,
-    CommonBadgeTone.success => TS.colors.onSuccess,
-    CommonBadgeTone.warning => TS.colors.onWarning,
+  Color _foreground(TS ts) => switch (tone) {
+    CommonBadgeTone.primary => ts.colors.onPrimary,
+    CommonBadgeTone.error => ts.colors.onError,
+    CommonBadgeTone.success => ts.colors.onSuccess,
+    CommonBadgeTone.warning => ts.colors.onWarning,
   };
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: TS.spacing.sm,
-        vertical: TS.spacing.xxs,
+        horizontal: ts.spacing.sm,
+        vertical: ts.spacing.xxs,
       ),
       decoration: BoxDecoration(
-        color: _background,
-        borderRadius: BorderRadius.circular(TS.radius.full),
+        color: _background(ts),
+        borderRadius: BorderRadius.circular(ts.radius.full),
       ),
       child: Text(
         label,
-        style: TS.textStyle.captionStrong.copyWith(color: _foreground),
+        style: ts.textStyle.captionStrong.copyWith(color: _foreground(ts)),
       ),
     );
   }

@@ -1,6 +1,6 @@
 # Flutter Target 脚手架
 
-`pnpm pb:new:flutter` 从 `apps/flutter_pb_app` 复制一份独立产品 target，去掉 `features` 业务示例，生成 Bootstrap 空壳、项目内 MCP launcher 和 Agent 上下文。生成后的目录默认与 proto-bridge 同级。
+`pnpm pb:new:flutter` 从 `apps/flutter_pb_app` 复制一份独立产品 target，去掉 `features` 业务示例，生成 Bootstrap 空壳、项目内 MCP launcher 和 Agent 上下文。生成后的目录默认与 proto-bridge 同级。底座使用 Riverpod 3、MMKV 和远程 unified_popups 2.2.1，主题只使用上下文 ThemeExtension。
 
 ## 命名
 
@@ -25,9 +25,9 @@ pnpm pb:new:flutter cold_chain_app
 - `--display-name <name>` / `--bundle-id <id>`：覆盖显示名和 bundle id
 - `--yes`：非交互执行；`--dry-run` 只打印计划
 - `--no-install`：跳过 `flutter pub get`（仍会 `dart format`）
-- `--verify`：生成后额外跑 analyze/test/token 校验
+- `--verify`：生成后额外跑 analyze/test/完整 DS 校验
 - `--set-target`：生成后自动执行 `pb:target use`，把 Workspace `delivery.targetRoot` 指过去
-- `--require-synced`：base 批次不是 `synced` 时直接失败（当前组件仍 pending，不建议开）
+- `--require-synced`：base 批次不是 `synced` 时直接失败
 
 ## 复制范围
 
@@ -50,7 +50,7 @@ pnpm pb:new:flutter cold_chain_app
 - `lib/app/bootstrap_page.dart`：等待固定 Handoff 的空壳
 - `lib/features/README.md`：业务 feature 的放置约定
 - `test/bootstrap_test.dart`
-- `tool/mcp.mjs`、`tool/verify.mjs`、`tool/ds-theme.mjs`、`tool/ds-sync.mjs`
+- `tool/mcp.mjs`、`tool/target.mjs`、`tool/verify.mjs`、`tool/ds-theme.mjs`、`tool/ds-sync.mjs`
 - `.pb-scaffold.json`
 - `.cursor/mcp.json`、`.codex/config.toml`、`.mcp.json`、`.agents/mcp.json`
 
@@ -96,6 +96,16 @@ pnpm pb:target use ../cold_chain_app
 在生成目录：
 
 ```bash
+node tool/target.mjs --show
+node tool/target.mjs --bind
+node tool/target.mjs --check
+```
+
+`--show` 只展示新工程与 Producer Workspace 的绑定关系；`--bind` 调用 Producer 的 target 命令更新其配置；`--check` 在不一致时返回非零状态。绑定后重启 Producer/MCP 客户端并重新生成定稿提示词。默认生成不会修改 Workspace。
+
+原生验证：
+
+```bash
 flutter pub get
 flutter analyze
 flutter test
@@ -103,7 +113,7 @@ node tool/verify.mjs
 node tool/ds-theme.mjs
 ```
 
-`tool/verify.mjs` 执行 Flutter 原生检查和 153 个 Token 的 target 校验；`tool/ds-theme.mjs` 只做 Token 校验。组件仍 pending 时 `node tool/ds-sync.mjs`（完整门禁）会失败，这是批次状态，不是主题回退。
+`tool/verify.mjs` 执行 Flutter 原生检查和 47 个组件、153 个 Token 的完整 target 校验；`tool/ds-theme.mjs` 只做 Token 校验。`node tool/ds-sync.mjs` 是 47 个组件与 153 个 Token 的完整同步门禁。
 
 ## PBWork 工作流
 
@@ -115,10 +125,16 @@ node tool/ds-theme.mjs
 
 ## 与基线同步
 
-新目录是复制，不是共享库。`proto-bridge.target.json` 的 Token 映射和 target 文档随目标走；组件批次确认后需要更新组件映射。基线变化不会自动进入已生成目录：
+新目录是复制，不是共享库。`proto-bridge.target.json` 的 Token 映射和 target 文档随目标走；DS 变化后需同步组件映射与实现。`.pb-scaffold.json` 保存生成时的 `baseSurfaceDigest` 与 `baseSyncStatus`，供维护时辨别来源；它不替代当前 Target 同步验证。基线变化不会自动进入已生成目录：
 
 - 小改动：按需对比 `apps/flutter_pb_app`，保留业务 feature 后手工合并。
 - 大改动：重新生成一个临时目录做 diff，再迁移需要的底座文件。
 - 不要把 proto-bridge 的 `.proto-bridge/store`、Workspace 配置或 `output/` 复制进 target。
 
 当前 Flutter Target adapter 只扫描 target 根下的 Dart，因此底座组件先保留在目标内，不抽成共享 package；抽包会让 resolver 看不到符号。
+
+依赖安装先于格式化执行。依赖安装或格式化失败时脚本返回非零状态，并保留已经生成的文件供修复；不能把该结果描述为工程就绪。未传 `--verify` 时成功输出只声明文件生成，不声明原生验证通过。生成前会检查实际 Token 映射，不能仅凭 pending 数量为零放行。
+
+首次生成时若 Producer 构建产物缺失，脚本先执行 `pnpm build`，再验证基线并复制；需事先完成仓库依赖安装。`--dry-run` 不触发构建。
+
+路径与同步基线按真实目录记录；例如 macOS 的 `/tmp` 与 `/private/tmp` 指向同一目录，完整同步检查会归一化后比较。

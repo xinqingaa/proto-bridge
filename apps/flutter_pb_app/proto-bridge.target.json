@@ -2,964 +2,1011 @@
   "version": 1,
   "technology": "flutter",
   "policyEntrypoints": [
-    "AGENTS.md",
+    "AGENts.md",
     "docs/proto-bridge.md",
     "docs/components.md",
     "docs/theme.md"
   ],
   "components": {
+    "action-sheet": {
+      "symbol": "AppPop.actionSheet",
+      "import": "lib/common/overlay/app_pop.dart",
+      "definition": "lib/common/overlay/app_pop.dart"
+    },
     "app-bar": {
-      "status": "pending",
-      "reason": "安全区统一由 PhoneShell 提供，AppBar 不再预留顶部安全区；Flutter 待复核外壳组合。"
+      "symbol": "CommonAppBar",
+      "import": "lib/common/widgets/navigation/app_bar.dart",
+      "definition": "lib/common/widgets/navigation/app_bar.dart"
     },
     "avatar": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "symbol": "CommonAvatar",
+      "import": "lib/common/widgets/display/avatar.dart",
+      "definition": "lib/common/widgets/display/avatar.dart"
     },
     "badge": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
+      "symbol": "CommonBadge",
+      "import": "lib/common/widgets/display/badge.dart",
+      "definition": "lib/common/widgets/display/badge.dart"
     },
     "bottom-sheet": {
-      "status": "pending",
-      "reason": "公共面板新增solid/glass有限材质能力、共享玻璃降级及绑定；Flutter尚未按当前Contract适配。"
-    },
-    "button": {
-      "status": "pending",
-      "reason": "公共Button的shape=rounded/pill、动态radius绑定及按压释放/label短过渡已更新；新增labelOffset绑定，Flutter尚待同步。"
-    },
-    "card": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
-    },
-    "checkbox": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
-    },
-    "chip": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
-    },
-    "confirm": {
-      "status": "pending",
-      "reason": "公共面板新增solid/glass有限材质能力、共享玻璃降级及绑定；Flutter尚未按当前Contract适配。"
-    },
-    "data-list": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
-    },
-    "divider": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
-    },
-    "empty-state": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
-    },
-    "filter-bar": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
-    },
-    "flow-sheet": {
-      "status": "pending",
-      "reason": "新增首步 header-start 入口、固定操作区与返回焦点；步骤指示器固定在内容下方、操作区上方，横向裁剪与纵向滚动分层避免焦点滚动错位；Flutter 待按当前 Contract 适配。"
-    },
-    "icon": {
-      "status": "pending",
-      "reason": "共享 PBWork SVG 清单新增 calendar-current（回到当前日期周期），Contract 与资产已同步；Flutter 图标映射尚待适配。"
-    },
-    "icon-button": {
-      "status": "pending",
-      "reason": "PBWork 玻璃控件升级：材质、选中滑动与有限 API 已更新，Flutter 待按当前 Contract 与主题复核实现。"
-    },
-    "loading": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
-    },
-    "menu": {
-      "status": "pending",
-      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
-    },
-    "primary-tabs": {
-      "status": "pending",
-      "reason": "PBWork 玻璃控件升级：材质、选中滑动与有限 API 已更新，Flutter 待按当前 Contract 与主题复核实现。"
-    },
-    "progress": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
-    },
-    "radio-group": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
-    },
-    "scrollable-data-list": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
-    },
-    "screen-transition": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
-    },
-    "search-bar": {
-      "status": "pending",
-      "reason": "嵌套TextField使用实例派生的稳定inspectId；Flutter待按现行Contract与主题复核。"
-    },
-    "secondary-tabs": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
-    },
-    "spinner": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
-    },
-    "switch": {
-      "status": "pending",
-      "reason": "Switch新增labelPosition=start/end公开布局，关闭轨道使用color.outline、滑块使用color.surface；Flutter待同步。"
-    },
-    "tab-viewport": {
-      "status": "pending",
-      "reason": "PBWork 主题包与绑定目录已迁移；本轮未适配 Flutter，需按新 Contract/取值表复核后恢复映射。"
-    },
-    "tabbar": {
-      "status": "pending",
-      "reason": "安全区统一由 PhoneShell 提供，底栏不再重复预留底部安全区；Flutter 待复核外壳组合。"
-    },
-    "text-field": {
-      "status": "pending",
-      "reason": "TextField只保留注册根Evidence身份，移除内部重复且缺role的标记；Flutter尚待复核现行布局与语义。"
-    },
-    "textarea": {
-      "status": "pending",
-      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
-    },
-    "toast": {
-      "status": "pending",
-      "reason": "PBWork Toast 位置避让共享底部安全区，内边距绑定改为垂直 toast.gap（10px）、水平 spacing.md（16px），并移除底层重复留白；可选撤销改为无独立内边距/最小高度的紧凑文字操作；Flutter 尚待按当前 Contract 复核实现。"
-    },
-    "segmented-control": {
-      "status": "pending",
-      "reason": "公共单选新增glass材质和density=compact，36px可见轨道/30px选中底板与至少44px点击范围分离；Flutter尚未适配。"
-    },
-    "stepper": {
-      "status": "pending",
-      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
-    },
-    "duration-picker": {
-      "status": "pending",
-      "reason": "共享 WheelPicker 已泛化为一至三列，columns/options/modelValue 由调用方配置；旧组件标识保持兼容。Flutter 待按当前 Contract 适配。"
-    },
-    "ring-progress": {
-      "status": "pending",
-      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
-    },
-    "metric": {
-      "status": "pending",
-      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
-    },
-    "tag": {
-      "status": "pending",
-      "reason": "PBWork 平台升级新增通用组件；本轮未实现 Flutter，需按 Producer Contract 与主题表适配。"
-    },
-    "mini-bars": {
-      "status": "pending",
-      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
-    },
-    "heatmap": {
-      "status": "pending",
-      "reason": "公共Heatmap新增readonly、dayLabels及只读plot/legend插槽；Flutter尚未适配该公开扩展。"
-    },
-    "month-calendar": {
-      "status": "pending",
-      "reason": "公共月历新增day插槽、dayLabels、showHeader外部周期导航及dayAppearance=custom自绘状态/紧凑布局；Flutter尚未适配这些公开扩展。"
-    },
-    "list-cell": {
-      "status": "pending",
-      "reason": "紧凑密度保留标准水平内边距，四侧 padding Evidence 独立声明；Flutter 待按当前 Contract 复核。"
-    },
-    "grouped-list": {
-      "status": "pending",
-      "reason": "公共配置列表新增regular/compact公开density；紧凑行使用spacing.xs内边距并保留size.touch，Flutter待同步。"
-    },
-    "action-sheet": {
-      "status": "pending",
-      "reason": "公共面板新增solid/glass有限材质能力、共享玻璃降级及绑定；Flutter尚未按当前Contract适配。"
+      "symbol": "AppPop.sheet",
+      "import": "lib/common/overlay/app_pop.dart",
+      "definition": "lib/common/overlay/app_pop.dart"
     },
     "brand-mark": {
-      "status": "pending",
-      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
+      "symbol": "CommonBrandMark",
+      "import": "lib/common/widgets/display/brand_mark.dart",
+      "definition": "lib/common/widgets/display/brand_mark.dart"
     },
-    "launch-screen": {
-      "status": "pending",
-      "reason": "PBWork 组件品质改版：布局、材质、图形或交互状态契约已更新；Flutter 尚待按当前 Contract 复核实现。"
+    "button": {
+      "symbol": "CommonButton",
+      "import": "lib/common/widgets/action/button.dart",
+      "definition": "lib/common/widgets/action/button.dart"
+    },
+    "card": {
+      "symbol": "CommonCard",
+      "import": "lib/common/widgets/display/card.dart",
+      "definition": "lib/common/widgets/display/card.dart"
+    },
+    "checkbox": {
+      "symbol": "CommonCheckbox",
+      "import": "lib/common/widgets/input/checkbox.dart",
+      "definition": "lib/common/widgets/input/checkbox.dart"
+    },
+    "chip": {
+      "symbol": "CommonChip",
+      "import": "lib/common/widgets/display/chip.dart",
+      "definition": "lib/common/widgets/display/chip.dart"
+    },
+    "confirm": {
+      "symbol": "AppPop.confirm",
+      "import": "lib/common/overlay/app_pop.dart",
+      "definition": "lib/common/overlay/app_pop.dart"
+    },
+    "data-list": {
+      "symbol": "CommonDataList",
+      "import": "lib/common/widgets/data/data_list.dart",
+      "definition": "lib/common/widgets/data/data_list.dart"
+    },
+    "divider": {
+      "symbol": "CommonDivider",
+      "import": "lib/common/widgets/display/divider.dart",
+      "definition": "lib/common/widgets/display/divider.dart"
+    },
+    "duration-picker": {
+      "symbol": "CommonWheelPicker",
+      "import": "lib/common/widgets/input/wheel_picker.dart",
+      "definition": "lib/common/widgets/input/wheel_picker.dart"
+    },
+    "empty-state": {
+      "symbol": "CommonEmptyState",
+      "import": "lib/common/widgets/display/empty_state.dart",
+      "definition": "lib/common/widgets/display/empty_state.dart"
+    },
+    "filter-bar": {
+      "symbol": "CommonFilterBar",
+      "import": "lib/common/widgets/navigation/filter_bar.dart",
+      "definition": "lib/common/widgets/navigation/filter_bar.dart"
+    },
+    "flow-sheet": {
+      "symbol": "AppPop.flowSheet",
+      "import": "lib/common/overlay/app_pop.dart",
+      "definition": "lib/common/overlay/app_pop.dart"
     },
     "glass-surface": {
-      "status": "pending",
-      "reason": "PBWork 新增纯玻璃容器，Flutter 材质、轮廓继承与降级尚未实现。"
+      "symbol": "CommonGlassSurface",
+      "import": "lib/common/widgets/display/glass_surface.dart",
+      "definition": "lib/common/widgets/display/glass_surface.dart"
+    },
+    "grouped-list": {
+      "symbol": "CommonGroupedList",
+      "import": "lib/common/widgets/data/grouped_list.dart",
+      "definition": "lib/common/widgets/data/grouped_list.dart"
+    },
+    "heatmap": {
+      "symbol": "CommonHeatmap",
+      "import": "lib/common/widgets/charts/heatmap.dart",
+      "definition": "lib/common/widgets/charts/heatmap.dart"
+    },
+    "icon": {
+      "symbol": "CommonIcon",
+      "import": "lib/common/widgets/action/icon.dart",
+      "definition": "lib/common/widgets/action/icon.dart"
+    },
+    "icon-button": {
+      "symbol": "CommonIconButton",
+      "import": "lib/common/widgets/action/icon_button.dart",
+      "definition": "lib/common/widgets/action/icon_button.dart"
+    },
+    "launch-screen": {
+      "symbol": "CommonLaunchScreen",
+      "import": "lib/common/widgets/navigation/launch_screen.dart",
+      "definition": "lib/common/widgets/navigation/launch_screen.dart"
+    },
+    "list-cell": {
+      "symbol": "CommonListCell",
+      "import": "lib/common/widgets/data/list_cell.dart",
+      "definition": "lib/common/widgets/data/list_cell.dart"
+    },
+    "loading": {
+      "symbol": "AppPop.loading",
+      "import": "lib/common/overlay/app_pop.dart",
+      "definition": "lib/common/overlay/app_pop.dart"
+    },
+    "menu": {
+      "symbol": "AppPop.dropMenu",
+      "import": "lib/common/overlay/app_pop.dart",
+      "definition": "lib/common/overlay/app_pop.dart"
+    },
+    "metric": {
+      "symbol": "CommonMetric",
+      "import": "lib/common/widgets/display/metric.dart",
+      "definition": "lib/common/widgets/display/metric.dart"
+    },
+    "mini-bars": {
+      "symbol": "CommonMiniBars",
+      "import": "lib/common/widgets/charts/mini_bars.dart",
+      "definition": "lib/common/widgets/charts/mini_bars.dart"
+    },
+    "month-calendar": {
+      "symbol": "CommonMonthCalendar",
+      "import": "lib/common/widgets/charts/month_calendar.dart",
+      "definition": "lib/common/widgets/charts/month_calendar.dart"
+    },
+    "primary-tabs": {
+      "symbol": "CommonPrimaryTabs",
+      "import": "lib/common/widgets/navigation/primary_tabs.dart",
+      "definition": "lib/common/widgets/navigation/primary_tabs.dart"
+    },
+    "progress": {
+      "symbol": "CommonProgress",
+      "import": "lib/common/widgets/display/progress.dart",
+      "definition": "lib/common/widgets/display/progress.dart"
+    },
+    "radio-group": {
+      "symbol": "CommonRadioGroup",
+      "import": "lib/common/widgets/input/radio_group.dart",
+      "definition": "lib/common/widgets/input/radio_group.dart"
+    },
+    "ring-progress": {
+      "symbol": "CommonRingProgress",
+      "import": "lib/common/widgets/display/ring_progress.dart",
+      "definition": "lib/common/widgets/display/ring_progress.dart"
+    },
+    "screen-transition": {
+      "symbol": "PbPageTransitions.theme",
+      "import": "lib/common/widgets/navigation/screen_transition.dart",
+      "definition": "lib/common/widgets/navigation/screen_transition.dart"
+    },
+    "scrollable-data-list": {
+      "symbol": "CommonScrollableDataList",
+      "import": "lib/common/widgets/data/scrollable_data_list.dart",
+      "definition": "lib/common/widgets/data/scrollable_data_list.dart"
+    },
+    "search-bar": {
+      "symbol": "CommonSearchBar",
+      "import": "lib/common/widgets/input/search_bar.dart",
+      "definition": "lib/common/widgets/input/search_bar.dart"
+    },
+    "secondary-tabs": {
+      "symbol": "CommonSecondaryTabs",
+      "import": "lib/common/widgets/navigation/secondary_tabs.dart",
+      "definition": "lib/common/widgets/navigation/secondary_tabs.dart"
+    },
+    "segmented-control": {
+      "symbol": "CommonSegmentedControl",
+      "import": "lib/common/widgets/input/segmented_control.dart",
+      "definition": "lib/common/widgets/input/segmented_control.dart"
+    },
+    "spinner": {
+      "symbol": "CommonSpinner",
+      "import": "lib/common/widgets/display/spinner.dart",
+      "definition": "lib/common/widgets/display/spinner.dart"
+    },
+    "stepper": {
+      "symbol": "CommonStepper",
+      "import": "lib/common/widgets/input/stepper.dart",
+      "definition": "lib/common/widgets/input/stepper.dart"
+    },
+    "switch": {
+      "symbol": "CommonSwitch",
+      "import": "lib/common/widgets/input/switch_control.dart",
+      "definition": "lib/common/widgets/input/switch_control.dart"
+    },
+    "tab-viewport": {
+      "symbol": "CommonTabView",
+      "import": "lib/common/widgets/navigation/tab_view.dart",
+      "definition": "lib/common/widgets/navigation/tab_view.dart"
+    },
+    "tabbar": {
+      "symbol": "CommonBottomNav",
+      "import": "lib/common/widgets/navigation/bottom_nav.dart",
+      "definition": "lib/common/widgets/navigation/bottom_nav.dart"
+    },
+    "tag": {
+      "symbol": "CommonTag",
+      "import": "lib/common/widgets/display/tag.dart",
+      "definition": "lib/common/widgets/display/tag.dart"
+    },
+    "text-field": {
+      "symbol": "CommonTextField",
+      "import": "lib/common/widgets/input/text_field.dart",
+      "definition": "lib/common/widgets/input/text_field.dart"
+    },
+    "textarea": {
+      "symbol": "CommonTextArea",
+      "import": "lib/common/widgets/input/text_area.dart",
+      "definition": "lib/common/widgets/input/text_area.dart"
+    },
+    "toast": {
+      "symbol": "AppPop.toast",
+      "import": "lib/common/overlay/app_pop.dart",
+      "definition": "lib/common/overlay/app_pop.dart"
     }
   },
   "tokens": {
     "color.background": {
-      "accessor": "TS.colors.background",
+      "accessor": "ts.colors.background",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-background": {
-      "accessor": "TS.colors.onBackground",
+      "accessor": "ts.colors.onBackground",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.surface": {
-      "accessor": "TS.colors.surface",
+      "accessor": "ts.colors.surface",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-surface": {
-      "accessor": "TS.colors.onSurface",
+      "accessor": "ts.colors.onSurface",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-surface-muted": {
-      "accessor": "TS.colors.onSurfaceMuted",
+      "accessor": "ts.colors.onSurfaceMuted",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.surface-variant": {
-      "accessor": "TS.colors.surfaceVariant",
+      "accessor": "ts.colors.surfaceVariant",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.surface-recessed": {
-      "accessor": "TS.colors.surfaceRecessed",
+      "accessor": "ts.colors.surfaceRecessed",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.surface-selected": {
-      "accessor": "TS.colors.surfaceSelected",
+      "accessor": "ts.colors.surfaceSelected",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.surface-raised": {
-      "accessor": "TS.colors.surfaceRaised",
+      "accessor": "ts.colors.surfaceRaised",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.inverse-surface": {
-      "accessor": "TS.colors.toast",
+      "accessor": "ts.colors.toast",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-inverse-surface": {
-      "accessor": "TS.colors.onToast",
+      "accessor": "ts.colors.onToast",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.primary": {
-      "accessor": "TS.colors.primary",
+      "accessor": "ts.colors.primary",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.primary-soft": {
-      "accessor": "TS.colors.primarySoft",
+      "accessor": "ts.colors.primarySoft",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-primary": {
-      "accessor": "TS.colors.onPrimary",
+      "accessor": "ts.colors.onPrimary",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.action": {
-      "accessor": "TS.colors.action",
+      "accessor": "ts.colors.action",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.action-soft": {
-      "accessor": "TS.colors.actionSoft",
+      "accessor": "ts.colors.actionSoft",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-action": {
-      "accessor": "TS.colors.onAction",
+      "accessor": "ts.colors.onAction",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.secondary": {
-      "accessor": "TS.colors.secondary",
+      "accessor": "ts.colors.secondary",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.secondary-soft": {
-      "accessor": "TS.colors.secondarySoft",
+      "accessor": "ts.colors.secondarySoft",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-secondary": {
-      "accessor": "TS.colors.onSecondary",
+      "accessor": "ts.colors.onSecondary",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.error": {
-      "accessor": "TS.colors.error",
+      "accessor": "ts.colors.error",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.error-soft": {
-      "accessor": "TS.colors.errorSoft",
+      "accessor": "ts.colors.errorSoft",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-error": {
-      "accessor": "TS.colors.onError",
+      "accessor": "ts.colors.onError",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.success": {
-      "accessor": "TS.colors.success",
+      "accessor": "ts.colors.success",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.success-soft": {
-      "accessor": "TS.colors.successSoft",
+      "accessor": "ts.colors.successSoft",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-success": {
-      "accessor": "TS.colors.onSuccess",
+      "accessor": "ts.colors.onSuccess",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.warning": {
-      "accessor": "TS.colors.warning",
+      "accessor": "ts.colors.warning",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.warning-soft": {
-      "accessor": "TS.colors.warningSoft",
+      "accessor": "ts.colors.warningSoft",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-warning": {
-      "accessor": "TS.colors.onWarning",
+      "accessor": "ts.colors.onWarning",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.info": {
-      "accessor": "TS.colors.info",
+      "accessor": "ts.colors.info",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.on-info": {
-      "accessor": "TS.colors.onInfo",
+      "accessor": "ts.colors.onInfo",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.border": {
-      "accessor": "TS.colors.border",
+      "accessor": "ts.colors.border",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.outline": {
-      "accessor": "TS.colors.outline",
+      "accessor": "ts.colors.outline",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.divider": {
-      "accessor": "TS.colors.divider",
+      "accessor": "ts.colors.divider",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.disabled": {
-      "accessor": "TS.colors.disabled",
+      "accessor": "ts.colors.disabled",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.scrim": {
-      "accessor": "TS.colors.scrim",
+      "accessor": "ts.colors.scrim",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.display": {
-      "accessor": "TS.textStyle.display",
+      "accessor": "ts.textStyle.display",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.headline": {
-      "accessor": "TS.textStyle.headline",
+      "accessor": "ts.textStyle.headline",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.title-lg": {
-      "accessor": "TS.textStyle.titleLg",
+      "accessor": "ts.textStyle.titleLg",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.title": {
-      "accessor": "TS.textStyle.title",
+      "accessor": "ts.textStyle.title",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.title-sm": {
-      "accessor": "TS.textStyle.titleSm",
+      "accessor": "ts.textStyle.titleSm",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.subtitle": {
-      "accessor": "TS.textStyle.subtitle",
+      "accessor": "ts.textStyle.subtitle",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.body-lg": {
-      "accessor": "TS.textStyle.bodyLg",
+      "accessor": "ts.textStyle.bodyLg",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.content": {
-      "accessor": "TS.textStyle.content",
+      "accessor": "ts.textStyle.content",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.body-sm": {
-      "accessor": "TS.textStyle.bodySm",
+      "accessor": "ts.textStyle.bodySm",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.label": {
-      "accessor": "TS.textStyle.label",
+      "accessor": "ts.textStyle.label",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.caption": {
-      "accessor": "TS.textStyle.caption",
+      "accessor": "ts.textStyle.caption",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.caption-strong": {
-      "accessor": "TS.textStyle.captionStrong",
+      "accessor": "ts.textStyle.captionStrong",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.micro": {
-      "accessor": "TS.textStyle.micro",
+      "accessor": "ts.textStyle.micro",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.numeric-display": {
-      "accessor": "TS.textStyle.numericDisplay",
+      "accessor": "ts.textStyle.numericDisplay",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.numeric-title": {
-      "accessor": "TS.textStyle.numericTitle",
+      "accessor": "ts.textStyle.numericTitle",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "typography.numeric-content": {
-      "accessor": "TS.textStyle.numericContent",
+      "accessor": "ts.textStyle.numericContent",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "radius.mark": {
-      "accessor": "TS.radius.xs",
+      "accessor": "ts.radius.xs",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "radius.control-compact": {
-      "accessor": "TS.radius.sm",
+      "accessor": "ts.radius.sm",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "radius.control": {
-      "accessor": "TS.radius.md",
+      "accessor": "ts.radius.md",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "radius.surface": {
-      "accessor": "TS.radius.lg",
+      "accessor": "ts.radius.lg",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "radius.overlay": {
-      "accessor": "TS.radius.xl",
+      "accessor": "ts.radius.xl",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "radius.pill": {
-      "accessor": "TS.radius.full",
+      "accessor": "ts.radius.full",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.control-compact": {
-      "accessor": "TS.sizing.controlSm",
+      "accessor": "ts.sizing.controlSm",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.control": {
-      "accessor": "TS.sizing.controlMd",
+      "accessor": "ts.sizing.controlMd",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.control-large": {
-      "accessor": "TS.sizing.controlLg",
+      "accessor": "ts.sizing.controlLg",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.touch": {
-      "accessor": "TS.sizing.touch",
+      "accessor": "ts.sizing.touch",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.icon-inline": {
-      "accessor": "TS.sizing.iconSm",
+      "accessor": "ts.sizing.iconSm",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.icon-compact": {
-      "accessor": "TS.sizing.iconCompact",
+      "accessor": "ts.sizing.iconCompact",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.icon": {
-      "accessor": "TS.sizing.iconMd",
+      "accessor": "ts.sizing.iconMd",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.icon-prominent": {
-      "accessor": "TS.sizing.iconLg",
+      "accessor": "ts.sizing.iconLg",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.avatar-compact": {
-      "accessor": "TS.sizing.avatarSm",
+      "accessor": "ts.sizing.avatarSm",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.avatar": {
-      "accessor": "TS.sizing.avatarMd",
+      "accessor": "ts.sizing.avatarMd",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.avatar-large": {
-      "accessor": "TS.sizing.avatarLg",
+      "accessor": "ts.sizing.avatarLg",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.navigation-bar": {
-      "accessor": "TS.sizing.bottomNavigation",
+      "accessor": "ts.sizing.bottomNavigation",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.stroke": {
-      "accessor": "TS.sizing.progressStroke",
+      "accessor": "ts.sizing.progressStroke",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.indicator": {
-      "accessor": "TS.sizing.indicatorThickness",
+      "accessor": "ts.sizing.indicatorThickness",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.caret": {
-      "accessor": "TS.sizing.caret",
+      "accessor": "ts.sizing.caret",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.marker": {
-      "accessor": "TS.sizing.stepDot",
+      "accessor": "ts.sizing.stepDot",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "border.width": {
-      "accessor": "TS.border.widthHairline",
+      "accessor": "ts.border.widthHairline",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "border.width-strong": {
-      "accessor": "TS.border.widthStrong",
+      "accessor": "ts.border.widthStrong",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "border.width-accent": {
-      "accessor": "TS.border.accentWidth",
+      "accessor": "ts.border.accentWidth",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "border.hairline": {
-      "accessor": "TS.border.hairline",
+      "accessor": "ts.border.hairline",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "border.default": {
-      "accessor": "TS.border.defaultBorder",
+      "accessor": "ts.border.defaultBorder",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "border.focus": {
-      "accessor": "TS.border.focus",
+      "accessor": "ts.border.focus",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "elevation.surface": {
-      "accessor": "TS.elevation.surface",
+      "accessor": "ts.elevation.surface",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "elevation.raised": {
-      "accessor": "TS.elevation.raised",
+      "accessor": "ts.elevation.raised",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "elevation.floating": {
-      "accessor": "TS.elevation.glass",
+      "accessor": "ts.elevation.floating",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "elevation.menu": {
-      "accessor": "TS.elevation.menu",
+      "accessor": "ts.elevation.menu",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "elevation.overlay": {
-      "accessor": "TS.elevation.overlay",
+      "accessor": "ts.elevation.overlay",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "opacity.disabled": {
-      "accessor": "TS.opacity.disabled",
+      "accessor": "ts.opacity.disabled",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "opacity.translucent": {
-      "accessor": "TS.opacity.translucent",
+      "accessor": "ts.opacity.translucent",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "opacity.hover": {
-      "accessor": "TS.opacity.hover",
+      "accessor": "ts.opacity.hover",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "opacity.pressed": {
-      "accessor": "TS.opacity.pressed",
+      "accessor": "ts.opacity.pressed",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "motion.duration-short": {
-      "accessor": "TS.motion.durationFast",
+      "accessor": "ts.motion.durationFast",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "motion.duration-medium": {
-      "accessor": "TS.motion.durationNormal",
+      "accessor": "ts.motion.durationNormal",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "motion.duration-long": {
-      "accessor": "TS.motion.durationSlow",
+      "accessor": "ts.motion.durationSlow",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "motion.easing-standard": {
-      "accessor": "TS.motion.easingStandard",
+      "accessor": "ts.motion.easingStandard",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "motion.easing-emphasized": {
-      "accessor": "TS.motion.easingEmphasized",
+      "accessor": "ts.motion.easingEmphasized",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "motion.easing-gentle": {
-      "accessor": "TS.motion.easingGentle",
+      "accessor": "ts.motion.easingGentle",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "motion.press-scale": {
-      "accessor": "TS.motion.scalePressed",
+      "accessor": "ts.motion.scalePressed",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "motion.press-scale-strong": {
-      "accessor": "TS.motion.scalePressedStrong",
+      "accessor": "ts.motion.scalePressedStrong",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "surface.glass-backdrop": {
-      "accessor": "TS.effect.glassBackdropBlur",
+      "accessor": "ts.effect.glassBackdropBlur",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "asset.brand-mark": {
-      "accessor": "TS.assets.brandMark",
+      "accessor": "ts.assets.brandMark",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "asset.brand-wordmark": {
-      "accessor": "TS.assets.brandWordmark",
+      "accessor": "ts.assets.brandWordmark",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "asset.launch-image": {
-      "accessor": "TS.assets.launchImage",
+      "accessor": "ts.assets.launchImage",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "asset.empty-illustration": {
-      "accessor": "TS.assets.emptyIllustration",
+      "accessor": "ts.assets.emptyIllustration",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "spacing.xs": {
-      "accessor": "TS.spacing.xs",
+      "accessor": "ts.spacing.xs",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "spacing.sm": {
-      "accessor": "TS.spacing.sm",
+      "accessor": "ts.spacing.sm",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "spacing.md": {
-      "accessor": "TS.spacing.md",
+      "accessor": "ts.spacing.md",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "spacing.lg": {
-      "accessor": "TS.spacing.lg",
+      "accessor": "ts.spacing.lg",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "spacing.xxs": {
-      "accessor": "TS.spacing.xxs",
+      "accessor": "ts.spacing.xxs",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "spacing.sm-plus": {
-      "accessor": "TS.spacing.smPlus",
+      "accessor": "ts.spacing.smPlus",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "spacing.lg-plus": {
-      "accessor": "TS.spacing.lgPlus",
+      "accessor": "ts.spacing.lgPlus",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "spacing.2xl": {
-      "accessor": "TS.spacing.xxl",
+      "accessor": "ts.spacing.xxl",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "bottom-sheet.duration": {
-      "accessor": "TS.motion.durationSheet",
+      "accessor": "ts.motion.durationSheet",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "flow-sheet.gap": {
-      "accessor": "TS.spacing.xsPlus",
+      "accessor": "ts.spacing.xsPlus",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "flow-sheet.duration": {
-      "accessor": "TS.motion.durationSheet",
+      "accessor": "ts.motion.durationSheet",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "menu.menu-item-height": {
-      "accessor": "TS.sizing.menuItem",
+      "accessor": "ts.sizing.menuItem",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "menu.offset": {
-      "accessor": "TS.spacing.xsPlus",
+      "accessor": "ts.spacing.xsPlus",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "primary-tabs.active-color": {
-      "accessor": "TS.colors.sectionTabActive",
+      "accessor": "ts.colors.sectionTabActive",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "progress.gap": {
-      "accessor": "TS.spacing.xsPlus",
+      "accessor": "ts.spacing.xsPlus",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "progress.track-height": {
-      "accessor": "TS.sizing.progressTrack",
+      "accessor": "ts.sizing.progressTrack",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "scrollable-data-list.action-min-width": {
-      "accessor": "TS.sizing.refreshActionMinWidth",
+      "accessor": "ts.sizing.refreshActionMinWidth",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "scrollable-data-list.action-height": {
-      "accessor": "TS.sizing.refreshActionHeight",
+      "accessor": "ts.sizing.refreshActionHeight",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "secondary-tabs.active-color": {
-      "accessor": "TS.colors.sectionTabActive",
+      "accessor": "ts.colors.sectionTabActive",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "secondary-tabs.indicator": {
-      "accessor": "TS.colors.sectionTabActive",
+      "accessor": "ts.colors.sectionTabActive",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "tab-viewport.duration": {
-      "accessor": "TS.motion.durationTabViewport",
+      "accessor": "ts.motion.durationTabViewport",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "tabbar.active": {
-      "accessor": "TS.colors.navigationActive",
+      "accessor": "ts.colors.navigationActive",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "textarea.rows": {
-      "accessor": "TS.sizing.textareaRows",
+      "accessor": "ts.sizing.textareaRows",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "toast.gap": {
-      "accessor": "TS.spacing.toastGap",
+      "accessor": "ts.spacing.toastGap",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "toast.duration": {
-      "accessor": "TS.motion.durationToast",
+      "accessor": "ts.motion.durationToast",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.panel-medium": {
-      "accessor": "TS.sizing.panelMedium",
+      "accessor": "ts.sizing.panelMedium",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.panel-large": {
-      "accessor": "TS.sizing.panelLarge",
+      "accessor": "ts.sizing.panelLarge",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "badge.label-size": {
-      "accessor": "TS.sizing.badgeLabelSize",
+      "accessor": "ts.sizing.badgeLabelSize",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.glass-tint": {
-      "accessor": "TS.colors.glassTint",
+      "accessor": "ts.colors.glassTint",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.glass-clear": {
-      "accessor": "TS.colors.glassClear",
+      "accessor": "ts.colors.glassClear",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "color.glass-edge": {
-      "accessor": "TS.colors.glassEdge",
+      "accessor": "ts.colors.glassEdge",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "border.glass": {
-      "accessor": "TS.border.glass",
+      "accessor": "ts.border.glass",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "elevation.glass": {
-      "accessor": "TS.elevation.glass",
+      "accessor": "ts.elevation.glass",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.brand": {
-      "accessor": "TS.sizing.brand",
+      "accessor": "ts.sizing.brand",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.plot": {
-      "accessor": "TS.sizing.plot",
+      "accessor": "ts.sizing.plot",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.ring": {
-      "accessor": "TS.sizing.ring",
+      "accessor": "ts.sizing.ring",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "tabbar.selection-tint": {
-      "accessor": "TS.colors.tabbarSelectionTint",
+      "accessor": "ts.colors.tabbarSelectionTint",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "primary-tabs.selection-tint": {
-      "accessor": "TS.colors.primaryTabsSelectionTint",
+      "accessor": "ts.colors.primaryTabsSelectionTint",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "button.glass-primary-tint": {
-      "accessor": "TS.colors.buttonGlassPrimaryTint",
+      "accessor": "ts.colors.buttonGlassPrimaryTint",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "icon-button.glass-primary-tint": {
-      "accessor": "TS.colors.iconButtonGlassPrimaryTint",
+      "accessor": "ts.colors.iconButtonGlassPrimaryTint",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "tracking.display": {
-      "accessor": "TS.textStyle.trackingDisplay",
+      "accessor": "ts.textStyle.trackingDisplay",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "tracking.heading": {
-      "accessor": "TS.textStyle.trackingHeading",
+      "accessor": "ts.textStyle.trackingHeading",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "tracking.label": {
-      "accessor": "TS.textStyle.trackingLabel",
+      "accessor": "ts.textStyle.trackingLabel",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "tracking.caption": {
-      "accessor": "TS.textStyle.trackingCaption",
+      "accessor": "ts.textStyle.trackingCaption",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "size.action-min-inline": {
-      "accessor": "TS.sizing.actionMinInline",
+      "accessor": "ts.sizing.actionMinInline",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "effect.artwork-shadow": {
-      "accessor": "TS.effect.artworkShadow",
+      "accessor": "ts.effect.artworkShadow",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "opacity.data-low": {
-      "accessor": "TS.opacity.dataLow",
+      "accessor": "ts.opacity.dataLow",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "opacity.data-medium": {
-      "accessor": "TS.opacity.dataMedium",
+      "accessor": "ts.opacity.dataMedium",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "opacity.data-high": {
-      "accessor": "TS.opacity.dataHigh",
+      "accessor": "ts.opacity.dataHigh",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "segmented-control.compact-height": {
-      "accessor": "TS.sizing.compactHeight",
+      "accessor": "ts.sizing.compactHeight",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "segmented-control.compact-selection-height": {
-      "accessor": "TS.sizing.compactSelectionHeight",
+      "accessor": "ts.sizing.compactSelectionHeight",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     }

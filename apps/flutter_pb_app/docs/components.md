@@ -1,8 +1,8 @@
 # 公共组件
 
-公共组件按 Producer 的职责分类位于 `lib/common/widgets/{action,input,display,navigation,data}/`，Target 自己拥有的组合壳位于 `lib/common/widgets/composition/`，业务与测试统一从 `lib/common/widgets.dart` 导入。组件负责稳定的交互语义、尺寸和 Theme 映射；业务页面只传入数据、状态和回调。弹层统一走 `lib/common/overlay/app_pop.dart` 的 `AppPop`。
+公共组件按 Producer 的职责分类位于 `lib/common/widgets/{action,input,display,navigation,data,charts}/`，Target 自己拥有的组合壳位于 `lib/common/widgets/composition/`，业务与测试统一从 `lib/common/widgets.dart` 导入。组件负责稳定的交互语义、尺寸和 Theme 映射；业务页面只传入数据、状态和回调。弹层统一走 `lib/common/overlay/app_pop.dart` 的 `AppPop`。
 
-目录分类只组织源码，不改变 `componentId` 或 role。`CommonFormSection` 等 Target 组合壳不得冒充 Producer 组件映射；当前 Producer 共 47 项，Target 均明确 pending，现有 Dart 目录仍对应先前的 32 项；`AppPop` 仍保持独立弹层边界，不由 Widget barrel 隐式导出。`PbPageTransitions` 承接 `screen-transition`，由 Theme 应用，不是页面可组合的业务 Widget。
+目录分类只组织源码，不改变 `componentId` 或 role。`CommonFormSection` 等 Target 组合壳不得冒充 Producer 组件映射；当前 Producer 共 47 项，均有具体 Dart 映射；`AppPop` 仍保持独立弹层边界，不由 Widget barrel 隐式导出。`PbPageTransitions` 承接 `screen-transition`，由 Theme 应用，不是页面可组合的业务 Widget。
 
 ## 组件职责
 
@@ -23,18 +23,36 @@
 | `CommonRadioGroup`                 | 互斥选项集合                                                     |
 | `CommonCheckbox`                   | 独立勾选项                                                       |
 | `CommonSwitch`                     | 二值开关设置；不能用 Checkbox 静默替代                           |
-| `CommonButton`                     | 主要、次要、描边三种类型动作；页面不配色槽                     |
+| `CommonButton`                     | 主要、次要、描边、强调、危险、轻量六种动作；页面不配色槽                     |
 | `CommonIconButton`                 | 单图标动作（含 loading）；必须提供 tooltip                       |
 | `PbPageTransitions`                | 栈级页面转场；默认 iOS 侧滑，可选 Android zoom                   |
-| `CommonPrimaryTabs`                | 无阴影 recessed 轨道 + 官方 indicator 驱动的 `LiquidGlassDecoration` 选中面 |
+| `CommonPrimaryTabs`                | 玻璃轨道 + 官方 TabBar indicator 驱动的静态选中面 |
 | `CommonSecondaryTabs`              | 官方 TabBar + 从文字行盒定位的 10×5 caret 指示器                 |
-| `CommonTabView`                    | 官方 TabBarView 内容切换与 swipe 所有权                           |
+| `CommonTabView`                    | 官方 TabBarView 内容切换、页面保活与 swipe 所有权                           |
 | `CommonEmptyState`                 | 空数据或未配置状态                                               |
 | `CommonSpinner` / `CommonProgress` | 加载指示和进度展示                                               |
 | `CommonDivider`                    | 语义分隔线                                                       |
 | `CommonAvatar`                     | 人员或主体头像/首字母                                            |
 | `CommonBottomNav`                  | 2–5 个顶级页面目的地；固定 icon + label、无顶部指示条            |
-| `CommonIcon`                       | 34 个稳定 Lucide id、尺寸、tone 和装饰/无障碍语义                |
+| `CommonIcon`                       | 35 个稳定 PBWork 图片 id、尺寸、tone 和装饰/无障碍语义                |
+
+## 扩展组件
+
+| API | 职责 |
+| --- | --- |
+| `CommonSegmentedControl` | 受控分段选择；regular/compact、键盘切换和禁用项，不拥有页面视口 |
+| `CommonStepper` | 有界数值输入；按钮、键盘与文本统一回调 |
+| `CommonWheelPicker` | 1–3 列独立滚轮；同时承接 duration-picker，外部状态可更新 |
+| `CommonRingProgress` / `CommonMetric` / `CommonTag` | 自绘环形进度、指标数值与只读标签 |
+| `CommonMiniBars` | 自绘柱状趋势；保留原始读数语义，长序列横向滚动 |
+| `CommonHeatmap` | 自绘日期热力图；缺失与零值不同，受控选择，可替换只读图层 |
+| `CommonMonthCalendar` | 显式 month/today、UTC 日期、禁用日与自定义日单元；不读取系统日期 |
+| `CommonListCell` / `CommonGroupedList` | Row 样式列表单元与稳定分组；使用外层滚动 |
+| `CommonBrandMark` | 品牌资源/Widget 槽位，缺资源时名称兜底 |
+| `CommonLaunchScreen` | Flutter 欢迎页或静态启动页；导航与忙碌状态由调用者控制 |
+| `CommonGlassSurface` | unified_popups 的玻璃容器，支持高对比度/显式实色降级 |
+
+`CommonDecisionActions` 统一单个主要按钮或左次要、右主要按钮；`CommonFlowSheetContent` 提供固定步骤点和页脚按钮、独立滚动正文。二者是组合辅助，不新增 Producer componentId。图表和日历不创建第二套状态或弹层。
 
 ## AppPop 弹层
 
@@ -46,8 +64,11 @@
 | `flowSheet`                              | FlowSheet（多步页面栈） |
 | `loading` / `hideLoading` / `runLoading` | 全局阻塞 Loading        |
 | `dropMenu`                               | 有限选项锚定菜单        |
+| `actionSheet`                            | Sheet 内的受控动作列表   |
 
-业务代码只调 `AppPop`，不直接调 `Pop`。
+业务代码只调 `AppPop`，不直接调 `Pop`。需要样式的 AppPop 方法显式接收调用处 `BuildContext`，并统一转换 Theme、Token 与材质。
+
+`CommonGlassSurface` 组合使用 unified_popups 2.2.1 的 LiquidGlass；明确轮廓，提供清透和实色降级。`AppPop.actionSheet` 是 Sheet 内的动作列表组合。
 
 公共组件不保留旧构造参数或历史别名；feature 与 Demo 必须直接迁移到当前 API。
 
@@ -73,5 +94,5 @@
 - 先检查组件构造参数和相似页面，再决定视觉变体。
 - 组件内部已有的尺寸、圆角、边框和颜色必须优先通过 `TS` 继承。
 - Evidence 要求组件存在但本地组件参数不足时，先报告缺口，再决定是否扩展组件；不要在 feature 中手写第二份公共实现。
-- 组件使用示例以 `lib/features/` 和 `lib/features/demo/` 为准；Demo 底部 Tabbar 本身就是根目的地导航实例，不再在 Navigation 分类中放置无内容切换的重复样例。
+- 组件使用示例以公共组件测试与业务页面为准；基线的 `lib/features/demo/` 提供对照；Demo 底部 Tabbar 本身就是根目的地导航实例，不再在 Navigation 分类中放置无内容切换的重复样例。
 - 精确 DS component id 落点以 [proto-bridge.md](proto-bridge.md) 与工程根目录 `../proto-bridge.target.json` 为准；映射不是靠本表的外观描述推断。

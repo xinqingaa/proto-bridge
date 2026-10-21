@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/ts.dart';
+import '../action/icon.dart';
 
 /// 对齐 pbwork `TextField` — 官方 [TextField]。
 class CommonTextField extends StatefulWidget {
@@ -43,12 +43,12 @@ class _CommonTextFieldState extends State<CommonTextField> {
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     final hidden = widget.obscureText && !_revealed;
-    return ConstrainedBox(
-      constraints: BoxConstraints(minHeight: TS.sizing.controlMd),
+    final field = ConstrainedBox(
+      constraints: BoxConstraints(minHeight: ts.sizing.controlMd),
       child: Opacity(
-        opacity: widget.enabled ? TS.opacity.visible : TS.opacity.disabled,
+        opacity: widget.enabled ? ts.opacity.visible : ts.opacity.disabled,
         child: TextField(
           controller: widget.controller,
           enabled: widget.enabled,
@@ -57,16 +57,16 @@ class _CommonTextFieldState extends State<CommonTextField> {
           keyboardType: widget.keyboardType,
           onChanged: widget.onChanged,
           onSubmitted: widget.onSubmitted,
-          style: TS.textStyle.content,
+          style: ts.textStyle.content,
           decoration: InputDecoration(
-            labelText: widget.showLabel ? widget.label : null,
-            labelStyle: TS.textStyle.caption,
+            labelText: null,
+            labelStyle: ts.textStyle.caption,
             hintText: widget.hint,
             errorText: widget.errorText,
             filled: true,
             fillColor: widget.showLabel
-                ? TS.colors.surface
-                : TS.colors.surfaceRecessed,
+                ? ts.colors.surface
+                : ts.colors.surfaceRecessed,
             border: widget.showLabel ? null : InputBorder.none,
             enabledBorder: widget.showLabel ? null : InputBorder.none,
             focusedBorder: widget.showLabel ? null : InputBorder.none,
@@ -76,16 +76,29 @@ class _CommonTextFieldState extends State<CommonTextField> {
                     onPressed: widget.enabled
                         ? () => setState(() => _revealed = !_revealed)
                         : null,
-                    icon: Icon(
-                      _revealed ? LucideIcons.eyeOff : LucideIcons.eye,
-                      size: TS.sizing.iconMd,
-                      color: TS.colors.onSurfaceMuted,
+                    icon: CommonIcon(
+                      name: _revealed
+                          ? CommonIconName.eyeOff
+                          : CommonIconName.eye,
+                      dimension: ts.sizing.iconMd,
+                      color: ts.colors.onSurfaceMuted,
                     ),
                   )
                 : null,
           ),
         ),
       ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (widget.showLabel && widget.label != null) ...[
+          Text(widget.label!, style: ts.textStyle.caption),
+          SizedBox(height: ts.spacing.sm),
+        ],
+        field,
+      ],
     );
   }
 }

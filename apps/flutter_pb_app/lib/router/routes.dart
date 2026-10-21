@@ -1,8 +1,5 @@
-/// Navigator 1.0 named route paths.
-///
-/// New prototype pages: add a constant here, register in [appRoutes],
-/// and expose an entry on HubPage.
+/// Navigator 1.0 route identities. Product targets register their own screens.
 abstract final class AppRoutes {
-  static const hub = '/';
-  static const demo = '/demo';
+  static const demo = '/';
+  static const launch = '/launch';
 }

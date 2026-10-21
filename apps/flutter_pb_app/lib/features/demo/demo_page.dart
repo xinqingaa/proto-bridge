@@ -63,11 +63,11 @@ class _DemoPageState extends ConsumerState<DemoPage> {
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     final destination = _destinations[_categoryIndex];
 
     return Scaffold(
-      backgroundColor: TS.colors.background,
+      backgroundColor: ts.colors.background,
       appBar: CommonAppBar(
         title: '${destination.label} · ${destination.description}',
         showAction: true,
@@ -79,7 +79,13 @@ class _DemoPageState extends ConsumerState<DemoPage> {
       ),
       body: IndexedStack(
         index: _categoryIndex,
-        children: [for (final item in _destinations) item.page],
+        children: [
+          for (var i = 0; i < _destinations.length; i++)
+            TickerMode(
+              enabled: i == _categoryIndex,
+              child: _destinations[i].page,
+            ),
+        ],
       ),
       bottomNavigationBar: CommonBottomNav(
         currentIndex: _categoryIndex,

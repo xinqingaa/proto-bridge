@@ -24,66 +24,66 @@ class CommonChip extends StatelessWidget {
   final VoidCallback? onTap;
   final bool elevated;
 
-  RoundedRectangleBorder get _shape =>
-      RoundedRectangleBorder(borderRadius: BorderRadius.circular(TS.radius.sm));
+  RoundedRectangleBorder _shape(TS ts) =>
+      RoundedRectangleBorder(borderRadius: BorderRadius.circular(ts.radius.sm));
 
-  Color get _bg {
-    if (selected) return TS.colors.primarySoft;
+  Color _bg(TS ts) {
+    if (selected) return ts.colors.primarySoft;
     switch (tone) {
       case CommonChipTone.primary:
-        return TS.colors.primarySoft;
+        return ts.colors.primarySoft;
       case CommonChipTone.secondary:
-        return TS.colors.secondarySoft;
+        return ts.colors.secondarySoft;
       case CommonChipTone.success:
-        return TS.colors.successSoft;
+        return ts.colors.successSoft;
       case CommonChipTone.warning:
-        return TS.colors.warningSoft;
+        return ts.colors.warningSoft;
       case CommonChipTone.error:
-        return TS.colors.errorSoft;
+        return ts.colors.errorSoft;
     }
   }
 
-  Color get _fg {
-    if (selected) return TS.colors.primary;
+  Color _fg(TS ts) {
+    if (selected) return ts.colors.primary;
     switch (tone) {
       case CommonChipTone.primary:
-        return TS.colors.primary;
+        return ts.colors.primary;
       case CommonChipTone.secondary:
-        return TS.colors.secondary;
+        return ts.colors.secondary;
       case CommonChipTone.success:
-        return TS.colors.success;
+        return ts.colors.success;
       case CommonChipTone.warning:
-        return TS.colors.warning;
+        return ts.colors.warning;
       case CommonChipTone.error:
-        return TS.colors.error;
+        return ts.colors.error;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
-    final labelStyle = TS.textStyle.caption.copyWith(color: _fg);
+    final ts = TS.of(context);
+    final labelStyle = ts.textStyle.caption.copyWith(color: _fg(ts));
     final chip = onTap == null
         ? Chip(
             label: Text(label, style: labelStyle),
-            backgroundColor: _bg,
+            backgroundColor: _bg(ts),
             side: BorderSide.none,
-            shape: _shape,
-            padding: EdgeInsets.symmetric(horizontal: TS.spacing.xs),
+            shape: _shape(ts),
+            padding: EdgeInsets.symmetric(horizontal: ts.spacing.xs),
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             visualDensity: VisualDensity.compact,
           )
         : ActionChip(
             label: Text(label, style: labelStyle),
             onPressed: onTap,
-            backgroundColor: _bg,
+            backgroundColor: _bg(ts),
             side: BorderSide.none,
-            shape: _shape,
+            shape: _shape(ts),
           );
     return Material(
       type: MaterialType.transparency,
-      elevation: elevated ? TS.elevation.card : TS.elevation.none,
-      borderRadius: BorderRadius.circular(TS.radius.sm),
+      elevation: elevated ? ts.elevation.card : ts.elevation.none,
+      borderRadius: BorderRadius.circular(ts.radius.sm),
       child: chip,
     );
   }

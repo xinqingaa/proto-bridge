@@ -37,25 +37,25 @@ class CommonDataList extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final ScrollController? controller;
 
-  double get _radius => switch (rounded) {
-    CommonDataListRounded.none => TS.radius.none,
-    CommonDataListRounded.sm => TS.radius.sm,
-    CommonDataListRounded.md => TS.radius.md,
-    CommonDataListRounded.lg => TS.radius.lg,
+  double _radius(TS ts) => switch (rounded) {
+    CommonDataListRounded.none => ts.radius.none,
+    CommonDataListRounded.sm => ts.radius.sm,
+    CommonDataListRounded.md => ts.radius.md,
+    CommonDataListRounded.lg => ts.radius.lg,
   };
 
-  Color? get _surfaceColor => switch (surface) {
+  Color? _surfaceColor(TS ts) => switch (surface) {
     CommonDataListSurface.none => null,
-    CommonDataListSurface.standard => TS.colors.surface,
-    CommonDataListSurface.raised => TS.colors.surfaceRaised,
+    CommonDataListSurface.standard => ts.colors.surface,
+    CommonDataListSurface.raised => ts.colors.surfaceRaised,
   };
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     final effectivePadding = inset
         ? (padding ?? EdgeInsets.zero).add(
-            EdgeInsets.symmetric(horizontal: TS.spacing.md),
+            EdgeInsets.symmetric(horizontal: ts.spacing.md),
           )
         : padding;
     final list = divided
@@ -69,9 +69,9 @@ class CommonDataList extends StatelessWidget {
             separatorBuilder:
                 separatorBuilder ??
                 (_, _) => Divider(
-                  height: TS.border.widthHairline,
-                  thickness: TS.border.widthHairline,
-                  color: TS.colors.border,
+                  height: ts.border.widthHairline,
+                  thickness: ts.border.widthHairline,
+                  color: ts.colors.border,
                 ),
           )
         : ListView.builder(
@@ -83,14 +83,16 @@ class CommonDataList extends StatelessWidget {
             itemBuilder: itemBuilder,
           );
 
-    if (_surfaceColor == null && !elevated && _radius == TS.radius.none) {
+    if (_surfaceColor(ts) == null &&
+        !elevated &&
+        _radius(ts) == ts.radius.none) {
       return list;
     }
     return Material(
-      color: _surfaceColor ?? Colors.transparent,
-      elevation: elevated ? TS.elevation.card : TS.elevation.none,
-      shadowColor: TS.colors.scrim,
-      borderRadius: BorderRadius.circular(_radius),
+      color: _surfaceColor(ts) ?? Colors.transparent,
+      elevation: elevated ? ts.elevation.card : ts.elevation.none,
+      shadowColor: ts.colors.scrim,
+      borderRadius: BorderRadius.circular(_radius(ts)),
       clipBehavior: Clip.antiAlias,
       child: list,
     );

@@ -23,45 +23,45 @@ class CommonEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(TS.spacing.lg),
+        padding: EdgeInsets.all(ts.spacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: TS.sizing.avatarLg,
-              height: TS.sizing.avatarLg,
+              width: ts.sizing.avatarLg,
+              height: ts.sizing.avatarLg,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: TS.colors.primarySoft,
+                color: ts.colors.primarySoft,
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon.data,
-                size: TS.sizing.iconLg,
-                color: TS.colors.primary,
+              child: CommonIcon(
+                name: icon,
+                dimension: ts.sizing.iconLg,
+                color: ts.colors.primary,
               ),
             ),
-            SizedBox(height: TS.spacing.smPlus),
+            SizedBox(height: ts.spacing.smPlus),
             Text(
               title,
-              style: TS.textStyle.subtitle,
+              style: ts.textStyle.subtitle,
               textAlign: TextAlign.center,
             ),
             if (description != null) ...[
-              SizedBox(height: TS.spacing.sm),
+              SizedBox(height: ts.spacing.sm),
               Text(
                 description!,
-                style: TS.textStyle.content.copyWith(
-                  color: TS.colors.onSurfaceMuted,
+                style: ts.textStyle.content.copyWith(
+                  color: ts.colors.onSurfaceMuted,
                 ),
                 textAlign: TextAlign.center,
               ),
             ],
             if (actionLabel != null) ...[
-              SizedBox(height: TS.spacing.sm),
+              SizedBox(height: ts.spacing.sm),
               CommonButton(label: actionLabel!, onPressed: onAction),
             ],
           ],

@@ -1,77 +1,101 @@
 # ProtoBridge 目标适配
 
-本文件定义 PBWork 语义在本 Flutter 工程中的翻译策略；精确、可机读的完整表位于工程根目录 `proto-bridge.target.json`，同步基线位于根目录 `proto-bridge.sync.json`。Producer Contract 决定组件职责、状态、行为、布局/结构承诺和 Token 槽，Flutter 侧使用目标技术栈的自然 API 实现这些语义，不复制 Vue props 或 DOM。
+Producer Contract 决定职责、状态、布局、Token 槽和可观察行为；Flutter 采用本平台的组件与 API 承接，不复制 Vue props、DOM 或手势实现。精确映射由根目录 `proto-bridge.target.json` 拥有；本文索引受文档校验约束。
 
-## 语义组件落点
+## 组件索引
 
-优先按 `componentId` 映射；role 只在没有可靠 `componentId` 时提供通用语义回退。比如 `flow-sheet` 的身份是 `componentId=flow-sheet`，role 仍是通用的 `sheet`，不需要创建 `flow-sheet` role。
+当前 47 个 componentId 都有 Dart 公开入口。`resolved` 证明声明、导入、定义和使用可定位，不代表已经完成某份业务 Evidence 的视觉验收。
 
-当前 47 个组件均在 `proto-bridge.target.json` 标为条目 pending：Producer 已完成主题包与绑定目录迁移，Flutter 尚未按新 Contract 适配。旧具体映射表已移除，避免与 pending 同 ID 并存造成 resolver conflict；现有 Dart 组件仍保留，但不能宣称已匹配新 Producer。
+| Evidence | Target | import |
+| --- | --- | --- |
+| `action-sheet` | `AppPop.actionSheet` | `lib/common/overlay/app_pop.dart` |
+| `app-bar` | `CommonAppBar` | `lib/common/widgets/navigation/app_bar.dart` |
+| `avatar` | `CommonAvatar` | `lib/common/widgets/display/avatar.dart` |
+| `badge` | `CommonBadge` | `lib/common/widgets/display/badge.dart` |
+| `bottom-sheet` | `AppPop.sheet` | `lib/common/overlay/app_pop.dart` |
+| `brand-mark` | `CommonBrandMark` | `lib/common/widgets/display/brand_mark.dart` |
+| `button` | `CommonButton` | `lib/common/widgets/action/button.dart` |
+| `card` | `CommonCard` | `lib/common/widgets/display/card.dart` |
+| `checkbox` | `CommonCheckbox` | `lib/common/widgets/input/checkbox.dart` |
+| `chip` | `CommonChip` | `lib/common/widgets/display/chip.dart` |
+| `confirm` | `AppPop.confirm` | `lib/common/overlay/app_pop.dart` |
+| `data-list` | `CommonDataList` | `lib/common/widgets/data/data_list.dart` |
+| `divider` | `CommonDivider` | `lib/common/widgets/display/divider.dart` |
+| `duration-picker` | `CommonWheelPicker` | `lib/common/widgets/input/wheel_picker.dart` |
+| `empty-state` | `CommonEmptyState` | `lib/common/widgets/display/empty_state.dart` |
+| `filter-bar` | `CommonFilterBar` | `lib/common/widgets/navigation/filter_bar.dart` |
+| `flow-sheet` | `AppPop.flowSheet` | `lib/common/overlay/app_pop.dart` |
+| `glass-surface` | `CommonGlassSurface` | `lib/common/widgets/display/glass_surface.dart` |
+| `grouped-list` | `CommonGroupedList` | `lib/common/widgets/data/grouped_list.dart` |
+| `heatmap` | `CommonHeatmap` | `lib/common/widgets/charts/heatmap.dart` |
+| `icon` | `CommonIcon` | `lib/common/widgets/action/icon.dart` |
+| `icon-button` | `CommonIconButton` | `lib/common/widgets/action/icon_button.dart` |
+| `launch-screen` | `CommonLaunchScreen` | `lib/common/widgets/navigation/launch_screen.dart` |
+| `list-cell` | `CommonListCell` | `lib/common/widgets/data/list_cell.dart` |
+| `loading` | `AppPop.loading` | `lib/common/overlay/app_pop.dart` |
+| `menu` | `AppPop.dropMenu` | `lib/common/overlay/app_pop.dart` |
+| `metric` | `CommonMetric` | `lib/common/widgets/display/metric.dart` |
+| `mini-bars` | `CommonMiniBars` | `lib/common/widgets/charts/mini_bars.dart` |
+| `month-calendar` | `CommonMonthCalendar` | `lib/common/widgets/charts/month_calendar.dart` |
+| `primary-tabs` | `CommonPrimaryTabs` | `lib/common/widgets/navigation/primary_tabs.dart` |
+| `progress` | `CommonProgress` | `lib/common/widgets/display/progress.dart` |
+| `radio-group` | `CommonRadioGroup` | `lib/common/widgets/input/radio_group.dart` |
+| `ring-progress` | `CommonRingProgress` | `lib/common/widgets/display/ring_progress.dart` |
+| `screen-transition` | `PbPageTransitions.theme` | `lib/common/widgets/navigation/screen_transition.dart` |
+| `scrollable-data-list` | `CommonScrollableDataList` | `lib/common/widgets/data/scrollable_data_list.dart` |
+| `search-bar` | `CommonSearchBar` | `lib/common/widgets/input/search_bar.dart` |
+| `secondary-tabs` | `CommonSecondaryTabs` | `lib/common/widgets/navigation/secondary_tabs.dart` |
+| `segmented-control` | `CommonSegmentedControl` | `lib/common/widgets/input/segmented_control.dart` |
+| `spinner` | `CommonSpinner` | `lib/common/widgets/display/spinner.dart` |
+| `stepper` | `CommonStepper` | `lib/common/widgets/input/stepper.dart` |
+| `switch` | `CommonSwitch` | `lib/common/widgets/input/switch_control.dart` |
+| `tab-viewport` | `CommonTabView` | `lib/common/widgets/navigation/tab_view.dart` |
+| `tabbar` | `CommonBottomNav` | `lib/common/widgets/navigation/bottom_nav.dart` |
+| `tag` | `CommonTag` | `lib/common/widgets/display/tag.dart` |
+| `text-field` | `CommonTextField` | `lib/common/widgets/input/text_field.dart` |
+| `textarea` | `CommonTextArea` | `lib/common/widgets/input/text_area.dart` |
+| `toast` | `AppPop.toast` | `lib/common/overlay/app_pop.dart` |
 
-`page`、`section`、`summary`、`list`、`field` 等 role 要结合 Fragment 上下文选择本地容器，不能覆盖一个已存在且更精确的 `componentId`。
+`page`、`section`、`summary`、`list` 和 `field` 等通用 role 不能覆盖更精确的 componentId。CommonFormSection、CommonDecisionActions 和 CommonFlowSheetContent 是 Target 组合壳，不是新增的 Producer componentId。
 
 ## Token mapping
 
-新目录的 153 个可绑定主题键已在根目录 `proto-bridge.target.json` 建立 concrete mapping，并由 `lib/theme/proto_bridge_tokens.dart` 提供可执行 accessor；47 个组件的映射仍按组件批次保持 pending，不能把主题映射当作组件已适配。不可绑定 enum、字阶派生部件与实现常量不建立 Target 映射。待组件适配完成后，再由 resolver 验证“组件声明存在”和“当前 Dart API 可访问”。这份 Target 映射不等于恢复 MCP 完整 Catalog 读取；Agent 仍按当前任务读取必要的 Producer Contract、文档和源码。
+153 个可绑定主题键映射到上下文主题实例的 accessor，例如 `ts.colors.primary`；先通过 `TS.of(context)` 获得该实例。`protoBridgeTokenSnapshot(ts)` 提供可执行使用点。不可绑定 enum、派生部件和实现常量不建立映射，`transparent` 与 `none` 是字面量。
 
-`transparent` 与 `none` 是绑定字面量，不是 Foundation Token，也不得生成 `TS.*` accessor 或 Target token obligation。
+主题只有类型化 AppThemePack 与 ThemeExtension 一条路径，详细规则见 [Theme](theme.md)。资源可以为空，组件按 Contract 回退；有品牌或插画 Evidence 时由目标产品主题包提供实际资源或公开 Widget 插槽。
 
-Target 只翻译语义，不复制 Web 表达：例如百分比映射为 Flutter 比例、CSS shadow 映射为 Material elevation、CSS easing 映射为 `Curve`。Theme 值由 `TS` 的 light/dark 服务提供，业务页面不得创建平行常量。
+## 原生实现与组合边界
+
+- AppBar、底部导航和各级 Tabs 使用官方组件。一级轨道使用 CommonGlassSurface，选中底由官方 TabBar.indicator 连续定位；底部导航在官方等宽目的地后绘制一份滑动选中面。次级 Tab 保留文字中心上三角。
+- CommonTabView 使用 TabBarView 与可配置保活；页面按区域关闭不需要的 swipe，Flutter Gesture Arena 负责仲裁。
+- CommonIcon 用 Image.asset 消费 35 个 PBWork 图形的倍率图片。仓库根 `node scripts/export-flutter-icons.mjs` 从同一 glyph-artwork 源导出，不使用同名字体图标替换。
+- Button 公开六种动作、rounded/pill 和 solid/glass；loading 保留文字并阻止重复触发，disabled 才降低整体透明度。
+- 字段标签独立放在官方输入表面上方。Checkbox、RadioGroup、Switch 的实例色槽必须由上下文 Theme Token 解析，不能传硬编码颜色；Switch 支持标签前后位置。
+- DataList 使用 ListView；ScrollableDataList 统一管理刷新、加载、异常和控制器释放。GroupedList 是外层滚动中的 Row 单元组合，不创建嵌套滚动。
+- 所有弹层经 AppPop 调用远程 unified_popups 2.2.1；需要样式的方法接收调用处 BuildContext。库拥有 Overlay、关闭、焦点、键盘、拖拽、路由与生命周期。ActionSheet 复用 Sheet。
+- Sheet 的 content/medium/expanded 由库的 `SheetSizeConfig` 表达；medium/expanded 使用 `ts.sizing.panelMedium` / `panelLarge` 的 fraction。档位由调用者选择，拖动关闭由库管理，不复制 Web 的档位切换手势。
+- FlowSheet 内部页面使用 CommonFlowSheetContent：滚动主体、固定步骤指示和决策区。头部返回调用库控制器，关闭结束整张 Sheet，不把返回等同于提交。决策区通过 CommonDecisionActions 保持一颗主要动作或左次要右主要。
+- GlassSurface 组合库内 LiquidGlass，边缘由其 Painter 绘制，背景由 BackdropFilter 模糊；高对比或显式减少透明度时使用实色。
+- 滚轮是独立一至三列的原生 ListWheelScrollView，不做业务时长换算。Stepper 的键盘与按钮统一使用有限值、step 与 min/max 规则。
+- MiniBars、Heatmap 和 RingProgress 使用 CustomPainter。日期计算只用传入的 UTC 日期；Heatmap 区分缺失与零值，限制展示区间，支持只读绘图与图例替换。MonthCalendar 管理日期、焦点和禁用，dayBuilder 只替换内容。
+- BrandMark 提供 mark/wordmark Widget 替换与名称回退。LaunchScreen 是 Flutter 欢迎/静态页面，不包含原生首帧前启动资源，也不自动延时跳转。
+
+## 明确的平台翻译
+
+- 页面和 FlowSheet 使用官方 Route／库内 Navigator 与返回机制；不复制 Web 的拖动阈值、前进横滑或指针仲裁算法。FlowSheet 的前进由动作推进，返回使用库内返回或官方侧滑。
+- CSS 饱和度、内阴影与多层 elevation 翻译为 LiquidGlassStyle、边缘 Painter、BoxShadow 或 Material elevation；不声称原生光学折射或跨平台像素完全一致。
+- Native 控件保留平台的键盘、焦点、字号缩放和触控行为；目标 API 不要求与 Vue 同名同构。图形与材质的性能需要在实际设备场景检查，不能由 resolver 成功推导。
 
 ## Resolver 与同步状态
 
-1. 根目录 `proto-bridge.target.json` 是精确映射，本文解释策略，Dart 公开 API 是可执行事实；三者不一致时 resolver 必须返回 `stale` 或 `conflict`。
-2. 根目录 `proto-bridge.sync.json` 记录最后一次已确认同步的 Producer surface fingerprint、分区/逐组件 digest 与计数；清单元数据必须整体一致，不能只手改总 digest。
-3. `pnpm ds:target-sync:verify` 比较 Component/Token/Theme Schema、Contract、role、Catalog、Theme、Bind 池、同步清单和 Flutter resolver（要求每个键为 `resolved` 或条目 `pending`）；任一协议或 Target API 漂移都会失败并列出变化项，条目 `pending` 在成功输出末尾列出。组件批次尚未确认时，用 `pnpm ds:theme:verify` 单独检查 153 个 Token 的 concrete mapping，不要把批次 `pending` 误判为主题回退。
-4. DS 连续迭代期间可以暂缓 Flutter 视觉精修，但必须把清单状态改为 `pending` 并记录原因；稳定后统一恢复 `synced`。不得靠记忆或口头提醒维持同步。
+映射与实际代码不一致返回 stale，政策与机器声明冲突返回 conflict。未实现的条目只能声明带非空 reason 的 pending，不得静默换成别的组件；pending 与同一 ID 的具体映射不能并存。
 
-本节出现两个不同的 `pending`，必须分开命名：
-
-| 概念 | 位置 | 含义 | 处理 |
-| --- | --- | --- | --- |
-| **批次状态** | `proto-bridge.sync.json` 的 `status: synced \| pending` | 整个 Producer surface 批次是否已确认同步 | `pending` 使 `pnpm ds:target-sync:verify` 失败 |
-| **条目状态**（entry status） | `proto-bridge.target.json` 中 `components.<id>` / `tokens.<id>` 的 `{ "status": "pending", "reason": "…" }` | 逐键事实：Target 尚未实现该组件或 Token（例如 Flutter 暂不实现的 `asset.*`、glass 分支、`motion.personality`） | resolver 返回 `pending` 并说明「Target 待实现」，附声明的 `reason`，不跑启发式、不给候选替代；同步脚本单独计数并列出，不判失败 |
-
-条目 `pending` 必须带非空 `reason`；缺失或为空是清单错误（resolver 对该键返回 `conflict`，同步脚本失败）。`pending` 与同一 ID 的具体映射（含本文表格）并存同样返回 `conflict`。未声明又缺失的键仍然失败，不能用 `pending` 以外的方式暂缓。`readiness` 把 `pending` 计为未就绪项并单独列出，`validate_target_changes` 对绑定到 `pending` 键的变更只给「Target 待实现」提示。Agent 遇到条目 `pending` 必须披露，不得自行替换实现。Core 语义见 [Target 适配器](../../../docs/architecture/proto-bridge.md)。
-
-## Flutter 当前实现（尚未适配主题包）
-
-- `data-list` 使用 Flutter `ListView.builder/separated`；`scrollable-data-list` 使用 `pull_to_refresh_flutter3`，并在公共壳内固定 Clamping physics、有限越界和高阻尼 spring，避免刷新完成后的二次回弹。
-- `CommonPrimaryTabs` 和 `CommonSecondaryTabs` 分文件维护，均基于官方 `TabBar`；一级轨道是无阴影的 `surface-recessed` 普通表面，选中面使用 Target 自有 `LiquidGlassDecoration` 并由官方 indicator 直接跟随 `TabController.animation`，内容切换使用 `CommonTabView` / `TabBarView`。Flutter 将 `sizing.control-md` 用作 40 高的选中面，并在其外叠加上下 `spacing.xs` 轨道内缩，形成 48 高点击轨道。
-- `LiquidGlassDecoration` 只复刻一级 Tab 所需的半透明 `surface-selected`、`radius.full` 和主题化 `elevation.glass`；`Decoration` 没有 Widget 合成层，无法承载 `BackdropFilter`，在统一纯色 recessed 轨道上不伪造背景模糊。这是 Flutter 平台近似，不改变 `effect.glass-backdrop` 的完整 Target 映射。
-- `CommonSecondaryTabs` 的 `sizing.caret` 表示三角单侧半宽和高度：默认总宽 10、高 5；`layout.inset-sm-negative` 从文字行盒而非整个 Tab 底边定位。
-- Demo 将 `CommonBottomNav` 作为 `Scaffold.bottomNavigationBar` 的真实根导航；遵守 2–5 个目的地约束，第五个“更多”目的地以内层一级 Tabs 承接 Data 与 Feedback，不使用 Drawer/Sheet 选择组件分类。
-- `menu` 精确映射为 `AppPop.dropMenu`；表单锚点 `CommonMenuField` 只是目标工程便利壳，不是第二套菜单实现。
-- `bottom-sheet`、`confirm`、`flow-sheet`、`loading`、`toast` 与 `menu` 全部经 `AppPop` 调用 `unified_popups`。
-- `CommonIcon` 使用 `lucide_icons_flutter` 映射 Producer 策展的 34 个稳定 id 。
-- `CommonButton` 只公开 `kind=primary|secondary|outlined`，配色由组件内部绑定 `color.action` / `color.action-soft` / `color.outline`；不保留 variant/tone 矩阵或 `text` 类型。
-- `CommonTextField` / `CommonTextArea` 在 `showLabel=false` 时无描边并填充 `color.surface-recessed`；`showLabel=true` 时显示标题、边框并填充 `color.surface`。
-- `screen-transition` 映射为 `PbPageTransitions.theme`：默认全部平台使用 iOS 侧滑（`CupertinoPageTransitionsBuilder`）；Android Fade Through 近似为 `ZoomPageTransitionsBuilder`，经 `PbPageTransitions.theme(mode: android)` 选择。不提供包住页面的容器，也不暴露 `screenKey` / `navigation`。
-- Flutter elevation、glass blur、布局比例和交互曲线属于平台语义翻译，不要求与 Web 数据结构同构。
-- 本工程现有 Dart 实现覆盖先前的 32 个 componentId；Producer 当前声明 47 个，全部仍 pending，新增 15 个尚未实现，不保留历史组件别名或旧 Dart API。公共 Widget 按 `action/input/display/navigation/data` 五类放在 `lib/common/widgets/`；`feedback` 由 `AppPop` 适配层承接，目标侧组合壳单列 `composition/`，统一从 `lib/common/widgets.dart` 导入。
-
-## Flutter 实现暂不需要
-
-下列 Producer 能力保持差异，Flutter 公开 API 不镜像：
-
-- 手势仲裁 Token（`layout.gesture-*`、`motion.duration-click-suppression`）的组件消费；Tab/列表使用官方 Gesture Arena。
-- 一级 Tab 玻璃 `effect.glass-backdrop` 与顶部过渡弧；选中面仍是静态 `LiquidGlassDecoration`。
-- Button / Icon Button 按压缩放。
-- TextField `clearable`（清除由 `CommonSearchBar` 承担）。
-- Checkbox / Switch / Radio 的实例 Token-ref 色槽参数；只保留 Contract 默认色。
-- FlowSheet 步骤点、`layout.sheet-max-height` 与弹层时长；`AppPop` 继续交给 `unified_popups` 默认几何。
-- 图表 Token 的业务消费。
-- `CommonIconButton.quarterTurns` 是 Target 便利参数，不是 Producer prop。
+条目 pending 表示该键待实现；`proto-bridge.sync.json` 的批次 pending 表示整个 surface 尚未确认同步，两者不同。同步基线固定 Schema、Contract、role、图标、Token、主题与绑定池的完整 fingerprint。稳定后用 verifier 输出整体更新，不能只改一个 digest。
 
 ## 实现与验证
 
-实现前批量解析组件和 Token；`resolved` 只证明映射 symbol/accessor 可定位，组件完成还必须通过状态、交互和 Token 消费测试。Case/variant/interaction 必须映射到页面状态和命名路由；新增页面遵循 [routing.md](routing.md)，验证遵循 [testing.md](testing.md)。最终报告保留固定引用、映射结果、平台近似和未解决项。
+固定 Handoff 的业务实现先按 Consumer Skill 读取 Screenshot、Screen packet、Case delta 和 Target readiness。按当前任务使用既有公开 API，不遍历 Store 或使用 active/latest 替代固定引用。
 
-官方 Flutter MCP Runtime Review 的实验实现不属于当前目标工程 Contract。目标工程
-只维护业务代码、组件/Token 映射、路由和原生测试，不携带 ProtoBridge 专属 Driver
-Bridge、Case/Scenario 副本或 App build identity。实验背景、保留代码位置和重新评估
-条件见仓库 Roadmap。
+运行 [原生与视觉检查](testing.md)、`pnpm ds:theme:verify` 与 `pnpm ds:target-sync:verify`。随后按固定范围报告状态、交互、结构、组件、Token、偏差和未验证项。没有对应设备或截图时不能宣称视觉验收通过。
 
-## PBWork 材质与组件品质变更
-
-Producer 新增 GlassSurface 及 8 个材质/数据展示键，并调整自绘图标、AppBar、数据/输入与启动展示契约。相关映射明确保持 pending，不声称 Flutter 已实现视觉和新 API；尤其自绘 SVG 不能静默映射为同名 Lucide 并报告一致。条目理由与未实现清单以 `proto-bridge.target.json` 为准。
+Core 的 [Target 适配器](../../../docs/architecture/proto-bridge.md) 只提供目标上下文，不把 Target 事实写入 Evidence。官方 Flutter MCP Runtime Review 属于保留实验，不要求目标携带专用 Driver、Case 副本或 build identity。

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/ts.dart';
 
+enum CommonLabelPosition { start, end }
+
 /// 对齐 pbwork `Switch`。默认开启色为 `color.primary`。
-/// Flutter 暂不暴露 Token-ref 色槽参数。
+/// Resolve activeColor from the contextual theme when overriding its slot.
 class CommonSwitch extends StatelessWidget {
   const CommonSwitch({
     super.key,
@@ -11,37 +13,44 @@ class CommonSwitch extends StatelessWidget {
     this.label,
     this.enabled = true,
     this.onChanged,
+    this.activeColor,
+    this.labelPosition = CommonLabelPosition.end,
   });
 
   final bool value;
   final String? label;
   final bool enabled;
   final ValueChanged<bool>? onChanged;
+  final Color? activeColor;
+  final CommonLabelPosition labelPosition;
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     final control = label == null
         ? Switch(
             value: value,
             onChanged: enabled && onChanged != null ? onChanged : null,
-            activeThumbColor: TS.colors.surface,
-            activeTrackColor: TS.colors.primary,
-            inactiveThumbColor: TS.colors.surface,
-            inactiveTrackColor: TS.colors.surfaceVariant,
+            activeThumbColor: ts.colors.surface,
+            activeTrackColor: activeColor ?? ts.colors.primary,
+            inactiveThumbColor: ts.colors.surface,
+            inactiveTrackColor: ts.colors.outline,
           )
         : SwitchListTile(
             value: value,
             onChanged: enabled && onChanged != null ? onChanged : null,
-            title: Text(label!, style: TS.textStyle.content),
+            title: Text(label!, style: ts.textStyle.content),
+            controlAffinity: labelPosition == CommonLabelPosition.start
+                ? ListTileControlAffinity.trailing
+                : ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
-            activeThumbColor: TS.colors.surface,
-            activeTrackColor: TS.colors.primary,
-            inactiveThumbColor: TS.colors.surface,
-            inactiveTrackColor: TS.colors.surfaceVariant,
+            activeThumbColor: ts.colors.surface,
+            activeTrackColor: activeColor ?? ts.colors.primary,
+            inactiveThumbColor: ts.colors.surface,
+            inactiveTrackColor: ts.colors.outline,
           );
     return Opacity(
-      opacity: enabled ? TS.opacity.visible : TS.opacity.disabled,
+      opacity: enabled ? ts.opacity.visible : ts.opacity.disabled,
       child: control,
     );
   }

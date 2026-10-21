@@ -22,7 +22,7 @@ class _NavigationDemoSectionState extends State<NavigationDemoSection> {
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     return DemoCategoryPage(
       title: 'Navigation / 导航',
       description: 'Tabs 拥有视图区，FilterBar 只改变数据；页面底部是 Tabbar 的真实根导航。',
@@ -37,7 +37,7 @@ class _NavigationDemoSectionState extends State<NavigationDemoSection> {
               child: Column(
                 children: [
                   const CommonPrimaryTabs(items: _tabItems),
-                  SizedBox(height: TS.spacing.smPlus),
+                  SizedBox(height: ts.spacing.smPlus),
                   const Expanded(
                     child: CommonTabView(
                       children: [
@@ -62,7 +62,7 @@ class _NavigationDemoSectionState extends State<NavigationDemoSection> {
               child: Column(
                 children: [
                   const CommonSecondaryTabs(items: _tabItems),
-                  SizedBox(height: TS.spacing.smPlus),
+                  SizedBox(height: ts.spacing.smPlus),
                   const Expanded(
                     child: CommonTabView(
                       children: [

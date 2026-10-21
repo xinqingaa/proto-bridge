@@ -16,14 +16,14 @@ class DemoCategoryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     return ListView(
-      padding: EdgeInsets.all(TS.spacing.md),
+      padding: EdgeInsets.all(ts.spacing.md),
       children: [
-        Text(title, style: TS.textStyle.title),
-        SizedBox(height: TS.spacing.xs),
-        Text(description, style: TS.textStyle.caption),
-        SizedBox(height: TS.spacing.lg),
+        Text(title, style: ts.textStyle.title),
+        SizedBox(height: ts.spacing.xs),
+        Text(description, style: ts.textStyle.caption),
+        SizedBox(height: ts.spacing.lg),
         ...children,
       ],
     );
@@ -44,18 +44,18 @@ class DemoGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     return Padding(
-      padding: EdgeInsets.only(bottom: TS.spacing.lg),
+      padding: EdgeInsets.only(bottom: ts.spacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TS.textStyle.titleSm),
+          Text(title, style: ts.textStyle.titleSm),
           if (description != null) ...[
-            SizedBox(height: TS.spacing.xxs),
-            Text(description!, style: TS.textStyle.caption),
+            SizedBox(height: ts.spacing.xxs),
+            Text(description!, style: ts.textStyle.caption),
           ],
-          SizedBox(height: TS.spacing.smPlus),
+          SizedBox(height: ts.spacing.smPlus),
           child,
         ],
       ),

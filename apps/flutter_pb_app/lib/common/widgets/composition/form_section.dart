@@ -24,7 +24,7 @@ class CommonFormSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -37,22 +37,22 @@ class CommonFormSection extends StatelessWidget {
                   Row(
                     children: [
                       Flexible(
-                        child: Text(title, style: TS.textStyle.subtitle),
+                        child: Text(title, style: ts.textStyle.subtitle),
                       ),
                       if (showRequiredMark) ...[
-                        SizedBox(width: TS.spacing.xs),
+                        SizedBox(width: ts.spacing.xs),
                         Text(
                           '必填',
-                          style: TS.textStyle.caption.copyWith(
-                            color: TS.colors.error,
+                          style: ts.textStyle.caption.copyWith(
+                            color: ts.colors.error,
                           ),
                         ),
                       ],
                     ],
                   ),
                   if (description != null) ...[
-                    SizedBox(height: TS.spacing.xxs),
-                    Text(description!, style: TS.textStyle.caption),
+                    SizedBox(height: ts.spacing.xxs),
+                    Text(description!, style: ts.textStyle.caption),
                   ],
                 ],
               ),
@@ -65,7 +65,7 @@ class CommonFormSection extends StatelessWidget {
               ),
           ],
         ),
-        SizedBox(height: TS.spacing.sm),
+        SizedBox(height: ts.spacing.sm),
         ...children,
       ],
     );

@@ -14,26 +14,26 @@ class CommonSpinner extends StatelessWidget {
   final String? label;
   final CommonControlSize size;
 
-  double get _dim {
+  double _dim(TS ts) {
     switch (size) {
       case CommonControlSize.sm:
-        return TS.sizing.iconSm;
+        return ts.sizing.iconSm;
       case CommonControlSize.md:
-        return TS.sizing.iconMd;
+        return ts.sizing.iconMd;
       case CommonControlSize.lg:
-        return TS.sizing.iconLg;
+        return ts.sizing.iconLg;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     final spinner = SizedBox(
-      width: _dim,
-      height: _dim,
+      width: _dim(ts),
+      height: _dim(ts),
       child: CircularProgressIndicator(
-        strokeWidth: TS.sizing.indicatorThickness,
-        color: TS.colors.primary,
+        strokeWidth: ts.sizing.indicatorThickness,
+        color: ts.colors.primary,
       ),
     );
     if (label == null) return spinner;
@@ -41,8 +41,8 @@ class CommonSpinner extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         spinner,
-        SizedBox(width: TS.spacing.sm),
-        Text(label!, style: TS.textStyle.caption),
+        SizedBox(width: ts.spacing.sm),
+        Text(label!, style: ts.textStyle.caption),
       ],
     );
   }

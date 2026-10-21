@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:unified_popups/unified_popups.dart';
 
 import '../../../theme/ts.dart';
@@ -53,6 +52,7 @@ class _CommonMenuFieldState<T> extends State<CommonMenuField<T>> {
   Future<void> _open() async {
     if (!_interactive) return;
     final selected = await AppPop.dropMenu<T>(
+      context,
       anchor: _anchor,
       menu: DropMenu<T>.single(
         selectedValue: widget.value,
@@ -61,6 +61,7 @@ class _CommonMenuFieldState<T> extends State<CommonMenuField<T>> {
             DropMenuItem<T>(
               value: option.value,
               label: option.label,
+              disabled: !option.enabled,
               selected: option.value == widget.value,
             ),
         ],
@@ -77,9 +78,10 @@ class _CommonMenuFieldState<T> extends State<CommonMenuField<T>> {
   }
 
   Widget _suffix() {
+    final ts = TS.of(context);
     if (widget.loading) {
       return Padding(
-        padding: EdgeInsets.all(TS.spacing.smPlus),
+        padding: EdgeInsets.all(ts.spacing.smPlus),
         child: const CommonSpinner(size: CommonControlSize.sm),
       );
     }
@@ -87,30 +89,33 @@ class _CommonMenuFieldState<T> extends State<CommonMenuField<T>> {
       return IconButton(
         tooltip: '清除',
         onPressed: () => widget.onChanged?.call(null),
-        icon: Icon(LucideIcons.x, color: TS.colors.onSurfaceMuted),
+        icon: CommonIcon(
+          name: CommonIconName.x,
+          color: ts.colors.onSurfaceMuted,
+        ),
       );
     }
-    return Icon(
-      CommonIconName.chevronDown.data,
-      color: TS.colors.onSurfaceMuted,
-      size: TS.sizing.iconSm,
+    return CommonIcon(
+      name: CommonIconName.chevronDown,
+      color: ts.colors.onSurfaceMuted,
+      dimension: ts.sizing.iconSm,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     final selectedLabel = _selectedLabel;
-    return Opacity(
-      opacity: widget.enabled ? TS.opacity.visible : TS.opacity.disabled,
+    final field = Opacity(
+      opacity: widget.enabled ? ts.opacity.visible : ts.opacity.disabled,
       child: PopupAnchor(
         controller: _anchor,
         child: InkWell(
           onTap: _interactive ? _open : null,
-          borderRadius: BorderRadius.circular(TS.radius.md),
+          borderRadius: BorderRadius.circular(ts.radius.md),
           child: InputDecorator(
             decoration: InputDecoration(
-              labelText: widget.label,
+              labelText: null,
               hintText: widget.hint,
               errorText: widget.errorText,
               enabled: widget.enabled,
@@ -119,13 +124,24 @@ class _CommonMenuFieldState<T> extends State<CommonMenuField<T>> {
             isEmpty: selectedLabel == null,
             child: Text(
               selectedLabel ?? widget.hint ?? '',
-              style: TS.textStyle.content.copyWith(
-                color: selectedLabel == null ? TS.colors.onSurfaceMuted : null,
+              style: ts.textStyle.content.copyWith(
+                color: selectedLabel == null ? ts.colors.onSurfaceMuted : null,
               ),
             ),
           ),
         ),
       ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (widget.label != null) ...[
+          Text(widget.label!, style: ts.textStyle.caption),
+          SizedBox(height: ts.spacing.sm),
+        ],
+        field,
+      ],
     );
   }
 }

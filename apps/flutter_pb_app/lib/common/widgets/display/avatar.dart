@@ -19,10 +19,10 @@ class CommonAvatar extends StatelessWidget {
   final CommonControlSize size;
   final CommonAvatarTone tone;
 
-  double get _diameter => switch (size) {
-    CommonControlSize.sm => TS.sizing.avatarSm,
-    CommonControlSize.md => TS.sizing.avatarMd,
-    CommonControlSize.lg => TS.sizing.avatarLg,
+  double _diameter(TS ts) => switch (size) {
+    CommonControlSize.sm => ts.sizing.avatarSm,
+    CommonControlSize.md => ts.sizing.avatarMd,
+    CommonControlSize.lg => ts.sizing.avatarLg,
   };
 
   String get _initials {
@@ -36,16 +36,17 @@ class CommonAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     final primary = tone == CommonAvatarTone.primary;
     return CircleAvatar(
-      radius: _diameter / 2,
-      backgroundColor: primary ? TS.colors.primary : TS.colors.secondary,
+      radius: _diameter(ts) / 2,
+      backgroundColor: primary ? ts.colors.primary : ts.colors.secondary,
       foregroundImage: imageUrl == null ? null : NetworkImage(imageUrl!),
+      onForegroundImageError: imageUrl == null ? null : (_, _) {},
       child: Text(
         _initials,
-        style: TS.textStyle.label.copyWith(
-          color: primary ? TS.colors.onPrimary : TS.colors.onSecondary,
+        style: ts.textStyle.label.copyWith(
+          color: primary ? ts.colors.onPrimary : ts.colors.onSecondary,
         ),
       ),
     );

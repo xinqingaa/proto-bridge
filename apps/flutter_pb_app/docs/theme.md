@@ -1,51 +1,30 @@
 # Theme 与 Token
 
-页面和公共组件通过 `TS` 读取当前 Theme。不要在 feature 中直接写颜色、字号、圆角或间距常量。
-
-## 入口
+主题采用唯一的类型化 `AppThemePack`，通过 `TS extends ThemeExtension<TS>` 放入 Material Theme。组件从当前 BuildContext 读取，局部 Theme 与弹层不会改写全局主题实例。
 
 ```dart
-TS.colors
-TS.textStyle
-TS.spacing
-TS.sizing
-TS.radius
-TS.opacity
-TS.motion
-TS.elevation
-TS.border
-TS.layout
-TS.layer
-TS.effect
+final ts = TS.of(context);
+Text('标题', style: ts.textStyle.title);
 ```
 
-组件 build 内可调用 `TS.of(context)` 同步当前亮度；应用根节点由 `ThemeService` 创建 Material Theme，主题切换由 `themeModeProvider` 管理，并经 `AppPrefs` 读写 `theme_mode`。
+## 主题包
+
+`lib/theme/theme_pack.dart` 声明包身份、明暗颜色、字阶、尺寸、间距、圆角、动效、布局、层级、效果和资源。默认包为 `AppThemePack.base`。新产品在 `lib/theme/` 编写类型化主题包，通过 `themePacksProvider` 注册；`themePackProvider.notifier.select(id)` 切换，`themeModeProvider` 切换明暗。两种选择通过 AppPrefs 持久化到 MMKV。
+
+未注册的存储包 ID 回到注册表首项；空注册表和重复 ID 是配置错误。主题不从 PBWork 当前源码动态加载，也没有旧 Token 或旧主题兼容入口。目标包依据固定 Evidence 的主题取值表维护 Flutter 表达，不复制 CSS。
 
 ## Token 职责
 
-- `spacing` / `sizing` / `radius` 分别负责间距、控件/图标尺寸与轮廓圆角；业务代码按语义 accessor 消费，不复制具体数值。
-- `opacity` / `motion` / `elevation` 负责交互状态、转场和材质层级；平台近似由公共 Theme 层统一翻译。
-- `border` / `layout` / `layer` / `effect` 负责边界、比例/约束、叠放层级与玻璃等效果；不能在 feature 中创建平行常量。
+`ts.colors`、`ts.textStyle`、`ts.spacing`、`ts.sizing`、`ts.radius`、`ts.opacity`、`ts.motion`、`ts.elevation`、`ts.border`、`ts.layout`、`ts.layer`、`ts.effect`、`ts.assets` 是组件使用入口。具体设计量只放在主题目录；页面和公共组件不得另建平行常量或复制颜色数值。
 
-具体值和类型只以 `lib/theme/app_tokens.dart` 及 Theme 实现为准，本文不复制第二份可变配置。PBWork 当前全部 153 个可绑定 Token 都在工程根目录 `proto-bridge.target.json` 有 concrete mapping，并由 `lib/theme/proto_bridge_tokens.dart` 提供可执行 accessor；组件只消费与自身语义相关的部分。手势、图表、玻璃模糊等 Token 已映射，但 Flutter 组件暂不消费，见 [proto-bridge.md](proto-bridge.md#flutter-实现暂不需要)。
+`protoBridgeTokenSnapshot(ts)` 接收明确的上下文主题，用于调试和映射验证。`proto-bridge.target.json` 维护 153 个可绑定主题键的精确 accessor。映射有效仅说明落点可访问；组件的视觉、状态和实际消费仍需单独验证。
 
-## 颜色和文字
+`transparent` / `none` 是绑定字面量，不建立 Token accessor。资源未提供时由组件按 Contract 回退。Flutter 用逻辑像素、比例、Curve、BoxShadow 表达 Web 对应语义。
 
-`AppColors.light` 与 `AppColors.dark` 分别定义背景、surface、primary、secondary、error、warning、success、border、divider 和对应的 on-color。文字角色包括 `display`、`headline`、`title`、`subtitle`、`content`、`label`、`caption`。
+## 主题切换
 
-优先使用语义角色，而不是直接读取底层色值。例如错误状态使用 `TS.colors.error` 和 `TS.colors.errorSoft`，次要说明使用 `TS.textStyle.caption`。
-
-`transparent` / `none` 是绑定字面量，不是 Token，不创建 `TS.*` 字段。Web 百分比、shadow、filter 和 easing 在 Flutter 分别翻译为比例/逻辑像素、elevation/`BoxShadow`、effect 参数和 `Curve`，不复制 CSS 字符串。常规 elevation 使用 Material 数字；`elevation.glass` 保留 light/dark 单层 `BoxShadow`，供 Target 的静态玻璃 Decoration 消费。
-
-Theme override 也属于同步 surface；例如深色主题的 `opacity.glass` 必须由 `ThemeService` 按亮度解析，不能把浅色默认值固定成全局常量。
+Material Theme 和 TS 使用同一主题包。颜色在主题动画中插值；非颜色 Token 在切换中采用对应端点值，避免枚举和资源出现无意义的中间值。组件不得缓存 BuildContext 对应的主题供其它页面使用。
 
 ## 同步门禁
 
-工程根目录的 `proto-bridge.target.json` 是精确 id → accessor 表，`proto-bridge.sync.json` 固定最后一次已确认的 PBWork surface。修改协议 Schema、Theme、Token accessor 或映射后从仓库根运行 `pnpm ds:target-sync:verify`；只有所有映射均为 `resolved` 且完整 fingerprint 元数据匹配才算同步。
-
-## 布局规则
-
-- Screenshot 对尺寸、间距、圆角或边框有约束时，页面必须显式绑定对应 token。
-- 固定格式控件必须稳定尺寸，避免状态或文案变化导致布局跳动。
-- Evidence 未给出的布局敏感值先对照 Screenshot；仍不确定时记录风险。
-- Material 默认值只有在没有更具体的项目或 Evidence 约束时才可使用。
+主题及映射修改运行 `pnpm ds:theme:verify`。组件仍在迁移时批次保留 pending；完整组件适配后更新 `proto-bridge.sync.json` 并运行 `pnpm ds:target-sync:verify`。只有元数据和实际映射一致才能声明同步。

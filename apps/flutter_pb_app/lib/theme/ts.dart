@@ -1,13 +1,16 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:unified_popups/liquid_glass.dart';
 
 import '../common/widgets/navigation/screen_transition.dart';
 import '../storage/providers.dart';
+import '../storage/app_prefs.dart';
 import 'app_colors.dart';
 import 'app_text_styles.dart';
 import 'app_tokens.dart';
+import 'theme_pack.dart';
+
+export 'theme_pack.dart';
 
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override
@@ -17,12 +20,10 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
   }
 
   void setMode(ThemeMode mode) {
+    ref
+        .read(appPrefsProvider)
+        .writeThemeMode(mode == ThemeMode.dark ? 'dark' : 'light');
     state = mode;
-    unawaited(
-      ref
-          .read(appPrefsProvider)
-          .writeThemeMode(mode == ThemeMode.dark ? 'dark' : 'light'),
-    );
   }
 
   void toggle() {
@@ -35,34 +36,119 @@ final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
   ThemeModeNotifier.new,
 );
 
-/// 主题服务：组件侧请通过 [TS] 读取。
-class ThemeService {
-  ThemeService._(this._brightness);
+final themePacksProvider = Provider<List<AppThemePack>>(
+  (ref) => const [AppThemePack.base],
+);
 
-  factory ThemeService.of(Brightness brightness) => ThemeService._(brightness);
+class ThemePackNotifier extends Notifier<AppThemePack> {
+  @override
+  AppThemePack build() {
+    final packs = ref.watch(themePacksProvider);
+    if (packs.isEmpty ||
+        packs.any((pack) => pack.id.trim().isEmpty) ||
+        packs.map((pack) => pack.id).toSet().length != packs.length) {
+      throw StateError('Theme packs must have nonempty, unique identities.');
+    }
+    final stored = ref
+        .watch(appPrefsProvider)
+        .readString(AppPrefs.themePackKey);
+    return packs.firstWhere(
+      (pack) => pack.id == stored,
+      orElse: () => packs.first,
+    );
+  }
 
-  final Brightness _brightness;
+  void select(String id) {
+    final pack = ref
+        .read(themePacksProvider)
+        .firstWhere((pack) => pack.id == id);
+    ref.read(appPrefsProvider).writeString(AppPrefs.themePackKey, id);
+    state = pack;
+  }
+}
 
-  bool get isDark => _brightness == Brightness.dark;
+final themePackProvider = NotifierProvider<ThemePackNotifier, AppThemePack>(
+  ThemePackNotifier.new,
+);
 
-  late final AppColors colors = isDark ? AppColors.dark : AppColors.light;
-  late final AppTextStyles textStyle = AppTextStyles(colors: colors);
+/// ThemeExtension owned by the nearest Material Theme, never a global singleton.
+class TS extends ThemeExtension<TS> {
+  TS({
+    required this.brightness,
+    this.pack = AppThemePack.base,
+    AppColors? colors,
+  }) : colors = colors ?? pack.colorsFor(brightness);
 
-  final AppSpacing spacing = const AppSpacing();
-  final AppSizing sizing = const AppSizing();
-  final AppRadius radius = const AppRadius();
-  late final AppOpacity opacity = AppOpacity(isDark: isDark);
-  final AppMotion motion = const AppMotion();
-  late final AppElevation elevation = AppElevation(isDark: isDark);
+  final Brightness brightness;
+  final AppThemePack pack;
+  final AppColors colors;
+  bool get isDark => brightness == Brightness.dark;
+  late final AppTextStyles textStyle = AppTextStyles(
+    colors: colors,
+    typography: pack.typography,
+  );
+  AppSpacing get spacing => pack.spacing;
+  AppSizing get sizing => pack.sizing;
+  AppRadius get radius => pack.radius;
+  AppOpacity get opacity => isDark ? pack.darkOpacity : pack.lightOpacity;
+  AppMotion get motion => pack.motion;
+  AppElevation get elevation =>
+      isDark ? pack.darkElevation : pack.lightElevation;
   late final AppBorderTokens border = AppBorderTokens(colors: colors);
-  final AppLayoutTokens layout = const AppLayoutTokens();
-  final AppLayerTokens layer = const AppLayerTokens();
-  final AppEffectTokens effect = const AppEffectTokens();
-  final AppAssets assets = const AppAssets();
+  AppLayoutTokens get layout => pack.layout;
+  AppLayerTokens get layer => pack.layer;
+  AppEffectTokens get effect => pack.effect;
+  AppAssets get assets => pack.assets;
+
+  static TS of(BuildContext context) {
+    final tokens = Theme.of(context).extension<TS>();
+    if (tokens == null) throw StateError('Install TS in ThemeData.extensions.');
+    return tokens;
+  }
+
+  @override
+  TS copyWith({
+    Brightness? brightness,
+    AppThemePack? pack,
+    AppColors? colors,
+  }) => TS(
+    brightness: brightness ?? this.brightness,
+    pack: pack ?? this.pack,
+    colors: colors ?? (pack == null && brightness == null ? this.colors : null),
+  );
+
+  @override
+  TS lerp(covariant TS? other, double t) {
+    if (other == null) return this;
+    final target = t < 0.5 ? this : other;
+    return TS(
+      brightness: target.brightness,
+      pack: target.pack,
+      colors: colors.lerp(other.colors, t),
+    );
+  }
+
+  LiquidGlassStyle glassStyle({bool clear = false, Color? tint}) =>
+      LiquidGlassStyle(
+        backgroundColor: tint ?? (clear ? colors.glassClear : colors.glassTint),
+        borderColor: colors.glassEdge,
+        topHighlightColor: colors.glassEdge,
+        pressHighlightColor: colors.primary.withValues(alpha: opacity.pressed),
+        shadowColor: elevation.glass.color,
+        blurSigma: effect.glassBackdropBlur,
+        outlineWidth: border.widthHairline,
+        topStrokeWidth: border.widthStrong,
+        shadowBlurRadius: elevation.glass.blurRadius,
+        shadowOffset: elevation.glass.offset,
+        pressColorDuration: motion.durationFast,
+        pressScaleDuration: motion.durationNormal,
+        pressScale: motion.scalePressed,
+        pressCurve: motion.easingStandard,
+      );
 
   ThemeData toThemeData() {
     final scheme = ColorScheme(
-      brightness: _brightness,
+      brightness: brightness,
       primary: colors.primary,
       onPrimary: colors.onPrimary,
       secondary: colors.secondary,
@@ -75,7 +161,8 @@ class ThemeService {
 
     return ThemeData(
       useMaterial3: true,
-      brightness: _brightness,
+      extensions: [this],
+      brightness: brightness,
       colorScheme: scheme,
       pageTransitionsTheme: PbPageTransitions.theme(),
       scaffoldBackgroundColor: colors.background,
@@ -125,56 +212,5 @@ class ThemeService {
         hintStyle: textStyle.content.copyWith(color: colors.onSurfaceMuted),
       ),
     );
-  }
-}
-
-/// 全局主题简写入口。
-///
-/// 用法：`TS.colors.primary` / `TS.textStyle.title`。
-/// 在 [MaterialApp] 之下、或调用 [TS.bind] / [TS.ensure] 后使用。
-abstract final class TS {
-  static ThemeService _service = ThemeService.of(Brightness.light);
-
-  static ThemeService get current => _service;
-
-  static AppColors get colors => _service.colors;
-  static AppTextStyles get textStyle => _service.textStyle;
-  static AppSpacing get spacing => _service.spacing;
-  static AppSizing get sizing => _service.sizing;
-  static AppRadius get radius => _service.radius;
-  static AppOpacity get opacity => _service.opacity;
-  static AppMotion get motion => _service.motion;
-  static AppElevation get elevation => _service.elevation;
-  static AppBorderTokens get border => _service.border;
-  static AppLayoutTokens get layout => _service.layout;
-  static AppLayerTokens get layer => _service.layer;
-  static AppEffectTokens get effect => _service.effect;
-  static AppAssets get assets => _service.assets;
-
-  /// 绑定当前亮度（App 根节点 / 主题切换时调用）。
-  static void bind(Brightness brightness) {
-    _service = ThemeService.of(brightness);
-  }
-
-  /// 从 [BuildContext] 同步亮度（组件 build 内可选调用）。
-  static ThemeService of(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    if (_service._brightness != brightness) {
-      bind(brightness);
-    }
-    return _service;
-  }
-}
-
-/// 在 Widget 树中保持 [TS] 与当前 Theme 同步。
-class TsBinder extends StatelessWidget {
-  const TsBinder({super.key, required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    TS.of(context);
-    return child;
   }
 }

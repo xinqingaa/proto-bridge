@@ -1,24 +1,21 @@
-import 'package:shared_preferences/shared_preferences.dart';
-
-/// Thin KV wrapper. New keys must be added to `docs/architecture.md` first.
-class AppPrefs {
-  AppPrefs(this._prefs);
-
-  final SharedPreferences _prefs;
-
+/// Application preferences. MMKV is the sole production implementation.
+abstract class AppPrefs {
   static const themeModeKey = 'theme_mode';
+  static const themePackKey = 'theme_pack';
 
-  /// Returns `light`, `dark`, or `null` when unset.
+  String? readString(String key);
+  void writeString(String key, String value);
+  void remove(String key);
+
   String? readThemeMode() {
-    final value = _prefs.getString(themeModeKey);
-    if (value == 'light' || value == 'dark') return value;
-    return null;
+    final mode = readString(themeModeKey);
+    return mode == 'light' || mode == 'dark' ? mode : null;
   }
 
-  Future<void> writeThemeMode(String mode) async {
+  void writeThemeMode(String mode) {
     if (mode != 'light' && mode != 'dark') {
       throw ArgumentError.value(mode, 'mode', 'Must be light or dark.');
     }
-    await _prefs.setString(themeModeKey, mode);
+    writeString(themeModeKey, mode);
   }
 }

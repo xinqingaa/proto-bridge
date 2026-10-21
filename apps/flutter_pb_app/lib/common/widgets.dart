@@ -33,3 +33,20 @@ export 'widgets/data/data_list.dart';
 export 'widgets/data/scrollable_data_list.dart';
 
 export 'widgets/composition/form_section.dart';
+
+export 'widgets/display/glass_surface.dart';
+export 'widgets/input/stepper.dart';
+export 'widgets/input/segmented_control.dart';
+export 'widgets/input/wheel_picker.dart';
+export 'widgets/display/ring_progress.dart';
+export 'widgets/display/metric.dart';
+export 'widgets/display/tag.dart';
+export 'widgets/display/brand_mark.dart';
+export 'widgets/data/list_cell.dart';
+export 'widgets/data/grouped_list.dart';
+export 'widgets/navigation/launch_screen.dart';
+export 'widgets/composition/density.dart';
+export 'widgets/charts/mini_bars.dart';
+export 'widgets/charts/heatmap.dart';
+export 'widgets/charts/month_calendar.dart';
+export 'widgets/composition/sheet_content.dart';

@@ -4,10 +4,12 @@ import '../../common/widgets.dart';
 import '../../theme/ts.dart';
 import 'data_demo_section.dart';
 import 'feedback_demo_section.dart';
+import 'extended_demo_section.dart';
 
 const _moreTabs = [
   CommonTabItem(value: 'data', label: '数据'),
   CommonTabItem(value: 'feedback', label: '反馈'),
+  CommonTabItem(value: 'extended', label: '扩展'),
 ];
 
 /// 第五个根目的地：在不突破 Tabbar 2–5 个目的地约束的前提下承接其余分类。
@@ -16,24 +18,28 @@ class MoreDemoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     return DefaultTabController(
       length: _moreTabs.length,
-      animationDuration: TS.motion.durationSlow,
+      animationDuration: ts.motion.durationSlow,
       child: Column(
         children: [
           Padding(
             padding: EdgeInsets.fromLTRB(
-              TS.spacing.md,
-              TS.spacing.md,
-              TS.spacing.md,
-              TS.spacing.none,
+              ts.spacing.md,
+              ts.spacing.md,
+              ts.spacing.md,
+              ts.spacing.none,
             ),
             child: const CommonPrimaryTabs(items: _moreTabs, grow: true),
           ),
           const Expanded(
             child: CommonTabView(
-              children: [DataDemoSection(), FeedbackDemoSection()],
+              children: [
+                DataDemoSection(),
+                FeedbackDemoSection(),
+                ExtendedDemoSection(),
+              ],
             ),
           ),
         ],

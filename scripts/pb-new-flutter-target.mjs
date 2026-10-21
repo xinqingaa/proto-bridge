@@ -16,6 +16,7 @@ import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 
 import {
+  ensureBuilt,
   optionValue,
   repoRoot,
   userArgv,
@@ -37,7 +38,7 @@ if (argv.includes("--help") || argv.includes("-h")) {
     "  --yes                   non-interactive",
     "  --dry-run               print the plan without writing",
     "  --no-install            skip flutter pub get (dart format still runs)",
-    "  --verify                run analyze/test/token check after generation",
+    "  --verify                run analyze/test/full DS check after generation",
     "  --set-target            run pb:target use for the generated directory",
     "  --require-synced        fail when the base sync batch is not synced",
     "",
@@ -72,7 +73,7 @@ if (!rawName) {
   }
   const rl = createInterface({ input: process.stdin, output: process.stderr });
   try {
-    rawName = (await rl.question("Project name (e.g. cold_chain_app): ")).trim();
+    rawName = (await rl.question("Project name (e.g. product_app): ")).trim();
   } finally {
     rl.close();
   }
@@ -116,7 +117,7 @@ if (manifest.pendingTokens > 0) {
 }
 if (manifest.syncStatus !== "synced") {
   const message =
-    "Base proto-bridge.sync.json is not synced; components remain pending by scope.";
+    "Base proto-bridge.sync.json is not synced; inspect DS drift before using this base.";
   if (requireSynced) throw new Error(message);
   process.stdout.write(`Warning: ${message}\n\n`);
 }
@@ -143,6 +144,15 @@ if (!yes) {
   }
 }
 
+// Validate live token coverage, not merely the count of explicit pending entries.
+await ensureBuilt([
+  "packages/core/dist/v2/theme/index.js",
+  "packages/core/dist/target/query.js",
+  "packages/mcp-server/dist/index.js",
+]);
+await run(process.execPath, [path.join(repoRoot, "scripts/verify-ds-target-sync.mjs"), "--tokens-only"], repoRoot);
+if (requireSynced) await run(process.execPath, [path.join(repoRoot, "scripts/verify-ds-target-sync.mjs")], repoRoot);
+
 await mkdir(destination, { recursive: true });
 resolvedDestination = await realpath(destination);
 resolvedRepoRoot = await realpath(repoRoot);
@@ -163,22 +173,17 @@ await writeMcpAndTools();
 await writeSkills();
 await writeDocs();
 
-try {
-  await run("dart", ["format", "lib", "test"], destination);
-} catch (error) {
-  process.stderr.write(
-    `Warning: dart format failed; run it manually in ${destination}.\n${String(error)}\n`,
-  );
-}
-
 if (install) {
   try {
     await run("flutter", ["pub", "get"], destination);
   } catch (error) {
-    process.stderr.write(
-      `Warning: flutter pub get failed; run it manually in ${destination}.\n${String(error)}\n`,
-    );
+    throw new Error(`Files were generated at ${destination}, but dependency installation failed. Run flutter pub get there before using the project.`, { cause: error });
   }
+}
+try {
+  await run("dart", ["format", "lib", "test"], destination);
+} catch (error) {
+  throw new Error(`Files were generated at ${destination}, but Dart formatting failed.`, { cause: error });
 }
 if (verify) {
   await run("flutter", ["analyze"], destination);
@@ -189,7 +194,6 @@ if (verify) {
       path.join(repoRoot, "scripts/verify-ds-target-sync.mjs"),
       "--target",
       destination,
-      "--tokens-only",
     ],
     destination,
   );
@@ -212,17 +216,18 @@ if (setTarget) {
 
 process.stdout.write([
   "",
-  `Created ${destination}`,
+  `Generated ${destination} (${verify ? "native checks and full DS verification passed" : "verification not requested"})`,
   "",
   "Next:",
   `  cd ${destination}`,
   "  flutter pub get",
+  "  node tool/target.mjs --show",
   "  node tool/verify.mjs",
   "  flutter run -d <device>",
   "",
   "MCP is configured in .cursor/mcp.json, .codex/config.toml, .mcp.json.",
   "PBWork prompt target must match this directory:",
-  `pnpm pb:target use ${resolvedDestination} --yes`,
+  "node tool/target.mjs --bind",
   "",
 ].join("\n"));
 
@@ -262,6 +267,7 @@ async function assertDestination(dir) {
 
 async function copyBase() {
   await copyTree(sourceRoot, destination, (relative) => {
+    if (relative.split(path.sep).some((part) => ["ephemeral", ".swiftpm", "xcuserdata", ".git"].includes(part))) return false;
     if (relative === "lib/features" || relative.startsWith("lib/features/")) {
       return false;
     }
@@ -341,7 +347,7 @@ async function rewritePubspec({ packageName, displayName }) {
     .replace(/^name:.*$/m, `name: ${packageName}`)
     .replace(
       /^description:.*$/m,
-      `description: ${displayName} Flutter target generated from flutter_pb_app.`,
+      `description: ${JSON.stringify(`${displayName} Flutter target generated from flutter_pb_app.`)}`,
     );
   await writeFile(file, text, "utf8");
 }
@@ -356,7 +362,7 @@ async function rewritePlatformIdentity({ packageName, displayName, bundleId }) {
   let manifestText = await readFile(manifest, "utf8");
   manifestText = manifestText.replace(
     /android:label="[^"]*"/,
-    `android:label="${displayName}"`,
+    `android:label="${xmlText(displayName)}"`,
   );
   await writeFile(manifest, manifestText, "utf8");
 
@@ -385,7 +391,7 @@ async function rewritePlatformIdentity({ packageName, displayName, bundleId }) {
   plist = plist
     .replace(
       /<key>CFBundleDisplayName<\/key>\s*<string>[^<]*<\/string>/,
-      `<key>CFBundleDisplayName</key>\n\t<string>${displayName}</string>`,
+      `<key>CFBundleDisplayName</key>\n\t<string>${xmlText(displayName)}</string>`,
     )
     .replace(
       /<key>CFBundleName<\/key>\s*<string>[^<]*<\/string>/,
@@ -418,7 +424,17 @@ async function rewriteDocsAndAgent({ packageName, displayName, repoRoot, protoBr
     ...(await walk(path.join(destination, "docs"))),
   ]) {
     let text = await readFile(file, "utf8");
-    for (const [from, to] of replacements) text = text.replaceAll(from, to);
+    const relativeProducer = producerRelativeFrom(file);
+    for (const [from, to] of replacements) {
+      text = text.replaceAll(from, to.replaceAll(protoBridgeRelative, relativeProducer));
+    }
+    text = text.replaceAll("基线仅以 Demo 为入口", "生成工程以 Bootstrap 为入口")
+      .replaceAll("和 Demo 对照区", "")
+      .replaceAll("feature 与 Demo 必须", "feature 必须")
+      .replaceAll("组件使用示例以 `lib/features/` 和 `lib/features/demo/` 为准；Demo 底部 Tabbar 本身就是根目的地导航实例，不再在 Navigation 分类中放置无内容切换的重复样例。", "组件公开 API 以 lib/common 的源码为准；业务页面按固定 Handoff 在 lib/features 中实现。")
+      .replaceAll("基线的 `lib/features/demo/` 提供对照；Demo 底部 Tabbar 本身就是根目的地导航实例，不再在 Navigation 分类中放置无内容切换的重复样例。", "生成工程使用 Bootstrap 入口；公共组件示例参见 test/。")
+      .replaceAll("- `/` Demo 对照（基线入口）\n- `/launch` Flutter 欢迎页；不是原生启动屏", "- `/` Bootstrap 入口；业务路由由固定 Handoff 创建")
+      .replaceAll("test/widget_test.dart", "test/bootstrap_test.dart");
     await writeFile(file, text, "utf8");
   }
   await writeFile(
@@ -466,18 +482,18 @@ async function writeProjectFiles() {
   );
   let app = await readFile(path.join(destination, "lib/app/app.dart"), "utf8");
   app = app
-    .replace("initialRoute: AppRoutes.hub", "initialRoute: AppRoutes.bootstrap")
-    .replace(/title: '[^']*'/, `title: '${displayName.replaceAll("'", "\\'")}'`);
+    .replace(/initialRoute: AppRoutes\.\w+/, "initialRoute: AppRoutes.bootstrap")
+    .replace(/title: '[^']*'/, `title: '${dartText(displayName)}'`);
   await writeFile(path.join(destination, "lib/app/app.dart"), app, "utf8");
   await writeFile(
     path.join(destination, "test/bootstrap_test.dart"),
-    `import 'package:flutter_test/flutter_test.dart';\n\nimport 'support/pump_app.dart';\n\nvoid main() {\n  testWidgets('bootstrap renders the generated target shell', (tester) async {\n    await pumpPbApp(tester);\n    await tester.pumpAndSettle();\n\n    expect(find.text('${displayName.replaceAll("'", "\\'")}'), findsOneWidget);\n    expect(find.text('等待 PBWork Handoff'), findsOneWidget);\n  });\n}\n`,
+    `import 'package:flutter_test/flutter_test.dart';\n\nimport 'support/pump_app.dart';\n\nvoid main() {\n  testWidgets('bootstrap renders the generated target shell', (tester) async {\n    await pumpPbApp(tester);\n    await tester.pumpAndSettle();\n\n    expect(find.text('${dartText(displayName)}'), findsOneWidget);\n    expect(find.text('等待 PBWork Handoff'), findsOneWidget);\n  });\n}\n`,
     "utf8",
   );
 }
 
 async function writeMcpAndTools() {
-  const manifest = {
+  const scaffoldManifest = {
     schemaVersion: 1,
     base: "apps/flutter_pb_app",
     protoBridgeRoot: path
@@ -489,11 +505,13 @@ async function writeMcpAndTools() {
     packageName,
     displayName,
     bundleId,
+    baseSurfaceDigest: manifest.sync.surfaceDigest,
+    baseSyncStatus: manifest.syncStatus,
     createdAt: new Date().toISOString(),
   };
   await writeFile(
     path.join(destination, ".pb-scaffold.json"),
-    `${JSON.stringify(manifest, null, 2)}\n`,
+    `${JSON.stringify(scaffoldManifest, null, 2)}\n`,
     "utf8",
   );
   await mkdir(path.join(destination, "tool"), { recursive: true });
@@ -501,7 +519,7 @@ async function writeMcpAndTools() {
   await writeFile(path.join(destination, "tool/mcp.mjs"), launcher, { encoding: "utf8", mode: 0o755 });
   await writeFile(
     path.join(destination, "tool/verify.mjs"),
-    toolVerify(true, true),
+    toolVerify(false, true),
     { encoding: "utf8", mode: 0o755 },
   );
   await writeFile(
@@ -514,12 +532,13 @@ async function writeMcpAndTools() {
     toolVerify(false, false),
     { encoding: "utf8", mode: 0o755 },
   );
+  await writeFile(path.join(destination, "tool/target.mjs"), targetTool(), { encoding: "utf8", mode: 0o755 });
   const cursor = `${JSON.stringify({ mcpServers: { "proto-bridge": { command: "node", args: ["\${workspaceFolder}/tool/mcp.mjs"] } } }, null, 2)}\n`;
   await mkdir(path.join(destination, ".cursor"), { recursive: true });
   await writeFile(path.join(destination, ".cursor/mcp.json"), cursor, "utf8");
-  const claude = `${JSON.stringify({ mcpServers: { "proto-bridge": { command: "node", args: ["\${workspaceFolder}/tool/mcp.mjs"] } } }, null, 2)}\n`;
+  const claude = `${JSON.stringify({ mcpServers: { "proto-bridge": { command: "node", args: [path.join(destination, "tool/mcp.mjs")] } } }, null, 2)}\n`;
   await writeFile(path.join(destination, ".mcp.json"), claude, "utf8");
-  const codex = `[mcp_servers.proto-bridge]\ncommand = "node"\nargs = ["${path.join(destination, "tool/mcp.mjs")}"]\nstartup_timeout_sec = 20\n`;
+  const codex = `[mcp_servers.proto-bridge]\ncommand = "node"\nargs = ${JSON.stringify([path.join(destination, "tool/mcp.mjs")])}\nstartup_timeout_sec = 20\n`;
   await mkdir(path.join(destination, ".codex"), { recursive: true });
   await writeFile(path.join(destination, ".codex/config.toml"), codex, "utf8");
   await mkdir(path.join(destination, ".agents"), { recursive: true });
@@ -532,10 +551,6 @@ async function writeMcpAndTools() {
 
 async function writeSkills() {
   const skillRoot = path.join(destination, ".agents/skills");
-  const pbRelative = path
-    .relative(resolvedDestination, resolvedRepoRoot)
-    .split(path.sep)
-    .join("/");
   const consumer = path.join(skillRoot, "proto-bridge-consumer/SKILL.md");
   if (await exists(consumer)) {
     let text = await readFile(consumer, "utf8");
@@ -557,7 +572,9 @@ async function writeSkills() {
       .replaceAll("pnpm ds:theme:verify", "node tool/ds-theme.mjs")
       .replaceAll("cd ../.. && node tool/ds-sync.mjs", "node tool/ds-sync.mjs")
       .replaceAll("cd ../.. && node tool/ds-theme.mjs", "node tool/ds-theme.mjs")
-      .replaceAll("apps/pbwork", `${pbRelative}/apps/pbwork`)
+      .replaceAll("../../../../pbwork", "__PBWORK_SOURCE__")
+      .replaceAll("apps/pbwork", "__PBWORK_SOURCE__")
+      .replaceAll("__PBWORK_SOURCE__", `${producerRelativeFrom(dsSkill)}/apps/pbwork`)
       .replaceAll("32 个当前 Contract id", "47 个当前 Contract id");
     await writeFile(dsSkill, text, "utf8");
   }
@@ -565,6 +582,7 @@ async function writeSkills() {
   const acceptanceTarget = path.join(skillRoot, "acceptance");
   await mkdir(path.join(acceptanceTarget, "references"), { recursive: true });
   let acceptance = await readFile(acceptanceSource, "utf8");
+  acceptance = acceptance.replaceAll("`proto-bridge` Skill", "`proto-bridge-consumer` Skill");
   acceptance = acceptance.replace(
     "../../../packages/core/src/v2/prompts/acceptance-discipline.md",
     "references/acceptance-discipline.md",
@@ -595,15 +613,15 @@ async function writeDocs() {
 }
 
 function bootstrapPage() {
-  return `import 'package:flutter/material.dart';\n\nimport '../common/widgets.dart';\nimport '../theme/ts.dart';\n\nclass BootstrapPage extends StatelessWidget {\n  const BootstrapPage({super.key});\n\n  @override\n  Widget build(BuildContext context) {\n    TS.of(context);\n    return Scaffold(\n      backgroundColor: TS.colors.background,\n      appBar: ${"CommonAppBar"}(\n        title: '${displayName.replaceAll("'", "\\'")}',\n        showAction: false,\n      ),\n      body: ListView(\n        padding: EdgeInsets.all(TS.spacing.md),\n        children: [\n          Text('等待 PBWork Handoff', style: TS.textStyle.title),\n          SizedBox(height: TS.spacing.sm),\n          Text(\n            'MCP 已绑定到本工程。把 PBWork 定稿提示词交给 agent 后，先只读理解 Evidence、按 Screen 输出实现计划并等待批准。',\n            style: TS.textStyle.caption,\n          ),\n          SizedBox(height: TS.spacing.lg),\n          CommonCard(\n            child: Column(\n              crossAxisAlignment: CrossAxisAlignment.start,\n              children: [\n                Text('验证命令', style: TS.textStyle.subtitle),\n                SizedBox(height: TS.spacing.sm),\n                Text('node tool/verify.mjs', style: TS.textStyle.content),\n                Text('node tool/ds-theme.mjs', style: TS.textStyle.content),\n              ],\n            ),\n          ),\n        ],\n      ),\n    );\n  }\n}\n`;
+  return `import 'package:flutter/material.dart';\n\nimport '../common/widgets.dart';\nimport '../theme/ts.dart';\n\nclass BootstrapPage extends StatelessWidget {\n  const BootstrapPage({super.key});\n\n  @override\n  Widget build(BuildContext context) {\n    final ts = TS.of(context);\n    return Scaffold(\n      backgroundColor: ts.colors.background,\n      appBar: ${"CommonAppBar"}(\n        title: '${dartText(displayName)}',\n        showAction: false,\n      ),\n      body: ListView(\n        padding: EdgeInsets.all(ts.spacing.md),\n        children: [\n          Text('等待 PBWork Handoff', style: ts.textStyle.title),\n          SizedBox(height: ts.spacing.sm),\n          Text(\n            'MCP 已绑定到本工程。把 PBWork 定稿提示词交给 agent 后，先只读理解 Evidence、按 Screen 输出实现计划并等待批准。',\n            style: ts.textStyle.caption,\n          ),\n          SizedBox(height: ts.spacing.lg),\n          CommonCard(\n            child: Column(\n              crossAxisAlignment: CrossAxisAlignment.start,\n              children: [\n                Text('验证命令', style: ts.textStyle.subtitle),\n                SizedBox(height: ts.spacing.sm),\n                Text('node tool/verify.mjs', style: ts.textStyle.content),\n                Text('node tool/ds-theme.mjs', style: ts.textStyle.content),\n              ],\n            ),\n          ),\n        ],\n      ),\n    );\n  }\n}\n`;
 }
 
 function agentInstructions({ packageName, displayName }) {
-  return `# ${displayName} Agent Rules\n\n本工程由 \`pnpm pb:new:flutter\` 从 flutter_pb_app 基线生成，是独立的 **${packageName}** 产品 target，不是 ProtoBridge 仓库。\`lib/features/\` 为空；业务页面由固定 PBWork Handoff 按 Screen 落在这里。\n\nMCP 已由 \`.cursor/mcp.json\`、\`.codex/config.toml\`、\`.mcp.json\` 指向 \`tool/mcp.mjs\`；不要修改 proto-bridge producer，也不要在目标工程复制 Evidence Store。\n\n收到固定 Evidence 时先读 \`.agents/skills/proto-bridge-consumer/SKILL.md\`；DS 同步任务读 \`.agents/skills/proto-bridge-ds-target-sync/SKILL.md\`；完成实现准备 Review 时读 \`.agents/skills/acceptance/SKILL.md\`。\n\n## 文档优先级\n\n1. 固定 ProtoBridge Evidence 决定源页面的结构、文案、状态、交互和构图。\n2. 本工程 \`AGENTS.md\`、\`docs/\` 和实际代码决定 Target 落点、组件、Theme、路由与验证方式。\n3. Target adapter 结果只提供目标上下文，不能覆盖 Screenshot、Fragment、Case 或 revision。\n\n## 修改边界\n\n- 业务页面和页面模型放在 \`lib/features/<feature>/\`。\n- 页面业务状态使用 Riverpod \`Notifier\` / \`AsyncNotifier\`，不要用 \`setState\` 承载筛选、表单或 variant。\n- 持久化只走 \`AppPrefs\`；feature 不得直接使用 \`SharedPreferences\`。\n- 路由常量和注册表只放在 \`lib/router/\`。\n- 主题和语义 token 只放在 \`lib/theme/\`。\n- 可复用 UI 和共享弹层只放在 \`lib/common/\`。\n- 不在 feature 中复制公共组件、创建平行 Theme 或绕过既有路由/弹层边界。\n\n## 第一轮纪律\n\n拿到 PBWork 提示词后，先读 \`AGENTS.md\`、\`README.md\`、\`docs/\` 和 Consumer Skill；只读理解 Evidence 与目标工程，按 Screen 用简短散文输出结构/滚动边界、组件与 Token 落点、状态与交互覆盖、预计修改文件、验证方式和剩余风险；然后暂停等待明确批准。未批准前不得修改本工程。\n\n## 必要验证\n\n\`\`\`bash\nflutter analyze\nflutter test\nnode tool/verify.mjs\nnode tool/ds-theme.mjs\n# 组件批次确认后再跑完整门禁\nnode tool/ds-sync.mjs\n\`\`\`\n\n主题批次用 \`ds-theme.mjs\` 确认 153 个 Token；组件仍 pending 时完整 \`ds-sync.mjs\` 会失败，这是批次状态。组件实现前必须先由用户确认组件清单；Theme 映射和组件实现是两条流程。\n\n视觉验证遵循 \`docs/testing.md\`；最终报告必须包含固定引用、原始风险、修改文件、验证结果、已知偏差和剩余风险。\n`;
+  return `# ${displayName} Agent Rules\n\n本工程由 \`pnpm pb:new:flutter\` 从 flutter_pb_app 基线生成，是独立的 **${packageName}** 产品 target，不是 ProtoBridge 仓库。\`lib/features/\` 为空；业务页面由固定 PBWork Handoff 按 Screen 落在这里。\n\nMCP 已由 \`.cursor/mcp.json\`、\`.codex/config.toml\`、\`.mcp.json\` 指向 \`tool/mcp.mjs\`；不要修改 proto-bridge producer，也不要在目标工程复制 Evidence Store。\n\n收到固定 Evidence 时先读 \`.agents/skills/proto-bridge-consumer/SKILL.md\`；DS 同步任务读 \`.agents/skills/proto-bridge-ds-target-sync/SKILL.md\`；完成实现准备 Review 时读 \`.agents/skills/acceptance/SKILL.md\`。\n\n## 文档优先级\n\n1. 固定 ProtoBridge Evidence 决定源页面的结构、文案、状态、交互和构图。\n2. 本工程 \`AGENTS.md\`、\`docs/\` 和实际代码决定 Target 落点、组件、Theme、路由与验证方式。\n3. Target adapter 结果只提供目标上下文，不能覆盖 Screenshot、Fragment、Case 或 revision。\n\n## 修改边界\n\n- 业务页面和页面模型放在 \`lib/features/<feature>/\`。\n- 页面业务状态使用 Riverpod \`Notifier\` / \`AsyncNotifier\`，不要用 \`setState\` 承载筛选、表单或 variant。\n- 持久化只走 \`AppPrefs\`；feature 不得直接使用 \`MMKV\`。\n- 路由常量和注册表只放在 \`lib/router/\`。\n- 主题和语义 token 只放在 \`lib/theme/\`。\n- 可复用 UI 和共享弹层只放在 \`lib/common/\`。\n- 不在 feature 中复制公共组件、创建平行 Theme 或绕过既有路由/弹层边界。\n\n## 第一轮纪律\n\n拿到 PBWork 提示词后，先读 \`AGENTS.md\`、\`README.md\`、\`docs/\` 和 Consumer Skill；只读理解 Evidence 与目标工程，按 Screen 用简短散文输出结构/滚动边界、组件与 Token 落点、状态与交互覆盖、预计修改文件、验证方式和剩余风险；然后暂停等待明确批准。未批准前不得修改本工程。\n\n## 必要验证\n\n\`\`\`bash\nflutter analyze\nflutter test\nnode tool/verify.mjs\nnode tool/ds-theme.mjs\n# 完整组件与 Token 同步门禁\nnode tool/ds-sync.mjs\n\`\`\`\n\n主题门禁检查 153 个 Token；完整 \`ds-sync.mjs\` 同时检查 47 个组件与当前 DS surface。共享组件扩展必须遵循当前 Contract 和目标工程规范；映射成功不等于视觉验收通过。\n\n视觉验证遵循 \`docs/testing.md\`；最终报告必须包含固定引用、原始风险、修改文件、验证结果、已知偏差和剩余风险。\n`;
 }
 
 function readme({ packageName, displayName }) {
-  return `# ${displayName}\n\n\`${packageName}\` 是从 flutter_pb_app 生成的产品 target 骨架。它继承 PBWork 主题/Token、公共组件、路由和测试底座，\`lib/features/\` 为空，等待固定 PBWork Handoff 落业务页面。\n\n## 快速开始\n\n\`\`\`bash\nflutter pub get\nflutter analyze\nflutter test\nnode tool/verify.mjs\nflutter run -d <device>\n\`\`\`\n\n## MCP\n\nMCP 已配置在 \`.cursor/mcp.json\`、\`.codex/config.toml\`、\`.mcp.json\`，统一指向 \`tool/mcp.mjs\`。Codex 需要 trust 本目录后才会加载项目级配置。\n\nPBWork 提示词里的目标路径必须与本目录一致；不一致时先运行：\n\n\`\`\`bash\npnpm pb:target use <this-directory> --yes\n\`\`\`\n\n## 文档\n\n- [工程架构](docs/architecture.md)\n- [组件](docs/components.md)\n- [Theme 与 Token](docs/theme.md)\n- [路由](docs/routing.md)\n- [测试](docs/testing.md)\n- [ProtoBridge 目标适配](docs/proto-bridge.md)\n- [Agent 工作流](docs/agent-workflow.md)\n\n## 验证\n\n\`node tool/ds-theme.mjs\` 只验证 153 个 Token；\`node tool/ds-sync.mjs\` 是组件批次确认后的完整门禁。组件仍 pending 时后者失败是预期状态。\n`;
+  return `# ${displayName}\n\n\`${packageName}\` 是从 flutter_pb_app 生成的产品 target 骨架。它继承 PBWork 主题/Token、公共组件、路由和测试底座，\`lib/features/\` 为空，等待固定 PBWork Handoff 落业务页面。\n\n## 快速开始\n\n\`\`\`bash\nflutter pub get\nflutter analyze\nflutter test\nnode tool/verify.mjs\nflutter run -d <device>\n\`\`\`\n\n## MCP\n\nMCP 已配置在 \`.cursor/mcp.json\`、\`.codex/config.toml\`、\`.mcp.json\`，统一指向 \`tool/mcp.mjs\`。Codex 需要 trust 本目录后才会加载项目级配置。\n\nPBWork 提示词里的目标路径必须与本目录一致；不一致时先运行：\n\n\`\`\`bash\nnode tool/target.mjs --bind\n\`\`\`\n\n## 文档\n\n- [工程架构](docs/architecture.md)\n- [组件](docs/components.md)\n- [Theme 与 Token](docs/theme.md)\n- [路由](docs/routing.md)\n- [测试](docs/testing.md)\n- [ProtoBridge 目标适配](docs/proto-bridge.md)\n- [Agent 工作流](docs/agent-workflow.md)\n\n## 验证\n\n\`node tool/ds-theme.mjs\` 验证 153 个 Token；\`node tool/ds-sync.mjs\` 同时验证 47 个组件与当前 DS surface。\n`;
 }
 
 function agentWorkflow() {
@@ -645,7 +663,9 @@ function toPackageName(value) {
   let name = raw.replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
   if (!name) throw new Error("Project name must contain letters or digits.");
   if (/^[0-9]/.test(name)) name = `app_${name}`;
-  if (name === "flutter") throw new Error("flutter is reserved.");
+  if (new Set(["flutter", "class", "enum", "switch", "if", "else", "import", "export", "library", "part", "return", "void", "true", "false", "null", "new", "const", "final", "var", "while", "for", "try", "catch", "throw", "this", "super", "extends", "with", "is", "in", "assert", "break", "continue", "do", "rethrow"]).has(name)) {
+    throw new Error(`${name} is reserved and cannot be a Dart package name.`);
+  }
   return name;
 }
 
@@ -676,4 +696,44 @@ async function run(command, args, cwd) {
       else reject(new Error(`${command} ${args.join(" ")} exited ${code}`));
     });
   });
+}
+
+function xmlText(value) {
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&apos;");
+}
+
+function dartText(value) {
+  return value.replaceAll("\\", "\\\\").replaceAll("'", "\\'").replaceAll("$", "\\$").replaceAll("\n", "\\n").replaceAll("\r", "\\r");
+}
+
+function targetTool() {
+  return String.raw`#!/usr/bin/env node
+import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const targetRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const manifest = JSON.parse(readFileSync(path.join(targetRoot, '.pb-scaffold.json'), 'utf8'));
+const producer = path.resolve(targetRoot, manifest.protoBridgeRoot);
+const config = path.resolve(producer, manifest.workspaceConfig);
+if (process.argv.includes('--bind')) {
+  const result = spawnSync(process.execPath, [path.join(producer, 'scripts/pb-target.mjs'), 'use', targetRoot, '--yes', '--config', config], { cwd: producer, stdio: 'inherit' });
+  if (result.error) throw result.error;
+  process.exitCode = result.status ?? 1;
+} else {
+  const workspace = JSON.parse(readFileSync(config, 'utf8'));
+  const deliveryTarget = workspace.delivery?.targetRoot ? path.resolve(path.dirname(config), workspace.delivery.targetRoot) : null;
+  const matches = deliveryTarget === targetRoot;
+  process.stdout.write(JSON.stringify({ workspaceId: workspace.workspaceId, targetRoot, deliveryTarget, matches, producer, baseSurfaceDigest: manifest.baseSurfaceDigest }, null, 2) + '\n');
+  if (!matches) {
+    process.stderr.write('PBWork delivery target differs. Run node tool/target.mjs --bind, then restart Producer/MCP clients and regenerate the delivery prompt.\n');
+    if (process.argv.includes('--check')) process.exitCode = 1;
+  }
+}
+`;
+}
+
+function producerRelativeFrom(file) {
+  const actualDirectory = path.join(resolvedDestination, path.relative(destination, path.dirname(file)));
+  return path.relative(actualDirectory, resolvedRepoRoot).split(path.sep).join("/");
 }

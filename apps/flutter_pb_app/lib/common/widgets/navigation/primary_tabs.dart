@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/ts.dart';
 import 'liquid_glass_decoration.dart';
 import 'tab_item.dart';
+import '../display/glass_surface.dart';
 
 /// 一级页内分区：官方 [TabBar] 承担布局、交互和选中面动画。
 class CommonPrimaryTabs extends StatelessWidget {
@@ -23,19 +24,15 @@ class CommonPrimaryTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
-    final trackHeight = TS.sizing.controlMd + TS.spacing.xs * 2;
-    final trackRadius = BorderRadius.circular(TS.radius.lg);
+    final ts = TS.of(context);
+    final trackHeight = ts.sizing.controlMd + ts.spacing.xs * 2;
+    final trackRadius = BorderRadius.circular(ts.radius.md);
 
-    return DecoratedBox(
+    final track = CommonGlassSurface(
       key: const ValueKey('primary-tabs-track'),
-      decoration: BoxDecoration(
-        color: TS.colors.surfaceRecessed,
-        borderRadius: trackRadius,
-        border: showDivider ? Border.fromBorderSide(TS.border.hairline) : null,
-      ),
+      borderRadius: trackRadius,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: TS.spacing.xs),
+        padding: EdgeInsets.symmetric(horizontal: ts.spacing.xs),
         child: SizedBox(
           width: double.infinity,
           height: trackHeight,
@@ -47,22 +44,22 @@ class CommonPrimaryTabs extends StatelessWidget {
                 : centered
                 ? TabAlignment.center
                 : TabAlignment.start,
-            labelColor: TS.colors.sectionTabActive,
-            unselectedLabelColor: TS.colors.onSurfaceMuted,
-            labelStyle: TS.textStyle.label,
-            unselectedLabelStyle: TS.textStyle.label,
+            labelColor: ts.colors.sectionTabActive,
+            unselectedLabelColor: ts.colors.onSurfaceMuted,
+            labelStyle: ts.textStyle.label,
+            unselectedLabelStyle: ts.textStyle.label,
             labelPadding: EdgeInsets.zero,
             dividerColor: Colors.transparent,
             dividerHeight: 0,
             indicatorWeight: 0,
             indicatorSize: TabBarIndicatorSize.tab,
-            indicatorPadding: EdgeInsets.symmetric(vertical: TS.spacing.xs),
+            indicatorPadding: EdgeInsets.symmetric(vertical: ts.spacing.xs),
             indicatorAnimation: TabIndicatorAnimation.linear,
             indicator: LiquidGlassDecoration(
-              surfaceColor: TS.colors.surfaceSelected,
-              opacity: TS.opacity.glass,
-              borderRadius: BorderRadius.circular(TS.radius.full),
-              shadow: TS.elevation.glass,
+              surfaceColor: ts.colors.primaryTabsSelectionTint,
+              opacity: ts.opacity.translucent,
+              borderRadius: BorderRadius.circular(ts.radius.sm),
+              shadow: ts.elevation.floating,
             ),
             splashFactory: NoSplash.splashFactory,
             overlayColor: const WidgetStatePropertyAll(Colors.transparent),
@@ -71,7 +68,7 @@ class CommonPrimaryTabs extends StatelessWidget {
                 Tab(
                   height: trackHeight,
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: TS.spacing.md),
+                    padding: EdgeInsets.symmetric(horizontal: ts.spacing.md),
                     child: Text(item.label),
                   ),
                 ),
@@ -80,5 +77,13 @@ class CommonPrimaryTabs extends StatelessWidget {
         ),
       ),
     );
+    return showDivider
+        ? DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border(bottom: ts.border.hairline),
+            ),
+            child: track,
+          )
+        : track;
   }
 }

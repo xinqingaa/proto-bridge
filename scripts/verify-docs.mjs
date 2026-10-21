@@ -39,6 +39,10 @@ async function collectMarkdown(root) {
   const ignored = new Set([
     ".git",
     ".dart_tool",
+    "Pods",
+    ".symlinks",
+    "ephemeral",
+    ".swiftpm",
     "build",
     "dist",
     "node_modules",

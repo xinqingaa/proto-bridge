@@ -6,8 +6,8 @@
 lib/
 ├── app/              MaterialApp 和应用启动
 ├── router/           命名路由常量和注册表
-├── theme/            颜色、文字、尺寸和 ThemeService
-├── storage/          AppPrefs：进程外 KV，不存业务数据
+├── theme/            颜色、文字、尺寸和 ThemeExtension
+├── storage/          AppPrefs：MMKV 偏好，不存业务数据
 ├── common/
 │   ├── widgets/      可复用 UI 组件
 │   └── overlay/      AppPop 共享弹层入口
@@ -22,7 +22,7 @@ app      -> router / theme / common / overlay / storage
 theme    -> storage（仅主题偏好）
 ```
 
-`common`、`theme`、`router` 和 `storage` 不依赖具体业务 feature。页面不得通过反向 import 依赖另一个 feature 的私有实现。feature 不得直接依赖 `shared_preferences`。
+`router` 只在注册表导入页面；`common`、`theme` 和 `storage` 不依赖具体业务 feature。页面不得通过反向 import 依赖另一个 feature 的私有实现。feature 不得直接依赖 `mmkv`。
 
 ## 状态管理
 
@@ -39,9 +39,10 @@ theme    -> storage（仅主题偏好）
 
 ## 本地存储
 
-只通过 `AppPrefs` 访问 `SharedPreferences`。本轮允许的 key：
+只通过 `AppPrefs` 访问 MMKV。生产实现为 `MmkvAppPrefs`，启动时初始化并 override `appPrefsProvider`。测试使用 `test/support/fake_app_prefs.dart`，不加载原生存储。当前偏好 key：
 
 - `theme_mode`：`light` | `dark`
+- `theme_pack`：已注册的类型化主题包 ID
 
 不要为列表、表单、Evidence 固定文案或截图 Case 创建存储。需要新 key 时先改本文白名单，再改 `AppPrefs`。
 
@@ -57,7 +58,7 @@ theme    -> storage（仅主题偏好）
 2. 在 `lib/router/routes.dart` 添加路由常量。
 3. 在 `lib/router/router.dart` 注册 `WidgetBuilder`。
 4. 有参数时通过 `RouteSettings.arguments` 传入，并在目标页面集中解析。
-5. 只有产品入口需要时才在 Hub 增加入口。
+5. 在产品导航流程中接入页面；基线仅以 Demo 为入口。
 6. 新的持久化 key 先改本文白名单，再改 `AppPrefs`。
 7. 遵循 [components.md](components.md) 和 [theme.md](theme.md)。
 
@@ -67,5 +68,5 @@ theme    -> storage（仅主题偏好）
 - 不在 feature 内复制 `Common*` 组件。
 - 不直接写新的颜色、字号、圆角或间距数字来绕过 `TS`。
 - 不把临时展示数据误写成网络请求或持久化逻辑。
-- 不在 feature 中直接使用 `SharedPreferences`。
+- 不在 feature 中直接使用 `MMKV`。
 - 不为未被 Evidence 或产品需求证明的状态创建额外入口。

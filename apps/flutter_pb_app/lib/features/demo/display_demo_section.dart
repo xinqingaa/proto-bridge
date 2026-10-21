@@ -9,7 +9,7 @@ class DisplayDemoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     return DemoCategoryPage(
       title: 'Display / 展示',
       description: '只读表面、状态信息与加载反馈。',
@@ -17,8 +17,8 @@ class DisplayDemoSection extends StatelessWidget {
         DemoGroup(
           title: 'Avatar / Badge / Chip',
           child: Wrap(
-            spacing: TS.spacing.sm,
-            runSpacing: TS.spacing.sm,
+            spacing: ts.spacing.sm,
+            runSpacing: ts.spacing.sm,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: const [
               CommonAvatar(name: 'Lin Rui'),
@@ -42,9 +42,9 @@ class DisplayDemoSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const CommonDivider(label: '分隔'),
-              SizedBox(height: TS.spacing.md),
+              SizedBox(height: ts.spacing.md),
               const CommonProgress(value: 45, label: '进度 45%'),
-              SizedBox(height: TS.spacing.md),
+              SizedBox(height: ts.spacing.md),
               const CommonSpinner(label: '加载中'),
             ],
           ),

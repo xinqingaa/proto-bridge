@@ -649,7 +649,7 @@ function declarationMatchesInFile(text: string, target: string, kind: MappingKin
   if (/^[A-Za-z_]\w*$/.test(target)) {
     return new RegExp(`\\b(?:class|mixin|extension|enum)\\s+${escapeRegExp(symbol)}\\b`).test(source);
   }
-  return new RegExp(`\\b${escapeRegExp(symbol)}\\s*\\(`).test(source);
+  return new RegExp(`\\b${escapeRegExp(symbol)}\\s*(?:<[^>]+>)?\\s*\\(`).test(source);
 }
 
 function codeContainsTarget(text: string, target: string): boolean {

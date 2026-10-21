@@ -7,26 +7,23 @@ import 'package:flutter_pb_app/theme/ts.dart';
 import 'support/pump_app.dart';
 
 void main() {
-  testWidgets('Hub lists the Demo entry', (tester) async {
+  testWidgets('Demo is the reference application entry', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await pumpPbApp(tester);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('flutter_pb_app'), findsOneWidget);
-    expect(find.text('Demo 对照'), findsOneWidget);
+    expect(find.text('Action · 操作'), findsOneWidget);
+    expect(find.byType(CommonBottomNav), findsOneWidget);
   });
 
-  testWidgets('Demo entry opens the shared component comparison', (
-    tester,
-  ) async {
+  testWidgets('Demo opens the shared component comparison', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await pumpPbApp(tester);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Demo 对照'));
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -41,8 +38,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await pumpPbApp(tester);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Demo 对照'));
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -67,8 +63,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await pumpPbApp(tester);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Demo 对照'));
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.text('更多'));
@@ -86,6 +81,24 @@ void main() {
     expect(find.text('Feedback / 反馈'), findsOneWidget);
   });
 
+  testWidgets(
+    'extended component gallery renders controlled inputs and charts',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await pumpPbApp(tester);
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.tap(find.text('更多'));
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.tap(find.text('扩展'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.byType(CommonSegmentedControl<String>), findsOneWidget);
+      expect(find.byType(CommonStepper), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('Demo text follows the completed theme transition', (
     tester,
   ) async {
@@ -93,8 +106,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await pumpPbApp(tester);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Demo 对照'));
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.text('更多'));
@@ -105,7 +117,7 @@ void main() {
 
     expect(
       dataTitle().style?.color,
-      ThemeService.of(Brightness.light).textStyle.title.color,
+      TS(brightness: Brightness.light).textStyle.title.color,
     );
 
     await tester.tap(find.byTooltip('切换主题'));
@@ -113,7 +125,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(
       dataTitle().style?.color,
-      ThemeService.of(Brightness.dark).textStyle.title.color,
+      TS(brightness: Brightness.dark).textStyle.title.color,
     );
 
     await tester.tap(find.byTooltip('切换主题'));
@@ -121,7 +133,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     expect(
       dataTitle().style?.color,
-      ThemeService.of(Brightness.light).textStyle.title.color,
+      TS(brightness: Brightness.light).textStyle.title.color,
     );
   });
 
@@ -132,8 +144,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await pumpPbApp(tester);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Demo 对照'));
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.text('更多'));
@@ -157,7 +168,12 @@ void main() {
     final scrollableState = tester.state<ScrollableState>(scrollables.first);
     expect(
       scrollableState.position.pixels,
-      lessThan(-TS.layout.pullRefreshThreshold),
+      lessThan(
+        -TS
+            .of(tester.element(find.byType(CommonScrollableDataList)))
+            .layout
+            .pullRefreshThreshold,
+      ),
     );
     expect(find.text('松开刷新'), findsOneWidget);
     await gesture.up();

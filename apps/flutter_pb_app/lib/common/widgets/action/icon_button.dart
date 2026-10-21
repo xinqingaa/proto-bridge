@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/ts.dart';
 import 'button.dart';
 import 'icon.dart';
+import '../display/glass_surface.dart';
 
 /// 对齐 pbwork Icon Button `tone`。
 enum CommonIconButtonTone { primary, secondary }
@@ -10,7 +11,7 @@ enum CommonIconButtonTone { primary, secondary }
 /// 对齐 pbwork Icon Button `variant`。
 enum CommonIconButtonVariant { tonal, flat, outlined, text }
 
-/// 紧凑 Lucide 操作；[label] 同时作为 tooltip 与无障碍名称。
+/// 紧凑图片操作；[label] 同时作为 tooltip 与无障碍名称。
 ///
 /// [quarterTurns] 是 Target 便利参数，用于旋转图标（例如返回箭头），不是 Producer prop。
 class CommonIconButton extends StatelessWidget {
@@ -25,6 +26,7 @@ class CommonIconButton extends StatelessWidget {
     this.loading = false,
     this.disabled = false,
     this.quarterTurns = 0,
+    this.material = CommonSurfaceMaterial.solid,
   });
 
   final CommonIconName name;
@@ -36,70 +38,90 @@ class CommonIconButton extends StatelessWidget {
   final bool loading;
   final bool disabled;
   final int quarterTurns;
+  final CommonSurfaceMaterial material;
 
   bool get _enabled => !disabled && !loading && onPressed != null;
 
-  double get _iconSize => switch (size) {
-    CommonControlSize.sm => TS.sizing.iconSm,
-    CommonControlSize.md => TS.sizing.iconMd,
-    CommonControlSize.lg => TS.sizing.iconLg,
+  double _iconSize(TS ts) => switch (size) {
+    CommonControlSize.sm => ts.sizing.iconSm,
+    CommonControlSize.md => ts.sizing.iconMd,
+    CommonControlSize.lg => ts.sizing.iconLg,
   };
 
-  double get _buttonSize => switch (size) {
-    CommonControlSize.sm || CommonControlSize.md => TS.sizing.touch,
-    CommonControlSize.lg => TS.sizing.controlLg,
+  double _buttonSize(TS ts) => switch (size) {
+    CommonControlSize.sm || CommonControlSize.md => ts.sizing.touch,
+    CommonControlSize.lg => ts.sizing.controlLg,
   };
 
-  Color get _color => switch (tone) {
-    CommonIconButtonTone.primary => TS.colors.primary,
-    CommonIconButtonTone.secondary => TS.colors.secondary,
+  Color _color(TS ts) => switch (tone) {
+    CommonIconButtonTone.primary => ts.colors.primary,
+    CommonIconButtonTone.secondary => ts.colors.secondary,
   };
 
-  Color? get _background => switch (variant) {
-    CommonIconButtonVariant.flat => _color,
+  Color? _background(TS ts) => switch (variant) {
+    CommonIconButtonVariant.flat => _color(ts),
     CommonIconButtonVariant.tonal => switch (tone) {
-      CommonIconButtonTone.primary => TS.colors.primarySoft,
-      CommonIconButtonTone.secondary => TS.colors.secondarySoft,
+      CommonIconButtonTone.primary => ts.colors.primarySoft,
+      CommonIconButtonTone.secondary => ts.colors.secondarySoft,
     },
     CommonIconButtonVariant.outlined || CommonIconButtonVariant.text => null,
   };
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     final foreground = variant == CommonIconButtonVariant.flat
         ? switch (tone) {
-            CommonIconButtonTone.primary => TS.colors.onPrimary,
-            CommonIconButtonTone.secondary => TS.colors.onSecondary,
+            CommonIconButtonTone.primary => ts.colors.onPrimary,
+            CommonIconButtonTone.secondary => ts.colors.onSecondary,
           }
-        : _color;
+        : _color(ts);
 
-    return Opacity(
-      opacity: disabled ? TS.opacity.disabled : TS.opacity.visible,
-      child: IconButton(
-        onPressed: _enabled ? onPressed : null,
-        tooltip: label,
-        iconSize: _iconSize,
-        style: IconButton.styleFrom(
-          fixedSize: Size.square(_buttonSize),
-          shape: const CircleBorder(),
-          foregroundColor: foreground,
-          backgroundColor: _background,
-          side: variant == CommonIconButtonVariant.outlined
-              ? BorderSide(color: _color, width: TS.border.widthHairline)
-              : null,
-        ),
-        icon: loading
-            ? SizedBox(
-                width: _iconSize,
-                height: _iconSize,
-                child: CircularProgressIndicator(
-                  strokeWidth: TS.sizing.progressStroke,
-                  color: foreground,
-                ),
-              )
-            : RotatedBox(quarterTurns: quarterTurns, child: Icon(name.data)),
+    Widget result = IconButton(
+      onPressed: _enabled ? onPressed : null,
+      tooltip: label,
+      iconSize: _iconSize(ts),
+      style: IconButton.styleFrom(
+        fixedSize: Size.square(_buttonSize(ts)),
+        shape: const CircleBorder(),
+        foregroundColor: foreground,
+        backgroundColor: material == CommonSurfaceMaterial.glass
+            ? Colors.transparent
+            : _background(ts),
+        side: variant == CommonIconButtonVariant.outlined
+            ? BorderSide(color: _color(ts), width: ts.border.widthHairline)
+            : null,
       ),
+      icon: loading
+          ? SizedBox(
+              width: _iconSize(ts),
+              height: _iconSize(ts),
+              child: CircularProgressIndicator(
+                strokeWidth: ts.sizing.progressStroke,
+                color: foreground,
+              ),
+            )
+          : RotatedBox(
+              quarterTurns: quarterTurns,
+              child: CommonIcon(
+                name: name,
+                dimension: _iconSize(ts),
+                color: foreground,
+              ),
+            ),
+    );
+    if (material == CommonSurfaceMaterial.glass) {
+      result = CommonGlassSurface(
+        borderRadius: BorderRadius.circular(ts.radius.full),
+        tint: tone == CommonIconButtonTone.primary
+            ? ts.colors.iconButtonGlassPrimaryTint
+            : null,
+        child: result,
+      );
+    }
+    return Opacity(
+      opacity: disabled ? ts.opacity.disabled : ts.opacity.visible,
+      child: result,
     );
   }
 }

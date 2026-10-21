@@ -11,21 +11,21 @@ class CommonDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     final divider = Divider(
-      color: TS.colors.divider,
-      height: TS.border.widthHairline,
-      thickness: TS.border.widthHairline,
-      indent: inset ? TS.spacing.md : 0,
-      endIndent: inset ? TS.spacing.md : 0,
+      color: ts.colors.divider,
+      height: ts.border.widthHairline,
+      thickness: ts.border.widthHairline,
+      indent: inset ? ts.spacing.md : 0,
+      endIndent: inset ? ts.spacing.md : 0,
     );
     if (label == null) return divider;
     return Row(
       children: [
         Expanded(child: divider),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: TS.spacing.sm),
-          child: Text(label!, style: TS.textStyle.caption),
+          padding: EdgeInsets.symmetric(horizontal: ts.spacing.sm),
+          child: Text(label!, style: ts.textStyle.caption),
         ),
         Expanded(child: divider),
       ],

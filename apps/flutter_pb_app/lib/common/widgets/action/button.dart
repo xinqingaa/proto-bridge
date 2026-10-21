@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/ts.dart';
+import '../display/glass_surface.dart';
 
-/// 对齐 pbwork Button `kind`：主要、次要、描边。页面不配色槽。
-enum CommonButtonKind { primary, secondary, outlined }
+enum CommonButtonKind { primary, secondary, outlined, accent, danger, quiet }
 
-/// 对齐 pbwork `size`。
 enum CommonControlSize { sm, md, lg }
 
-/// 对齐 pbwork `Button`。
-class CommonButton extends StatelessWidget {
+enum CommonButtonShape { rounded, pill }
+
+class CommonButton extends StatefulWidget {
   const CommonButton({
     super.key,
     required this.label,
@@ -19,6 +19,8 @@ class CommonButton extends StatelessWidget {
     this.loading = false,
     this.block = false,
     this.disabled = false,
+    this.shape = CommonButtonShape.rounded,
+    this.material = CommonSurfaceMaterial.solid,
   });
 
   final String label;
@@ -28,90 +30,135 @@ class CommonButton extends StatelessWidget {
   final bool loading;
   final bool block;
   final bool disabled;
+  final CommonButtonShape shape;
+  final CommonSurfaceMaterial material;
 
-  bool get _enabled => !disabled && !loading && onPressed != null;
+  @override
+  State<CommonButton> createState() => _CommonButtonState();
+}
 
-  double get _height {
-    switch (size) {
-      case CommonControlSize.sm:
-        return TS.sizing.controlSm;
-      case CommonControlSize.md:
-        return TS.sizing.controlMd;
-      case CommonControlSize.lg:
-        return TS.sizing.controlLg;
-    }
-  }
-
-  Color get _background => switch (kind) {
-    CommonButtonKind.primary => TS.colors.action,
-    CommonButtonKind.secondary => TS.colors.actionSoft,
-    CommonButtonKind.outlined => Colors.transparent,
-  };
-
-  Color get _borderColor => switch (kind) {
-    CommonButtonKind.primary => TS.colors.action,
-    CommonButtonKind.secondary => TS.colors.actionSoft,
-    CommonButtonKind.outlined => TS.colors.outline,
-  };
-
-  Color get _foreground => switch (kind) {
-    CommonButtonKind.primary => TS.colors.onAction,
-    CommonButtonKind.secondary => TS.colors.action,
-    CommonButtonKind.outlined => TS.colors.onSurface,
-  };
+class _CommonButtonState extends State<CommonButton> {
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
-    final radius = BorderRadius.circular(TS.radius.md);
-    final child = Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (loading) ...[
-          SizedBox(
-            width: TS.sizing.iconSm,
-            height: TS.sizing.iconSm,
-            child: CircularProgressIndicator(
-              strokeWidth: TS.sizing.progressStroke,
-              color: _foreground,
-            ),
-          ),
-          SizedBox(width: TS.spacing.sm),
-        ],
-        Text(
-          label,
-          style:
-              (size == CommonControlSize.sm
-                      ? TS.textStyle.captionStrong
-                      : TS.textStyle.label)
-                  .copyWith(color: _foreground),
-        ),
-      ],
+    final ts = TS.of(context);
+    final enabled =
+        !widget.disabled && !widget.loading && widget.onPressed != null;
+    final height = switch (widget.size) {
+      CommonControlSize.sm => ts.sizing.controlSm,
+      CommonControlSize.md => ts.sizing.controlMd,
+      CommonControlSize.lg => ts.sizing.controlLg,
+    };
+    final background = switch (widget.kind) {
+      CommonButtonKind.primary => ts.colors.action,
+      CommonButtonKind.secondary => ts.colors.actionSoft,
+      CommonButtonKind.accent => ts.colors.primary,
+      CommonButtonKind.danger => ts.colors.error,
+      CommonButtonKind.outlined || CommonButtonKind.quiet => Colors.transparent,
+    };
+    final foreground = switch (widget.kind) {
+      CommonButtonKind.primary => ts.colors.onAction,
+      CommonButtonKind.secondary => ts.colors.action,
+      CommonButtonKind.accent => ts.colors.onPrimary,
+      CommonButtonKind.danger => ts.colors.onError,
+      CommonButtonKind.outlined ||
+      CommonButtonKind.quiet => ts.colors.onSurface,
+    };
+    final radius = BorderRadius.circular(
+      widget.shape == CommonButtonShape.pill ? ts.radius.full : ts.radius.md,
     );
-
-    return SizedBox(
-      width: block ? double.infinity : null,
-      height: _height,
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    Widget content = SizedBox(
+      width: widget.block ? double.infinity : null,
+      height: height,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: _enabled ? onPressed : null,
+          onTap: enabled ? widget.onPressed : null,
+          onHighlightChanged: (value) {
+            if (value != _pressed) setState(() => _pressed = value);
+          },
           borderRadius: radius,
           child: Ink(
             decoration: BoxDecoration(
-              color: _background,
+              color: widget.material == CommonSurfaceMaterial.glass
+                  ? Colors.transparent
+                  : background,
               borderRadius: radius,
-              border: Border.all(
-                color: _borderColor,
-                width: TS.border.widthHairline,
+              border: widget.kind == CommonButtonKind.quiet
+                  ? null
+                  : Border.all(
+                      color: widget.kind == CommonButtonKind.outlined
+                          ? ts.colors.outline
+                          : background,
+                      width: ts.border.widthHairline,
+                    ),
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: ts.spacing.md),
+              child: Center(
+                widthFactor: widget.block ? null : 1,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (widget.loading) ...[
+                      SizedBox(
+                        width: ts.sizing.iconSm,
+                        height: ts.sizing.iconSm,
+                        child: CircularProgressIndicator(
+                          strokeWidth: ts.sizing.progressStroke,
+                          color: foreground,
+                        ),
+                      ),
+                      SizedBox(width: ts.spacing.sm),
+                    ],
+                    Flexible(
+                      child: AnimatedSwitcher(
+                        duration: reduceMotion
+                            ? Duration.zero
+                            : ts.motion.durationFast,
+                        child: Text(
+                          widget.label,
+                          key: ValueKey(widget.label),
+                          style:
+                              (widget.size == CommonControlSize.sm
+                                      ? ts.textStyle.captionStrong
+                                      : ts.textStyle.label)
+                                  .copyWith(color: foreground),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            child: Opacity(
-              opacity: disabled ? TS.opacity.disabled : TS.opacity.visible,
-              child: Center(child: child),
-            ),
           ),
+        ),
+      ),
+    );
+    if (widget.material == CommonSurfaceMaterial.glass) {
+      content = CommonGlassSurface(
+        borderRadius: radius,
+        tint: widget.kind == CommonButtonKind.primary
+            ? ts.colors.buttonGlassPrimaryTint
+            : background,
+        child: content,
+      );
+    }
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      child: Opacity(
+        opacity: widget.disabled ? ts.opacity.disabled : ts.opacity.visible,
+        child: AnimatedScale(
+          scale: _pressed && enabled && !reduceMotion
+              ? ts.motion.scalePressed
+              : ts.opacity.visible,
+          duration: reduceMotion ? Duration.zero : ts.motion.durationFast,
+          curve: ts.motion.easingStandard,
+          child: content,
         ),
       ),
     );

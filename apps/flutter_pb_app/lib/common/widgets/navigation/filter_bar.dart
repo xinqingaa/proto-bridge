@@ -24,13 +24,13 @@ class CommonFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     return SizedBox(
-      height: TS.sizing.controlMd + TS.spacing.xs,
+      height: ts.sizing.controlMd + ts.spacing.xs,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
-        separatorBuilder: (_, _) => SizedBox(width: TS.spacing.sm),
+        separatorBuilder: (_, _) => SizedBox(width: ts.spacing.sm),
         itemBuilder: (context, index) {
           final item = items[index];
           final active = selected == item.value;
@@ -42,14 +42,14 @@ class CommonFilterBar extends StatelessWidget {
                 : (_) => onSelected!(item.value),
             showCheckmark: false,
             backgroundColor: Colors.transparent,
-            selectedColor: TS.colors.surfaceVariant,
+            selectedColor: ts.colors.surfaceVariant,
             disabledColor: Colors.transparent,
             side: BorderSide.none,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(TS.radius.sm),
+              borderRadius: BorderRadius.circular(ts.radius.sm),
             ),
-            labelStyle: TS.textStyle.label.copyWith(
-              color: active ? TS.colors.onSurface : TS.colors.onSurfaceMuted,
+            labelStyle: ts.textStyle.label.copyWith(
+              color: active ? ts.colors.onSurface : ts.colors.onSurfaceMuted,
             ),
           );
         },

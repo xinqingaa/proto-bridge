@@ -20,6 +20,21 @@ afterEach(async () => {
 });
 
 describe('Target component/token resolver', () => {
+  it('resolves a mapped generic static method from its real declaration and usage', async () => {
+    const root = await flutterTarget();
+    await write(root, 'lib/common/popup.dart',
+      'class Popup { static T? sheet<T>() => null; }\n');
+    await write(root, 'lib/features/popup_usage.dart',
+      'final popup = Popup.sheet<String>();\n');
+    await machineContract(root, { components: {
+      'open.generic-method': { symbol: 'Popup.sheet', definition: 'lib/common/popup.dart', import: 'lib/common/popup.dart' },
+      'open.missing-method': { symbol: 'Popup.removed', definition: 'lib/common/popup.dart' },
+    } });
+    const result = await resolveTargetComponents({ targetRoot: root, ids: ['open.generic-method', 'open.missing-method'] });
+    expect(result.resolutions[0]).toMatchObject({ status: 'resolved', validation: { exists: true, usageFound: true } });
+    expect(result.resolutions[1]).toMatchObject({ status: 'stale', validation: { exists: false } });
+  });
+
   it('resolves open component and token IDs only when target declarations match current code', async () => {
     const root = await flutterTarget();
     await write(

@@ -1,26 +1,25 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:flutter_pb_app/storage/app_prefs.dart';
+import 'support/fake_app_prefs.dart';
 
 void main() {
-  setUp(() {
-    SharedPreferences.setMockInitialValues({});
-  });
-
-  test('theme_mode defaults to unset and round-trips light/dark', () async {
-    final prefs = AppPrefs(await SharedPreferences.getInstance());
+  test('theme_mode defaults to unset and round-trips light/dark', () {
+    final prefs = FakeAppPrefs();
     expect(prefs.readThemeMode(), isNull);
-
-    await prefs.writeThemeMode('dark');
+    prefs.writeThemeMode('dark');
     expect(prefs.readThemeMode(), 'dark');
-
-    await prefs.writeThemeMode('light');
+    prefs.writeThemeMode('light');
     expect(prefs.readThemeMode(), 'light');
   });
 
-  test('rejects unknown theme_mode values', () async {
-    final prefs = AppPrefs(await SharedPreferences.getInstance());
+  test('rejects invalid theme modes without changing preferences', () {
+    final prefs = FakeAppPrefs();
+    prefs.writeThemeMode('dark');
     expect(() => prefs.writeThemeMode('system'), throwsArgumentError);
+    expect(prefs.readThemeMode(), 'dark');
+  });
+
+  test('unknown stored theme mode is ignored', () {
+    expect(FakeAppPrefs({'theme_mode': 'unknown'}).readThemeMode(), isNull);
   });
 }

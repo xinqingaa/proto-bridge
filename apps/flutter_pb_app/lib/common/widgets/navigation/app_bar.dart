@@ -4,6 +4,9 @@ import '../../../theme/ts.dart';
 import '../action/button.dart';
 import '../action/icon.dart';
 import '../action/icon_button.dart';
+import '../display/glass_surface.dart';
+
+enum CommonAppBarSurface { theme, solid, glass, transparent }
 
 class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CommonAppBar({
@@ -18,6 +21,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.actionIcon = CommonIconName.more,
     this.actionLabel = '更多操作',
     this.onAction,
+    this.background = CommonAppBarSurface.theme,
   });
 
   final String title;
@@ -30,21 +34,39 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   final CommonIconName actionIcon;
   final String actionLabel;
   final VoidCallback? onAction;
+  final CommonAppBarSurface background;
 
   @override
   Size get preferredSize => Size.fromHeight(dense ? 48 : kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
+    final glass =
+        background == CommonAppBarSurface.glass ||
+        (background == CommonAppBarSurface.theme &&
+            ts.pack.surfaceTreatment == AppSurfaceTreatment.glass);
+    final transparent = glass || background == CommonAppBarSurface.transparent;
     return AppBar(
+      automaticallyImplyLeading: false,
+      forceMaterialTransparency: transparent,
+      flexibleSpace: glass
+          ? const CommonGlassSurface(child: SizedBox.expand())
+          : null,
       toolbarHeight: preferredSize.height,
-      title: Text(title, style: TS.textStyle.subtitle),
+      title: title.trim().isEmpty
+          ? null
+          : Text(
+              title,
+              style: ts.textStyle.subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
       centerTitle: true,
-      elevation: elevated ? TS.elevation.card : TS.elevation.none,
-      backgroundColor: TS.colors.surface,
-      foregroundColor: TS.colors.onSurface,
-      shape: Border(bottom: TS.border.hairline),
+      elevation: elevated ? ts.elevation.card : ts.elevation.none,
+      backgroundColor: transparent ? Colors.transparent : ts.colors.surface,
+      foregroundColor: ts.colors.onSurface,
+      shape: Border(bottom: ts.border.hairline),
       leading: showBack
           ? CommonIconButton(
               name: CommonIconName.chevronRight,

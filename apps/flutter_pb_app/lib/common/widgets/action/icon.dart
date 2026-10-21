@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../theme/ts.dart';
 
-/// PBWork `icon.name` 的 34 个稳定 Lucide id。
+/// PBWork `icon.name` 的 35 个稳定 PBWork 图形 id。
 enum CommonIconName {
   more,
   plus,
@@ -21,6 +20,7 @@ enum CommonIconName {
   alertCircle,
   clock,
   refreshCw,
+  calendarCurrent,
   clipboardCheck,
   shieldCheck,
   folderOpen,
@@ -54,46 +54,17 @@ enum CommonIconTone {
   warning,
 }
 
-extension CommonIconNameData on CommonIconName {
-  IconData get data => switch (this) {
-    CommonIconName.more => LucideIcons.moreHorizontal,
-    CommonIconName.plus => LucideIcons.plus,
-    CommonIconName.search => LucideIcons.search,
-    CommonIconName.settings => LucideIcons.settings,
-    CommonIconName.home => LucideIcons.home,
-    CommonIconName.list => LucideIcons.list,
-    CommonIconName.user => LucideIcons.user,
-    CommonIconName.inbox => LucideIcons.inbox,
-    CommonIconName.check => LucideIcons.check,
-    CommonIconName.chevronDown => LucideIcons.chevronDown,
-    CommonIconName.chevronLeft => LucideIcons.chevronLeft,
-    CommonIconName.chevronRight => LucideIcons.chevronRight,
-    CommonIconName.alertTriangle => LucideIcons.triangleAlert,
-    CommonIconName.alertCircle => LucideIcons.circleAlert,
-    CommonIconName.clock => LucideIcons.clock,
-    CommonIconName.refreshCw => LucideIcons.refreshCw,
-    CommonIconName.clipboardCheck => LucideIcons.clipboardCheck,
-    CommonIconName.shieldCheck => LucideIcons.shieldCheck,
-    CommonIconName.folderOpen => LucideIcons.folderOpen,
-    CommonIconName.thermometer => LucideIcons.thermometer,
-    CommonIconName.snowflake => LucideIcons.snowflake,
-    CommonIconName.copy => LucideIcons.copy,
-    CommonIconName.fileText => LucideIcons.fileText,
-    CommonIconName.slidersHorizontal => LucideIcons.slidersHorizontal,
-    CommonIconName.mapPin => LucideIcons.mapPin,
-    CommonIconName.radio => LucideIcons.radio,
-    CommonIconName.truck => LucideIcons.truck,
-    CommonIconName.dumbbell => LucideIcons.dumbbell,
-    CommonIconName.eye => LucideIcons.eye,
-    CommonIconName.eyeOff => LucideIcons.eyeOff,
-    CommonIconName.footprints => LucideIcons.footprints,
-    CommonIconName.personStanding => LucideIcons.personStanding,
-    CommonIconName.sparkles => LucideIcons.sparkles,
-    CommonIconName.x => LucideIcons.x,
-  };
+extension CommonIconNameAsset on CommonIconName {
+  String get assetPath {
+    final id = name.replaceAllMapped(
+      RegExp('[A-Z]'),
+      (match) => '-${match[0]!.toLowerCase()}',
+    );
+    return 'assets/icons/$id.png';
+  }
 }
 
-/// PBWork `icon` 的 Flutter 实现；只接受策展后的稳定 Lucide id。
+/// PBWork `icon` 的 Flutter 实现；使用策展后的稳定图片资源。
 class CommonIcon extends StatelessWidget {
   const CommonIcon({
     super.key,
@@ -101,38 +72,49 @@ class CommonIcon extends StatelessWidget {
     this.size = CommonIconSize.md,
     this.tone = CommonIconTone.inherit,
     this.label,
+    this.dimension,
+    this.color,
   });
 
   final CommonIconName name;
   final CommonIconSize size;
   final CommonIconTone tone;
   final String? label;
+  final double? dimension;
+  final Color? color;
 
-  double get _size => switch (size) {
-    CommonIconSize.sm => TS.sizing.iconSm,
-    CommonIconSize.md => TS.sizing.iconMd,
-    CommonIconSize.lg => TS.sizing.iconLg,
+  double _size(TS ts) => switch (size) {
+    CommonIconSize.sm => ts.sizing.iconSm,
+    CommonIconSize.md => ts.sizing.iconMd,
+    CommonIconSize.lg => ts.sizing.iconLg,
   };
 
-  Color? get _color => switch (tone) {
+  Color? _color(TS ts) => switch (tone) {
     CommonIconTone.inherit => null,
-    CommonIconTone.onSurface => TS.colors.onSurface,
-    CommonIconTone.muted => TS.colors.onSurfaceMuted,
-    CommonIconTone.primary => TS.colors.primary,
-    CommonIconTone.action => TS.colors.action,
-    CommonIconTone.error => TS.colors.error,
-    CommonIconTone.success => TS.colors.success,
-    CommonIconTone.warning => TS.colors.warning,
+    CommonIconTone.onSurface => ts.colors.onSurface,
+    CommonIconTone.muted => ts.colors.onSurfaceMuted,
+    CommonIconTone.primary => ts.colors.primary,
+    CommonIconTone.action => ts.colors.action,
+    CommonIconTone.error => ts.colors.error,
+    CommonIconTone.success => ts.colors.success,
+    CommonIconTone.warning => ts.colors.warning,
   };
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
-    return Icon(
-      name.data,
-      size: _size,
-      color: _color,
-      semanticLabel: label == null || label!.isEmpty ? null : label,
+    final ts = TS.of(context);
+    return Image.asset(
+      name.assetPath,
+      width: dimension ?? _size(ts),
+      height: dimension ?? _size(ts),
+      color:
+          color ??
+          _color(ts) ??
+          IconTheme.of(context).color ??
+          ts.colors.onSurface,
+      colorBlendMode: BlendMode.srcIn,
+      excludeFromSemantics: label == null || label!.isEmpty,
+      semanticLabel: label,
     );
   }
 }

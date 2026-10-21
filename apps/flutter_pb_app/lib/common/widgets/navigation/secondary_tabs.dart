@@ -22,14 +22,14 @@ class CommonSecondaryTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
-    final labelStyle = TS.textStyle.label;
+    final ts = TS.of(context);
+    final labelStyle = ts.textStyle.label;
     final labelHeight =
         MediaQuery.textScalerOf(context).scale(labelStyle.fontSize!) *
         labelStyle.height!;
     return DecoratedBox(
       decoration: BoxDecoration(
-        border: showDivider ? Border(bottom: TS.border.hairline) : null,
+        border: showDivider ? Border(bottom: ts.border.hairline) : null,
       ),
       child: TabBar(
         controller: controller,
@@ -39,24 +39,24 @@ class CommonSecondaryTabs extends StatelessWidget {
             : centered
             ? TabAlignment.center
             : TabAlignment.start,
-        labelColor: TS.colors.sectionTabActive,
-        unselectedLabelColor: TS.colors.onSurfaceMuted,
+        labelColor: ts.colors.sectionTabActive,
+        unselectedLabelColor: ts.colors.onSurfaceMuted,
         labelStyle: labelStyle,
         unselectedLabelStyle: labelStyle,
-        labelPadding: EdgeInsets.symmetric(horizontal: TS.spacing.sm),
+        labelPadding: EdgeInsets.symmetric(horizontal: ts.spacing.sm),
         dividerColor: Colors.transparent,
         indicatorSize: TabBarIndicatorSize.label,
         indicator: _CaretIndicator(
-          color: TS.colors.sectionTabActive,
-          size: TS.sizing.caret,
-          offset: -TS.layout.insetSmNegative,
+          color: ts.colors.sectionTabActive,
+          size: ts.sizing.caret,
+          offset: -ts.layout.insetSmNegative,
           labelHeight: labelHeight,
         ),
         splashFactory: NoSplash.splashFactory,
         overlayColor: const WidgetStatePropertyAll(Colors.transparent),
         tabs: [
           for (final item in items)
-            Tab(height: TS.sizing.controlMd, text: item.label),
+            Tab(height: ts.sizing.controlMd, text: item.label),
         ],
       ),
     );

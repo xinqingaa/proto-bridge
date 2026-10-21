@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'package:flutter_pb_app/common/widgets.dart';
 import 'package:flutter_pb_app/common/widgets/navigation/liquid_glass_decoration.dart';
@@ -11,6 +11,7 @@ import 'package:flutter_pb_app/theme/proto_bridge_tokens.dart';
 import 'package:flutter_pb_app/theme/ts.dart';
 
 void main() {
+  final ts = TS(brightness: Brightness.light);
   test('machine token mappings match the executable TS snapshot', () {
     final contract =
         jsonDecode(File('proto-bridge.target.json').readAsStringSync())
@@ -72,7 +73,7 @@ void main() {
       );
     }
 
-    final snapshotKeys = protoBridgeTokenSnapshot().keys.toSet();
+    final snapshotKeys = protoBridgeTokenSnapshot(ts).keys.toSet();
     expect(snapshotKeys, isNotEmpty);
     expect(snapshotKeys, mappings.keys.toSet());
     for (final entry in mappings.entries) {
@@ -86,89 +87,95 @@ void main() {
     }
   });
 
-  testWidgets('Tabbar mapping defaults to icon-label without indicator', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeService.of(Brightness.light).toThemeData(),
-        home: Scaffold(
-          bottomNavigationBar: CommonBottomNav(
-            currentIndex: 0,
-            onTap: (_) {},
-            items: const [
-              CommonBottomNavItem(
-                value: 'home',
-                label: '首页',
-                icon: CommonIconName.home,
-              ),
-              CommonBottomNavItem(
-                value: 'tasks',
-                label: '任务',
-                icon: CommonIconName.list,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    await tester.pump();
-
-    expect(find.text('首页'), findsOneWidget);
-    expect(find.byIcon(CommonIconName.home.data), findsOneWidget);
-    expect(find.byType(AnimatedPositioned), findsNothing);
-  });
-
-  testWidgets('primary tabs keep the track plain and glass on selection only', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeService.of(Brightness.light).toThemeData(),
-        home: const Scaffold(
-          body: DefaultTabController(
-            length: 2,
-            child: CommonPrimaryTabs(
-              items: [
-                CommonTabItem(value: 'all', label: '全部'),
-                CommonTabItem(value: 'done', label: '完成'),
+  testWidgets(
+    'Tabbar keeps native icon-label navigation with one moving material',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: TS(brightness: Brightness.light).toThemeData(),
+          home: Scaffold(
+            bottomNavigationBar: CommonBottomNav(
+              currentIndex: 0,
+              onTap: (_) {},
+              items: const [
+                CommonBottomNavItem(
+                  value: 'home',
+                  label: '首页',
+                  icon: CommonIconName.home,
+                ),
+                CommonBottomNavItem(
+                  value: 'tasks',
+                  label: '任务',
+                  icon: CommonIconName.list,
+                ),
               ],
             ),
           ),
         ),
-      ),
-    );
-    await tester.pump();
+      );
+      await tester.pump();
 
-    final track = tester.widget<DecoratedBox>(
-      find.byKey(const ValueKey('primary-tabs-track')),
-    );
-    final decoration = track.decoration as BoxDecoration;
-    expect(decoration.color, TS.colors.surfaceRecessed);
-    expect(decoration.boxShadow, isNull);
+      expect(find.text('首页'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Image &&
+              widget.image is AssetImage &&
+              (widget.image as AssetImage).assetName ==
+                  CommonIconName.home.assetPath,
+        ),
+        findsOneWidget,
+      );
+      expect(find.byType(AnimatedPositioned), findsOneWidget);
+    },
+  );
 
-    final tabBar = tester.widget<TabBar>(find.byType(TabBar));
-    final selection = tabBar.indicator! as LiquidGlassDecoration;
-    expect(tabBar.indicatorSize, TabBarIndicatorSize.tab);
-    expect(tabBar.indicatorAnimation, TabIndicatorAnimation.linear);
-    expect(
-      tabBar.indicatorPadding,
-      EdgeInsets.symmetric(vertical: TS.spacing.xs),
-    );
-    expect(selection.surfaceColor, TS.colors.surfaceSelected);
-    expect(selection.opacity, TS.opacity.glass);
-    expect(selection.borderRadius, BorderRadius.circular(TS.radius.full));
-    expect(selection.shadow, TS.elevation.glass);
-    expect(
-      tester.getSize(find.byKey(const ValueKey('primary-tabs-track'))).height,
-      TS.sizing.controlMd + TS.spacing.xs * 2,
-    );
-    expect(
-      tester.getSize(find.byType(TabBar)).height -
-          tabBar.indicatorPadding.vertical,
-      TS.sizing.controlMd,
-    );
-  });
+  testWidgets(
+    'primary tabs use one glass track and native indicator geometry',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: TS(brightness: Brightness.light).toThemeData(),
+          home: const Scaffold(
+            body: DefaultTabController(
+              length: 2,
+              child: CommonPrimaryTabs(
+                items: [
+                  CommonTabItem(value: 'all', label: '全部'),
+                  CommonTabItem(value: 'done', label: '完成'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(CommonGlassSurface), findsOneWidget);
+
+      final tabBar = tester.widget<TabBar>(find.byType(TabBar));
+      final selection = tabBar.indicator! as LiquidGlassDecoration;
+      expect(tabBar.indicatorSize, TabBarIndicatorSize.tab);
+      expect(tabBar.indicatorAnimation, TabIndicatorAnimation.linear);
+      expect(
+        tabBar.indicatorPadding,
+        EdgeInsets.symmetric(vertical: ts.spacing.xs),
+      );
+      expect(selection.surfaceColor, ts.colors.primaryTabsSelectionTint);
+      expect(selection.opacity, ts.opacity.translucent);
+      expect(selection.borderRadius, BorderRadius.circular(ts.radius.sm));
+      expect(selection.shadow, ts.elevation.floating);
+      expect(
+        tester.getSize(find.byKey(const ValueKey('primary-tabs-track'))).height,
+        ts.sizing.controlMd + ts.spacing.xs * 2,
+      );
+      expect(
+        tester.getSize(find.byType(TabBar)).height -
+            tabBar.indicatorPadding.vertical,
+        ts.sizing.controlMd,
+      );
+    },
+  );
 
   testWidgets('primary indicator follows a TabBarView drag before it settles', (
     tester,
@@ -178,7 +185,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeService.of(Brightness.light).toThemeData(),
+        theme: TS(brightness: Brightness.light).toThemeData(),
         home: const Scaffold(
           body: DefaultTabController(
             length: 2,
@@ -232,7 +239,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeService.of(Brightness.light).toThemeData(),
+        theme: TS(brightness: Brightness.light).toThemeData(),
         home: const Scaffold(
           body: DefaultTabController(
             length: 3,
@@ -270,7 +277,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeService.of(Brightness.light).toThemeData(),
+        theme: TS(brightness: Brightness.light).toThemeData(),
         home: const Scaffold(
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,7 +309,7 @@ void main() {
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeService.of(Brightness.light).toThemeData(),
+          theme: TS(brightness: Brightness.light).toThemeData(),
           home: const Scaffold(
             body: DefaultTabController(
               length: 2,
@@ -320,23 +327,23 @@ void main() {
       final tabBar = tester.widget<TabBar>(find.byType(TabBar));
       expect(
         tabBar.labelPadding,
-        EdgeInsets.symmetric(horizontal: TS.spacing.sm),
+        EdgeInsets.symmetric(horizontal: ts.spacing.sm),
       );
       expect(
         tester.widgetList<Tab>(find.byType(Tab)).map((tab) => tab.height),
-        everyElement(TS.sizing.controlMd),
+        everyElement(ts.sizing.controlMd),
       );
     },
   );
 
-  test('dark theme consumes the Producer glass-opacity override', () {
-    expect(ThemeService.of(Brightness.light).opacity.glass, 0.76);
-    expect(ThemeService.of(Brightness.dark).opacity.glass, 0.8);
+  test('dark theme consumes the Producer translucent-opacity override', () {
+    expect(TS(brightness: Brightness.light).opacity.translucent, 0.76);
+    expect(TS(brightness: Brightness.dark).opacity.translucent, 0.8);
   });
 
-  test('glass elevation keeps the Producer single-layer shadow', () {
-    final light = ThemeService.of(Brightness.light).elevation.glass;
-    final dark = ThemeService.of(Brightness.dark).elevation.glass;
+  test('floating elevation keeps the Producer selection shadow', () {
+    final light = TS(brightness: Brightness.light).elevation.floating;
+    final dark = TS(brightness: Brightness.dark).elevation.floating;
 
     expect(light.blurRadius, 18);
     expect(light.offset, const Offset(0, 6));
@@ -347,7 +354,7 @@ void main() {
   });
 
   test('default page transitions use iOS on every platform', () {
-    final theme = ThemeService.of(Brightness.light).toThemeData();
+    final theme = TS(brightness: Brightness.light).toThemeData();
     expect(
       theme.pageTransitionsTheme.builders[TargetPlatform.iOS],
       isA<CupertinoPageTransitionsBuilder>(),
@@ -365,20 +372,18 @@ void main() {
     );
   });
 
-  test('all curated Lucide ids resolve', () {
-    expect(CommonIconName.values, hasLength(34));
-    expect(
-      CommonIconName.values.map((name) => name.data.codePoint).toSet(),
-      hasLength(34),
-    );
-    expect(CommonIconName.chevronLeft.data, LucideIcons.chevronLeft);
-    expect(CommonIconName.eye.data, LucideIcons.eye);
-    expect(CommonIconName.eyeOff.data, LucideIcons.eyeOff);
-    expect(CommonIconName.dumbbell.data, LucideIcons.dumbbell);
-    expect(CommonIconName.footprints.data, LucideIcons.footprints);
-    expect(CommonIconName.personStanding.data, LucideIcons.personStanding);
-    expect(CommonIconName.sparkles.data, LucideIcons.sparkles);
-    expect(CommonIconName.x.data, LucideIcons.x);
+  test('curated PBWork image assets include every resolution', () {
+    expect(CommonIconName.values, hasLength(35));
+    for (final name in CommonIconName.values) {
+      final file = name.assetPath.split('/').last;
+      for (final ratio in ['', '2.0x/', '3.0x/']) {
+        expect(
+          File('assets/icons/$ratio$file').existsSync(),
+          isTrue,
+          reason: '$ratio$file',
+        );
+      }
+    }
   });
 
   testWidgets('pull refresh settles at the boundary without a second rebound', (
@@ -387,7 +392,7 @@ void main() {
     var refreshCount = 0;
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeService.of(Brightness.light).toThemeData(),
+        theme: TS(brightness: Brightness.light).toThemeData(),
         home: Scaffold(
           body: CommonScrollableDataList(
             itemCount: 20,
@@ -421,7 +426,7 @@ void main() {
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeService.of(Brightness.light).toThemeData(),
+          theme: TS(brightness: Brightness.light).toThemeData(),
           home: const Scaffold(
             body: Column(
               children: [
@@ -444,7 +449,7 @@ void main() {
   testWidgets('button kinds use action tokens', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeService.of(Brightness.light).toThemeData(),
+        theme: TS(brightness: Brightness.light).toThemeData(),
         home: const Scaffold(
           body: Column(
             children: [
@@ -469,10 +474,10 @@ void main() {
           as BoxDecoration;
     }
 
-    expect(decorationOf('主要').color, TS.colors.action);
-    expect(decorationOf('次要').color, TS.colors.actionSoft);
+    expect(decorationOf('主要').color, ts.colors.action);
+    expect(decorationOf('次要').color, ts.colors.actionSoft);
     expect(decorationOf('描边').color, Colors.transparent);
-    expect(decorationOf('描边').border?.top.color, TS.colors.outline);
+    expect(decorationOf('描边').border?.top.color, ts.colors.outline);
   });
 
   testWidgets('unlabeled text fields fill with surface-recessed', (
@@ -480,13 +485,13 @@ void main() {
   ) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: ThemeService.of(Brightness.light).toThemeData(),
+        theme: TS(brightness: Brightness.light).toThemeData(),
         home: const Scaffold(body: CommonTextField(hint: '无标题输入')),
       ),
     );
 
     final field = tester.widget<TextField>(find.byType(TextField));
-    expect(field.decoration?.fillColor, TS.colors.surfaceRecessed);
+    expect(field.decoration?.fillColor, ts.colors.surfaceRecessed);
     expect(field.decoration?.border, InputBorder.none);
   });
 }

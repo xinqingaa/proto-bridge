@@ -207,11 +207,11 @@ try {
     }),
   );
   assert(
-    targetComponents.resolutions?.[0]?.status === "pending" &&
-      targetComponents.resolutions?.[0]?.pending?.notice === "Target 待实现" &&
-      targetTokens.resolutions?.[0]?.status === "pending" &&
+    targetComponents.resolutions?.[0]?.status === "resolved" &&
+      targetComponents.resolutions?.[0]?.candidates?.[0]?.symbol === "CommonAppBar" &&
+      targetTokens.resolutions?.[0]?.status === "resolved" &&
       targetTokens.resolutions?.[0]?.id === "color.error",
-    "Flutter target should stay pending until it is adapted to the theme-pack contracts.",
+    "The adapted Flutter baseline must resolve its component and contextual theme token.",
   );
   const boundComponents = parseToolJson(
     await client.request("tools/call", {

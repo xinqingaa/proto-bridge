@@ -10,27 +10,32 @@ class CommonCard extends StatelessWidget {
     super.key,
     required this.child,
     this.elevated = false,
+    this.padding,
     this.semanticRole = CommonCardSemanticRole.section,
   });
 
   final Widget child;
   final bool elevated;
+  final EdgeInsetsGeometry? padding;
   final CommonCardSemanticRole semanticRole;
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     return Semantics(
       container: true,
       child: Card(
-        color: TS.colors.surface,
-        elevation: elevated ? TS.elevation.card : TS.elevation.none,
-        shadowColor: TS.colors.scrim,
+        color: ts.colors.surface,
+        elevation: elevated ? ts.elevation.card : ts.elevation.none,
+        shadowColor: ts.colors.scrim,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(TS.radius.lg),
-          side: TS.border.defaultBorder,
+          borderRadius: BorderRadius.circular(ts.radius.lg),
+          side: ts.border.defaultBorder,
         ),
-        child: Padding(padding: EdgeInsets.all(TS.spacing.md), child: child),
+        child: Padding(
+          padding: padding ?? EdgeInsets.all(ts.spacing.md),
+          child: child,
+        ),
       ),
     );
   }

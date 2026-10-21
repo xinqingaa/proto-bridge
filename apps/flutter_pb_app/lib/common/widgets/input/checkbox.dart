@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/ts.dart';
 
 /// 对齐 pbwork `Checkbox`。默认选中色为 `color.primary`。
-/// Flutter 暂不暴露 Token-ref 色槽参数。
+/// Instance color slots are resolved from the caller’s contextual theme.
 class CommonCheckbox extends StatelessWidget {
   const CommonCheckbox({
     super.key,
@@ -11,55 +11,59 @@ class CommonCheckbox extends StatelessWidget {
     this.label,
     this.enabled = true,
     this.onChanged,
+    this.selectedColor,
+    this.uncheckedBorderColor,
   });
 
   final bool value;
   final String? label;
   final bool enabled;
   final ValueChanged<bool>? onChanged;
+  final Color? selectedColor;
+  final Color? uncheckedBorderColor;
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     final box = Checkbox(
       value: value,
       onChanged: enabled && onChanged != null
           ? (next) => onChanged!(next ?? false)
           : null,
-      activeColor: TS.colors.primary,
-      checkColor: TS.colors.onPrimary,
+      activeColor: selectedColor ?? ts.colors.primary,
+      checkColor: ts.colors.onPrimary,
       side: BorderSide(
-        color: TS.colors.outline,
-        width: TS.border.widthHairline,
+        color: uncheckedBorderColor ?? ts.colors.outline,
+        width: ts.border.widthHairline,
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(TS.radius.xs),
+        borderRadius: BorderRadius.circular(ts.radius.xs),
       ),
     );
     if (label == null) {
       return Opacity(
-        opacity: enabled ? TS.opacity.visible : TS.opacity.disabled,
+        opacity: enabled ? ts.opacity.visible : ts.opacity.disabled,
         child: box,
       );
     }
     return Opacity(
-      opacity: enabled ? TS.opacity.visible : TS.opacity.disabled,
+      opacity: enabled ? ts.opacity.visible : ts.opacity.disabled,
       child: CheckboxListTile(
         value: value,
         onChanged: enabled && onChanged != null
             ? (next) => onChanged!(next ?? false)
             : null,
-        title: Text(label!, style: TS.textStyle.content),
+        title: Text(label!, style: ts.textStyle.content),
         controlAffinity: ListTileControlAffinity.leading,
         contentPadding: EdgeInsets.zero,
-        activeColor: TS.colors.primary,
-        checkColor: TS.colors.onPrimary,
+        activeColor: selectedColor ?? ts.colors.primary,
+        checkColor: ts.colors.onPrimary,
         checkboxShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(TS.radius.xs),
+          borderRadius: BorderRadius.circular(ts.radius.xs),
         ),
         side: BorderSide(
-          color: TS.colors.outline,
-          width: TS.border.widthHairline,
+          color: uncheckedBorderColor ?? ts.colors.outline,
+          width: ts.border.widthHairline,
         ),
       ),
     );

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createHash } from "node:crypto";
-import { readdir, readFile } from "node:fs/promises";
+import { readdir, readFile, realpath } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -17,9 +17,9 @@ import {
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const targetArg = optionValue(process.argv, "--target");
-const targetRoot = targetArg
+const targetRoot = await realpath(targetArg
   ? path.resolve(process.cwd(), targetArg)
-  : path.join(repoRoot, "apps/flutter_pb_app");
+  : path.join(repoRoot, "apps/flutter_pb_app"));
 const syncPath = path.join(targetRoot, "proto-bridge.sync.json");
 const targetMappingPath = path.join(targetRoot, "proto-bridge.target.json");
 const printBaseline = process.argv.includes("--print-baseline");
@@ -101,7 +101,7 @@ if (errors.length > 0) {
   process.stdout.write(`${JSON.stringify(baseline, null, 2)}\n`);
 } else if (tokensOnly) {
   process.stdout.write(
-    `DS → Target token verification verified: ${tokenIds.size}/${tokens.length} bindable theme keys mapped; components remain pending by scope.\n`,
+    `DS → Target token verification verified: ${tokenIds.size}/${tokens.length} bindable theme keys mapped; component verification not requested.\n`,
   );
 } else {
   process.stdout.write(

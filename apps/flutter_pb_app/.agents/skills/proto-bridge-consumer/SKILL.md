@@ -12,7 +12,7 @@ Evidence Region 用于定位与验收事实；它们不是 Widget 边界、ListV
 ## 编辑前读取
 
 1. 阅读 `AGENTS.md`、`README.md` 以及 `docs/` 下相关文件。
-2. 调用 `inspect_evidence_workspace`，核对 Workspace 与所需 consumer capabilities，再调用 `read_handoff_index`。编辑前原样报告全部 `mandatoryRisks`。不得用 active/latest 替换固定引用。
+2. 先读取资源 `proto-bridge://guides/handoff-consumer`，再调用 `inspect_evidence_workspace`，核对 Workspace 与所需 consumer capabilities，再调用 `read_handoff_index`。编辑前原样报告全部 `mandatoryRisks`。不得用 active/latest 替换固定引用。
 3. 每个选中 Screen 调用一次 `read_screen_packet`。用 `canonicalBrief`、baseline structure/state，以及按 `regionId` / `caseId` 组织的 `implementationInventory`，理解主滚动归属、主 section、状态矩阵和固定业务数据。
 4. 用 digest 分组的 `representativeBlobId` 直接查看每份不同 Screenshot。记录可见结构、响应式假设、覆盖的 Case，以及未解决的布局敏感值。
 5. 编辑前调用 `inspect_target_readiness` 并解析组件/Token。非 baseline Case 使用 `read_case_delta`；仅在有明确未决问题时调用 `read_evidence_detail`。默认路径不要调用 `read_implementation_plan` 或 `read_implementation_tranche`；二者仅作诊断。

@@ -25,7 +25,7 @@ class _InputDemoSectionState extends State<InputDemoSection> {
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     return DemoCategoryPage(
       title: 'Input / 输入',
       description: '字段、有限选项与二值输入；Menu 弹层经 AppPop.dropMenu。',
@@ -44,11 +44,11 @@ class _InputDemoSectionState extends State<InputDemoSection> {
           },
           children: [
             const CommonTextField(hint: '无标题输入'),
-            SizedBox(height: TS.spacing.md),
+            SizedBox(height: ts.spacing.md),
             const CommonTextField(label: '单行输入', showLabel: true, hint: '请输入'),
-            SizedBox(height: TS.spacing.md),
+            SizedBox(height: ts.spacing.md),
             const CommonTextArea(label: '多行输入', showLabel: true),
-            SizedBox(height: TS.spacing.md),
+            SizedBox(height: ts.spacing.md),
             CommonMenuField<String>(
               label: '选择',
               value: _selectValue,
@@ -56,7 +56,7 @@ class _InputDemoSectionState extends State<InputDemoSection> {
               clearable: true,
               onChanged: (value) => setState(() => _selectValue = value),
             ),
-            SizedBox(height: TS.spacing.sm),
+            SizedBox(height: ts.spacing.sm),
             CommonCheckbox(
               label: '同意协议',
               value: _checked,
@@ -76,7 +76,7 @@ class _InputDemoSectionState extends State<InputDemoSection> {
               ],
               onChanged: (value) => setState(() => _radioValue = value),
             ),
-            SizedBox(height: TS.spacing.md),
+            SizedBox(height: ts.spacing.md),
             const CommonSearchBar(),
           ],
         ),

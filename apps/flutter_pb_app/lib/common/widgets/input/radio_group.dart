@@ -4,7 +4,7 @@ import '../../../theme/ts.dart';
 import 'choice_option.dart';
 
 /// 对齐 pbwork `RadioGroup`。默认选中色为 `color.primary`。
-/// Flutter 暂不暴露 Token-ref 色槽参数。
+/// Resolve color from the contextual theme when overriding its slot.
 class CommonRadioGroup<T> extends StatelessWidget {
   const CommonRadioGroup({
     super.key,
@@ -13,6 +13,7 @@ class CommonRadioGroup<T> extends StatelessWidget {
     this.label,
     this.enabled = true,
     this.onChanged,
+    this.color,
   });
 
   final List<CommonChoiceOption<T>> options;
@@ -20,19 +21,20 @@ class CommonRadioGroup<T> extends StatelessWidget {
   final String? label;
   final bool enabled;
   final ValueChanged<T?>? onChanged;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
+    final ts = TS.of(context);
     final interactive = enabled && onChanged != null;
     return Opacity(
-      opacity: interactive ? TS.opacity.visible : TS.opacity.disabled,
+      opacity: interactive ? ts.opacity.visible : ts.opacity.disabled,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (label != null) ...[
-            Text(label!, style: TS.textStyle.caption),
-            SizedBox(height: TS.spacing.sm),
+            Text(label!, style: ts.textStyle.caption),
+            SizedBox(height: ts.spacing.sm),
           ],
           RadioGroup<T>(
             groupValue: value,
@@ -44,10 +46,10 @@ class CommonRadioGroup<T> extends StatelessWidget {
                 for (final opt in options)
                   RadioListTile<T>(
                     value: opt.value,
-                    title: Text(opt.label, style: TS.textStyle.content),
+                    title: Text(opt.label, style: ts.textStyle.content),
                     contentPadding: EdgeInsets.zero,
-                    enabled: interactive,
-                    activeColor: TS.colors.primary,
+                    enabled: interactive && opt.enabled,
+                    activeColor: color ?? ts.colors.primary,
                   ),
               ],
             ),

@@ -25,29 +25,40 @@ class CommonTextArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TS.of(context);
-    final visibleRows = rows ?? TS.sizing.textareaRows;
-    return Opacity(
-      opacity: enabled ? TS.opacity.visible : TS.opacity.disabled,
+    final ts = TS.of(context);
+    final visibleRows = rows ?? ts.sizing.textareaRows;
+    final field = Opacity(
+      opacity: enabled ? ts.opacity.visible : ts.opacity.disabled,
       child: TextField(
         controller: controller,
         enabled: enabled,
         minLines: visibleRows,
         maxLines: visibleRows,
         onChanged: onChanged,
-        style: TS.textStyle.content,
+        style: ts.textStyle.content,
         decoration: InputDecoration(
-          labelText: showLabel ? label : null,
-          labelStyle: TS.textStyle.caption,
+          labelText: null,
+          labelStyle: ts.textStyle.caption,
           hintText: hint,
           alignLabelWithHint: true,
           filled: true,
-          fillColor: showLabel ? TS.colors.surface : TS.colors.surfaceRecessed,
+          fillColor: showLabel ? ts.colors.surface : ts.colors.surfaceRecessed,
           border: showLabel ? null : InputBorder.none,
           enabledBorder: showLabel ? null : InputBorder.none,
           focusedBorder: showLabel ? null : InputBorder.none,
         ),
       ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (showLabel && label != null) ...[
+          Text(label!, style: ts.textStyle.caption),
+          SizedBox(height: ts.spacing.sm),
+        ],
+        field,
+      ],
     );
   }
 }
