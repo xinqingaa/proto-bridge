@@ -15,6 +15,7 @@
 
 ## 待实施计划
 
+- [DS 资产引用与页面采集优化方案](./asset-reference-capture.md)：分离 DS 图形同步、页面资源使用证据与 Target 复用；移除正常采集的重复资产归档依赖。提案待实施。
 - [产品文档与动效证据交付优化计划](./evidence-delivery-upgrade.md)：语义身份兼容、产品文档快照、真实动效过程采集，以及固定 Handoff 到 MCP 的按需消费。目标设计与门禁尚未成为现行 Contract。
 
 业务原型的计划与进度仅在各自 `prototypes/{prototypeId}/docs/` 维护，本目录不维护其入口或排期。

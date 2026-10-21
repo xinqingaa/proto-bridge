@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { createHash } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -29,6 +30,49 @@ function captureTheme(manifest: RuntimeCaptureManifest, mode = "light") {
     mode,
   };
 }
+
+test("theme Catalog asset URLs preserve the exact authored bytes", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/prototype/yike/__manifest__");
+  await page.waitForFunction(() =>
+    Boolean((window as any).__PROTO_BRIDGE_CAPTURE_V2__),
+  );
+  const manifest: RuntimeCaptureManifest = await page.evaluate(async () => {
+    const response = await (window as any).__PROTO_BRIDGE_CAPTURE_V2__.request({
+      protocolVersion: 3,
+      requestId: "theme-asset-bytes-describe",
+      payload: { kind: "describe" },
+    });
+    if (!response.ok) throw new Error(JSON.stringify(response.error));
+    return response.payload.manifest;
+  });
+  const catalog = manifest.catalogs!.find(
+    (entry) => entry.kind === "theme-pack",
+  )!;
+  const entry = catalog.entries.find((entry) =>
+    entry.objectId.endsWith("/manifest"),
+  )!;
+  const assets = (
+    entry.value as {
+      assets: Array<{ file: string; url: string; sha1: string }>;
+    }
+  ).assets;
+  expect(assets.length).toBeGreaterThan(0);
+  for (const asset of assets) {
+    const url = new URL(asset.url, page.url());
+    expect(url.protocol, asset.file).toMatch(/^https?:$/);
+    const response = await request.get(url.toString());
+    expect(response.ok(), asset.file).toBe(true);
+    expect(
+      createHash("sha1")
+        .update(await response.body())
+        .digest("hex"),
+      asset.file,
+    ).toBe(asset.sha1);
+  }
+});
 
 test("the fixed three-page regression baseline still resolves", async ({
   page,

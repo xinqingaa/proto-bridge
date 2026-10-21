@@ -61,7 +61,8 @@ const assetModules = import.meta.glob(
     "/src/prototypes/*/theme/assets/**/*",
     "/src/design-system/components/_shared/glyphs/**/*.svg",
   ],
-  { eager: true, query: "?url", import: "default" },
+  // Catalog digests refer to source bytes; SVG inlining rewrites those bytes.
+  { eager: true, query: "?url&no-inline", import: "default" },
 ) as Record<string, string>;
 
 const artworkCatalogs = import.meta.glob(

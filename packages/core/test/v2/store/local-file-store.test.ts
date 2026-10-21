@@ -492,6 +492,58 @@ describe('LocalFileStore: Job lifecycle and orphan/restart finalization', () => 
     expect(finalized.endedAt).toBeDefined();
   });
 
+  it('commits catalog assets staged before the first Bundle exists', async () => {
+    const store = new LocalFileStore({ root, workspaceId: WORKSPACE_ID });
+    await store.init();
+    const job = await store.createJob({
+      bundleId: BUNDLE_ID,
+      selection,
+      inputVersion: RUN_1.inputVersion,
+    });
+    await store.startJob(job.jobId, RUN_1_ID);
+    await store.advanceJob(job.jobId, 'capturing');
+    const catalogRevisionId = 'catalog-theme-assets';
+    await store.stageJobCatalogs(job.jobId, [{
+      schemaVersion: RUN_1.schemaVersion,
+      catalogRevisionId,
+      workspaceId: WORKSPACE_ID,
+      bundleId: BUNDLE_ID,
+      prototypeId: PROTOTYPE_ID,
+      kind: 'theme-pack',
+      inputDigest: 'sha1:' + 'a'.repeat(40),
+      createdAt: '2026-10-21T00:00:00.000Z',
+      entries: [{
+        objectId: 'sample-pack/manifest',
+        digest: 'sha1:' + 'b'.repeat(40),
+        value: { assets: [] },
+        blobIds: [],
+      }],
+    }]);
+    const [blobId] = await store.stageJobCatalogAssets(
+      job.jobId,
+      catalogRevisionId,
+      [{ kind: 'theme-asset', mediaType: 'text/plain', bytes: Buffer.from('asset') }],
+    );
+
+    const committed = await store.createBundle({
+      bundleId: BUNDLE_ID,
+      prototypeId: PROTOTYPE_ID,
+      run: RUN_1,
+      revisions: [PRIMARY_ACTIVE_REVISION],
+      coverage: RUN_1.coverage,
+      stagedJobId: job.jobId,
+    });
+    const catalog = await store.getCatalogRevision(BUNDLE_ID, catalogRevisionId);
+    expect(catalog?.entries[0]?.blobIds).toContain(blobId);
+    expect(await store.getBlob(BUNDLE_ID, blobId!)).toMatchObject({
+      record: { kind: 'theme-asset', ownerRefs: [{ kind: 'catalog', objectId: catalogRevisionId }] },
+    });
+    expect(committed.snapshot.catalogRefs).toEqual([{ kind: 'theme-pack', catalogRevisionId }]);
+    await store.advanceJob(job.jobId, 'writing');
+    await store.finalizeJob(job.jobId, 'completed');
+    await store.close();
+  });
+
   it('finalizes a Job left capturing by a crashed writer as interrupted on the next Store init, without touching existing active Evidence', async () => {
     const writer = await freshStoreWithBundle();
     await writer.commitRun({ bundleId: BUNDLE_ID, run: RUN_1, revisions: [PRIMARY_ACTIVE_REVISION], coverage: RUN_1.coverage });

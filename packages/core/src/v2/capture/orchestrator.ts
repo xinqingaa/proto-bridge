@@ -8,7 +8,10 @@ import {
   type CaseEvidenceRevision as CaseEvidenceRevisionType,
 } from '../contracts/evidence.js';
 import { Run, type Run as RunType } from '../contracts/run.js';
-import { CatalogRevision, type CatalogRevision as CatalogRevisionType } from '../contracts/catalog.js';
+import {
+  CatalogRevision,
+  type CatalogRevision as CatalogRevisionType,
+} from '../contracts/catalog.js';
 import { computeScopeKey } from '../contracts/scope.js';
 import {
   evidenceLevelAtLeast,
@@ -110,13 +113,20 @@ export async function capturePreflightToStore(
   }
   await input.store.startJob(job.jobId, runId);
   try {
-    return await executeStartedJob(input, job.jobId, job.acceptedAt, runId, now);
+    return await executeStartedJob(
+      input,
+      job.jobId,
+      job.acceptedAt,
+      runId,
+      now,
+    );
   } catch (error) {
     const current = await input.store.getJob(job.jobId).catch(() => undefined);
     if (current && !isTerminalJobStatus(current.status)) {
       await input.store
         .appendJobJournal(job.jobId, {
-          event: current.status === 'writing' ? 'commit-failed' : 'execution-failed',
+          event:
+            current.status === 'writing' ? 'commit-failed' : 'execution-failed',
           detail: resultReason(error),
         })
         .catch(() => undefined);
@@ -140,6 +150,7 @@ async function executeStartedJob(
     ? await store.listCatalogRevisions(input.bundleId)
     : [];
   const catalogs: CatalogRevisionType[] = [];
+  const newCatalogIds = new Set<string>();
   for (const catalog of input.preflight.catalogInputs) {
     const existing = existingCatalogs.find(
       (candidate) =>
@@ -151,19 +162,11 @@ async function executeStartedJob(
       continue;
     }
     const catalogRevisionId = generateOperationalId('catalog', now());
+    newCatalogIds.add(catalogRevisionId);
     const entries = catalog.entries.map((entry) => ({
       ...entry,
       blobIds: [...entry.blobIds],
     }));
-    if (catalog.kind === 'theme-pack') {
-      await storeThemePackAssets({
-        store,
-        bundleId: input.bundleId,
-        runtimeBaseUrl: input.runtimeBaseUrl,
-        catalogRevisionId,
-        entries,
-      });
-    }
     catalogs.push(
       CatalogRevision.parse({
         schemaVersion: V2_SCHEMA_MAJOR,
@@ -179,6 +182,20 @@ async function executeStartedJob(
     );
   }
   await store.stageJobCatalogs(jobId, catalogs);
+  for (const catalog of catalogs) {
+    if (
+      catalog.kind !== 'theme-pack' ||
+      !newCatalogIds.has(catalog.catalogRevisionId)
+    )
+      continue;
+    await storeThemePackAssets({
+      store,
+      jobId,
+      runtimeBaseUrl: input.runtimeBaseUrl,
+      catalogRevisionId: catalog.catalogRevisionId,
+      entries: catalog.entries,
+    });
+  }
 
   const attempts: CaseAttemptType[] = [];
   const revisions: CaseEvidenceRevisionType[] = [];
@@ -225,7 +242,11 @@ async function executeStartedJob(
         const failed = CaseAttempt.parse({
           ...rest,
           result: 'failed',
-          reason: `Required screenshot Blob could not be written: ${resultReason(error)}`.slice(0, 2000),
+          reason:
+            `Required screenshot Blob could not be written: ${resultReason(error)}`.slice(
+              0,
+              2000,
+            ),
         });
         await store.stageJobCase(jobId, { attempt: failed });
         staged = { attempt: failed, revision: undefined };
@@ -445,7 +466,7 @@ async function executeStartedJob(
 
 async function storeThemePackAssets(input: {
   store: V2Store;
-  bundleId: CaptureOrchestratorInput['bundleId'];
+  jobId: JobId;
   runtimeBaseUrl: string;
   catalogRevisionId: string;
   entries: Array<{ objectId: string; blobIds: string[]; value?: unknown }>;
@@ -459,8 +480,7 @@ async function storeThemePackAssets(input: {
       ? (value as { assets?: unknown }).assets
       : undefined;
   if (!manifest || !Array.isArray(assets) || assets.length === 0) return;
-  const { request } = await import('playwright');
-  const context = await request.newContext();
+  let context: import('playwright').APIRequestContext | undefined;
   try {
     for (const asset of assets) {
       if (!asset || typeof asset !== 'object') continue;
@@ -473,29 +493,46 @@ async function storeThemePackAssets(input: {
       if (!record.file || !record.sha1 || !record.url || !record.mediaType) {
         throw new Error('Theme asset catalog entry is incomplete.');
       }
-      const response = await context.get(
-        new URL(record.url, input.runtimeBaseUrl).toString(),
-      );
-      if (!response.ok()) {
-        throw new Error(
-          `Theme asset ${record.file} request failed (${response.status()}).`,
-        );
+      const url = new URL(record.url, input.runtimeBaseUrl);
+      let bytes: Uint8Array;
+      if (url.protocol === 'data:') {
+        // Vite may inline assets; Node's data URL reader preserves both
+        // base64 and percent-encoded binary bytes without an HTTP request.
+        try {
+          const response = await fetch(url);
+          bytes = new Uint8Array(await response.arrayBuffer());
+        } catch (error) {
+          throw new Error(
+            `Theme asset ${record.file} data URL could not be read: ${resultReason(error)}`,
+          );
+        }
+      } else {
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+          throw new Error(
+            `Theme asset ${record.file} uses unsupported URL protocol ${url.protocol}.`,
+          );
+        }
+        context ??= await (await import('playwright')).request.newContext();
+        const response = await context.get(url.toString());
+        if (!response.ok()) {
+          throw new Error(
+            `Theme asset ${record.file} request failed (${response.status()}).`,
+          );
+        }
+        bytes = await response.body();
       }
-      const bytes = await response.body();
       const sha1 = createHash('sha1').update(bytes).digest('hex');
       if (sha1 !== record.sha1) {
         throw new Error(`Theme asset ${record.file} sha1 mismatch.`);
       }
-      const stored = await input.store.putBlob({
-        bundleId: input.bundleId,
-        kind: 'theme-asset',
-        mediaType: record.mediaType,
-        bytes,
-        ownerRefs: [{ kind: 'catalog', objectId: input.catalogRevisionId }],
-      });
-      manifest.blobIds.push(stored.blobId);
+      const [blobId] = await input.store.stageJobCatalogAssets(
+        input.jobId,
+        input.catalogRevisionId,
+        [{ kind: 'theme-asset', mediaType: record.mediaType, bytes }],
+      );
+      if (blobId) manifest.blobIds.push(blobId);
     }
   } finally {
-    await context.dispose();
+    await context?.dispose();
   }
 }

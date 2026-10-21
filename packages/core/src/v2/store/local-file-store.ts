@@ -611,7 +611,10 @@ export class LocalFileStore implements V2Store {
     const revisions = pinIssueReferences(input.revisions.map((revision) =>
       this.parseOrThrow(CaseEvidenceRevision, revision, 'CaseEvidenceRevision'),
     ), issues);
-    const catalogs = (input.catalogs ?? []).map((catalog) =>
+    const stagedCatalogs = input.stagedJobId
+      ? await this.readStagedCatalogs(input.stagedJobId)
+      : undefined;
+    const catalogs = (stagedCatalogs ?? input.catalogs ?? []).map((catalog) =>
       this.parseOrThrow(CatalogRevision, catalog, 'CatalogRevision'),
     );
     this.assertCatalogCommitOwnership(bundle, catalogs);
@@ -1309,6 +1312,12 @@ export class LocalFileStore implements V2Store {
           `A revision-owned Blob needs a captured revision for Case ${attempt.caseId}.`,
         );
       }
+      if (binary.owner === 'catalog') {
+        throw new V2ContractError(
+          'blob-rejected',
+          'Catalog-owned Blobs must be staged with stageJobCatalogAssets.',
+        );
+      }
       this.validateBlobBytes(binary.kind, binary.mediaType, binary.bytes);
       const digest = `sha256:${createHash('sha256').update(binary.bytes).digest('hex')}`;
       if ((await fileByteLength(jobStagingBlobPath(this.root, jobId, digest))) === 0) {
@@ -1346,6 +1355,65 @@ export class LocalFileStore implements V2Store {
       'StagedJobCase',
       record,
     );
+  }
+
+  async stageJobCatalogAssets(
+    jobId: JobId,
+    catalogRevisionId: CatalogRevisionId,
+    binaries: Array<{ kind: BlobKind; mediaType: string; bytes: Uint8Array }>,
+  ): Promise<BlobId[]> {
+    await this.assertWritableStore();
+    const job = await this.requireExecutingJob(jobId);
+    const catalogs = await this.readStagedCatalogs(jobId);
+    const catalog = catalogs?.find((item) => item.catalogRevisionId === catalogRevisionId);
+    if (!catalog || catalog.bundleId !== job.bundleId || catalog.workspaceId !== this.workspaceId) {
+      throw new V2ContractError(
+        'unknown-reference',
+        `Catalog revision ${catalogRevisionId} is not staged for Job ${jobId}.`,
+      );
+    }
+    const refs: StagedBinaryRef[] = [];
+    let newBytes = 0;
+    for (const binary of binaries) {
+      this.validateBlobBytes(binary.kind, binary.mediaType, binary.bytes);
+      const digest = `sha256:${createHash('sha256').update(binary.bytes).digest('hex')}`;
+      if ((await fileByteLength(jobStagingBlobPath(this.root, jobId, digest))) === 0) {
+        newBytes += binary.bytes.byteLength;
+      }
+      refs.push({
+        kind: binary.kind,
+        mediaType: binary.mediaType,
+        owner: 'catalog',
+        catalogRevisionId,
+        digest,
+        byteLength: binary.bytes.byteLength,
+      });
+    }
+    await this.assertCapacity(2 * newBytes + this.serializedBytes(refs));
+    for (const [index, binary] of binaries.entries()) {
+      await writeImmutableBytes(
+        jobStagingBlobPath(this.root, jobId, refs[index]!.digest),
+        'Staged Blob content',
+        binary.bytes,
+      );
+    }
+    const blobIds = refs.map((ref) =>
+      blobIdFor(
+        ref.digest.replace(/^sha256:/, ''),
+        ref.kind,
+        ref.mediaType,
+        [{ kind: 'catalog', objectId: catalogRevisionId }],
+      ),
+    );
+    const manifest = catalog.entries.find((entry) => entry.objectId.endsWith('/manifest'));
+    if (manifest) {
+      manifest.blobIds = [...new Set([...manifest.blobIds, ...blobIds])];
+      await writeJsonAtomic(jobStagingCatalogsPath(this.root, jobId), catalogs);
+    }
+    const assetsPath = path.join(jobStagingDir(this.root, jobId), 'catalog-assets.json');
+    const existing = (await readJson<StagedBinaryRef[]>(assetsPath)) ?? [];
+    await writeJsonAtomic(assetsPath, [...existing, ...refs]);
+    return blobIds;
   }
 
   async listStagedJobCases(jobId: JobId): Promise<StagedJobCase[]> {
@@ -1800,7 +1868,10 @@ export class LocalFileStore implements V2Store {
     const revisions = pinIssueReferences(input.revisions.map((revision) =>
       this.parseOrThrow(CaseEvidenceRevision, revision, 'CaseEvidenceRevision'),
     ), issues);
-    const catalogs = (input.catalogs ?? []).map((catalog) =>
+    const stagedCatalogs = input.stagedJobId
+      ? await this.readStagedCatalogs(input.stagedJobId)
+      : undefined;
+    const catalogs = (stagedCatalogs ?? input.catalogs ?? []).map((catalog) =>
       this.parseOrThrow(CatalogRevision, catalog, 'CatalogRevision'),
     );
     this.assertCatalogCommitOwnership(bundle, catalogs);
@@ -2136,6 +2207,18 @@ export class LocalFileStore implements V2Store {
       string,
       { binary: StagedBinaryRef; owners: BlobOwnerRef[] }
     >();
+    const stagedCatalogAssets =
+      (await readJson<StagedBinaryRef[]>(
+        path.join(jobStagingDir(this.root, jobId), 'catalog-assets.json'),
+      )) ?? [];
+    for (const binary of stagedCatalogAssets) {
+      if (binary.owner !== 'catalog' || !binary.catalogRevisionId) continue;
+      const key = `${binary.kind}/${binary.mediaType}/${binary.digest}`;
+      const owner = { kind: 'catalog' as const, objectId: binary.catalogRevisionId };
+      const group = groups.get(key);
+      if (group) group.owners.push(owner);
+      else groups.set(key, { binary, owners: [owner] });
+    }
     for (const staged of await this.listStagedJobCases(jobId)) {
       if (!attemptIds.has(staged.attempt.attemptId)) continue;
       for (const binary of staged.binaries) {
@@ -2143,8 +2226,11 @@ export class LocalFileStore implements V2Store {
         if (binary.owner === 'revision') {
           if (!staged.revision || !revisionIds.has(staged.revision.revisionId)) continue;
           owner = { kind: 'revision', objectId: staged.revision.revisionId };
-        } else {
+        } else if (binary.owner === 'run') {
           owner = { kind: 'run', objectId: run.runId };
+        } else {
+          if (!binary.catalogRevisionId) continue;
+          owner = { kind: 'catalog', objectId: binary.catalogRevisionId };
         }
         const key = `${binary.kind}/${binary.mediaType}/${binary.digest}`;
         const group = groups.get(key);

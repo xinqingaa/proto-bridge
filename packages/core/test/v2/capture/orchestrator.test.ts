@@ -1,4 +1,6 @@
+import { createHash } from 'node:crypto';
 import { mkdtemp, rm } from 'node:fs/promises';
+import { createServer } from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -95,29 +97,49 @@ class UnknownDriver implements CaseCaptureDriver {
   }
 }
 
-function manifest(inputVersion: string): RuntimeCaptureManifest {
+type ThemeAsset = {
+  file: string;
+  sha1: string;
+  mediaType: string;
+  url: string;
+};
+
+function manifest(
+  inputVersion: string,
+  assets: ThemeAsset[] = [],
+): RuntimeCaptureManifest {
   return {
     protocolVersion: 3,
     theme: {
-    packId: 'sample-pack',
-    packDigest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-    keyCatalogDigest: 'sha1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
-    themes: ['default'],
-    defaultTheme: 'default',
-    modes: ['light', 'dark'],
-    defaultMode: 'light',
-  },
-  clock: { now: '2026-07-28T00:00:00.000Z', timeZone: 'Asia/Shanghai' },
-    catalogs: [{
-    kind: 'theme-pack',
-    inputDigest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-    entries: [{
-      objectId: 'sample-pack/default/light',
-      digest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      value: { values: {}, provenance: {} },
-      blobIds: [],
-    }],
-  }],
+      packId: 'sample-pack',
+      packDigest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      keyCatalogDigest: 'sha1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+      themes: ['default'],
+      defaultTheme: 'default',
+      modes: ['light', 'dark'],
+      defaultMode: 'light',
+    },
+    clock: { now: '2026-07-28T00:00:00.000Z', timeZone: 'Asia/Shanghai' },
+    catalogs: [
+      {
+        kind: 'theme-pack',
+        inputDigest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        entries: [
+          {
+            objectId: 'sample-pack/manifest',
+            digest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            value: { assets },
+            blobIds: [],
+          },
+          {
+            objectId: 'sample-pack/default/light',
+            digest: 'sha1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            value: { values: {}, provenance: {} },
+            blobIds: [],
+          },
+        ],
+      },
+    ],
     inputVersion,
     capabilities: [
       'describe',
@@ -205,6 +227,203 @@ function now(): Date {
 }
 
 describe('V2 Capture Orchestrator + real Store', () => {
+  const svgBytes = Buffer.from(
+    '<svg xmlns="http://www.w3.org/2000/svg"><text>一刻 + # %</text></svg>',
+  );
+  const inlineAssets = [
+    {
+      file: 'assets/logo.svg',
+      mediaType: 'image/svg+xml',
+      bytes: svgBytes,
+      url: `data:image/svg+xml;base64,${svgBytes.toString('base64')}`,
+    },
+    {
+      file: 'assets/label.svg',
+      mediaType: 'image/svg+xml',
+      bytes: svgBytes,
+      url: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgBytes.toString())}`,
+    },
+    {
+      file: 'assets/icon.png',
+      mediaType: 'image/png',
+      bytes: PNG_BYTES,
+      url: `data:image/png,${Array.from(PNG_BYTES, (byte) => `%${byte.toString(16).padStart(2, '0')}`).join('')}`,
+    },
+  ];
+
+  it.each(inlineAssets)(
+    'commits inline $file bytes with the first Bundle and reuses its Catalog',
+    async (asset) => {
+      const bundleId = 'bundle-inline-theme-asset';
+      const runtimeManifest = manifest('runtime-input-inline-asset', [
+        {
+          file: asset.file,
+          mediaType: asset.mediaType,
+          url: asset.url,
+          sha1: createHash('sha1').update(asset.bytes).digest('hex'),
+        },
+      ]);
+      const result = await capturePreflightToStore({
+        store,
+        bundleId,
+        preflight: preflightSelection(draft(['default']), runtimeManifest),
+        runtimeBaseUrl: 'http://127.0.0.1:3977',
+        driver: new FakeDriver(),
+        now,
+      });
+      expect(result.run.terminationReason).toBe('completed');
+      expect((await store.getJob(result.jobId))?.status).toBe('completed');
+      const [catalog] = await store.listCatalogRevisions(bundleId);
+      const [blobId] = catalog!.entries.find((entry) =>
+        entry.objectId.endsWith('/manifest'),
+      )!.blobIds;
+      const blob = await store.getBlob(bundleId, blobId!);
+      expect(Buffer.from(blob!.bytes)).toEqual(asset.bytes);
+      expect(blob!.record).toMatchObject({
+        kind: 'theme-asset',
+        mediaType: asset.mediaType,
+        ownerRefs: [{ kind: 'catalog', objectId: catalog!.catalogRevisionId }],
+      });
+      expect(result.snapshot.catalogRefs).toContainEqual({
+        kind: 'theme-pack',
+        catalogRevisionId: catalog!.catalogRevisionId,
+      });
+
+      const recapture = await capturePreflightToStore({
+        store,
+        bundleId,
+        preflight: preflightSelection(draft(['claimable']), runtimeManifest),
+        runtimeBaseUrl: 'http://127.0.0.1:3977',
+        driver: new FakeDriver(),
+        now,
+      });
+      expect(recapture.run.terminationReason).toBe('completed');
+      expect(recapture.snapshot.catalogRefs).toEqual(
+        result.snapshot.catalogRefs,
+      );
+      expect(await store.listCatalogRevisions(bundleId)).toEqual([catalog]);
+      expect(
+        Buffer.from((await store.getBlob(bundleId, blobId!))!.bytes),
+      ).toEqual(asset.bytes);
+    },
+  );
+
+  it('commits mixed inline and relative HTTP theme assets to an existing Bundle', async () => {
+    const server = createServer((_request, response) =>
+      response.end(PNG_BYTES),
+    );
+    await new Promise<void>((resolve) =>
+      server.listen(0, '127.0.0.1', resolve),
+    );
+    try {
+      const address = server.address() as { port: number };
+      const assets = [
+        {
+          file: 'assets/logo.svg',
+          mediaType: 'image/svg+xml',
+          url: inlineAssets[0]!.url,
+          sha1: createHash('sha1').update(svgBytes).digest('hex'),
+        },
+        {
+          file: 'assets/icon.png',
+          mediaType: 'image/png',
+          url: './icon.png',
+          sha1: createHash('sha1').update(PNG_BYTES).digest('hex'),
+        },
+      ];
+      const result = await capturePreflightToStore({
+        store,
+        bundleId: fixture.BUNDLE_ID,
+        preflight: preflightSelection(
+          draft(['default']),
+          manifest('runtime-input-mixed-assets', assets),
+        ),
+        runtimeBaseUrl: `http://127.0.0.1:${address.port}/assets/`,
+        driver: new FakeDriver(),
+        now,
+      });
+      expect(result.run.terminationReason).toBe('completed');
+      const catalog = (
+        await store.listCatalogRevisions(fixture.BUNDLE_ID)
+      ).find((item) => item.kind === 'theme-pack')!;
+      const entry = catalog.entries.find((item) =>
+        item.objectId.endsWith('/manifest'),
+      )!;
+      expect(entry.blobIds).toHaveLength(2);
+      const blobs = await Promise.all(
+        entry.blobIds.map((blobId) => store.getBlob(fixture.BUNDLE_ID, blobId)),
+      );
+      expect(blobs.map((blob) => Buffer.from(blob!.bytes))).toEqual([
+        svgBytes,
+        PNG_BYTES,
+      ]);
+    } finally {
+      await new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      );
+    }
+  });
+
+  it.each([
+    {
+      url: inlineAssets[0]!.url,
+      sha1: '0'.repeat(40),
+      reason: 'sha1 mismatch',
+    },
+    {
+      url: 'data:image/svg+xml;base64',
+      sha1: '0'.repeat(40),
+      reason: 'data URL could not be read',
+    },
+    {
+      url: 'file:///missing.svg',
+      sha1: '0'.repeat(40),
+      reason: 'uses unsupported URL protocol file:',
+    },
+  ])(
+    'records an actionable theme asset failure: $reason',
+    async ({ url, sha1, reason }) => {
+      const preflight = preflightSelection(
+        draft(['default']),
+        manifest('runtime-input-invalid-asset', [
+          {
+            file: 'assets/logo.svg',
+            mediaType: 'image/svg+xml',
+            url,
+            sha1,
+          },
+        ]),
+      );
+      const job = await store.createJob({
+        bundleId: 'bundle-invalid-theme-asset',
+        selection: preflight.selection,
+        inputVersion: preflight.inputVersion,
+      });
+      await expect(
+        capturePreflightToStore({
+          store,
+          bundleId: job.bundleId,
+          jobId: job.jobId,
+          preflight,
+          runtimeBaseUrl: 'http://127.0.0.1:3977',
+          driver: new FakeDriver(),
+          now,
+        }),
+      ).rejects.toThrow(`Theme asset assets/logo.svg ${reason}`);
+      const failed = await store.getJob(job.jobId);
+      expect(failed?.status).toBe('failed');
+      expect(failed?.journal).toContainEqual(
+        expect.objectContaining({
+          event: 'execution-failed',
+          detail: expect.stringContaining(
+            `Theme asset assets/logo.svg ${reason}`,
+          ),
+        }),
+      );
+      expect(await store.getBundle(job.bundleId)).toBeUndefined();
+    },
+  );
+
   it('isolates a failed Case, commits the successful Case and controlled Screenshot Blob', async () => {
     const preflight = preflightSelection(
       draft(['empty', 'claimable']),
@@ -500,9 +719,7 @@ describe('V2 Capture Orchestrator + real Store', () => {
       driver: new FakeDriver(),
       now,
     });
-    expect((await store.getBundle(bundleId))?.prototypeId).toBe(
-      'sample',
-    );
+    expect((await store.getBundle(bundleId))?.prototypeId).toBe('sample');
     expect(first.snapshot.activeSlots).toHaveLength(1);
     const report = await store.createStalenessReport({
       bundleId,

@@ -96,8 +96,9 @@ export type StagedBinaryInput = {
   kind: BlobKind;
   mediaType: string;
   bytes: Uint8Array;
-  /** `revision` binds the Blob to the staged revision; `run` to the Job's Run. */
-  owner: 'revision' | 'run';
+  /** `revision` binds the Blob to the staged revision; `run` to the Job's Run; `catalog` to a staged Catalog revision. */
+  owner: 'revision' | 'run' | 'catalog';
+  catalogRevisionId?: CatalogRevisionId;
 };
 
 export type StagedBinaryRef = Omit<StagedBinaryInput, 'bytes'> & {
@@ -269,6 +270,11 @@ export interface V2Store {
   getJob(jobId: JobId): Promise<CaptureJob | undefined>;
   /** Durably fixes the Catalog revisions an executing Job will commit, so restart recovery can commit them too. */
   stageJobCatalogs(jobId: JobId, catalogs: CatalogRevision[]): Promise<void>;
+  stageJobCatalogAssets(
+    jobId: JobId,
+    catalogRevisionId: CatalogRevisionId,
+    binaries: Array<Omit<StagedBinaryInput, 'owner' | 'catalogRevisionId'> & { mediaType: string }>,
+  ): Promise<BlobId[]>;
   /**
    * Durably records one finished Case of an executing Job (Attempt, optional
    * revision, Blob bytes) before the next Case starts. Rejects when a Blob

@@ -117,7 +117,9 @@ DS 与冷链消费者已完成迁移，Runtime 仅生成新表的变量。原有
 
 组件键由 Contract.componentTokens 声明 id 后缀、valueType/default/modeVariant/bindable/enumValues；loadThemeKeyCatalog 汇总为完整的 Core ThemeKeyCatalog。当前 129 个语义键 + 25 个组件键，其中 148 可绑定，6 个 enum 不可绑定；另有 64 个字阶派生部件和 37 个实现常量。Registry 同时校验组件声明与基础包默认值。SurfaceMaterial 负责共享材质；primary-tabs.selection-treatment 在基础包为 glass，AppBar/Tabbar 跟随 surface.treatment。组件 CSS 与 Inspector 绑定使用新键，常量不进入 Evidence/Target；JS 用 computed 读取主题值，以纯常量读取器读取手势阈值等不变值。
 
-Capture 的 token Catalog 只含键定义（类型、是否可绑定、是否随模式变化、说明与来源），不含取值，常量不进入 Catalog。theme-pack Catalog 的 `inputDigest` 等于包摘要：一条包清单，外加每个「主题 × 模式」的解析值与 provenance。清单列出的资产在采集时按 sha1 校验后存为 `theme-asset` Blob。Workbench 展示记录只是主题表生成的展示数据，不是第二份 Token 语义源。Gallery 与 Playground 可以选择基础包或原型主题包、包内主题和模式，并对照解析值。
+Capture 的 token Catalog 只含键定义（类型、是否可绑定、是否随模式变化、说明与来源），不含取值，常量不进入 Catalog。theme-pack Catalog 的 `inputDigest` 等于包摘要：一条包清单，外加每个「主题 × 模式」的解析值与 provenance。清单列出的资产支持相对或绝对 HTTP/HTTPS URL，以及构建器内联的 `data:` URL（base64 或百分号编码）；Core 读取原始字节，按 sha1 校验后存为 `theme-asset` Blob。其它 URL 协议、内联资源解码失败或摘要不匹配会阻断采集，并在 Job 失败原因中保留资产文件名。Workbench 展示记录只是主题表生成的展示数据，不是第二份 Token 语义源。Gallery 与 Playground 可以选择基础包或原型主题包、包内主题和模式，并对照解析值。
+
+PBWork 的主题资产加载器使用 `?url&no-inline` 提供资源 URL，在开发与构建环境中均保留源文件字节，避免 SVG 内联优化改写空白和引号后与清单摘要不一致。
 
 Runtime 协议版本为 3。清单必填 `theme` 与 `clock`。`clock` 声明采集用的当前时刻和时区；Playwright 安装该时钟，交互模式仍走真实时间。`useClock()` 读取 `Date`。Preflight 在采集前对每个 Screen 的 default Variant、每个主题和每个模式比较语义树（节点身份、role、可见性、bbox 是否非零、componentId、排序后的 tokenBindings、语义父节点）。分叉是 Authoring Diagnostic `theme.mode-divergence`，不写入 Evidence。MCP `read_theme_pack` 只读 Handoff 固定的 theme-pack Catalog：默认组合 `captured: true`，其它组合返回该表并标注 `captured: false`。`read_screen_packet` 的 token 清单在该 Catalog 存在时附带默认主题与模式的 `resolvedValue`、`chain` 和 `tier`。CLI 不再接受 `--theme`；`snapshot inspect` 打印 `packId@digest/theme/mode`。
 

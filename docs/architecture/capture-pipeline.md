@@ -101,6 +101,8 @@ Case 执行总会形成 Attempt。只有通过 Schema、完整性和激活规则
 
 每个 Case 终结（captured、failed、reused、cancelled）后，Core 先把该 Attempt 写入 Store root 下的 Job staging（`job-staging/<jobId>/`：`catalogs.json`、`cases/<序号>-<attemptId>.json`、`blobs/<hex>.bin`），captured Case 同时暂存 Revision 与 Blob 字节，之后才写 journal `case-finished`。staging 是 Job 内部的待提交区，不属于公共 Contract，也不会被 Snapshot 或 MCP 到达；Job finalize 后删除，Store 初始化时清理已终结或缺失 Job 的遗留 staging。
 
+Case 执行前，Core 先暂存 Catalog 修订及新增主题包的资产；资产引用记录在 staging 的 `catalog-assets.json`，字节写入同一暂存 Blob 区。首个 Bundle 尚不存在时也只写 Job staging，提交时再统一写入 Bundle，并将资产绑定到固定 Catalog 修订。资源读取与摘要校验规则见[主题包解析模型](./theme-packs.md#原型绑定与-capture-边界)。
+
 Blob 写入失败按必要性区分：
 
 - 可选二进制（非 Screenshot）暂存失败：该 Case 去掉这些二进制后重试，journal 记录 `blob-write-failed`；

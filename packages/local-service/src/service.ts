@@ -1134,7 +1134,16 @@ export class ProtoBridgeLocalService {
       if (!['completed', 'failed', 'cancelled', 'interrupted'].includes(job.status)) return;
       if (job.status !== 'completed') {
         const failedCases = await this.failedCasesForJob(job);
-        await this.failFinalization(operation.operationKey, `整原型采集以 ${job.status} 结束。`, failedCases);
+        const jobFailure = [...job.journal]
+          .reverse()
+          .find((entry) => entry.event === 'execution-failed' || entry.event === 'commit-failed')
+          ?.detail;
+        const detail = jobFailure ? `：${jobFailure}` : '。';
+        await this.failFinalization(
+          operation.operationKey,
+          `整原型采集以 ${job.status} 结束${detail}`,
+          failedCases,
+        );
         return;
       }
       const snapshot = await this.store.getActiveSnapshot(job.bundleId);
