@@ -193,11 +193,6 @@
       "import": "lib/common/widgets/navigation/secondary_tabs.dart",
       "definition": "lib/common/widgets/navigation/secondary_tabs.dart"
     },
-    "segmented-control": {
-      "symbol": "CommonSegmentedControl",
-      "import": "lib/common/widgets/input/segmented_control.dart",
-      "definition": "lib/common/widgets/input/segmented_control.dart"
-    },
     "spinner": {
       "symbol": "CommonSpinner",
       "import": "lib/common/widgets/display/spinner.dart",
@@ -846,12 +841,12 @@
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "secondary-tabs.active-color": {
-      "accessor": "ts.colors.sectionTabActive",
+      "accessor": "ts.colors.secondaryTabActive",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
     "secondary-tabs.indicator": {
-      "accessor": "ts.colors.sectionTabActive",
+      "accessor": "ts.colors.secondaryIndicator",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     },
@@ -997,16 +992,6 @@
     },
     "opacity.data-high": {
       "accessor": "ts.opacity.dataHigh",
-      "import": "lib/theme/proto_bridge_tokens.dart",
-      "definition": "lib/theme/proto_bridge_tokens.dart"
-    },
-    "segmented-control.compact-height": {
-      "accessor": "ts.sizing.compactHeight",
-      "import": "lib/theme/proto_bridge_tokens.dart",
-      "definition": "lib/theme/proto_bridge_tokens.dart"
-    },
-    "segmented-control.compact-selection-height": {
-      "accessor": "ts.sizing.compactSelectionHeight",
       "import": "lib/theme/proto_bridge_tokens.dart",
       "definition": "lib/theme/proto_bridge_tokens.dart"
     }

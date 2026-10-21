@@ -20,8 +20,8 @@ test("theme pack options deduplicate prototype bindings and migrate both saved d
             mode: "dark",
           },
           B: {
-            contextId: "sample:pbwork-sample",
-            theme: "citrus",
+            contextId: "prototype:yike",
+            theme: "water",
             mode: "light",
           },
         },
@@ -33,8 +33,8 @@ test("theme pack options deduplicate prototype bindings and migrate both saved d
   const second = page.locator('[data-preview-device="B"]');
   await expect(first).toHaveAttribute("data-preview-pack", "pbwork-base");
   await expect(first).toHaveAttribute("data-preview-mode", "dark");
-  await expect(second).toHaveAttribute("data-preview-pack", "pbwork-sample");
-  await expect(second).toHaveAttribute("data-preview-theme", "citrus");
+  await expect(second).toHaveAttribute("data-preview-pack", "yike");
+  await expect(second).toHaveAttribute("data-preview-theme", "water");
   const controls = page.locator('[data-preview-settings="A"]');
   await expect(
     controls.getByRole("combobox", { name: "主题", exact: true }),
@@ -47,7 +47,7 @@ test("theme pack options deduplicate prototype bindings and migrate both saved d
     page.getByRole("option", { name: "PBWork 基础包", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("option", { name: "样例主题包 · 仅演示", exact: true }),
+    page.getByRole("option", { name: "一刻", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("option", { name: "冷链异常处置台", exact: true }),
@@ -64,12 +64,12 @@ test("theme pack options deduplicate prototype bindings and migrate both saved d
     sourceMode: "dark",
     selections: {
       A: { contextId: "pack:pbwork-base", theme: "default", mode: "dark" },
-      B: { contextId: "pack:pbwork-sample", theme: "citrus", mode: "light" },
+      B: { contextId: "pack:yike", theme: "water", mode: "light" },
     },
   });
   await page.goto("/workbench/components/button");
   await expect(first).toHaveAttribute("data-preview-mode", "dark");
-  await expect(second).toHaveAttribute("data-preview-theme", "citrus");
+  await expect(second).toHaveAttribute("data-preview-theme", "water");
   await page.reload();
   await expect(first).toHaveAttribute("data-preview-pack", "pbwork-base");
   await expect(

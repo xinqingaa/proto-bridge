@@ -191,7 +191,6 @@ const isWideExhibit = computed(() =>
     "list-cell",
     "launch-screen",
     "duration-picker",
-    "segmented-control",
     "mini-bars",
     "heatmap",
   ].includes(record.value?.id ?? ""),

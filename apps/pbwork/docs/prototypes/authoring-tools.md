@@ -61,7 +61,7 @@ Runtime 的稳定等待会等字体、Vue 渲染及当前有限动画结束，�
 
 ## 脚手架与验证
 
-在仓库根执行 `pnpm pb:new-prototype <id>`，ID 使用小写连字符格式；已有目录拒绝覆盖。生成原型声明、独立且继承基础包的主题包、`status: draft` 的 `docs/design.md`、外壳、首页、模型存储、Date 时钟和一条登记测试，并生成 default 边界。无需手改登记表。模板不绑定仅供 Gallery/Playground 的 `pbwork-sample`。
+在仓库根执行 `pnpm pb:new-prototype <id>`，ID 使用小写连字符格式；已有目录拒绝覆盖。生成原型声明、独立且继承基础包的主题包、`status: draft` 的 `docs/design.md`、外壳、首页、模型存储、Date 时钟和一条登记测试，并生成 default 边界。无需手改登记表。模板不绑定仅供 Gallery/Playground 的 `yike`。
 
 空骨架可以执行 Preflight 与定稿技术验收；它不代表业务设计批准。开始真实业务/视觉制作前，按[设计工作流](./design-workflow.md)完成需求采访与批准。
 

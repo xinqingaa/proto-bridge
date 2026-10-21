@@ -165,8 +165,8 @@ for (const pack of ["base", "sample"] as const) {
                   contextId:
                     pack === "base"
                       ? "foundation:pbwork-base"
-                      : "sample:pbwork-sample",
-                  theme: pack === "base" ? "default" : "garden",
+                      : "prototype:yike",
+                  theme: pack === "base" ? "default" : "mechanical",
                   mode,
                 },
               },

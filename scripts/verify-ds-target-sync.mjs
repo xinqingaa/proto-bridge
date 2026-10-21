@@ -40,7 +40,12 @@ const catalog = ThemeKeyCatalog.parse({ ...rawCatalog, keys: [
 const tokens = catalog.keys.filter((key) => key.bindable);
 const constants = ThemeConstantTable.parse(await readJson("apps/pbwork/src/design-system/theme/constants.json"));
 const packs = await readThemePacks();
-const themes = { constants, packs: [...packs.values()] };
+const themeScope = JSON.parse(await readFile(path.join(targetRoot, 'proto-bridge.themes.json'), 'utf8'));
+const { exportFlutterThemes } = await import('./export-flutter-themes.mjs');
+try {
+  await exportFlutterThemes({targetRoot, check: true, prototype: themeScope.scope?.prototype});
+} catch (error) { errors.push(`Theme implementation coverage: ${error.message}`); }
+const themes = { constants, packs: [...packs.values()].filter(pack => themeScope.packs.includes(pack.manifest.id)) };
 for (const diagnostic of validateThemePacks({ keyCatalog: catalog, constants, packs })) {
   if (diagnostic.severity === "block") errors.push(`${diagnostic.packId}: ${diagnostic.message}`);
 }

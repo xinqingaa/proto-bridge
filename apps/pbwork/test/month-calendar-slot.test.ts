@@ -18,8 +18,8 @@ describe("公共月历的日期展示扩展", () => {
   it.each([
     ["pbwork-base", "default", "light"],
     ["pbwork-base", "default", "dark"],
-    ["pbwork-sample", "garden", "light"],
-    ["pbwork-sample", "garden", "dark"],
+    ["yike", "mechanical", "light"],
+    ["yike", "mechanical", "dark"],
   ] as const)(
     "%s/%s/%s 外部周期导航不复制日期选择与键盘机制",
     async (pack, theme, mode) => {

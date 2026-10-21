@@ -12,7 +12,7 @@ cd ../.. && pnpm ds:theme:verify
 pnpm ds:target-sync:verify
 ```
 
-修改公共组件、路由或 Theme 时，必须至少运行完整的 `flutter analyze` 和 `flutter test`。主题门禁检查 153 个 Token；完整同步门禁同时检查 47 个组件与当前 DS surface。
+修改公共组件、路由或 Theme 时，必须至少运行完整的 `flutter analyze` 和 `flutter test`。主题门禁检查 当前 Token 清单；完整同步门禁同时检查 当前组件清单与当前 DS surface。
 
 ## Widget 场景
 
@@ -40,4 +40,4 @@ xcrun simctl io <udid> screenshot <path>
 
 ## iOS 依赖
 
-工程禁用 Swift Package Manager，使用 CocoaPods 接入原生依赖。MMKV 2.4.3 的 Swift Package 清单要求 Swift 6.2，而当前 Xcode 16.4 提供 Swift 6.1；CocoaPods 可在现有工具链编译运行，无需升级 Flutter 或 Xcode。`Pods/`、`.symlinks/` 与 `build/` 为生成目录，不提交。
+工程通过 CocoaPods 接入原生依赖；依赖要求以 `pubspec.yaml` 和锁文件为准。工具链兼容原因统一记录在 Producer 的 Flutter iOS 决策中，不复制为 Skill 版本限制。`Pods/`、`.symlinks/` 与 `build/` 为生成目录，不提交。

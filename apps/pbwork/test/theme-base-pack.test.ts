@@ -67,9 +67,9 @@ function resolveWith(overrides: Record<string, string>) {
 describe("基础主题包（pbwork-base）", () => {
   const sources = loadBaseThemeSources();
 
-  it("键目录规模：可绑定 153、不可绑定 6、派生部件 64", () => {
+  it("键目录规模：可绑定 151、不可绑定 6、派生部件 64", () => {
     const keys = sources.keyCatalog.keys;
-    expect(keys.filter((key) => key.bindable)).toHaveLength(153);
+    expect(keys.filter((key) => key.bindable)).toHaveLength(151);
     expect(keys.filter((key) => !key.bindable)).toHaveLength(6);
     expect(
       keys
@@ -182,8 +182,8 @@ describe("基础主题包（pbwork-base）", () => {
         .sort(),
     ).toEqual(["dark/default", "light/default"]);
     for (const table of first.tables) {
-      // 159 个目录键（含紧凑选择与数据强度）+ 64 个字体部件
-      expect(Object.keys(table.values)).toHaveLength(159 + 64);
+      // 157 个目录键（含数据强度）+ 64 个字体部件
+      expect(Object.keys(table.values)).toHaveLength(157 + 64);
       expect(Object.keys(table.constants)).toHaveLength(37);
     }
   });

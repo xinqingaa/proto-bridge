@@ -153,13 +153,13 @@ describe("design contracts", () => {
   });
 
   it("ships the fixed component sample set", () => {
-    expect(componentRecords).toHaveLength(47);
+    expect(componentRecords).toHaveLength(46);
     expect(
       componentRecords.filter((item) => item.category === "action"),
     ).toHaveLength(3);
     expect(
       componentRecords.filter((item) => item.category === "input"),
-    ).toHaveLength(10);
+    ).toHaveLength(9);
     expect(
       componentRecords.filter((item) => item.category === "display"),
     ).toHaveLength(15);
@@ -175,7 +175,7 @@ describe("design contracts", () => {
   });
 
   it("ships the expanded semantic token set", () => {
-    expect(loadTokenPresentations()).toHaveLength(159);
+    expect(loadTokenPresentations()).toHaveLength(157);
     expect(
       new Set(loadTokenPresentations().map((item) => item.category)),
     ).toEqual(

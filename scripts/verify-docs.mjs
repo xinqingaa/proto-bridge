@@ -384,11 +384,6 @@ async function verifyTokenCatalog() {
     path.join(repoRoot, "apps/pbwork/docs/tokens/catalog.md"),
     "utf8",
   );
-  if (!catalog.includes(`共 ${tokens.length} 项`)) {
-    errors.push(
-      `Token catalog count does not match assembled theme keys (${tokens.length})`,
-    );
-  }
   const catalogTokenIds = new Set(
     catalog
       .split("\n")
@@ -397,6 +392,9 @@ async function verifyTokenCatalog() {
       .map((line) => line.split("|")[1]?.trim().replaceAll("`", ""))
       .filter(Boolean),
   );
+  for (const id of catalogTokenIds) {
+    if (!tokens.some(token => token.id === id)) errors.push(`Token catalog contains retired or unknown key ${id}`);
+  }
   for (const token of tokens) {
     if (!catalogTokenIds.has(token.id)) {
       errors.push(`Token catalog is missing ${token.id}`);

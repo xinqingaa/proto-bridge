@@ -43,7 +43,7 @@ flutter test
 cd ../.. && pnpm ds:theme:verify && pnpm ds:target-sync:verify
 ```
 
-当前基线包含 47 个组件与 153 个 Token 的具体映射；修改后同时运行主题和完整同步门禁。
+当前基线包含 当前组件与 Token 清单 的具体映射；修改后同时运行主题和完整同步门禁。
 
 视觉验证遵循 [testing.md](docs/testing.md)。最终报告必须包含固定引用、原始风险、修改文件、验证结果、已知偏差和剩余风险。
 

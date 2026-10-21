@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_pb_app/storage/app_prefs.dart';
 import 'package:flutter_pb_app/storage/providers.dart';
-import 'package:flutter_pb_app/theme/app_colors.dart';
 import 'package:flutter_pb_app/theme/app_tokens.dart';
 import 'package:flutter_pb_app/theme/ts.dart';
 
@@ -13,8 +12,8 @@ import 'support/fake_app_prefs.dart';
 const customPack = AppThemePack(
   id: 'product',
   label: 'Product',
-  light: AppColors.dark,
-  dark: AppColors.light,
+  light: generatedBaseDarkColors,
+  dark: generatedBaseLightColors,
   radius: AppRadius(md: 20),
 );
 
@@ -48,11 +47,11 @@ void main() {
     );
     Color? color(String text) =>
         tester.widget<Text>(find.text(text)).style?.color;
-    expect(color('base-before'), AppColors.light.onSurface);
-    expect(color('custom'), AppColors.dark.onSurface);
-    expect(color('base-after'), AppColors.light.onSurface);
+    expect(color('base-before'), AppThemePack.base.light.onSurface);
+    expect(color('custom'), AppThemePack.base.dark.onSurface);
+    expect(color('base-after'), AppThemePack.base.light.onSurface);
     await tester.pump();
-    expect(color('base-before'), AppColors.light.onSurface);
+    expect(color('base-before'), AppThemePack.base.light.onSurface);
   });
 
   test('theme package selection persists and restores by stable identity', () {

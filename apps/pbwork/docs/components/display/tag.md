@@ -13,7 +13,7 @@
 ## 行为要点
 
 - tone 是有限语义，不能传颜色或 Token 重绑。
-- 只读标签没有按钮角色或可点击样式；筛选使用 SegmentedControl 或 FilterBar。
+- 只读标签没有按钮角色或可点击样式；筛选使用 PrimaryTabs 或 FilterBar。
 
 ## States
 

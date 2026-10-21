@@ -46,6 +46,7 @@ class CommonLaunchScreen extends StatelessWidget {
             return SingleChildScrollView(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
+                  minWidth: constraints.maxWidth,
                   minHeight: constraints.hasBoundedHeight
                       ? constraints.maxHeight
                       : 0,

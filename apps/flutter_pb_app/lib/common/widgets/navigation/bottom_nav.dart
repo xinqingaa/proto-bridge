@@ -59,6 +59,7 @@ class CommonBottomNav extends StatelessWidget {
               builder: (context, constraints) {
                 final width = constraints.maxWidth / items.length;
                 return Stack(
+                  fit: StackFit.expand,
                   children: [
                     AnimatedPositioned(
                       duration: reduceMotion

@@ -121,9 +121,7 @@ for (const appearance of ["base", "sample-dark"]) {
       await controls
         .getByRole("combobox", { name: "主题包", exact: true })
         .press("ArrowDown");
-      await page
-        .getByRole("option", { name: "样例主题包 · 仅演示", exact: true })
-        .click();
+      await page.getByRole("option", { name: "一刻", exact: true }).click();
       await controls
         .getByRole("combobox", { name: "模式", exact: true })
         .press("ArrowDown");

@@ -20,7 +20,7 @@
 
 DS 与冷链已使用新键、响应式 JS 读取和不可变常量，Runtime 不再叠加旧 CSS。共享 SurfaceMaterial 由 surface.treatment 与组件材质控制驱动；基础包保留一级 Tab 的 glass 覆盖，AppBar/Tabbar 跟随全局材质。
 
-旧 Token/Theme JSON、resolveThemeTokens、bindTokens 与 tokenDefaults 已从生产代码移除；旧值仅留在 test/fixtures/legacy-theme 用于等价断言。全部设计基础分类、主题页与 Registry 组件的共享手机预览可按真实 Registry 绑定选择基础、原型或明确标注的演示包，分别选择包内主题与浅深模式，按需双机对照。分类与组件的只读值与来源表位于「来源」Tab，逐项展示真实值样板（字体以实际配置渲染），搜索不改变手机样板，不提供差异列或差异筛选；适应视区/100% 和手机缩放不改变主题值或逻辑设备，卡片随手机高度撑开；共同滚动可开关并保存偏好。设置只在预览侧栏显示，来源页使用完整卡片宽度；迁移范围及扩展登记见[预览工作流](../workbench-preview.md)。样例包不绑定正式原型。
+旧 Token/Theme JSON、resolveThemeTokens、bindTokens 与 tokenDefaults 已从生产代码移除；旧值仅留在 test/fixtures/legacy-theme 用于等价断言。全部设计基础分类、主题页与 Registry 组件的共享手机预览可按真实 Registry 绑定选择基础包或原型主题包，分别选择包内主题与浅深模式，按需双机对照。分类与组件的只读值与来源表位于「来源」Tab，逐项展示真实值样板（字体以实际配置渲染），搜索不改变手机样板，不提供差异列或差异筛选；适应视区/100% 和手机缩放不改变主题值或逻辑设备，卡片随手机高度撑开；共同滚动可开关并保存偏好。设置只在预览侧栏显示，来源页使用完整卡片宽度；迁移范围及扩展登记见[预览工作流](../workbench-preview.md)。
 
 ## 预览制作与人工验收
 

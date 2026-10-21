@@ -1,6 +1,6 @@
 # 组件总论
 
-当前共 47 个组件；全部以基础包与样例包分别验证浅色和深色。样例包仅用于 Gallery / Playground，正式原型使用自己的绑定主题包。短提示只有 Toast，撤销是它的可选动作。
+组件以 Registry 与 Contract 清单为准；使用基础包和真实原型主题包验证声明的主题与模式。短提示只有 Toast，撤销是它的可选动作。
 
 ## 唯一注册源
 
@@ -26,7 +26,7 @@ Contract 必含：`schemaVersion`、`id`、`category`、`semantic`、`summary`�
 
 禁止「一个组件 + 大 type 兼多种语义角色」→ 拆成独立 `componentId`；审计见 [audit-large-types.md](./audit-large-types.md)。
 
-Registry 全部 47 个组件已接入共享手机预览，类型/尺寸/Contract 状态与触发/反馈在设备内，支持真实来源主题、独立设备会话、按需双机及来源表。原型变体/自有组件支持最小显式展示登记，当前正式登记为空，不推断普通 props 使用为扩展。迁移范围以[预览工作流](../workbench-preview.md)为准。
+Registry 全部组件已接入共享手机预览，类型/尺寸/Contract 状态与触发/反馈在设备内，支持真实来源主题、独立设备会话、按需双机及来源表。原型变体/自有组件支持最小显式展示登记，当前正式登记为空，不推断普通 props 使用为扩展。迁移范围以[预览工作流](../workbench-preview.md)为准。
 
 ## Playground 可调项
 
@@ -74,7 +74,7 @@ Registry 全部 47 个组件已接入共享手机预览，类型/尺寸/Contract
 
 ### 输入（input）
 
-[text-field](./input/text-field.md) · [textarea](./input/textarea.md) · [search-bar](./input/search-bar.md) · [checkbox](./input/checkbox.md) · [radio-group](./input/radio-group.md) · [switch](./input/switch.md) · [menu](./input/menu.md) · [SegmentedControl](./input/segmented-control.md) · [Stepper](./input/stepper.md) · [DurationPicker](./input/duration-picker.md)
+[text-field](./input/text-field.md) · [textarea](./input/textarea.md) · [search-bar](./input/search-bar.md) · [checkbox](./input/checkbox.md) · [radio-group](./input/radio-group.md) · [switch](./input/switch.md) · [menu](./input/menu.md) · [Stepper](./input/stepper.md) · [DurationPicker](./input/duration-picker.md)
 
 ### 展示（display）
 

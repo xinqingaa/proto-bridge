@@ -64,7 +64,7 @@ export function useSlidingSelection(
     if (frame !== undefined) cancelAnimationFrame(frame);
   });
   function onKeydown(event: KeyboardEvent) {
-    const nodes = buttons();
+    const nodes = buttons().filter((node) => !node.matches(":disabled"));
     const current = nodes.indexOf(event.target as HTMLElement);
     if (
       current < 0 ||

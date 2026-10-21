@@ -2,7 +2,7 @@
 
 Core 的 `packages/core/src/v2/theme/` 提供浏览器安全的主题包 Schema、继承解析、引用链、摘要、对比度与作用域校验，通过 `@proto-bridge/core/v2/theme` 和 `@proto-bridge/core/v2` 导出。Core 不读取文件；键目录、常量、包集合和资产字节摘要由调用方提供。
 
-本文描述已经实现的解析、Runtime 接入与采集固定。PBWork Runtime 已按原型主题包提供响应式表、CSS、Vuetify 与偏好管理。DS/冷链已使用新键与响应式读取。样例包 `pbwork-sample` 只供 Gallery 与 Playground 对照，不能绑定正式原型。Capture 把包摘要、键目录摘要、声明时钟和每个「主题 × 模式」的解析表固定进 Evidence；Handoff 指向其中的默认主题与模式。
+本文描述已经实现的解析、Runtime 接入与采集固定。PBWork Runtime 已按原型主题包提供响应式表、CSS、Vuetify 与偏好管理。DS/冷链已使用新键与响应式读取。Capture 把包摘要、键目录摘要、声明时钟和每个「主题 × 模式」的解析表固定进 Evidence；Handoff 指向其中的默认主题与模式。
 
 ## 输入与所有权
 
@@ -102,7 +102,7 @@ PBWork 的数据位于 `src/design-system/theme/` 与 `theme-packs/base/`。`loa
 - `useRuntimeTheme(selection, registry?)` 接受响应式包/主题/模式选择，返回 computed 的 table、CSS 变量、根节点 enum 属性、Vuetify 主题与密度。CSS 与 Vuetify 消费同一张表；不会修改 Workbench 主题。
 - `ThemeTableKey` 用于根节点 provide 响应式表；组件内 `useToken(key)` 和 `useTokenNumber(key)` 返回 computed，缺失 provider、未知键或数字读取类型不符时抛错。JS 响应式读取器在运行时校验键；`v-pb` / `pbStyle()` 的槽键使用生成的键族类型，生成命令与新鲜度检查见 [制作工具](../../apps/pbwork/docs/prototypes/authoring-tools.md)。
 
-`theme/vuetify-theme.ts` 将表转换成 Vuetify ThemeDefinition。模式只接受 light/dark；tooltip 使用 inverse-surface 配对。密度 compact/regular/comfortable 分别映射为 Vuetify compact/comfortable/default。Runtime 按包/主题/模式/摘要动态注册名称，通过 VApp 局部选择主题并通过 VDefaultsProvider 提供表单密度；不修改 Workbench 全局主题。Playground 的静态名称目前也从 Core 表生成，并按包、主题与模式动态注册。`pbwork-sample` 只出现在 Gallery 与 Playground。
+`theme/vuetify-theme.ts` 将表转换成 Vuetify ThemeDefinition。模式只接受 light/dark；tooltip 使用 inverse-surface 配对。密度 compact/regular/comfortable 分别映射为 Vuetify compact/comfortable/default。Runtime 按包/主题/模式/摘要动态注册名称，通过 VApp 局部选择主题并通过 VDefaultsProvider 提供表单密度；不修改 Workbench 全局主题。Playground 的静态名称目前也从 Core 表生成，并按包、主题与模式动态注册。预览可选择真实登记的基础包与原型主题包。
 
 `runtime/theme-pack-preference.ts` 提供独立的 v2 存储接口，键为 `pbwork.runtime.theme.v2`，值为 `{ [prototypeId]: { theme, mode } }`；mode 接受 light/dark/system，theme 使用 Core 的 ID 格式。它不读取 v1，不影响其它原型的偏好，损坏或不可用的存储不阻断操作。`useSystemThemeMode()` 响应系统颜色方案并在 Vue scope 销毁时释放监听；`concreteThemeMode()` 将 system 转为具体模式。包内主题是否存在由 registry 判定。Runtime 与画布均已接入 v2，同文档写入与跨 iframe 的 storage 事件会触发响应式刷新。同步策略和组件迁移边界见 [PBWork Theme 手册](../../apps/pbwork/docs/tokens/themes.md)。
 
@@ -117,7 +117,7 @@ DS 与冷链消费者已完成迁移，Runtime 仅生成新表的变量。原有
 
 组件键由 Contract.componentTokens 声明 id 后缀、valueType/default/modeVariant/bindable/enumValues；loadThemeKeyCatalog 汇总为完整的 Core ThemeKeyCatalog。当前 129 个语义键 + 25 个组件键，其中 148 可绑定，6 个 enum 不可绑定；另有 64 个字阶派生部件和 37 个实现常量。Registry 同时校验组件声明与基础包默认值。SurfaceMaterial 负责共享材质；primary-tabs.selection-treatment 在基础包为 glass，AppBar/Tabbar 跟随 surface.treatment。组件 CSS 与 Inspector 绑定使用新键，常量不进入 Evidence/Target；JS 用 computed 读取主题值，以纯常量读取器读取手势阈值等不变值。
 
-Capture 的 token Catalog 只含键定义（类型、是否可绑定、是否随模式变化、说明与来源），不含取值，常量不进入 Catalog。theme-pack Catalog 的 `inputDigest` 等于包摘要：一条包清单，外加每个「主题 × 模式」的解析值与 provenance。清单列出的资产在采集时按 sha1 校验后存为 `theme-asset` Blob。Workbench 展示记录只是主题表生成的展示数据，不是第二份 Token 语义源。Gallery 与 Playground 可以选择基础包或样例包、包内主题和模式，并对照解析值。样例包改变品牌色、圆角、紧凑密度、玻璃表面、活泼动效和一个品牌标记，另有柑色主题。
+Capture 的 token Catalog 只含键定义（类型、是否可绑定、是否随模式变化、说明与来源），不含取值，常量不进入 Catalog。theme-pack Catalog 的 `inputDigest` 等于包摘要：一条包清单，外加每个「主题 × 模式」的解析值与 provenance。清单列出的资产在采集时按 sha1 校验后存为 `theme-asset` Blob。Workbench 展示记录只是主题表生成的展示数据，不是第二份 Token 语义源。Gallery 与 Playground 可以选择基础包或原型主题包、包内主题和模式，并对照解析值。
 
 Runtime 协议版本为 3。清单必填 `theme` 与 `clock`。`clock` 声明采集用的当前时刻和时区；Playwright 安装该时钟，交互模式仍走真实时间。`useClock()` 读取 `Date`。Preflight 在采集前对每个 Screen 的 default Variant、每个主题和每个模式比较语义树（节点身份、role、可见性、bbox 是否非零、componentId、排序后的 tokenBindings、语义父节点）。分叉是 Authoring Diagnostic `theme.mode-divergence`，不写入 Evidence。MCP `read_theme_pack` 只读 Handoff 固定的 theme-pack Catalog：默认组合 `captured: true`，其它组合返回该表并标注 `captured: false`。`read_screen_packet` 的 token 清单在该 Catalog 存在时附带默认主题与模式的 `resolvedValue`、`chain` 和 `tier`。CLI 不再接受 `--theme`；`snapshot inspect` 打印 `packId@digest/theme/mode`。
 

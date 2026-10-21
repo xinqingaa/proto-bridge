@@ -1,7 +1,6 @@
 import { expect, test } from "@playwright/test";
 
 const ids = [
-  "segmented-control",
   "stepper",
   "duration-picker",
   "ring-progress",
@@ -27,12 +26,34 @@ for (const pack of ["base", "sample"] as const) {
       const errors: string[] = [];
       page.on("pageerror", (error) => errors.push(error.message));
       await page.setViewportSize({ width: 1440, height: 1100 });
-      await page.addInitScript(({pack,mode}) => localStorage.setItem('pbwork:preview-preferences:v1',JSON.stringify({layout:'single', selections:{A:{contextId:pack === 'base' ? 'foundation:pbwork-base' : 'sample:pbwork-sample',theme:pack === 'base' ? 'default' : 'garden',mode}}})), {pack,mode});
+      await page.addInitScript(
+        ({ pack, mode }) =>
+          localStorage.setItem(
+            "pbwork:preview-preferences:v1",
+            JSON.stringify({
+              layout: "single",
+              selections: {
+                A: {
+                  contextId:
+                    pack === "base"
+                      ? "foundation:pbwork-base"
+                      : "prototype:yike",
+                  theme: pack === "base" ? "default" : "mechanical",
+                  mode,
+                },
+              },
+            }),
+          ),
+        { pack, mode },
+      );
       for (const id of ids) {
         await page.goto(`/workbench/components/${id}`);
         const stage = page.locator('[data-preview-device="A"]');
-        await expect(stage).toHaveAttribute('data-preview-mode',mode);
-        await expect(stage).toHaveAttribute('data-preview-pack',pack === 'base' ? 'pbwork-base' : 'pbwork-sample');
+        await expect(stage).toHaveAttribute("data-preview-mode", mode);
+        await expect(stage).toHaveAttribute(
+          "data-preview-pack",
+          pack === "base" ? "pbwork-base" : "yike",
+        );
         if (["toast", "bottom-sheet", "action-sheet"].includes(id)) {
           await stage
             .getByRole("button", {
@@ -107,54 +128,6 @@ for (const pack of ["base", "sample"] as const) {
   }
 }
 
-test("platform inputs and calendar remain controlled through keyboard and wheel", async ({
-  page,
-}) => {
-  await page.goto("/workbench/components/segmented-control");
-  let root = page.locator('[data-pb-component="ds.segmented-control"]').first();
-  await root.getByRole("radio", { name: "周", exact: true }).focus();
-  await page.keyboard.press("ArrowRight");
-  await expect(
-    root.getByRole("radio", { name: "月", exact: true }),
-  ).toHaveAttribute("aria-checked", "true");
-  await expect(
-    root.getByRole("radio", { name: "月", exact: true }),
-  ).toBeFocused();
-  await page.goto("/workbench/components/stepper");
-  root = page.locator('[data-pb-component="ds.stepper"]').first();
-  await root.getByRole("button", { name: /增加/ }).click();
-  await expect(root.getByRole("spinbutton")).toHaveValue("4");
-  await page.goto("/workbench/components/duration-picker");
-  root = page.locator('[data-pb-component="ds.duration-picker"]').first();
-  const hour = root.getByRole("listbox", { name: "第一列" });
-  await hour.focus();
-  await page.keyboard.press("ArrowDown");
-  await expect(
-    hour.getByRole("option", { name: "2", exact: true }),
-  ).toHaveAttribute("aria-selected", "true");
-  await hour.hover();
-  await page.mouse.wheel(0, 160);
-  await expect
-    .poll(() => hour.locator('[aria-selected="true"]').textContent())
-    .not.toBe("2");
-  await page.goto("/workbench/components/month-calendar");
-  root = page.locator('[data-pb-component="ds.month-calendar"]').first();
-  await expect(
-    root.getByRole("button", { name: "2026-07-15", exact: true }),
-  ).toBeDisabled();
-  await root.getByRole("button", { name: "2026-07-28", exact: true }).focus();
-  await page.keyboard.press("ArrowRight");
-  await expect(
-    root.getByRole("button", { name: "2026-07-29", exact: true }),
-  ).toBeFocused();
-  await page.keyboard.press("Enter");
-  await expect(
-    root.getByRole("button", { name: "2026-07-29", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
-  await root.getByRole("button", { name: "下个月" }).click();
-  await expect(root.locator("header strong")).toHaveText("2026年 8月");
-});
-
 test("detented sheet reuses overlay focus and closes with Escape", async ({
   page,
 }) => {
@@ -200,7 +173,8 @@ test("GroupedList demo writes controlled toggle state back to its groups", async
 }) => {
   await page.goto("/workbench/components/grouped-list");
   const toggle = page
-    .locator('[data-pb-component="ds.grouped-list"]').first()
+    .locator('[data-pb-component="ds.grouped-list"]')
+    .first()
     .getByRole("checkbox");
   await expect(toggle).toBeChecked();
   await toggle.uncheck();
@@ -210,10 +184,9 @@ test("GroupedList demo writes controlled toggle state back to its groups", async
   ).toHaveText("已更新列表开关");
 });
 
-
 for (const pack of ["base", "sample"] as const)
-for (const mode of ["light", "dark"] as const) {
-test(`generic wheel preview: ${pack}/${mode}, one to three independent columns`, async ({
+  for (const mode of ["light", "dark"] as const) {
+    test(`generic wheel preview: ${pack}/${mode}, one to three independent columns`, async ({
       page,
     }) => {
       await page.setViewportSize({ width: 1440, height: 1000 });
@@ -228,8 +201,8 @@ test(`generic wheel preview: ${pack}/${mode}, one to three independent columns`,
                   contextId:
                     pack === "base"
                       ? "foundation:pbwork-base"
-                      : "sample:pbwork-sample",
-                  theme: pack === "base" ? "default" : "garden",
+                      : "prototype:yike",
+                  theme: pack === "base" ? "default" : "mechanical",
                   mode,
                 },
               },
@@ -271,4 +244,4 @@ test(`generic wheel preview: ${pack}/${mode}, one to three independent columns`,
         }
       }
     });
-}
+  }

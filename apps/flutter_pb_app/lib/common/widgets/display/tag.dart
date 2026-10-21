@@ -4,7 +4,7 @@ import '../../../theme/ts.dart';
 
 enum CommonTagTone { neutral, primary, success, warning, error }
 
-/// Read-only classification; selection belongs to FilterBar or SegmentedControl.
+/// Read-only classification; selection belongs to FilterBar or PrimaryTabs.
 class CommonTag extends StatelessWidget {
   const CommonTag({
     super.key,

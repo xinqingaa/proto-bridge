@@ -1,7 +1,6 @@
 import { mount } from "@vue/test-utils";
 import { nextTick, shallowRef, type Component } from "vue";
 import { afterEach, describe, expect, it } from "vitest";
-import SegmentedControl from "@/design-system/components/input/SegmentedControl.vue";
 import Stepper from "@/design-system/components/input/Stepper.vue";
 import WheelPicker from "@/design-system/components/input/WheelPicker.vue";
 import RingProgress from "@/design-system/components/display/RingProgress.vue";
@@ -30,7 +29,6 @@ import { componentRecords } from "@/design-system/components/registry";
 import { loadComponentContracts } from "@/design-system/loaders";
 
 const ids = [
-  "segmented-control",
   "stepper",
   "duration-picker",
   "ring-progress",
@@ -82,7 +80,7 @@ afterEach(() => wrappers.splice(0).forEach((wrapper) => wrapper.unmount()));
 
 for (const [pack, theme] of [
   ["pbwork-base", "default"],
-  ["pbwork-sample", "garden"],
+  ["yike", "mechanical"],
 ] as const)
   for (const mode of ["light", "dark"] as const) {
     describe(`${pack}/${mode}`, () => {
@@ -125,23 +123,6 @@ for (const [pack, theme] of [
         });
     });
   }
-it("segments skip disabled options and preserve radio keyboard semantics", async () => {
-  const wrapper = render(SegmentedControl, {
-    modelValue: "a",
-    items: [
-      { id: "a", label: "A" },
-      { id: "b", label: "B", disabled: true },
-      { id: "c", label: "C" },
-    ],
-  });
-  await wrapper
-    .get('[data-value="a"]')
-    .trigger("keydown", { key: "ArrowRight" });
-  expect(wrapper.emitted("update:modelValue")?.[0]).toEqual(["c"]);
-  await wrapper.setProps({ disabled: true });
-  await wrapper.get('[data-value="c"]').trigger("click");
-  expect(wrapper.emitted("update:modelValue")).toHaveLength(1);
-});
 it("stepper clamps edits and suppresses disabled/boundary actions", async () => {
   const wrapper = render(Stepper, { modelValue: 10, min: 0, max: 10, step: 2 });
   expect(wrapper.findAll("button")[1]!.attributes("disabled")).toBeDefined();
@@ -289,7 +270,7 @@ it("BrandMark responds to theme assets and LaunchScreen leaves navigation to its
     { provide: { [ThemeTableKey as symbol]: table } },
   );
   expect(brand.find("img").exists()).toBe(false);
-  table.value = resolveRuntimeTheme("pbwork-sample", "garden", "light");
+  table.value = resolveRuntimeTheme("yike", "mechanical", "light");
   await nextTick();
   expect(brand.find("img").exists()).toBe(true);
   const launch = render(LaunchScreen);

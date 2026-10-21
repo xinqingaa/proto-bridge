@@ -55,7 +55,13 @@ class CommonBrandMark extends StatelessWidget {
       text,
     ];
     return layout == CommonBrandLayout.inline
-        ? Row(mainAxisSize: MainAxisSize.min, children: children)
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (brand != null) ...[brand, SizedBox(width: ts.spacing.sm)],
+              Flexible(child: text),
+            ],
+          )
         : Column(mainAxisSize: MainAxisSize.min, children: children);
   }
 }

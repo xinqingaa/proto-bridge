@@ -16,6 +16,9 @@ const SLIDE_DURATION_MS = useTokenNumber("motion.duration-long");
 const props = withDefaults(
   defineProps<{
     modelValue?: string;
+    viewport?: boolean;
+    disabled?: boolean;
+    label?: string;
     items: Array<{ value: string; label: string }>;
     showIndicator?: boolean;
     showDivider?: boolean;
@@ -29,6 +32,8 @@ const props = withDefaults(
     inspectId?: string;
   }>(),
   {
+    viewport: true,
+    disabled: false,
     swipe: true,
     mouseSwipe: true,
     fill: false,
@@ -49,6 +54,8 @@ const {
   swipe: swipeEnabled,
   mouseSwipe,
   fill,
+  viewport,
+  disabled,
   inspectId,
 } = toRefs(props);
 
@@ -72,7 +79,8 @@ const tabStyle = computed(() => ({
 const tab = computed({
   get: () => modelValue.value ?? items.value[0]?.value ?? "",
   set: (value: unknown) => {
-    if (typeof value === "string") emit("update:modelValue", value);
+    if (!disabled.value && typeof value === "string")
+      emit("update:modelValue", value);
   },
 });
 const tabValues = computed(() => items.value.map((item) => item.value));
@@ -80,7 +88,12 @@ const swipe = usePointerSwipe(
   tabValues,
   tab,
   (value) => emit("update:modelValue", value),
-  { swipe: swipeEnabled, mouseSwipe },
+  {
+    swipe: computed(
+      () => viewport.value && !disabled.value && swipeEnabled.value,
+    ),
+    mouseSwipe,
+  },
 );
 
 const selection = useSlidingSelection(
@@ -103,7 +116,9 @@ usePbInspect({
   getProps: () => ({
     modelValue: modelValue.value,
     itemCount: items.value.length,
-    hasPanels: true,
+    hasPanels: viewport.value,
+    viewport: viewport.value,
+    disabled: disabled.value,
     showIndicator: indicatorVisible.value,
     showDivider: showDivider.value ?? false,
     grow: grow.value ?? false,
@@ -147,11 +162,13 @@ usePbInspect({
     glassBackdrop: "surface.glass-backdrop",
     duration: "motion.duration-long",
     easing: "motion.easing-standard",
+    disabledOpacity: "opacity.disabled",
   }),
   getTokens: () => [
     "color.surface-recessed",
     "color.surface-selected",
     "opacity.translucent",
+    "opacity.disabled",
     "primary-tabs.active-color",
     "color.on-surface-muted",
     "border.hairline",
@@ -181,8 +198,9 @@ usePbInspect({
     class="pb-tabs tab-bar style-pill"
     :class="{
       'has-indicator': indicatorVisible,
+      'is-disabled': disabled,
       'has-divider': showDivider ?? false,
-      'is-fill': fill,
+      'is-fill': fill && viewport,
       'is-grow': grow ?? false,
       'align-center': align === 'center',
       'is-pill-transition-ready': selection.animated.value,
@@ -194,6 +212,8 @@ usePbInspect({
       ref="trackRef"
       class="pb-tabs-track"
       role="tablist"
+      :aria-label="label"
+      :aria-disabled="disabled"
       @keydown="selection.onKeydown"
     >
       <GlassMaterial />
@@ -218,6 +238,12 @@ usePbInspect({
         type="button"
         class="pb-tab"
         role="tab"
+        :disabled="disabled"
+        :aria-controls="
+          viewport
+            ? `${inspectId ?? 'ds.primary-tabs'}-panel-${item.value}`
+            : undefined
+        "
         :aria-selected="tab === item.value"
         :tabindex="tab === item.value ? 0 : -1"
         :data-pb-id="`${inspectId ?? 'ds.primary-tabs'}.tab`"
@@ -231,6 +257,7 @@ usePbInspect({
     </div>
 
     <v-window
+      v-if="viewport"
       v-model="tab"
       class="pb-tab-window"
       :class="{
@@ -257,6 +284,7 @@ usePbInspect({
       >
         <div
           class="pb-tab-panel"
+          :id="`${inspectId ?? 'ds.primary-tabs'}-panel-${item.value}`"
           :data-pb-id="`${inspectId ?? 'ds.primary-tabs'}.panel`"
           :data-pb-key="item.value"
           data-pb-role="tab-panel"
@@ -431,5 +459,14 @@ usePbInspect({
   .pb-tab-window :deep(.v-window-x-reverse-transition-leave-active) {
     transition-duration: var(--pb-motion-duration-instant);
   }
+}
+</style>
+
+<style scoped>
+.pb-tabs.is-disabled {
+  opacity: var(--pb-opacity-disabled);
+}
+.pb-tabs.is-disabled .pb-tab {
+  cursor: default;
 }
 </style>

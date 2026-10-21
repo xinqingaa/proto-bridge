@@ -38,9 +38,35 @@ class CommonGlassSurface extends StatelessWidget {
     }
     return LiquidGlass(
       borderRadius: radius,
+      edgePainterBuilder: (radius, style) =>
+          _RoundedGlassEdge(borderRadius: radius, style: style),
       style: ts.glassStyle(clear: clear, tint: tint),
       enableShadow: true,
       child: child,
     );
+  }
+}
+
+class _RoundedGlassEdge extends LiquidGlassEdgePainter {
+  const _RoundedGlassEdge({required super.borderRadius, required super.style});
+  @override
+  void paint(Canvas canvas, Size size) {
+    final inset =
+        (style.source.topStrokeWidth > style.source.outlineWidth
+            ? style.source.topStrokeWidth
+            : style.source.outlineWidth) /
+        2;
+    final rect = (Offset.zero & size).deflate(inset);
+    if (rect.isEmpty) return;
+    final shape = borderRadius.toRRect(rect).scaleRadii();
+    LiquidGlassEdgePainter(
+      borderRadius: BorderRadius.only(
+        topLeft: shape.tlRadius,
+        topRight: shape.trRadius,
+        bottomLeft: shape.blRadius,
+        bottomRight: shape.brRadius,
+      ),
+      style: style,
+    ).paint(canvas, size);
   }
 }

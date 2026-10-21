@@ -21,8 +21,8 @@ const stubs = {
 const contexts = [
   ["pbwork-base", "default", "light"],
   ["pbwork-base", "default", "dark"],
-  ["pbwork-sample", "garden", "light"],
-  ["pbwork-sample", "garden", "dark"],
+  ["yike", "mechanical", "light"],
+  ["yike", "mechanical", "dark"],
   ...["mechanical", "water", "sundial"].flatMap((theme) =>
     ["light", "dark"].map((mode) => ["yike", theme, mode]),
   ),

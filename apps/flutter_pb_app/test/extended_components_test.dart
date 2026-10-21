@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:flutter_pb_app/common/widgets.dart';
@@ -68,38 +67,6 @@ void main() {
     expect(value, 8);
     final field = tester.widget<TextField>(find.byType(TextField));
     expect(field.controller?.text, '8');
-  });
-
-  testWidgets('segmented keyboard skips disabled options and has no viewport', (
-    tester,
-  ) async {
-    var value = 'a';
-    await tester.pumpWidget(
-      shell(
-        (context) => StatefulBuilder(
-          builder: (context, setState) => CommonSegmentedControl(
-            value: value,
-            options: const [
-              CommonChoiceOption(value: 'a', label: 'A'),
-              CommonChoiceOption(value: 'b', label: 'B', enabled: false),
-              CommonChoiceOption(value: 'c', label: 'C'),
-            ],
-            onChanged: (next) => setState(() => value = next),
-          ),
-        ),
-      ),
-    );
-    await tester.tap(find.text('A'));
-    await tester.pump();
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-    await tester.pump();
-    expect(value, 'c');
-    await tester.sendKeyEvent(LogicalKeyboardKey.home);
-    await tester.pump();
-    expect(value, 'a');
-    await tester.tap(find.text('B'));
-    expect(value, 'a');
-    expect(find.byType(PageView), findsNothing);
   });
 
   testWidgets(

@@ -4,7 +4,7 @@ Producer Contract 决定职责、状态、布局、Token 槽和可观察行为�
 
 ## 组件索引
 
-当前 47 个 componentId 都有 Dart 公开入口。`resolved` 证明声明、导入、定义和使用可定位，不代表已经完成某份业务 Evidence 的视觉验收。
+当前登记的 componentId 均有 Dart 公开入口。`resolved` 证明声明、导入、定义和使用可定位，不代表已经完成某份业务 Evidence 的视觉验收。
 
 | Evidence | Target | import |
 | --- | --- | --- |
@@ -45,7 +45,6 @@ Producer Contract 决定职责、状态、布局、Token 槽和可观察行为�
 | `scrollable-data-list` | `CommonScrollableDataList` | `lib/common/widgets/data/scrollable_data_list.dart` |
 | `search-bar` | `CommonSearchBar` | `lib/common/widgets/input/search_bar.dart` |
 | `secondary-tabs` | `CommonSecondaryTabs` | `lib/common/widgets/navigation/secondary_tabs.dart` |
-| `segmented-control` | `CommonSegmentedControl` | `lib/common/widgets/input/segmented_control.dart` |
 | `spinner` | `CommonSpinner` | `lib/common/widgets/display/spinner.dart` |
 | `stepper` | `CommonStepper` | `lib/common/widgets/input/stepper.dart` |
 | `switch` | `CommonSwitch` | `lib/common/widgets/input/switch_control.dart` |
@@ -60,7 +59,7 @@ Producer Contract 决定职责、状态、布局、Token 槽和可观察行为�
 
 ## Token mapping
 
-153 个可绑定主题键映射到上下文主题实例的 accessor，例如 `ts.colors.primary`；先通过 `TS.of(context)` 获得该实例。`protoBridgeTokenSnapshot(ts)` 提供可执行使用点。不可绑定 enum、派生部件和实现常量不建立映射，`transparent` 与 `none` 是字面量。
+当前可绑定主题键映射到上下文主题实例的 accessor，例如 `ts.colors.primary`；先通过 `TS.of(context)` 获得该实例。`protoBridgeTokenSnapshot(ts)` 提供可执行使用点。不可绑定 enum、派生部件和实现常量不建立映射，`transparent` 与 `none` 是字面量。
 
 主题只有类型化 AppThemePack 与 ThemeExtension 一条路径，详细规则见 [Theme](theme.md)。资源可以为空，组件按 Contract 回退；有品牌或插画 Evidence 时由目标产品主题包提供实际资源或公开 Widget 插槽。
 
@@ -68,11 +67,11 @@ Producer Contract 决定职责、状态、布局、Token 槽和可观察行为�
 
 - AppBar、底部导航和各级 Tabs 使用官方组件。一级轨道使用 CommonGlassSurface，选中底由官方 TabBar.indicator 连续定位；底部导航在官方等宽目的地后绘制一份滑动选中面。次级 Tab 保留文字中心上三角。
 - CommonTabView 使用 TabBarView 与可配置保活；页面按区域关闭不需要的 swipe，Flutter Gesture Arena 负责仲裁。
-- CommonIcon 用 Image.asset 消费 35 个 PBWork 图形的倍率图片。仓库根 `node scripts/export-flutter-icons.mjs` 从同一 glyph-artwork 源导出，不使用同名字体图标替换。
+- CommonIcon 用 Image.asset 消费 35 个 PBWork 图形的高分辨率图片。仓库根 `node scripts/export-flutter-icons.mjs` 从同一 glyph-artwork 源导出，不使用同名字体图标替换。
 - Button 公开六种动作、rounded/pill 和 solid/glass；loading 保留文字并阻止重复触发，disabled 才降低整体透明度。
 - 字段标签独立放在官方输入表面上方。Checkbox、RadioGroup、Switch 的实例色槽必须由上下文 Theme Token 解析，不能传硬编码颜色；Switch 支持标签前后位置。
 - DataList 使用 ListView；ScrollableDataList 统一管理刷新、加载、异常和控制器释放。GroupedList 是外层滚动中的 Row 单元组合，不创建嵌套滚动。
-- 所有弹层经 AppPop 调用远程 unified_popups 2.2.1；需要样式的方法接收调用处 BuildContext。库拥有 Overlay、关闭、焦点、键盘、拖拽、路由与生命周期。ActionSheet 复用 Sheet。
+- 所有弹层经 AppPop 调用远程 unified_popups；需要样式的方法接收调用处 BuildContext。库拥有 Overlay、关闭、焦点、键盘、拖拽、路由与生命周期。ActionSheet 复用 Sheet。
 - Sheet 的 content/medium/expanded 由库的 `SheetSizeConfig` 表达；medium/expanded 使用 `ts.sizing.panelMedium` / `panelLarge` 的 fraction。档位由调用者选择，拖动关闭由库管理，不复制 Web 的档位切换手势。
 - FlowSheet 内部页面使用 CommonFlowSheetContent：滚动主体、固定步骤指示和决策区。头部返回调用库控制器，关闭结束整张 Sheet，不把返回等同于提交。决策区通过 CommonDecisionActions 保持一颗主要动作或左次要右主要。
 - GlassSurface 组合库内 LiquidGlass，边缘由其 Painter 绘制，背景由 BackdropFilter 模糊；高对比或显式减少透明度时使用实色。

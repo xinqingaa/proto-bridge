@@ -3,7 +3,7 @@ import { useReducedMotion } from "@/runtime/useReducedMotion";
 const reducedMotion = useReducedMotion();
 import { computed, ref } from "vue";
 import TextField from "@/design-system/components/input/TextField.vue";
-import SegmentedControl from "@/design-system/components/input/SegmentedControl.vue";
+import PrimaryTabs from "@/design-system/components/navigation/PrimaryTabs.vue";
 import YikeOptionPicker from "./YikeOptionPicker.vue";
 import WheelPicker from "@/design-system/components/input/WheelPicker.vue";
 import SwitchControl from "@/design-system/components/input/SwitchControl.vue";
@@ -158,12 +158,14 @@ function save() {
         data-pb-token-typography="typography.caption"
         >频率</span
       >
-      <SegmentedControl
+      <PrimaryTabs
+        :viewport="false"
+        :swipe="false"
+        :grow="true"
         label="频率"
-        material="glass"
         :items="[
-          { id: 'daily', label: '每天' },
-          { id: 'weekly', label: '每周' },
+          { value: 'daily', label: '每天' },
+          { value: 'weekly', label: '每周' },
         ]"
         :model-value="modelValue.frequency"
         :disabled="Boolean(submitting)"
@@ -300,5 +302,9 @@ small {
 </style>
 
 <style scoped>
-.target-field, .time-field { transition-duration: var(--pb-motion-duration-medium); transition-timing-function: var(--pb-motion-easing-standard); }
+.target-field,
+.time-field {
+  transition-duration: var(--pb-motion-duration-medium);
+  transition-timing-function: var(--pb-motion-easing-standard);
+}
 </style>

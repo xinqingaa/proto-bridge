@@ -2,6 +2,16 @@ import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
 
+/// Resolves CSS-relative tracking against the font actually used by the style.
+@immutable
+class AppLetterSpacing {
+  const AppLetterSpacing.pixels(this.value) : relative = false;
+  const AppLetterSpacing.em(this.value) : relative = true;
+  final double value;
+  final bool relative;
+  double resolve(TextStyle style) => relative ? value * style.fontSize! : value;
+}
+
 @immutable
 class AppTypography {
   const AppTypography({
@@ -70,10 +80,21 @@ class AppTypography {
       fontSize: 11.52,
       height: 1.2,
     ),
-    this.trackingDisplay = 0,
-    this.trackingHeading = 0,
-    this.trackingLabel = 0,
-    this.trackingCaption = 0,
+    this.numericDisplay = const TextStyle(
+      fontSize: 40,
+      height: 1.15,
+      fontWeight: FontWeight.w700,
+    ),
+    this.numericTitle = const TextStyle(
+      fontSize: 20,
+      height: 1.3,
+      fontWeight: FontWeight.w600,
+    ),
+    this.numericContent = const TextStyle(fontSize: 14, height: 1.5),
+    this.trackingDisplay = const AppLetterSpacing.pixels(0),
+    this.trackingHeading = const AppLetterSpacing.pixels(0),
+    this.trackingLabel = const AppLetterSpacing.pixels(0),
+    this.trackingCaption = const AppLetterSpacing.pixels(0),
   });
   final TextStyle display;
   final TextStyle headline;
@@ -88,10 +109,11 @@ class AppTypography {
   final TextStyle caption;
   final TextStyle captionStrong;
   final TextStyle micro;
-  final double trackingDisplay;
-  final double trackingHeading;
-  final double trackingLabel;
-  final double trackingCaption;
+  final TextStyle numericDisplay, numericTitle, numericContent;
+  final AppLetterSpacing trackingDisplay;
+  final AppLetterSpacing trackingHeading;
+  final AppLetterSpacing trackingLabel;
+  final AppLetterSpacing trackingCaption;
 }
 
 class AppTextStyles {
@@ -100,64 +122,64 @@ class AppTextStyles {
   final AppTypography typography;
   TextStyle get display => typography.display.copyWith(
     color: colors.onSurface,
-    letterSpacing: typography.trackingDisplay,
+    letterSpacing: typography.trackingDisplay.resolve(typography.display),
   );
   TextStyle get headline => typography.headline.copyWith(
     color: colors.onSurface,
-    letterSpacing: typography.trackingHeading,
+    letterSpacing: typography.trackingHeading.resolve(typography.headline),
   );
   TextStyle get titleLg => typography.titleLg.copyWith(
     color: colors.onSurface,
-    letterSpacing: typography.trackingHeading,
+    letterSpacing: typography.trackingHeading.resolve(typography.titleLg),
   );
   TextStyle get title => typography.title.copyWith(
     color: colors.onSurface,
-    letterSpacing: typography.trackingHeading,
+    letterSpacing: typography.trackingHeading.resolve(typography.title),
   );
   TextStyle get titleSm => typography.titleSm.copyWith(
     color: colors.onSurface,
-    letterSpacing: typography.trackingHeading,
+    letterSpacing: typography.trackingHeading.resolve(typography.titleSm),
   );
   TextStyle get subtitle => typography.subtitle.copyWith(
     color: colors.onSurface,
-    letterSpacing: typography.trackingHeading,
+    letterSpacing: typography.trackingHeading.resolve(typography.subtitle),
   );
-  TextStyle get bodyLg => typography.bodyLg.copyWith(
-    color: colors.onSurface,
-    letterSpacing: typography.trackingCaption,
-  );
-  TextStyle get content => typography.content.copyWith(
-    color: colors.onSurface,
-    letterSpacing: typography.trackingCaption,
-  );
-  TextStyle get bodySm => typography.bodySm.copyWith(
-    color: colors.onSurface,
-    letterSpacing: typography.trackingCaption,
-  );
+  TextStyle get bodyLg =>
+      typography.bodyLg.copyWith(color: colors.onSurface, letterSpacing: 0);
+  TextStyle get content =>
+      typography.content.copyWith(color: colors.onSurface, letterSpacing: 0);
+  TextStyle get bodySm =>
+      typography.bodySm.copyWith(color: colors.onSurface, letterSpacing: 0);
   TextStyle get label => typography.label.copyWith(
     color: colors.onSurface,
-    letterSpacing: typography.trackingLabel,
+    letterSpacing: typography.trackingLabel.resolve(typography.label),
   );
   TextStyle get caption => typography.caption.copyWith(
     color: colors.onSurfaceMuted,
-    letterSpacing: typography.trackingCaption,
+    letterSpacing: typography.trackingCaption.resolve(typography.caption),
   );
   TextStyle get captionStrong => typography.captionStrong.copyWith(
     color: colors.onSurface,
-    letterSpacing: typography.trackingCaption,
+    letterSpacing: typography.trackingCaption.resolve(typography.captionStrong),
   );
   TextStyle get micro => typography.micro.copyWith(
     color: colors.onSurfaceMuted,
-    letterSpacing: typography.trackingCaption,
+    letterSpacing: typography.trackingCaption.resolve(typography.micro),
   );
-  TextStyle get numericDisplay =>
-      display.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
-  TextStyle get numericTitle =>
-      title.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
-  TextStyle get numericContent =>
-      content.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
-  double get trackingDisplay => typography.trackingDisplay;
-  double get trackingHeading => typography.trackingHeading;
-  double get trackingLabel => typography.trackingLabel;
-  double get trackingCaption => typography.trackingCaption;
+  TextStyle get numericDisplay => typography.numericDisplay.copyWith(
+    color: colors.onSurface,
+    fontFeatures: const [FontFeature.tabularFigures()],
+  );
+  TextStyle get numericTitle => typography.numericTitle.copyWith(
+    color: colors.onSurface,
+    fontFeatures: const [FontFeature.tabularFigures()],
+  );
+  TextStyle get numericContent => typography.numericContent.copyWith(
+    color: colors.onSurface,
+    fontFeatures: const [FontFeature.tabularFigures()],
+  );
+  AppLetterSpacing get trackingDisplay => typography.trackingDisplay;
+  AppLetterSpacing get trackingHeading => typography.trackingHeading;
+  AppLetterSpacing get trackingLabel => typography.trackingLabel;
+  AppLetterSpacing get trackingCaption => typography.trackingCaption;
 }

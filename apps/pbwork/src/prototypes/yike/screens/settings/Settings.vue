@@ -4,7 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { vPb } from "@/authoring/pb-style";
 import PrototypeShell from "@/runtime/prototype/PrototypeShell.vue";
 import Button from "@/design-system/components/action/Button.vue";
-import SegmentedControl from "@/design-system/components/input/SegmentedControl.vue";
+import PrimaryTabs from "@/design-system/components/navigation/PrimaryTabs.vue";
 import GroupedList from "@/design-system/components/data/GroupedList.vue";
 import DurationPicker from "../../components/YikeDurationPicker.vue";
 import IconButton from "@/design-system/components/action/IconButton.vue";
@@ -378,15 +378,17 @@ async function reset() {
           </button>
         </div>
         <h3 class="setting-label">显示模式</h3>
-        <SegmentedControl
+        <PrimaryTabs
+          :viewport="false"
+          :swipe="false"
+          :grow="true"
           :model-value="preference.mode"
           :items="[
-            { id: 'light', label: '浅色' },
-            { id: 'dark', label: '深色' },
-            { id: 'system', label: '跟随系统' },
+            { value: 'light', label: '浅色' },
+            { value: 'dark', label: '深色' },
+            { value: 'system', label: '跟随系统' },
           ]"
           label="外观模式"
-          material="glass"
           :inspect-id="scope.id('mode')"
           @update:model-value="
             (value) =>

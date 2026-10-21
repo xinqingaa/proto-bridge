@@ -136,14 +136,12 @@ describe("Workbench preview boundaries", () => {
     ).toContain("选项不存在");
   });
 
-  it("offers no prototype controls without registered prototypes; samples are explicit", () => {
+  it("offers only foundations without registered prototypes", () => {
     const base = loadBaseThemeSources();
     expect(previewContexts(base.packs, [])).toHaveLength(1);
     expect(
-      previewContexts(runtimeThemeSources.packs, []).find(
-        (c) => c.kind === "sample",
-      )?.label,
-    ).toContain("仅演示");
+      previewContexts(runtimeThemeSources.packs, []).map((c) => c.kind),
+    ).toEqual(["foundation"]);
   });
 
   it("copies the current demonstration while keeping theme, state and overlay ownership independent", () => {
@@ -182,7 +180,7 @@ describe("Workbench preview boundaries", () => {
 
   it("counts final differences by key and retains authored/inherited provenance separately", () => {
     const base = resolveRuntimeTheme("pbwork-base", "default", "light");
-    const sample = resolveRuntimeTheme("pbwork-sample", "garden", "light");
+    const sample = resolveRuntimeTheme("yike", "mechanical", "light");
     const rows = comparePreviewTables(sample, base);
     expect(rows).toHaveLength(Object.keys(sample.values).length);
     expect(rows.filter((r) => r.changed).length).toBeGreaterThan(0);
@@ -208,16 +206,18 @@ it("source columns enumerate actual themes, deduplicate shared packs and retain 
   const contexts = previewContexts(runtimeThemeSources.packs, [
     { id: "first", label: "First", themePackId: "pbwork-base" },
     { id: "second", label: "Second", themePackId: "pbwork-base" },
+    { id: "yike", label: "一刻", themePackId: "yike" },
   ]);
   const columns = sourceThemeColumns(contexts, runtimeThemeSources.packs);
   expect(columns.map((c) => c.id)).toEqual([
     "pbwork-base/default",
-    "pbwork-sample/garden",
-    "pbwork-sample/citrus",
+    "yike/mechanical",
+    "yike/water",
+    "yike/sundial",
   ]);
   expect(columns[0]!.owners).toEqual(["First", "Second"]);
   expect(columns[0]!.contextIds).toContain("prototype:second");
-  expect(columns[1]!.sample).toBe(true);
+  expect(columns[1]!.sample).toBe(false);
 });
 it("missing source packs remain explicit unresolved columns", () => {
   const contexts = [
@@ -242,16 +242,17 @@ it("deduplicates appearance options while preserving owners and migrates legacy 
   const aliases = previewContexts(runtimeThemeSources.packs, [
     { id: "first", label: "First", themePackId: "pbwork-base" },
     { id: "second", label: "Second", themePackId: "pbwork-base" },
-    { id: "sample-owner", label: "Sample Owner", themePackId: "pbwork-sample" },
+    { id: "yike", label: "一刻", themePackId: "yike" },
+    { id: "sample-owner", label: "Sample Owner", themePackId: "yike" },
   ]);
   const options = themePackContexts(aliases, runtimeThemeSources.packs);
   expect(options.map((option) => option.id)).toEqual([
     "pack:pbwork-base",
-    "pack:pbwork-sample",
+    "pack:yike",
   ]);
-  expect(
-    options.find((option) => option.packId === "pbwork-sample")?.kind,
-  ).toBe("sample");
+  expect(options.find((option) => option.packId === "yike")?.kind).toBe(
+    "prototype",
+  );
   for (const contextId of [
     "prototype:first",
     "prototype:second",

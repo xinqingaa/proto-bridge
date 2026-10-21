@@ -27,7 +27,7 @@ class PbApp extends ConsumerWidget {
       navigatorObservers: [Pop.routeObserver],
       builder: (context, child) =>
           Pop.hostBuilder(context, child ?? const SizedBox.shrink()),
-      initialRoute: AppRoutes.demo,
+      initialRoute: AppRoutes.launch,
       routes: appRoutes,
     );
   }

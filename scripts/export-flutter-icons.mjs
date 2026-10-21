@@ -13,8 +13,8 @@ const browser = await chromium.launch({ headless: true });
 try {
   const page = await browser.newPage();
   for (const [name, glyph] of Object.entries(artwork.paths)) {
-    for (const ratio of [1, 2, 3]) {
-      const folder = ratio === 1 ? output : path.join(output, `${ratio}.0x`);
+    for (const ratio of [3]) {
+      const folder = output;
       await mkdir(folder, { recursive: true });
       const png = await page.evaluate(async ({ artwork, glyph, ratio }) => {
         const source = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${artwork.viewBox}" fill="none" stroke="black" stroke-width="${artwork.strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><path d="${glyph}"/></svg>`;
@@ -29,7 +29,7 @@ try {
       await writeFile(path.join(folder, `${name}.png`), Buffer.from(png, 'base64'));
     }
   }
-  process.stdout.write(`Exported ${Object.keys(artwork.paths).length} PBWork glyphs at 1x/2x/3x.\n`);
+  process.stdout.write(`Exported ${Object.keys(artwork.paths).length} PBWork glyphs at 3x.\n`);
 } finally {
   await browser.close();
 }

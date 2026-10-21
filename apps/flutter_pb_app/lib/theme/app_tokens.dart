@@ -68,8 +68,6 @@ class AppSizing {
     this.brand = 72,
     this.plot = 160,
     this.actionMinInline = 0,
-    this.compactHeight = 36,
-    this.compactSelectionHeight = 30,
     this.badgeLabelSize = 10,
   });
 
@@ -103,8 +101,6 @@ class AppSizing {
   final double brand;
   final double plot;
   final double actionMinInline;
-  final double compactHeight;
-  final double compactSelectionHeight;
   final double badgeLabelSize;
 }
 
@@ -131,21 +127,24 @@ class AppRadius {
 
 /// 对齐 pbwork `opacity.*` token。
 class AppOpacity {
-  const AppOpacity({required this.isDark});
-
+  const AppOpacity({
+    required this.isDark,
+    this.disabled = 0.38,
+    this.hover = 0.08,
+    this.pressed = 0.14,
+    this.translucentValue,
+    this.dataLow = 0.3,
+    this.dataMedium = 0.65,
+    this.dataHigh = 1,
+  });
   final bool isDark;
-
-  double get disabled => 0.38;
+  final double disabled, hover, pressed, dataLow, dataMedium, dataHigh;
+  final double? translucentValue;
+  double get translucent => translucentValue ?? (isDark ? 0.8 : 0.76);
   double get muted => 0.62;
-  double get hover => 0.08;
-  double get pressed => 0.14;
   double get overlay => 0.6;
-  double get translucent => isDark ? 0.8 : 0.76;
   double get hidden => 0;
   double get visible => 1;
-  double get dataLow => 0.3;
-  double get dataMedium => 0.65;
-  double get dataHigh => 1;
 }
 
 /// 对齐 pbwork `motion.*` token。
@@ -188,24 +187,37 @@ class AppMotion {
 /// 常规 surface 使用 Material elevation 数字；`elevation.glass` 保留主题相关的
 /// 单层低对比阴影，以供静态玻璃 Decoration 直接绘制。
 class AppElevation {
-  const AppElevation({required this.isDark});
+  const AppElevation({
+    required this.isDark,
+    this.floatingShadow,
+    this.glassShadow,
+    this.menuShadow,
+    this.overlayShadow,
+    this.surfaceShadows,
+  });
+  final BoxShadow? floatingShadow, glassShadow, menuShadow, overlayShadow;
+  final List<BoxShadow>? surfaceShadows;
 
   final bool isDark;
 
   double get none => 0;
   double get card => 1;
-  BoxShadow get floating => BoxShadow(
-    color: isDark
-        ? const Color.fromRGBO(0, 0, 0, 0.28)
-        : const Color.fromRGBO(15, 23, 42, 0.08),
-    blurRadius: 18,
-    offset: const Offset(0, 6),
-  );
-  BoxShadow get glass => BoxShadow(
-    color: isDark ? const Color(0x40000000) : const Color(0x141D3040),
-    blurRadius: 20,
-    offset: const Offset(0, 8),
-  );
+  BoxShadow get floating =>
+      floatingShadow ??
+      BoxShadow(
+        color: isDark
+            ? const Color.fromRGBO(0, 0, 0, 0.28)
+            : const Color.fromRGBO(15, 23, 42, 0.08),
+        blurRadius: 18,
+        offset: const Offset(0, 6),
+      );
+  BoxShadow get glass =>
+      glassShadow ??
+      BoxShadow(
+        color: isDark ? const Color(0x40000000) : const Color(0x141D3040),
+        blurRadius: 20,
+        offset: const Offset(0, 8),
+      );
   double get raised => 4;
   double get level1 => 1;
   double get level2 => 3;
@@ -213,45 +225,51 @@ class AppElevation {
   double get level4 => 8;
   double get level5 => 12;
 
-  BoxShadow get menu => BoxShadow(
-    color: isDark
-        ? const Color.fromRGBO(0, 0, 0, 0.45)
-        : const Color.fromRGBO(15, 23, 42, 0.14),
-    blurRadius: 20,
-    offset: const Offset(0, 8),
-  );
-  BoxShadow get overlay => BoxShadow(
-    color: isDark
-        ? const Color.fromRGBO(0, 0, 0, 0.58)
-        : const Color.fromRGBO(15, 23, 42, 0.2),
-    blurRadius: 48,
-    offset: const Offset(0, 22),
-  );
-  List<BoxShadow> get surface => isDark
-      ? const [
-          BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, 0.35),
-            blurRadius: 2,
-            offset: Offset(0, 1),
-          ),
-          BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, 0.28),
-            blurRadius: 28,
-            offset: Offset(0, 10),
-          ),
-        ]
-      : const [
-          BoxShadow(
-            color: Color.fromRGBO(15, 23, 42, 0.08),
-            blurRadius: 2,
-            offset: Offset(0, 1),
-          ),
-          BoxShadow(
-            color: Color.fromRGBO(15, 23, 42, 0.06),
-            blurRadius: 24,
-            offset: Offset(0, 8),
-          ),
-        ];
+  BoxShadow get menu =>
+      menuShadow ??
+      BoxShadow(
+        color: isDark
+            ? const Color.fromRGBO(0, 0, 0, 0.45)
+            : const Color.fromRGBO(15, 23, 42, 0.14),
+        blurRadius: 20,
+        offset: const Offset(0, 8),
+      );
+  BoxShadow get overlay =>
+      overlayShadow ??
+      BoxShadow(
+        color: isDark
+            ? const Color.fromRGBO(0, 0, 0, 0.58)
+            : const Color.fromRGBO(15, 23, 42, 0.2),
+        blurRadius: 48,
+        offset: const Offset(0, 22),
+      );
+  List<BoxShadow> get surface =>
+      surfaceShadows ??
+      (isDark
+          ? const [
+              BoxShadow(
+                color: Color.fromRGBO(0, 0, 0, 0.35),
+                blurRadius: 2,
+                offset: Offset(0, 1),
+              ),
+              BoxShadow(
+                color: Color.fromRGBO(0, 0, 0, 0.28),
+                blurRadius: 28,
+                offset: Offset(0, 10),
+              ),
+            ]
+          : const [
+              BoxShadow(
+                color: Color.fromRGBO(15, 23, 42, 0.08),
+                blurRadius: 2,
+                offset: Offset(0, 1),
+              ),
+              BoxShadow(
+                color: Color.fromRGBO(15, 23, 42, 0.06),
+                blurRadius: 24,
+                offset: Offset(0, 8),
+              ),
+            ]);
 }
 
 /// 对齐组件实际消费的 `border.*` token。

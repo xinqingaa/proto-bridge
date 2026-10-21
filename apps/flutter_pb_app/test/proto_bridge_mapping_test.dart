@@ -372,18 +372,12 @@ void main() {
     );
   });
 
-  test('curated PBWork image assets include every resolution', () {
-    expect(CommonIconName.values, hasLength(35));
+  test('PBWork icons retain one 3x asset for every public identity', () {
     for (final name in CommonIconName.values) {
-      final file = name.assetPath.split('/').last;
-      for (final ratio in ['', '2.0x/', '3.0x/']) {
-        expect(
-          File('assets/icons/$ratio$file').existsSync(),
-          isTrue,
-          reason: '$ratio$file',
-        );
-      }
+      expect(File(name.assetPath).existsSync(), isTrue);
     }
+    expect(Directory('assets/icons/2.0x').existsSync(), isFalse);
+    expect(Directory('assets/icons/3.0x').existsSync(), isFalse);
   });
 
   testWidgets('pull refresh settles at the boundary without a second rebound', (

@@ -14,6 +14,8 @@ class CommonPrimaryTabs extends StatelessWidget {
     this.grow = false,
     this.centered = false,
     this.showDivider = false,
+    this.onSelected,
+    this.disabled = false,
   });
 
   final List<CommonTabItem> items;
@@ -21,6 +23,8 @@ class CommonPrimaryTabs extends StatelessWidget {
   final bool grow;
   final bool centered;
   final bool showDivider;
+  final bool disabled;
+  final ValueChanged<String>? onSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -36,43 +40,59 @@ class CommonPrimaryTabs extends StatelessWidget {
         child: SizedBox(
           width: double.infinity,
           height: trackHeight,
-          child: TabBar(
-            controller: controller,
-            isScrollable: !grow,
-            tabAlignment: grow
-                ? TabAlignment.fill
-                : centered
-                ? TabAlignment.center
-                : TabAlignment.start,
-            labelColor: ts.colors.sectionTabActive,
-            unselectedLabelColor: ts.colors.onSurfaceMuted,
-            labelStyle: ts.textStyle.label,
-            unselectedLabelStyle: ts.textStyle.label,
-            labelPadding: EdgeInsets.zero,
-            dividerColor: Colors.transparent,
-            dividerHeight: 0,
-            indicatorWeight: 0,
-            indicatorSize: TabBarIndicatorSize.tab,
-            indicatorPadding: EdgeInsets.symmetric(vertical: ts.spacing.xs),
-            indicatorAnimation: TabIndicatorAnimation.linear,
-            indicator: LiquidGlassDecoration(
-              surfaceColor: ts.colors.primaryTabsSelectionTint,
-              opacity: ts.opacity.translucent,
-              borderRadius: BorderRadius.circular(ts.radius.sm),
-              shadow: ts.elevation.floating,
-            ),
-            splashFactory: NoSplash.splashFactory,
-            overlayColor: const WidgetStatePropertyAll(Colors.transparent),
-            tabs: [
-              for (final item in items)
-                Tab(
-                  height: trackHeight,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: ts.spacing.md),
-                    child: Text(item.label),
+          child: IgnorePointer(
+            ignoring: disabled,
+            child: ExcludeFocus(
+              excluding: disabled,
+              child: Opacity(
+                opacity: disabled ? ts.opacity.disabled : 1,
+                child: TabBar(
+                  onTap: (index) => onSelected?.call(items[index].value),
+                  controller: controller,
+                  isScrollable: !grow,
+                  tabAlignment: grow
+                      ? TabAlignment.fill
+                      : centered
+                      ? TabAlignment.center
+                      : TabAlignment.start,
+                  labelColor: ts.colors.sectionTabActive,
+                  unselectedLabelColor: ts.colors.onSurfaceMuted,
+                  labelStyle: ts.textStyle.label,
+                  unselectedLabelStyle: ts.textStyle.label,
+                  labelPadding: EdgeInsets.zero,
+                  dividerColor: Colors.transparent,
+                  dividerHeight: 0,
+                  indicatorWeight: 0,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicatorPadding: EdgeInsets.symmetric(
+                    vertical: ts.spacing.xs,
                   ),
+                  indicatorAnimation: TabIndicatorAnimation.linear,
+                  indicator: LiquidGlassDecoration(
+                    surfaceColor: ts.colors.primaryTabsSelectionTint,
+                    opacity: ts.opacity.translucent,
+                    borderRadius: BorderRadius.circular(ts.radius.sm),
+                    shadow: ts.elevation.floating,
+                  ),
+                  splashFactory: NoSplash.splashFactory,
+                  overlayColor: const WidgetStatePropertyAll(
+                    Colors.transparent,
+                  ),
+                  tabs: [
+                    for (final item in items)
+                      Tab(
+                        height: trackHeight,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: ts.spacing.md,
+                          ),
+                          child: Text(item.label),
+                        ),
+                      ),
+                  ],
                 ),
-            ],
+              ),
+            ),
           ),
         ),
       ),

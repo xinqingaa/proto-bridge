@@ -143,7 +143,7 @@ test("settings preserve the current timer and apply configuration to the next se
   await focus.getByRole("button", { name: "设置", exact: true }).click();
   await expect(page).toHaveURL(/\/settings\?/);
   await page.getByRole("button", { name: "水位表盘", exact: true }).click();
-  await page.getByRole("radio", { name: "深色", exact: true }).click();
+  await page.getByRole("tab", { name: "深色", exact: true }).click();
   await expect(page).toHaveURL(/theme=water&mode=dark/);
   await page.getByRole("button", { name: /专注时长/ }).click();
   const minutes = page.getByRole("listbox", { name: "分钟", exact: true });

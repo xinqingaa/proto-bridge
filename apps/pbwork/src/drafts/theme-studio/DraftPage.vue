@@ -23,7 +23,7 @@ import { themePackCssValues } from "@/design-system/theme/presentation";
 import "../studio-shared/studio.css";
 
 const mode = ref<Mode>("light");
-const selected = ref("pbwork-sample");
+const selected = ref("yike");
 const themeNames = reactive(
   Object.fromEntries(sources.map((s) => [s.id, pack(s.packId).defaultTheme])),
 );
@@ -69,7 +69,7 @@ const typography = computed(() =>
   keys.value.filter((k) =>
     [
       "typography.display",
-        "typography.headline",
+      "typography.headline",
       "typography.title",
       "typography.content",
       "typography.label",

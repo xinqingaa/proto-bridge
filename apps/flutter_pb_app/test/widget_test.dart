@@ -1,185 +1,98 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:flutter_pb_app/app/app.dart';
 import 'package:flutter_pb_app/common/widgets.dart';
+import 'package:flutter_pb_app/storage/providers.dart';
+import 'package:flutter_pb_app/storage/app_prefs.dart';
 import 'package:flutter_pb_app/theme/ts.dart';
+import 'support/fake_app_prefs.dart';
 
-import 'support/pump_app.dart';
+Future<void> start(WidgetTester tester, FakeAppPrefs prefs) async {
+  await tester.binding.setSurfaceSize(const Size(390, 844));
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [appPrefsProvider.overrideWithValue(prefs)],
+      child: const PbApp(),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+Future<void> enterGallery(WidgetTester tester) async {
+  await tester.tap(find.text('开始'));
+  await tester.pump();
+  await tester.pumpAndSettle();
+}
 
 void main() {
-  testWidgets('Demo is the reference application entry', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await pumpPbApp(tester);
-    await tester.pump(const Duration(milliseconds: 500));
-
-    expect(find.text('Action · 操作'), findsOneWidget);
-    expect(find.byType(CommonBottomNav), findsOneWidget);
-  });
-
-  testWidgets('Demo opens the shared component comparison', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await pumpPbApp(tester);
-    await tester.pump(const Duration(milliseconds: 500));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-
-    expect(find.text('Button / IconButton'), findsOneWidget);
-    expect(find.text('Action / 操作'), findsOneWidget);
-  });
-
-  testWidgets('Demo Tabbar navigates to primary and secondary tab examples', (
-    tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await pumpPbApp(tester);
-    await tester.pump(const Duration(milliseconds: 500));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-
-    expect(find.byType(Drawer), findsNothing);
-    expect(find.byType(CommonBottomNav), findsOneWidget);
-    await tester.tap(find.text('导航'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-
-    expect(find.text('Navigation · 导航'), findsOneWidget);
-    expect(find.text('Primary Tabs'), findsOneWidget);
-    expect(find.text('Secondary Tabs'), findsOneWidget);
-    expect(find.byType(CommonPrimaryTabs), findsOneWidget);
-    expect(find.byType(CommonSecondaryTabs), findsOneWidget);
-    expect(find.byType(CommonTabView), findsNWidgets(2));
-  });
-
-  testWidgets('Demo More keeps Data and Feedback visible without a drawer', (
-    tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await pumpPbApp(tester);
-    await tester.pump(const Duration(milliseconds: 500));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.tap(find.text('更多'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-
-    expect(find.text('More · 更多'), findsOneWidget);
-    expect(find.text('数据'), findsOneWidget);
-    expect(find.text('反馈'), findsOneWidget);
-    expect(find.text('Data / 数据'), findsOneWidget);
-
-    await tester.tap(find.text('反馈'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('Feedback / 反馈'), findsOneWidget);
-  });
-
   testWidgets(
-    'extended component gallery renders controlled inputs and charts',
+    'startup fills the viewport and replaces itself with the gallery',
     (tester) async {
-      await tester.binding.setSurfaceSize(const Size(390, 844));
       addTearDown(() => tester.binding.setSurfaceSize(null));
-      await pumpPbApp(tester);
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.tap(find.text('更多'));
-      await tester.pump(const Duration(milliseconds: 400));
-      await tester.tap(find.text('扩展'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
-      expect(find.byType(CommonSegmentedControl<String>), findsOneWidget);
-      expect(find.byType(CommonStepper), findsOneWidget);
-      expect(tester.takeException(), isNull);
+      await start(tester, FakeAppPrefs());
+      expect(tester.getSize(find.byType(CommonLaunchScreen)).width, 390);
+      await enterGallery(tester);
+      expect(find.byType(CommonBottomNav), findsOneWidget);
+      expect(find.text('主题与外观'), findsOneWidget);
+      final context = tester.element(find.byType(CommonBottomNav));
+      expect(Navigator.of(context).canPop(), isFalse);
     },
   );
-
-  testWidgets('Demo text follows the completed theme transition', (
-    tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await pumpPbApp(tester);
-    await tester.pump(const Duration(milliseconds: 500));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.tap(find.text('更多'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-
-    Text dataTitle() => tester.widget<Text>(find.text('Data / 数据'));
-
-    expect(
-      dataTitle().style?.color,
-      TS(brightness: Brightness.light).textStyle.title.color,
-    );
-
-    await tester.tap(find.byTooltip('切换主题'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(
-      dataTitle().style?.color,
-      TS(brightness: Brightness.dark).textStyle.title.color,
-    );
-
-    await tester.tap(find.byTooltip('切换主题'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(
-      dataTitle().style?.color,
-      TS(brightness: Brightness.light).textStyle.title.color,
-    );
-  });
-
-  testWidgets('Demo Data exposes pull-to-refresh from the page top', (
-    tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await pumpPbApp(tester);
-    await tester.pump(const Duration(milliseconds: 500));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.tap(find.text('更多'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-
-    expect(find.text('已刷新 0 次'), findsOneWidget);
-    final scrollables = find.descendant(
-      of: find.byType(CommonScrollableDataList),
-      matching: find.byType(Scrollable),
-    );
-    expect(scrollables, findsNWidgets(2));
-    final viewport = tester.getRect(scrollables.first);
-    final gesture = await tester.startGesture(
-      Offset(viewport.center.dx, viewport.bottom - 60),
-    );
-    await gesture.moveBy(const Offset(0, 40));
-    await tester.pump();
-    await gesture.moveBy(const Offset(0, 400));
-    await tester.pump();
-    final scrollableState = tester.state<ScrollableState>(scrollables.first);
-    expect(
-      scrollableState.position.pixels,
-      lessThan(
-        -TS
-            .of(tester.element(find.byType(CommonScrollableDataList)))
-            .layout
-            .pullRefreshThreshold,
-      ),
-    );
-    expect(find.text('松开刷新'), findsOneWidget);
-    await gesture.up();
-    for (var i = 0; i < 10; i += 1) {
-      await tester.pump(const Duration(milliseconds: 200));
-    }
-    expect(find.text('已刷新 1 次'), findsOneWidget);
-  });
+  testWidgets(
+    'settings select real themes and modes and restore them after app restart',
+    (tester) async {
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final prefs = FakeAppPrefs();
+      await start(tester, prefs);
+      await enterGallery(tester);
+      await tester.tap(find.byTooltip('展示设置'));
+      await tester.pump();
+      await tester.pumpAndSettle();
+      final water = find.byWidgetPredicate(
+        (w) => w is RadioListTile<String> && w.value == 'yike/water',
+      );
+      await tester.ensureVisible(water.last);
+      await tester.tap(water.last);
+      await tester.pumpAndSettle();
+      expect(prefs.readString(AppPrefs.themePackKey), 'yike/water');
+      final dark = find.byWidgetPredicate(
+        (w) => w is RadioListTile<ThemeMode> && w.value == ThemeMode.dark,
+      );
+      await tester.ensureVisible(dark.last);
+      await tester.tap(dark.last);
+      await tester.pumpAndSettle();
+      final ts = TS.of(
+        tester.element(find.byType(CommonRadioGroup<ThemeMode>).last),
+      );
+      expect(ts.pack.id, 'yike/water');
+      expect(ts.isDark, isTrue);
+      expect(prefs.readThemeMode(), 'dark');
+      await tester.pumpWidget(const SizedBox.shrink());
+      await start(tester, prefs);
+      await enterGallery(tester);
+      final restored = TS.of(tester.element(find.byType(CommonBottomNav)));
+      expect(restored.pack.id, 'yike/water');
+      expect(restored.isDark, isTrue);
+    },
+  );
+  testWidgets(
+    'component catalog opens focused examples and supports returning',
+    (tester) async {
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await start(tester, FakeAppPrefs());
+      await enterGallery(tester);
+      await tester.tap(find.text('组件').last);
+      await tester.pump();
+      await tester.tap(find.text('Stepper'));
+      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(find.byType(CommonStepper), findsOneWidget);
+      expect(find.byType(CommonHeatmap), findsNothing);
+      await tester.tap(find.byTooltip('返回'));
+      await tester.pump();
+      await tester.pumpAndSettle();
+      expect(find.text('按钮与图标'), findsOneWidget);
+    },
+  );
 }

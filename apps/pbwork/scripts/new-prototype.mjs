@@ -43,7 +43,7 @@ export default {
   );
   write(
     "docs/design.md",
-    `---\nstatus: draft\n---\n\n# ${id}\n\n这是制作工具生成的空骨架，不代表已批准的业务或视觉设计。\n\n## 定位与受众\n\n待需求采访。\n\n## 页面与关键任务\n\n待批准。示例首页仅验证技术闭环。\n\n## 视觉方向与 Promotion Mapping\n\n待批准；当前骨架使用基础包，不绑定 pbwork-sample。\n`,
+    `---\nstatus: draft\n---\n\n# ${id}\n\n这是制作工具生成的空骨架，不代表已批准的业务或视觉设计。\n\n## 定位与受众\n\n待需求采访。\n\n## 页面与关键任务\n\n待批准。示例首页仅验证技术闭环。\n\n## 视觉方向与 Promotion Mapping\n\n待批准；当前骨架使用继承基础包的原型主题包。\n`,
   );
   write(
     "docs/implementation.md",

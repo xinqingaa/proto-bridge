@@ -5,7 +5,7 @@ import 'ts.dart';
 /// 该 Map 是 resolver 的可验证使用点，也是调试/测试读取完整映射的单一入口；
 /// 值由显式传入的上下文主题 [TS] 提供，不复制 Foundation 数值。
 ///
-/// 迁移期允许值为 null 的 `asset.*`；组件仍消费旧 accessor，直到组件批次。
+/// 资源未提供时，`asset.*` 为 null。
 Map<String, Object?> protoBridgeTokenSnapshot(TS ts) => <String, Object?>{
   'asset.brand-mark': ts.assets.brandMark,
   'asset.brand-wordmark': ts.assets.brandWordmark,
@@ -99,11 +99,8 @@ Map<String, Object?> protoBridgeTokenSnapshot(TS ts) => <String, Object?>{
   'radius.surface': ts.radius.lg,
   'scrollable-data-list.action-height': ts.sizing.refreshActionHeight,
   'scrollable-data-list.action-min-width': ts.sizing.refreshActionMinWidth,
-  'secondary-tabs.active-color': ts.colors.sectionTabActive,
-  'secondary-tabs.indicator': ts.colors.sectionTabActive,
-  'segmented-control.compact-height': ts.sizing.compactHeight,
-  'segmented-control.compact-selection-height':
-      ts.sizing.compactSelectionHeight,
+  'secondary-tabs.active-color': ts.colors.secondaryTabActive,
+  'secondary-tabs.indicator': ts.colors.secondaryIndicator,
   'size.action-min-inline': ts.sizing.actionMinInline,
   'size.avatar': ts.sizing.avatarMd,
   'size.avatar-compact': ts.sizing.avatarSm,
@@ -162,4 +159,3 @@ Map<String, Object?> protoBridgeTokenSnapshot(TS ts) => <String, Object?>{
   'typography.title-lg': ts.textStyle.titleLg,
   'typography.title-sm': ts.textStyle.titleSm,
 };
-// count=153

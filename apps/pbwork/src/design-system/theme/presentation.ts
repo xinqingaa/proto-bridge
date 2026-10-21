@@ -24,8 +24,6 @@ export type ThemePackOption = {
 
 const APPEARANCE_LABELS: Record<string, string> = {
   "pbwork-base:default": "默认",
-  "pbwork-sample:garden": "绿色",
-  "pbwork-sample:citrus": "橙色",
 };
 
 export type AppearanceChoice = {

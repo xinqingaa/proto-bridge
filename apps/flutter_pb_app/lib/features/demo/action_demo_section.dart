@@ -46,9 +46,9 @@ class ActionDemoSection extends StatelessWidget {
                   onPressed: () => AppPop.toast(context, kind.name),
                 ),
               CommonButton(
-                label: '玻璃胶囊',
+                label: '玻璃圆角',
                 material: CommonSurfaceMaterial.glass,
-                shape: CommonButtonShape.pill,
+                shape: CommonButtonShape.rounded,
                 onPressed: () => AppPop.toast(context, '玻璃操作'),
               ),
               const CommonButton(label: '处理中', loading: true),
@@ -71,11 +71,15 @@ class ActionDemoSection extends StatelessWidget {
           child: Wrap(
             spacing: ts.spacing.md,
             runSpacing: ts.spacing.md,
-            children: const [
-              CommonIcon(name: CommonIconName.home, label: '首页'),
-              CommonIcon(name: CommonIconName.search, label: '搜索'),
-              CommonIcon(name: CommonIconName.settings, label: '设置'),
-              CommonIcon(name: CommonIconName.alertTriangle, label: '警告'),
+            children: [
+              for (final name in CommonIconName.values)
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CommonIcon(name: name, label: name.name),
+                    Text(name.name, style: ts.textStyle.caption),
+                  ],
+                ),
             ],
           ),
         ),

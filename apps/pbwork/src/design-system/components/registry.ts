@@ -33,7 +33,8 @@ export const componentRecords = [
   {
     id: "button",
     label: "Button",
-    description: "表单与决策区操作；中性、品牌强调、危险与轻量层级，按压释放与标签短过渡。",
+    description:
+      "表单与决策区操作；中性、品牌强调、危险与轻量层级，按压释放与标签短过渡。",
     category: "action",
     view: "action/Button.vue",
     contract: "contracts/button.json",
@@ -805,7 +806,8 @@ export const componentRecords = [
   {
     id: "flow-sheet",
     label: "Flow Sheet",
-    description: "底部多步面板；顶栏为返回、标题和关闭，步骤指示器固定在内容下方、操作区上方。",
+    description:
+      "底部多步面板；顶栏为返回、标题和关闭，步骤指示器固定在内容下方、操作区上方。",
     category: "feedback",
     view: "feedback/FlowSheet.vue",
     contract: "contracts/flow-sheet.json",
@@ -842,50 +844,6 @@ export const componentRecords = [
     ],
   },
 
-  {
-    id: "segmented-control",
-    label: "SegmentedControl",
-    description: "互斥的局部模式选择，不创建视图区或导航历史。",
-    category: "input",
-    view: "input/SegmentedControl.vue",
-    contract: "contracts/segmented-control.json",
-    example: {},
-    controls: [
-      {
-        key: "density",
-        label: "密度",
-        control: "select",
-        options: [
-          { value: "regular", label: "常规" },
-          { value: "compact", label: "紧凑" },
-        ],
-      },
-      {
-        key: "material",
-        label: "材质",
-        control: "select",
-        options: [
-          { value: "solid", label: "实色" },
-          { value: "glass", label: "玻璃" },
-        ],
-      },
-      {
-        key: "label",
-        label: "label",
-        control: "text",
-      },
-      {
-        key: "modelValue",
-        label: "modelValue",
-        control: "text",
-      },
-      {
-        key: "disabled",
-        label: "disabled",
-        control: "boolean",
-      },
-    ],
-  },
   {
     id: "stepper",
     label: "Stepper",

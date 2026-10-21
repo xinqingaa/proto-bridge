@@ -11,7 +11,7 @@ import {
 import { useRoute, useRouter } from "vue-router";
 import { vPb } from "@/authoring/pb-style";
 import { useClock } from "@/runtime/useClock";
-import SegmentedControl from "@/design-system/components/input/SegmentedControl.vue";
+import PrimaryTabs from "@/design-system/components/navigation/PrimaryTabs.vue";
 import Button from "@/design-system/components/action/Button.vue";
 import Icon from "@/design-system/components/action/Icon.vue";
 import IconButton from "@/design-system/components/action/IconButton.vue";
@@ -215,16 +215,18 @@ onBeforeUnmount(() => chartObserver?.disconnect());
       />
     </header>
     <div class="period-controls">
-      <SegmentedControl
+      <PrimaryTabs
+        :viewport="false"
+        :swipe="false"
+        :grow="true"
         class="range-switch"
-        density="compact"
+        size="sm"
         :model-value="range"
         :items="[
-          { id: 'week', label: '周' },
-          { id: 'month', label: '月' },
+          { value: 'week', label: '周' },
+          { value: 'month', label: '月' },
         ]"
         label="回顾范围"
-        material="glass"
         inspect-id="yike.review.range-tabs"
         @update:model-value="chooseRange"
       />

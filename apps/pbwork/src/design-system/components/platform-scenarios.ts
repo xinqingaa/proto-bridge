@@ -13,57 +13,7 @@ export const platformScenarios = {
       props: { clear: true },
     },
   ],
-  "segmented-control": [
-    {
-      id: "default",
-      label: "默认示例",
-      description: "互斥的局部模式选择，不创建视图区或导航历史。",
-      props: {
-        label: "统计范围",
-        items: [
-          {
-            id: "week",
-            label: "周",
-          },
-          {
-            id: "month",
-            label: "月",
-          },
-          {
-            id: "year",
-            label: "年",
-          },
-        ],
-        modelValue: "week",
-        disabled: false,
-      },
-    },
-    {
-      id: "month",
-      label: "按月",
-      description:
-        "只有未禁用的选项可以被选中；方向键、Home 与 End 支持跳过禁用项",
-      props: {
-        label: "统计范围",
-        items: [
-          {
-            id: "week",
-            label: "周",
-          },
-          {
-            id: "month",
-            label: "月",
-          },
-          {
-            id: "year",
-            label: "年",
-          },
-        ],
-        modelValue: "month",
-        disabled: false,
-      },
-    },
-  ],
+
   stepper: [
     {
       id: "default",

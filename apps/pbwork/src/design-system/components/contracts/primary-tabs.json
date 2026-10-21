@@ -6,13 +6,14 @@
     "policy": "fixed",
     "defaultRole": "tab-bar"
   },
-  "summary": "当前页面的主要内容分区：每项对应具名内容面板，轨道和选中胶囊均由主题语义表面令牌决定。",
+  "summary": "当前页面的主要内容分区：每项对应具名内容面板，轨道和选中胶囊均由主题语义表面令牌决定。可关闭视口以承接局部受控选择。",
   "behavior": [
     "轨道填满组件容器而非视口；默认项按内容宽排列，equal 状态才平分轨道，项过多时横向滚动",
     "轨道使用共享玻璃材质；选中底使用中性透明填色和高光，不叠加背景滤镜，保持比主 Tabbar 更轻的层级。",
     "首次进入时先完成胶囊定位再开启后续切换动效，避免出现无选中态的首帧",
     "内容进入对应具名视图；可按场景启用触摸或鼠标横滑",
-    "同一物理区域只有一个横滑 owner；嵌套时由页面关闭外层横滑"
+    "同一物理区域只有一个横滑 owner；嵌套时由页面关闭外层横滑",
+    "viewport=false 时只呈现受控选择条，不挂载面板或接管视口滑动；disabled 阻止点击、键盘与拖动选择。"
   ],
   "layout": {
     "summary": "小圆角玻璃轨道填满容器，选项默认按内容宽排列，equal 状态等分；选中底连续滑动，内容视口由组件所有。",
@@ -85,6 +86,15 @@
             }
           }
         }
+      },
+      "viewport": {
+        "type": "boolean"
+      },
+      "disabled": {
+        "type": "boolean"
+      },
+      "label": {
+        "type": "string"
       }
     },
     "required": ["items"]
@@ -116,7 +126,9 @@
         "value": "settings",
         "label": "设置"
       }
-    ]
+    ],
+    "viewport": true,
+    "disabled": false
   },
   "states": [
     {
@@ -125,6 +137,23 @@
       "kind": "variant",
       "props": {
         "grow": true
+      }
+    },
+    {
+      "id": "selection-only",
+      "label": "仅选择条",
+      "kind": "variant",
+      "props": {
+        "viewport": false,
+        "swipe": false
+      }
+    },
+    {
+      "id": "disabled",
+      "label": "禁用",
+      "kind": "interaction",
+      "props": {
+        "disabled": true
       }
     }
   ],
@@ -160,7 +189,8 @@
     "glassFallback": "color.surface",
     "glassFallbackBorder": "border.default",
     "selectionTint": "primary-tabs.selection-tint",
-    "glassLight": "elevation.glass"
+    "glassLight": "elevation.glass",
+    "disabledOpacity": "opacity.disabled"
   },
   "playground": {
     "presentation": "interactive"

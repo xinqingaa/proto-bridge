@@ -23,8 +23,8 @@ describe("公共按钮操作层级", () => {
   it.each([
     ["pbwork-base", "default", "light"],
     ["pbwork-base", "default", "dark"],
-    ["pbwork-sample", "garden", "light"],
-    ["pbwork-sample", "garden", "dark"],
+    ["yike", "mechanical", "light"],
+    ["yike", "mechanical", "dark"],
   ])(
     "%s/%s/%s更新标签后保持当前操作名称及禁用语义",
     async (pack, theme, mode) => {

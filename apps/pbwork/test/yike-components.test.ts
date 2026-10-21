@@ -149,7 +149,7 @@ describe("习惯表单", () => {
     stubs: {
       VExpandTransition: { template: "<slot />" },
       TextField: true,
-      SegmentedControl: true,
+      PrimaryTabs: true,
       SwitchControl: true,
       Spinner: true,
       BottomSheet: {

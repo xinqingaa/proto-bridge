@@ -30,6 +30,7 @@ if (argv.includes("--help") || argv.includes("-h")) {
     "Create an independent Flutter product target from apps/flutter_pb_app.",
     "",
     "Options:",
+    "  --prototype <id>        select a prototype theme pack and its base dependencies",
     "  --parent <dir>          default: the directory above proto-bridge",
     "  --name <name>           project name (alternative to positional)",
     "  --display-name <name>   app display name",
@@ -51,6 +52,7 @@ const dryRun = argv.includes("--dry-run");
 const install = !argv.includes("--no-install");
 const verify = argv.includes("--verify");
 const setTarget = argv.includes("--set-target");
+const selectedPrototype = optionValue(argv, "--prototype");
 const requireSynced = argv.includes("--require-synced");
 const configPath = path.resolve(
   repoRoot,
@@ -112,7 +114,7 @@ process.stdout.write([
 
 if (manifest.pendingTokens > 0) {
   throw new Error(
-    "Base token mapping is incomplete. Finish the 153-token mapping before scaffolding.",
+    "Base token mapping is incomplete. Finish the source token mapping before scaffolding.",
   );
 }
 if (manifest.syncStatus !== "synced") {
@@ -172,6 +174,15 @@ await writeProjectFiles();
 await writeMcpAndTools();
 await writeSkills();
 await writeDocs();
+const { exportFlutterThemes } = await import('./export-flutter-themes.mjs');
+await exportFlutterThemes({targetRoot: resolvedDestination, prototype: selectedPrototype});
+// A selected target owns a scope-specific baseline, including only its theme dependencies.
+if (selectedPrototype) {
+  const { spawnSync } = await import('node:child_process');
+  const result = spawnSync(process.execPath, [path.join(repoRoot, 'scripts/verify-ds-target-sync.mjs'), '--target', resolvedDestination, '--print-baseline'], {cwd: repoRoot, encoding: 'utf8'});
+  if (result.status !== 0) throw new Error(result.stderr);
+  await writeFile(path.join(resolvedDestination, 'proto-bridge.sync.json'), result.stdout);
+}
 
 if (install) {
   try {
@@ -574,8 +585,7 @@ async function writeSkills() {
       .replaceAll("cd ../.. && node tool/ds-theme.mjs", "node tool/ds-theme.mjs")
       .replaceAll("../../../../pbwork", "__PBWORK_SOURCE__")
       .replaceAll("apps/pbwork", "__PBWORK_SOURCE__")
-      .replaceAll("__PBWORK_SOURCE__", `${producerRelativeFrom(dsSkill)}/apps/pbwork`)
-      .replaceAll("32 个当前 Contract id", "47 个当前 Contract id");
+      .replaceAll("__PBWORK_SOURCE__", `${producerRelativeFrom(dsSkill)}/apps/pbwork`);
     await writeFile(dsSkill, text, "utf8");
   }
   const acceptanceSource = path.join(repoRoot, ".agents/skills/acceptance/SKILL.md");
@@ -617,11 +627,11 @@ function bootstrapPage() {
 }
 
 function agentInstructions({ packageName, displayName }) {
-  return `# ${displayName} Agent Rules\n\n本工程由 \`pnpm pb:new:flutter\` 从 flutter_pb_app 基线生成，是独立的 **${packageName}** 产品 target，不是 ProtoBridge 仓库。\`lib/features/\` 为空；业务页面由固定 PBWork Handoff 按 Screen 落在这里。\n\nMCP 已由 \`.cursor/mcp.json\`、\`.codex/config.toml\`、\`.mcp.json\` 指向 \`tool/mcp.mjs\`；不要修改 proto-bridge producer，也不要在目标工程复制 Evidence Store。\n\n收到固定 Evidence 时先读 \`.agents/skills/proto-bridge-consumer/SKILL.md\`；DS 同步任务读 \`.agents/skills/proto-bridge-ds-target-sync/SKILL.md\`；完成实现准备 Review 时读 \`.agents/skills/acceptance/SKILL.md\`。\n\n## 文档优先级\n\n1. 固定 ProtoBridge Evidence 决定源页面的结构、文案、状态、交互和构图。\n2. 本工程 \`AGENTS.md\`、\`docs/\` 和实际代码决定 Target 落点、组件、Theme、路由与验证方式。\n3. Target adapter 结果只提供目标上下文，不能覆盖 Screenshot、Fragment、Case 或 revision。\n\n## 修改边界\n\n- 业务页面和页面模型放在 \`lib/features/<feature>/\`。\n- 页面业务状态使用 Riverpod \`Notifier\` / \`AsyncNotifier\`，不要用 \`setState\` 承载筛选、表单或 variant。\n- 持久化只走 \`AppPrefs\`；feature 不得直接使用 \`MMKV\`。\n- 路由常量和注册表只放在 \`lib/router/\`。\n- 主题和语义 token 只放在 \`lib/theme/\`。\n- 可复用 UI 和共享弹层只放在 \`lib/common/\`。\n- 不在 feature 中复制公共组件、创建平行 Theme 或绕过既有路由/弹层边界。\n\n## 第一轮纪律\n\n拿到 PBWork 提示词后，先读 \`AGENTS.md\`、\`README.md\`、\`docs/\` 和 Consumer Skill；只读理解 Evidence 与目标工程，按 Screen 用简短散文输出结构/滚动边界、组件与 Token 落点、状态与交互覆盖、预计修改文件、验证方式和剩余风险；然后暂停等待明确批准。未批准前不得修改本工程。\n\n## 必要验证\n\n\`\`\`bash\nflutter analyze\nflutter test\nnode tool/verify.mjs\nnode tool/ds-theme.mjs\n# 完整组件与 Token 同步门禁\nnode tool/ds-sync.mjs\n\`\`\`\n\n主题门禁检查 153 个 Token；完整 \`ds-sync.mjs\` 同时检查 47 个组件与当前 DS surface。共享组件扩展必须遵循当前 Contract 和目标工程规范；映射成功不等于视觉验收通过。\n\n视觉验证遵循 \`docs/testing.md\`；最终报告必须包含固定引用、原始风险、修改文件、验证结果、已知偏差和剩余风险。\n`;
+  return `# ${displayName} Agent Rules\n\n本工程由 \`pnpm pb:new:flutter\` 从 flutter_pb_app 基线生成，是独立的 **${packageName}** 产品 target，不是 ProtoBridge 仓库。\`lib/features/\` 为空；业务页面由固定 PBWork Handoff 按 Screen 落在这里。\n\nMCP 已由 \`.cursor/mcp.json\`、\`.codex/config.toml\`、\`.mcp.json\` 指向 \`tool/mcp.mjs\`；不要修改 proto-bridge producer，也不要在目标工程复制 Evidence Store。\n\n收到固定 Evidence 时先读 \`.agents/skills/proto-bridge-consumer/SKILL.md\`；DS 同步任务读 \`.agents/skills/proto-bridge-ds-target-sync/SKILL.md\`；完成实现准备 Review 时读 \`.agents/skills/acceptance/SKILL.md\`。\n\n## 文档优先级\n\n1. 固定 ProtoBridge Evidence 决定源页面的结构、文案、状态、交互和构图。\n2. 本工程 \`AGENTS.md\`、\`docs/\` 和实际代码决定 Target 落点、组件、Theme、路由与验证方式。\n3. Target adapter 结果只提供目标上下文，不能覆盖 Screenshot、Fragment、Case 或 revision。\n\n## 修改边界\n\n- 业务页面和页面模型放在 \`lib/features/<feature>/\`。\n- 页面业务状态使用 Riverpod \`Notifier\` / \`AsyncNotifier\`，不要用 \`setState\` 承载筛选、表单或 variant。\n- 持久化只走 \`AppPrefs\`；feature 不得直接使用 \`MMKV\`。\n- 路由常量和注册表只放在 \`lib/router/\`。\n- 主题和语义 token 只放在 \`lib/theme/\`。\n- 可复用 UI 和共享弹层只放在 \`lib/common/\`。\n- 不在 feature 中复制公共组件、创建平行 Theme 或绕过既有路由/弹层边界。\n\n## 第一轮纪律\n\n拿到 PBWork 提示词后，先读 \`AGENTS.md\`、\`README.md\`、\`docs/\` 和 Consumer Skill；只读理解 Evidence 与目标工程，按 Screen 用简短散文输出结构/滚动边界、组件与 Token 落点、状态与交互覆盖、预计修改文件、验证方式和剩余风险；然后暂停等待明确批准。未批准前不得修改本工程。\n\n## 必要验证\n\n\`\`\`bash\nflutter analyze\nflutter test\nnode tool/verify.mjs\nnode tool/ds-theme.mjs\n# 完整组件与 Token 同步门禁\nnode tool/ds-sync.mjs\n\`\`\`\n\n主题门禁检查当前 Token 清单；完整 \`ds-sync.mjs\` 同时检查当前组件清单与当前 DS surface。共享组件扩展必须遵循当前 Contract 和目标工程规范；映射成功不等于视觉验收通过。\n\n视觉验证遵循 \`docs/testing.md\`；最终报告必须包含固定引用、原始风险、修改文件、验证结果、已知偏差和剩余风险。\n`;
 }
 
 function readme({ packageName, displayName }) {
-  return `# ${displayName}\n\n\`${packageName}\` 是从 flutter_pb_app 生成的产品 target 骨架。它继承 PBWork 主题/Token、公共组件、路由和测试底座，\`lib/features/\` 为空，等待固定 PBWork Handoff 落业务页面。\n\n## 快速开始\n\n\`\`\`bash\nflutter pub get\nflutter analyze\nflutter test\nnode tool/verify.mjs\nflutter run -d <device>\n\`\`\`\n\n## MCP\n\nMCP 已配置在 \`.cursor/mcp.json\`、\`.codex/config.toml\`、\`.mcp.json\`，统一指向 \`tool/mcp.mjs\`。Codex 需要 trust 本目录后才会加载项目级配置。\n\nPBWork 提示词里的目标路径必须与本目录一致；不一致时先运行：\n\n\`\`\`bash\nnode tool/target.mjs --bind\n\`\`\`\n\n## 文档\n\n- [工程架构](docs/architecture.md)\n- [组件](docs/components.md)\n- [Theme 与 Token](docs/theme.md)\n- [路由](docs/routing.md)\n- [测试](docs/testing.md)\n- [ProtoBridge 目标适配](docs/proto-bridge.md)\n- [Agent 工作流](docs/agent-workflow.md)\n\n## 验证\n\n\`node tool/ds-theme.mjs\` 验证 153 个 Token；\`node tool/ds-sync.mjs\` 同时验证 47 个组件与当前 DS surface。\n`;
+  return `# ${displayName}\n\n\`${packageName}\` 是从 flutter_pb_app 生成的产品 target 骨架。它继承 PBWork 主题/Token、公共组件、路由和测试底座，\`lib/features/\` 为空，等待固定 PBWork Handoff 落业务页面。\n\n## 快速开始\n\n\`\`\`bash\nflutter pub get\nflutter analyze\nflutter test\nnode tool/verify.mjs\nflutter run -d <device>\n\`\`\`\n\n## MCP\n\nMCP 已配置在 \`.cursor/mcp.json\`、\`.codex/config.toml\`、\`.mcp.json\`，统一指向 \`tool/mcp.mjs\`。Codex 需要 trust 本目录后才会加载项目级配置。\n\nPBWork 提示词里的目标路径必须与本目录一致；不一致时先运行：\n\n\`\`\`bash\nnode tool/target.mjs --bind\n\`\`\`\n\n## 文档\n\n- [工程架构](docs/architecture.md)\n- [组件](docs/components.md)\n- [Theme 与 Token](docs/theme.md)\n- [路由](docs/routing.md)\n- [测试](docs/testing.md)\n- [ProtoBridge 目标适配](docs/proto-bridge.md)\n- [Agent 工作流](docs/agent-workflow.md)\n\n## 验证\n\n\`node tool/ds-theme.mjs\` 验证当前 Token 清单；\`node tool/ds-sync.mjs\` 同时验证当前组件清单与当前 DS surface。\n`;
 }
 
 function agentWorkflow() {

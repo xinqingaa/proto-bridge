@@ -2,7 +2,7 @@
 
 公共组件按 Producer 的职责分类位于 `lib/common/widgets/{action,input,display,navigation,data,charts}/`，Target 自己拥有的组合壳位于 `lib/common/widgets/composition/`，业务与测试统一从 `lib/common/widgets.dart` 导入。组件负责稳定的交互语义、尺寸和 Theme 映射；业务页面只传入数据、状态和回调。弹层统一走 `lib/common/overlay/app_pop.dart` 的 `AppPop`。
 
-目录分类只组织源码，不改变 `componentId` 或 role。`CommonFormSection` 等 Target 组合壳不得冒充 Producer 组件映射；当前 Producer 共 47 项，均有具体 Dart 映射；`AppPop` 仍保持独立弹层边界，不由 Widget barrel 隐式导出。`PbPageTransitions` 承接 `screen-transition`，由 Theme 应用，不是页面可组合的业务 Widget。
+目录分类只组织源码，不改变 `componentId` 或 role。`CommonFormSection` 等 Target 组合壳不得冒充 Producer 组件映射；当前 Producer Contract 均有具体 Dart 映射；`AppPop` 仍保持独立弹层边界，不由 Widget barrel 隐式导出。`PbPageTransitions` 承接 `screen-transition`，由 Theme 应用，不是页面可组合的业务 Widget。
 
 ## 组件职责
 
@@ -34,13 +34,12 @@
 | `CommonDivider`                    | 语义分隔线                                                       |
 | `CommonAvatar`                     | 人员或主体头像/首字母                                            |
 | `CommonBottomNav`                  | 2–5 个顶级页面目的地；固定 icon + label、无顶部指示条            |
-| `CommonIcon`                       | 35 个稳定 PBWork 图片 id、尺寸、tone 和装饰/无障碍语义                |
+| `CommonIcon`                       | 源端公共图标清单、尺寸、tone 和装饰/无障碍语义                |
 
 ## 扩展组件
 
 | API | 职责 |
 | --- | --- |
-| `CommonSegmentedControl` | 受控分段选择；regular/compact、键盘切换和禁用项，不拥有页面视口 |
 | `CommonStepper` | 有界数值输入；按钮、键盘与文本统一回调 |
 | `CommonWheelPicker` | 1–3 列独立滚轮；同时承接 duration-picker，外部状态可更新 |
 | `CommonRingProgress` / `CommonMetric` / `CommonTag` | 自绘环形进度、指标数值与只读标签 |
@@ -68,7 +67,7 @@
 
 业务代码只调 `AppPop`，不直接调 `Pop`。需要样式的 AppPop 方法显式接收调用处 `BuildContext`，并统一转换 Theme、Token 与材质。
 
-`CommonGlassSurface` 组合使用 unified_popups 2.2.1 的 LiquidGlass；明确轮廓，提供清透和实色降级。`AppPop.actionSheet` 是 Sheet 内的动作列表组合。
+`CommonGlassSurface` 组合使用 unified_popups 的 LiquidGlass；明确轮廓，提供清透和实色降级。`AppPop.actionSheet` 是 Sheet 内的动作列表组合。
 
 公共组件不保留旧构造参数或历史别名；feature 与 Demo 必须直接迁移到当前 API。
 
@@ -94,5 +93,7 @@
 - 先检查组件构造参数和相似页面，再决定视觉变体。
 - 组件内部已有的尺寸、圆角、边框和颜色必须优先通过 `TS` 继承。
 - Evidence 要求组件存在但本地组件参数不足时，先报告缺口，再决定是否扩展组件；不要在 feature 中手写第二份公共实现。
-- 组件使用示例以公共组件测试与业务页面为准；基线的 `lib/features/demo/` 提供对照；Demo 底部 Tabbar 本身就是根目的地导航实例，不再在 Navigation 分类中放置无内容切换的重复样例。
+- 组件示例以公共组件测试和展示目录为准；展示工程根部区分主题与组件，各类示例通过独立页面进入。
 - 精确 DS component id 落点以 [proto-bridge.md](proto-bridge.md) 与工程根目录 `../proto-bridge.target.json` 为准；映射不是靠本表的外观描述推断。
+
+PrimaryTabs 本身只提供选择条，TabView 是可选的独立视口。局部范围或模式选择使用选择条和受控回调，不创建空 TabView。

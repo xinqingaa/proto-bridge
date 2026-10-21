@@ -13,8 +13,10 @@
 
 需要参数时通过 `RouteSettings.arguments` 传递，并在目标页面集中解析；不要在多个 widget 中重复解析同一参数。当前路由：
 
-- `/` Demo 对照（基线入口）
-- `/launch` Flutter 欢迎页；不是原生启动屏
+- `/` Flutter 启动入口，用户开始后替换为展示工程。
+- `/demo` 主题 / 组件目录。
+- `/settings` 展示设置，切换主题与深浅色。
+- `/launch` 手动启动页预览，关闭后回到原页面。
 
 业务页面由固定 PBWork Handoff 按 Screen 新增；新增时同时补路由常量、注册、参数解析和 Widget test，不把页面私有解析散落到多个 widget。
 

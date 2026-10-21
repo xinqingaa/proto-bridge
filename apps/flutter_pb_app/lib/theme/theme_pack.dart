@@ -4,6 +4,8 @@ import 'app_colors.dart';
 import 'app_tokens.dart';
 import 'app_text_styles.dart';
 
+part 'generated_theme_packs.dart';
+
 enum AppSurfaceTreatment { solid, outlined, glass }
 
 /// One typed source for a target theme package, including its light/dark modes.
@@ -14,6 +16,8 @@ class AppThemePack {
     required this.label,
     required this.light,
     required this.dark,
+    this.darkAssets,
+    this.darkEffect,
     this.surfaceTreatment = AppSurfaceTreatment.solid,
     this.spacing = const AppSpacing(),
     this.sizing = const AppSizing(),
@@ -43,6 +47,8 @@ class AppThemePack {
   final AppLayerTokens layer;
   final AppEffectTokens effect;
   final AppAssets assets;
+  final AppAssets? darkAssets;
+  final AppEffectTokens? darkEffect;
   final AppTypography typography;
   final AppOpacity lightOpacity;
   final AppOpacity darkOpacity;
@@ -52,10 +58,5 @@ class AppThemePack {
   AppColors colorsFor(Brightness brightness) =>
       brightness == Brightness.dark ? dark : light;
 
-  static const base = AppThemePack(
-    id: 'pbwork-base/default',
-    label: 'PBWork',
-    light: AppColors.light,
-    dark: AppColors.dark,
-  );
+  static const base = generatedBaseThemePack;
 }

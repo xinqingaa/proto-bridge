@@ -39,7 +39,7 @@ class CommonSecondaryTabs extends StatelessWidget {
             : centered
             ? TabAlignment.center
             : TabAlignment.start,
-        labelColor: ts.colors.sectionTabActive,
+        labelColor: ts.colors.secondaryTabActive,
         unselectedLabelColor: ts.colors.onSurfaceMuted,
         labelStyle: labelStyle,
         unselectedLabelStyle: labelStyle,
@@ -47,7 +47,7 @@ class CommonSecondaryTabs extends StatelessWidget {
         dividerColor: Colors.transparent,
         indicatorSize: TabBarIndicatorSize.label,
         indicator: _CaretIndicator(
-          color: ts.colors.sectionTabActive,
+          color: ts.colors.secondaryIndicator,
           size: ts.sizing.caret,
           offset: -ts.layout.insetSmNegative,
           labelHeight: labelHeight,

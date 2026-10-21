@@ -25,6 +25,8 @@
 | id | label | kind |
 | --- | --- | --- |
 | `equal` | 等宽 | `variant` |
+| `selection-only` | 仅选择条 | `variant` |
+| `disabled` | 禁用 | `interaction` |
 
 
 ## 用法与反例
@@ -34,3 +36,7 @@
 - Props、Slots、Events、默认值与 Token 槽以 [Primary Tabs Contract](../../../src/design-system/components/contracts/primary-tabs.json) 为准。
 
 内部 tab / panel 的语义归属由 Inspect Registry 的 `semanticParts` 显式声明，Token Evidence 沿用所属组件绑定；slot 内的业务局部节点仍须自行声明所需绑定。见[制作工具](../../prototypes/authoring-tools.md)。
+
+## 仅选择条
+
+`viewport=false` 时只渲染选择条，不创建空面板或面板 ARIA 引用，也不接管视口滑动。适用于局部模式、频率与范围选择；状态和业务更新由调用方持有。`disabled` 同时禁止点击、键盘和拖动切换。默认 `viewport=true` 保持页内分区和命名内容槽。

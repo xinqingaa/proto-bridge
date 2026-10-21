@@ -37,7 +37,7 @@ final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(
 );
 
 final themePacksProvider = Provider<List<AppThemePack>>(
-  (ref) => const [AppThemePack.base],
+  (ref) => generatedThemePacks,
 );
 
 class ThemePackNotifier extends Notifier<AppThemePack> {
@@ -97,8 +97,9 @@ class TS extends ThemeExtension<TS> {
   late final AppBorderTokens border = AppBorderTokens(colors: colors);
   AppLayoutTokens get layout => pack.layout;
   AppLayerTokens get layer => pack.layer;
-  AppEffectTokens get effect => pack.effect;
-  AppAssets get assets => pack.assets;
+  AppEffectTokens get effect =>
+      isDark ? pack.darkEffect ?? pack.effect : pack.effect;
+  AppAssets get assets => isDark ? pack.darkAssets ?? pack.assets : pack.assets;
 
   static TS of(BuildContext context) {
     final tokens = Theme.of(context).extension<TS>();

@@ -1,6 +1,6 @@
 # Flutter Target 脚手架
 
-`pnpm pb:new:flutter` 从 `apps/flutter_pb_app` 复制一份独立产品 target，去掉 `features` 业务示例，生成 Bootstrap 空壳、项目内 MCP launcher 和 Agent 上下文。生成后的目录默认与 proto-bridge 同级。底座使用 Riverpod 3、MMKV 和远程 unified_popups 2.2.1，主题只使用上下文 ThemeExtension。
+`pnpm pb:new:flutter` 从 `apps/flutter_pb_app` 复制一份独立产品 target，去掉 `features` 业务示例，生成 Bootstrap 空壳、项目内 MCP launcher 和 Agent 上下文。生成后的目录默认与 proto-bridge 同级。底座使用 Riverpod 3、MMKV 和远程 unified_popups，主题只使用上下文 ThemeExtension。
 
 ## 命名
 
@@ -21,6 +21,7 @@ pnpm pb:new:flutter cold_chain_app
 
 常用参数：
 
+- `--prototype <id>`：只选择该原型绑定的主题包与继承依赖；默认全部。公共基础组件保持共享，业务 features 仍为空。
 - `--parent <dir>`：自定义父目录，默认 proto-bridge 同级
 - `--display-name <name>` / `--bundle-id <id>`：覆盖显示名和 bundle id
 - `--yes`：非交互执行；`--dry-run` 只打印计划
@@ -113,7 +114,7 @@ node tool/verify.mjs
 node tool/ds-theme.mjs
 ```
 
-`tool/verify.mjs` 执行 Flutter 原生检查和 47 个组件、153 个 Token 的完整 target 校验；`tool/ds-theme.mjs` 只做 Token 校验。`node tool/ds-sync.mjs` 是 47 个组件与 153 个 Token 的完整同步门禁。
+`tool/verify.mjs` 执行 Flutter 原生检查和 当前组件与 Token 清单 的完整 target 校验；`tool/ds-theme.mjs` 只做 Token 校验。`node tool/ds-sync.mjs` 是 当前组件与 Token 清单 的完整同步门禁。
 
 ## PBWork 工作流
 
@@ -138,3 +139,5 @@ node tool/ds-theme.mjs
 首次生成时若 Producer 构建产物缺失，脚本先执行 `pnpm build`，再验证基线并复制；需事先完成仓库依赖安装。`--dry-run` 不触发构建。
 
 路径与同步基线按真实目录记录；例如 macOS 的 `/tmp` 与 `/private/tmp` 指向同一目录，完整同步检查会归一化后比较。
+
+生成目录携带 `proto-bridge.themes.json` 和类型化 Dart 主题；主题矩阵检查按记录的选择范围执行。资源同步目录 `assets/themes/` 由生成器管理，产品自有资源放在其它目录。

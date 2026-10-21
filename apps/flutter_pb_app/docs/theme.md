@@ -9,17 +9,22 @@ Text('标题', style: ts.textStyle.title);
 
 ## 主题包
 
-`lib/theme/theme_pack.dart` 声明包身份、明暗颜色、字阶、尺寸、间距、圆角、动效、布局、层级、效果和资源。默认包为 `AppThemePack.base`。新产品在 `lib/theme/` 编写类型化主题包，通过 `themePacksProvider` 注册；`themePackProvider.notifier.select(id)` 切换，`themeModeProvider` 切换明暗。两种选择通过 AppPrefs 持久化到 MMKV。
+`lib/theme/theme_pack.dart` 定义唯一的类型化主题模型；`generated_theme_packs.dart` 是 Core 解析表到 Flutter 的生成结果，不手工维护。身份使用 `packId/themeId`，明暗模式独立；注册表来自 `generatedThemePacks`，没有样例包或旧主题兼容实现。
 
-未注册的存储包 ID 回到注册表首项；空注册表和重复 ID 是配置错误。主题不从 PBWork 当前源码动态加载，也没有旧 Token 或旧主题兼容入口。目标包依据固定 Evidence 的主题取值表维护 Flutter 表达，不复制 CSS。
+展示工程通过「主题」入口或右上角「展示设置」切换主题和浅深色，作用于所有页面、组件及弹层，并由 AppPrefs / MMKV 恢复。`themePackProvider` 与 `themeModeProvider` 是唯一选择状态；组件通过最近的 TS ThemeExtension 读取。
+
+在 Producer 仓库运行 `node scripts/export-flutter-themes.mjs` 默认同步全部包。指定 `--prototype <id>` 只选择真实原型绑定包及继承依赖；可配合 `--target <directory>`。公共基础组件保留为共享能力，不复制原型业务页面。主题的组件键也参与解析；资源按模式选择，仅输出高分辨率图片，组件明确设置逻辑尺寸。
+
+`proto-bridge.themes.json` 记录选择范围、主题与模式矩阵、源摘要和解析值。同步门禁同时核对生成的 Dart 内容和这个矩阵，不能只凭 accessor 存在或源端 fingerprint 声明主题已落地。固定 Handoff 实现仍以其中固定的主题表为准，不读取 active/latest。
+
 
 ## Token 职责
 
 `ts.colors`、`ts.textStyle`、`ts.spacing`、`ts.sizing`、`ts.radius`、`ts.opacity`、`ts.motion`、`ts.elevation`、`ts.border`、`ts.layout`、`ts.layer`、`ts.effect`、`ts.assets` 是组件使用入口。具体设计量只放在主题目录；页面和公共组件不得另建平行常量或复制颜色数值。
 
-`protoBridgeTokenSnapshot(ts)` 接收明确的上下文主题，用于调试和映射验证。`proto-bridge.target.json` 维护 153 个可绑定主题键的精确 accessor。映射有效仅说明落点可访问；组件的视觉、状态和实际消费仍需单独验证。
+`protoBridgeTokenSnapshot(ts)` 接收明确的上下文主题，用于调试和映射验证。`proto-bridge.target.json` 维护 当前可绑定主题键的精确 accessor。映射有效仅说明落点可访问；组件的视觉、状态和实际消费仍需单独验证。
 
-`transparent` / `none` 是绑定字面量，不建立 Token accessor。资源未提供时由组件按 Contract 回退。Flutter 用逻辑像素、比例、Curve、BoxShadow 表达 Web 对应语义。
+`transparent` / `none` 是绑定字面量，不建立 Token accessor。资源未提供时由组件按 Contract 回退。Flutter 用逻辑像素、比例、Curve、BoxShadow 表达 Web 对应语义。相对字距保留为类型化 AppLetterSpacing，在使用处按实际字号解析；不把 em 直接当作像素。CSS 内阴影、滤镜饱和度和连续字重使用明确的平台翻译，不宣称逐像素一致。
 
 ## 主题切换
 
@@ -27,4 +32,4 @@ Material Theme 和 TS 使用同一主题包。颜色在主题动画中插值；�
 
 ## 同步门禁
 
-主题及映射修改运行 `pnpm ds:theme:verify`。组件仍在迁移时批次保留 pending；完整组件适配后更新 `proto-bridge.sync.json` 并运行 `pnpm ds:target-sync:verify`。只有元数据和实际映射一致才能声明同步。
+主题及映射修改运行 `pnpm ds:theme:verify`，组件和完整 surface 运行 `pnpm ds:target-sync:verify`。先验证所选主题矩阵与实际生成实现，再更新同步基线；未完成的部分保持 drift 或 pending 可见。

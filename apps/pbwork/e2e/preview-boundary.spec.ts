@@ -73,16 +73,10 @@ test("color uses same-content device samples, real sources and independent theme
       .getByRole("group", { name: "预览布局" })
       .getByRole("button", { name: "对比", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
-  await select(page, phone(page, "B"), "主题包", "样例主题包 · 仅演示");
+  await select(page, phone(page, "B"), "主题包", "一刻");
   await select(page, phone(page, "B"), "主题", "柑色");
-  await expect(phone(page, "B")).toHaveAttribute(
-    "data-preview-pack",
-    "pbwork-sample",
-  );
-  await expect(phone(page, "B")).toHaveAttribute(
-    "data-preview-theme",
-    "citrus",
-  );
+  await expect(phone(page, "B")).toHaveAttribute("data-preview-pack", "yike");
+  await expect(phone(page, "B")).toHaveAttribute("data-preview-theme", "water");
   await expect(phone(page, "A").locator("[data-color-key]")).toHaveCount(count);
   await expect(phone(page, "B").locator("[data-color-key]")).toHaveCount(count);
   const colors = await page
@@ -153,7 +147,7 @@ test("button copies current state, stays independent and retains state while swi
   ).toBe(true);
 
   await expect(second.getByRole("status")).toContainText("已完成");
-  await select(page, second, "主题包", "样例主题包 · 仅演示");
+  await select(page, second, "主题包", "一刻");
   await select(page, second, "主题", "柑色");
   await expect(second.getByRole("status")).toContainText("已完成");
   await main.click();
@@ -234,7 +228,7 @@ test("BottomSheet overlays attach to distinct devices with local viewport dimens
   expect(Math.abs(dimensions.left)).toBeLessThan(2);
   expect(Math.abs(dimensions.right)).toBeLessThan(2);
   expect(Math.abs(dimensions.bottom)).toBeLessThan(2);
-  await select(page, first, "主题包", "样例主题包 · 仅演示");
+  await select(page, first, "主题包", "一刻");
   await select(page, first, "主题", "柑色");
   await expect(first.locator(".pb-sheet")).toBeVisible();
   await expect(first.locator(".pb-sheet")).toHaveAttribute(
@@ -254,7 +248,9 @@ test("BottomSheet overlays attach to distinct devices with local viewport dimens
         // to enter the dialog after its transition before sending Escape.
         .evaluate((sheet) =>
           Boolean(
-            sheet.closest(".v-overlay__content")?.contains(document.activeElement),
+            sheet
+              .closest(".v-overlay__content")
+              ?.contains(document.activeElement),
           ),
         ),
     )
@@ -475,19 +471,13 @@ test("device resize grows the card, reports accurate scale and persists across p
     .getByRole("group", { name: "预览布局" })
     .getByRole("button", { name: "对比", exact: true })
     .click();
-  await select(page, phone(page, "A"), "主题包", "样例主题包 · 仅演示");
+  await select(page, phone(page, "A"), "主题包", "一刻");
   await page.goto("/workbench/foundations/tokens/typography");
   await expect(phone(page, "B")).toBeVisible();
-  await expect(phone(page, "A")).toHaveAttribute(
-    "data-preview-pack",
-    "pbwork-sample",
-  );
+  await expect(phone(page, "A")).toHaveAttribute("data-preview-pack", "yike");
   await page.reload();
   await expect(phone(page, "B")).toBeVisible();
-  await expect(phone(page, "A")).toHaveAttribute(
-    "data-preview-pack",
-    "pbwork-sample",
-  );
+  await expect(phone(page, "A")).toHaveAttribute("data-preview-pack", "yike");
   await expect.poll(scale).toBeCloseTo(0.95);
   await page
     .getByRole("group", { name: "预览尺寸" })

@@ -36,7 +36,6 @@ export 'widgets/composition/form_section.dart';
 
 export 'widgets/display/glass_surface.dart';
 export 'widgets/input/stepper.dart';
-export 'widgets/input/segmented_control.dart';
 export 'widgets/input/wheel_picker.dart';
 export 'widgets/display/ring_progress.dart';
 export 'widgets/display/metric.dart';

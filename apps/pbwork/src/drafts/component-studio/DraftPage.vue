@@ -70,10 +70,10 @@ const previews = computed(() => {
       ? [
           currentPreview,
           {
-            packId: "pbwork-sample",
-            theme: "garden",
+            packId: "yike",
+            theme: "mechanical",
             mode: mode.value,
-            label: "样例主题包 · 园色",
+            label: "一刻 · 机械",
           },
         ]
       : [
