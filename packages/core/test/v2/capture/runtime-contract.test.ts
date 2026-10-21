@@ -5,6 +5,7 @@ import {
   RuntimeCaptureRequest,
   RuntimeCaptureResponse,
   RuntimeSemanticNode,
+  RuntimeCheckpointManifest,
 } from '../../../src/v2/runtime-contract/index.js';
 import { formatSchemaIssues } from '../../../src/v2/contracts/errors.js';
 
@@ -266,8 +267,47 @@ describe('V2 Runtime Capture Protocol schemas', () => {
     expect(message).toContain('variants.plan-open');
     expect(message).toContain('sample-app.settings.plan-option#3');
     expect(message).toContain('got "3"');
-    expect(message).toContain('stable lowercase identifier');
+    expect(message).toContain('stable identifier');
     expect(message).not.toContain('"Invalid"');
+  });
+
+  it('preserves camelCase keys in snapshots, ancestors, scroll owners and checkpoint key assertions', () => {
+    const parent = {
+      screenId: 'sample.task-list',
+      pbId: 'sample.task-list.settingsRow',
+      pbKey: 'pomodoro-pomodoroMinutes',
+    };
+    const child = { ...parent, pbId: `${parent.pbId}.value` };
+    const node = RuntimeSemanticNode.parse({
+      fragment: child,
+      semanticParent: parent,
+      semanticAncestors: [parent],
+      role: 'text',
+      tag: 'span',
+      text: '25 分钟',
+      visible: true,
+      bbox: { x: 0, y: 0, width: 80, height: 24 },
+      documentOrder: 1,
+      scrollOwner: { kind: 'fragment', fragment: parent },
+      positioning: 'flow',
+    });
+    expect(node.fragment).toEqual(child);
+    expect(node.semanticParent).toEqual(parent);
+    expect(node.semanticAncestors).toEqual([parent]);
+    expect(node.scrollOwner).toEqual({ kind: 'fragment', fragment: parent });
+    const checkpoint = RuntimeCheckpointManifest.parse({
+      checkpointId: 'settings-visible',
+      screenId: parent.screenId,
+      variantId: 'default',
+      requiredFragments: [parent],
+      expectedFragmentKeys: [{
+        fragment: { screenId: parent.screenId, pbId: parent.pbId },
+        keys: [parent.pbKey, 'pomodoro-pomodorominutes'],
+      }],
+    });
+    expect(checkpoint.expectedFragmentKeys?.[0]?.keys).toEqual([
+      'pomodoro-pomodoroMinutes', 'pomodoro-pomodorominutes',
+    ]);
   });
 
   it('rejects protocol mismatch, malformed requests, and invalid semantic roles', () => {

@@ -29,6 +29,21 @@ describe('normalizeCaptureScope / computeScopeKey', () => {
     const a = normalizeCaptureScope(fullScopeInput({ fragments: [rowA, rowB, rowA] }));
     const b = normalizeCaptureScope(fullScopeInput({ fragments: [rowB, rowA] }));
     expect(computeScopeKey(a)).toBe(computeScopeKey(b));
+    expect(computeScopeKey(a)).toBe('scope_3d11b77d520fd6c1');
+  });
+
+  it('keeps differently cased business keys distinct', () => {
+    const fragments = [
+      { ...rowA, pbKey: 'pomodoro-pomodoroMinutes' },
+      { ...rowA, pbKey: 'pomodoro-pomodorominutes' },
+    ];
+    const scope = normalizeCaptureScope(fullScopeInput({ fragments }));
+    expect(scope.fragments).toHaveLength(2);
+    expect(new Set(scope.fragments.map((fragment) => fragment.pbKey))).toEqual(
+      new Set(fragments.map((fragment) => fragment.pbKey)),
+    );
+    expect(computeScopeKey(normalizeCaptureScope(fullScopeInput({ fragments: [fragments[0]!] }))))
+      .not.toBe(computeScopeKey(normalizeCaptureScope(fullScopeInput({ fragments: [fragments[1]!] }))));
   });
 
   it('changes when the requested Evidence input mode or min level changes', () => {

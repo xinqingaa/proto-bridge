@@ -82,6 +82,8 @@ Keep formal authoring and Evidence gates intact.
   boundary and keep coverage risk for other Variants visible.
 - Use stable `screenId + pbId + optional pbKey` Fragment identity. Business DS
   instances receive stable `inspectId`; required Fragments never depend on `ds.*`.
+  Follow Core `PbId` / `PbKey` validation and the semantic-authoring identity rules;
+  preserve case-sensitive camelCase business keys without lowercasing them.
 - Prefer typed `v-pb` / `pbStyle()` for local styles and bindings; regenerate
   committed keys with `pnpm ds:keys:generate`, and boundaries with
   `pnpm pb:screens:generate`. Do not rebind DS instances through this helper.

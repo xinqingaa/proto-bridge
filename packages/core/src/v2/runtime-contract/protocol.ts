@@ -3,7 +3,7 @@ import { SemanticRole } from '../contracts/vocabulary.js';
 import { CatalogEntry, CatalogKind } from '../contracts/catalog.js';
 import { AuthoringDiagnostic } from '../contracts/authoring-diagnostic.js';
 import { FragmentRef } from '../contracts/fragment.js';
-import { STABLE_ID_PATTERN, STABLE_ID_RULE } from '../contracts/ids.js';
+import { PbKey, STABLE_ID_PATTERN, STABLE_ID_RULE } from '../contracts/ids.js';
 import { ThemeIdentity } from '../theme/schema.js';
 
 /**
@@ -144,7 +144,7 @@ export const RuntimeCheckpointManifest = z
         z
           .object({
             fragment: RuntimeFragmentIdentity.omit({ pbKey: true }),
-            keys: z.array(StableId),
+            keys: z.array(PbKey),
           })
           .strict(),
       )

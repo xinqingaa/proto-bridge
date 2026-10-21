@@ -372,9 +372,7 @@ const shadowOpacity = computed(() => {
       :class="{ 'is-changing': captionRevision > artwork.zero }"
       :data-pb-id="`${inspectId}.caption`"
       data-pb-role="text"
-      :data-pb-token-typography="
-        face === 'mechanical' ? 'typography.micro' : 'typography.body-sm'
-      "
+      data-pb-token-typography="typography.micro"
       :data-pb-token-color="
         tone === 'paused' ? 'color.primary' : 'color.on-surface-muted'
       "
@@ -469,9 +467,6 @@ const shadowOpacity = computed(() => {
 }
 .caption {
   fill: var(--pb-color-on-surface-muted);
-  font: var(--pb-typography-body-sm);
-}
-.is-mechanical .caption {
   font: var(--pb-typography-micro);
 }
 .is-paused > .caption,

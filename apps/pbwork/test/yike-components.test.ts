@@ -83,6 +83,9 @@ describe("表盘与打卡", () => {
       expect(
         wrapper.findAll("clipPath").at(-1)!.get("path").attributes("d"),
       ).toBe(arc);
+      expect(wrapper.get(".caption").attributes("data-pb-token-typography")).toBe(
+        "typography.micro",
+      );
       await wrapper.setProps({ tone: "paused" });
       expect(wrapper.get(".caption").attributes("data-pb-token-color")).toBe(
         "color.primary",
@@ -128,6 +131,9 @@ describe("表盘与打卡", () => {
             ]),
         }),
         { global: options.global },
+      );
+      expect(first.get(".caption").attributes("data-pb-token-typography")).toBe(
+        "typography.micro",
       );
       expect(first.get(".submerged").attributes("aria-hidden")).toBe("true");
       expect(first.get("clipPath rect").attributes("height")).toBe("184");

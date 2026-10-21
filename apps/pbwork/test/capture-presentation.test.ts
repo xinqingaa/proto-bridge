@@ -226,26 +226,31 @@ describe("capture task presentation", () => {
     const groups = groupCaptureFailures([
       {
         caseId: "cold-chain-ops.exception-queue::default::light::iphone-14",
-        reason: "Required Fragment cold-chain-ops.exception-queue.summary/ is occluded at its center point.",
+        reason:
+          "Required Fragment cold-chain-ops.exception-queue.summary/ is occluded at its center point.",
       },
       {
         caseId: "cold-chain-ops.resolution-form::default::light::iphone-14",
-        reason: "Required Fragment cold-chain-ops.resolution-form.submit/ is occluded at its center point.",
+        reason:
+          "Required Fragment cold-chain-ops.resolution-form.submit/ is occluded at its center point.",
       },
       {
         caseId:
           "cold-chain-ops.shipment-detail::default::light::iphone-14::scenario=cold-chain-ops.shipment-detail.reveal-response-options@response-sheet-visible",
-        reason: "Fragment cold-chain-ops.shipment-detail.response-sheet/ is missing.",
+        reason:
+          "Fragment cold-chain-ops.shipment-detail.response-sheet/ is missing.",
       },
       {
-        caseId: "cold-chain-ops.exception-queue::critical-only::light::iphone-14",
+        caseId:
+          "cold-chain-ops.exception-queue::critical-only::light::iphone-14",
         reason:
           "Required Fragment cold-chain-ops.exception-queue.list.row/critical-ex-017 has data-pb-id without data-pb-role.",
       },
       {
-        caseId: "cold-chain-ops.exception-queue::warning-only::light::iphone-14",
+        caseId:
+          "cold-chain-ops.exception-queue::warning-only::light::iphone-14",
         reason:
-          'payload.nodes.[88].fragment.pbKey: pbKey must be a stable lowercase identifier (letters, digits, \'.\', \'-\', \'_\'); CSS selectors, DOM paths, and array indices are not allowed (got "全部")',
+          "payload.nodes.[88].fragment.pbKey: pbKey must be a stable lowercase identifier (letters, digits, '.', '-', '_'); CSS selectors, DOM paths, and array indices are not allowed (got \"全部\")",
       },
     ]);
 
@@ -266,11 +271,7 @@ describe("capture task presentation", () => {
   });
 
   it("does not report a completed Job with failed Cases as a success", () => {
-    const partial = job(
-      "job-partial",
-      "completed",
-      "2026-07-30T06:19:32.962Z",
-    );
+    const partial = job("job-partial", "completed", "2026-07-30T06:19:32.962Z");
     const generated = state([partial]);
     const counts = generated.bundles[0]!.activeSnapshot!.coverage.counts;
     counts.captured = 0;
@@ -279,18 +280,28 @@ describe("capture task presentation", () => {
     expect(buildCaptureTaskPresentations(generated)[0]).toMatchObject({
       status: "needs-attention",
       statusLabel: "部分失败 · 1 项",
-      resultPath:
-        "/workbench/evidence/bundle-job-partial/snapshot-job-partial",
+      resultPath: "/workbench/evidence/bundle-job-partial/snapshot-job-partial",
     });
   });
 
   it("translates illegal pbKey schema failures into an authoring diagnosis", () => {
     expect(
       translateCaptureFailure(
-        'payload.manifest.screens.cold-chain-ops.exception-queue.variants.default.requiredFragments.cold-chain-ops.exception-queue.severity-tabs.tab#3.pbKey: pbKey must be a stable lowercase identifier (letters, digits, \'.\', \'-\', \'_\'); CSS selectors, DOM paths, and array indices are not allowed (got "3")',
+        "payload.manifest.screens.cold-chain-ops.exception-queue.variants.default.requiredFragments.cold-chain-ops.exception-queue.severity-tabs.tab#3.pbKey: pbKey must be a stable lowercase identifier (letters, digits, '.', '-', '_'); CSS selectors, DOM paths, and array indices are not allowed (got \"3\")",
       ),
     ).toMatchObject({
       title: "原型身份不合法",
+    });
+  });
+
+  it("classifies the camelCase-aware identity rule as an authoring failure", () => {
+    expect(
+      translateCaptureFailure(
+        "payload.nodes.[21].fragment.pbKey: pbKey must be a stable identifier with a lowercase initial (letters including camelCase, digits, '.', '-', '_'); CSS selectors, DOM paths, and array indices are not allowed (got \"3\")",
+      ),
+    ).toMatchObject({
+      title: "原型身份不合法",
+      message: expect.stringContaining("允许驼峰"),
     });
   });
 

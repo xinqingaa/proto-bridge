@@ -34,6 +34,8 @@ packages/mcp-server/                   Consumer MCP
 ## Constraints
 
 - Put product semantics in Core only.
+- Keep semantic `pbId` / `pbKey` validation in Core and preserve case-sensitive
+  camelCase values; do not relax unrelated resource IDs or rewrite identities.
 - Do not maintain duplicate Selection, state, risk, Case identity, or reference
   algorithms at entry points.
 - Keep Store history immutable and pin Handoff to Snapshot/revision.

@@ -63,8 +63,10 @@
 | --- | --- | --- |
 | `screenId` | Fragment 所属 Screen | 固定为 `{prototypeId}.{screenSlug}` |
 | `pbId` / `data-pb-id` | Screen 内的业务语义槽位模板 | 新业务节点使用 `{screenId}.{slotPath}` |
-| `pbKey` / `data-pb-key` | 重复模板的业务稳定实例 | 小写字母开头的稳定标识；不使用纯数字、index、文案、随机值、时间或敏感数据 |
+| `pbKey` / `data-pb-key` | 重复模板的业务稳定实例 | 遵守下述语义身份语法；不使用纯数字、index、文案、随机值、时间或敏感数据 |
 | `componentId` / `data-pb-component` | PBWork DS 组件类型 | 由组件注册提供，不代替 `pbId` |
+
+`pbId` 与 `pbKey` 使用 Core 的 `PbId` / `PbKey` 校验：整体以小写字母开头，后续允许大小写字母、数字及 `.`、`-`、`_` 分隔的非空片段，支持 `camelCase`，例如 `pomodoro-pomodoroMinutes`。身份区分大小写并保留原值，不自动转小写或改写现有引用。其它资源 ID 的小写规则不变。
 
 `role` 描述当前节点在产品中的语义或交互职责，不描述 Vue/Flutter/Swift 类型。`componentId=card` 的实例可以按 Contract 允许的上下文承担 `card`、`section` 或 `summary`；固定行为组件如 Button 只能承担 `button`。精确身份和通用职责可以不同：`componentId=flow-sheet` 使用 `role=sheet`，不能仅因新增组件就扩展 role 闭集。
 
@@ -124,7 +126,7 @@
 - 正式 PBWork 原型存在不属于 Core `SEMANTIC_ROLES` 的静态 `data-pb-role`；
 - `data-pb-id` / `data-pb-role` 只出现一个；
 - 重复 `pbId` 缺少唯一稳定 `pbKey`；
-- `pbId` / `pbKey` 不是稳定小写标识（字母开头；禁止纯数字、CSS selector、DOM path）；
+- `pbId` / `pbKey` 不符合上述语义身份语法（小写字母开头，允许驼峰；禁止纯数字、CSS selector、DOM path）；
 - strict 业务 required Fragment 使用 `ds.*`；
 - Action/Scenario/Checkpoint 引用不能精确解析；
 - 证据节点声明了未知 Token、非法 slot 或与组件 Contract 冲突的 binding；

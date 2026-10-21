@@ -11,16 +11,23 @@ export const STABLE_ID_RULE =
   "must be a stable lowercase identifier (letters, digits, '.', '-', '_'); " +
   'CSS selectors, DOM paths, and array indices are not allowed';
 
-function stableIdMessage(label: string) {
-  return `${label} ${STABLE_ID_RULE}`;
-}
+/** Semantic node identities preserve business-authored camelCase verbatim. */
+export const SEMANTIC_ID_PATTERN = /^[a-z][A-Za-z0-9]*(?:[._-][A-Za-z0-9]+)*$/;
+export const SEMANTIC_ID_RULE =
+  "must be a stable identifier with a lowercase initial (letters including camelCase, digits, '.', '-', '_'); " +
+  'CSS selectors, DOM paths, and array indices are not allowed';
 
-function stableId(label: string, maxLength = 200) {
+function stableId(
+  label: string,
+  maxLength = 200,
+  pattern = STABLE_ID_PATTERN,
+  rule = STABLE_ID_RULE,
+) {
   return z
     .string()
     .min(1, `${label} must not be empty`)
     .max(maxLength, `${label} must be at most ${maxLength} characters`)
-    .regex(STABLE_ID_PATTERN, stableIdMessage(label))
+    .regex(pattern, `${label} ${rule}`)
     .describe(label);
 }
 
@@ -58,9 +65,9 @@ export const TokenId = stableId('tokenId');
 export const AssetId = stableId('assetId');
 
 /** `data-pb-id`: unique within the current visible semantic tree, or a shared template id for repeated instances. */
-export const PbId = stableId('pbId', 400);
+export const PbId = stableId('pbId', 400, SEMANTIC_ID_PATTERN, SEMANTIC_ID_RULE);
 /** `data-pb-key`: required alongside a repeated-instance `pbId`; must be a non-sensitive business-stable key. */
-export const PbKey = stableId('pbKey', 200);
+export const PbKey = stableId('pbKey', 200, SEMANTIC_ID_PATTERN, SEMANTIC_ID_RULE);
 
 export const BundleId = stableId('bundleId');
 export const JobId = stableId('jobId');

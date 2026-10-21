@@ -16,7 +16,14 @@ describe('V2 stable id rules', () => {
     expect(PbKey.safeParse('t1').success).toBe(true);
   });
 
-  it('rejects CSS selectors, DOM paths, whitespace and uppercase', () => {
+  it('preserves camelCase semantic identities without relaxing resource ids', () => {
+    expect(PbId.parse('sample.task-list.settingsRow')).toBe('sample.task-list.settingsRow');
+    expect(PbKey.parse('pomodoro-pomodoroMinutes')).toBe('pomodoro-pomodoroMinutes');
+    expect(PbKey.parse('pomodoro-pomodorominutes')).not.toBe(PbKey.parse('pomodoro-pomodoroMinutes'));
+    expect(ScreenId.safeParse('sample.taskList').success).toBe(false);
+  });
+
+  it('rejects CSS selectors, DOM paths, whitespace and uppercase initials', () => {
     expect(PbId.safeParse('.task-row:nth-child(2) > span').success).toBe(false);
     expect(PbId.safeParse('#task-row').success).toBe(false);
     expect(PbId.safeParse('div[data-id="1"]').success).toBe(false);
@@ -29,7 +36,7 @@ describe('V2 stable id rules', () => {
     expect(PbKey.safeParse('0').success).toBe(false);
     expect(PbKey.safeParse('1').success).toBe(false);
     expect(PbKey.safeParse('3').error?.issues[0]?.message).toContain(
-      'stable lowercase identifier',
+      'stable identifier',
     );
   });
 

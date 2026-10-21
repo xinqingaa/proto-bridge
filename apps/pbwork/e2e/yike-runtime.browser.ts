@@ -1,4 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
+import {
+  PlaywrightCaseCaptureDriver,
+  preflightSelection,
+  type SelectionDraft,
+} from "@proto-bridge/core/v2/capture";
 test.use({
   viewport: { width: 390, height: 844 },
   timezoneId: "Asia/Shanghai",
@@ -38,6 +43,74 @@ async function prepareCurrent(
   expect(result.ok, JSON.stringify(result)).toBe(true);
   return { manifest, theme };
 }
+test("Core Capture preserves settings camelCase keys and produces its screenshot", async ({
+  page,
+}) => {
+  await page.goto(
+    "/prototype/yike/settings?variant=default&theme=mechanical&mode=light",
+  );
+  const described = await runtimeRequest(page, { kind: "describe" });
+  expect(described.ok, JSON.stringify(described)).toBe(true);
+  const manifest = described.payload.manifest;
+  const draft: SelectionDraft = {
+    prototypeId: "yike",
+    themePack: {
+      packId: manifest.theme.packId,
+      packDigest: manifest.theme.packDigest,
+      theme: manifest.theme.defaultTheme,
+      mode: manifest.theme.defaultMode,
+    },
+    screens: [
+      {
+        screenId: "yike.settings",
+        variants: { mode: "explicit", variantIds: ["default"] },
+        deviceIds: ["iphone-14"],
+        scenarios: { mode: "none" },
+        captureScope: {
+          fragments: [],
+          screenshots: { mode: "all" },
+          sourcePolicy: false,
+          debugPolicy: false,
+          evidenceInputMode: "instrumented",
+          minEvidenceLevel: "instrumented-runtime",
+        },
+      },
+    ],
+    acceptedWarningIds: [],
+  };
+  const preflight = preflightSelection(draft, manifest);
+  const captured = await new PlaywrightCaseCaptureDriver().captureCase({
+    entry: preflight.matrix[0]!,
+    preflight,
+    runtimeBaseUrl: new URL(page.url()).origin,
+  });
+  expect(captured.evidenceLevel).toBe("instrumented-runtime");
+  expect(captured.diagnostics.pageErrors).toEqual([]);
+  for (const key of [
+    "pomodoroMinutes",
+    "shortBreakMinutes",
+    "longBreakMinutes",
+    "longBreakEvery",
+  ]) {
+    expect(
+      captured.facts.find(
+        (fact) =>
+          fact.factId ===
+          `yike.settings.configuration.row.pomodoro-${key}.identity`,
+      )?.effectiveValue,
+    ).toEqual({
+      screenId: "yike.settings",
+      pbId: "yike.settings.configuration.row",
+      pbKey: `pomodoro-${key}`,
+    });
+  }
+  expect(
+    captured.binaries.some(
+      (binary) => binary.kind === "screenshot" && binary.bytes.byteLength > 0,
+    ),
+  ).toBe(true);
+});
+
 test("declared states prepare, expose semantic snapshots and reset", async ({
   page,
 }) => {

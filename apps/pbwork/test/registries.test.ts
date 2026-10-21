@@ -1,6 +1,6 @@
 import { runtimeThemeSources } from "@/design-system/theme/runtime-theme";
 import { describe, expect, it } from "vitest";
-import { SEMANTIC_ROLES, TOKEN_BINDING_LITERALS } from "@proto-bridge/core/v2";
+import { SEMANTIC_ID_RULE, SEMANTIC_ROLES, TOKEN_BINDING_LITERALS } from "@proto-bridge/core/v2";
 import { validateRegistries } from "@/design-system/validateRegistries";
 import { BIND_TOKEN_SPECIAL_VALUES } from "@/design-system/theme/bindings";
 import componentSchema from "@/design-system/schemas/component.schema.json";
@@ -87,7 +87,7 @@ describe("registries", () => {
       errors.some(
         (error) =>
           error.instancePath.endsWith("/pbKey") &&
-          error.message.includes("stable lowercase identifier"),
+          error.message.includes(SEMANTIC_ID_RULE),
       ),
     ).toBe(true);
   });

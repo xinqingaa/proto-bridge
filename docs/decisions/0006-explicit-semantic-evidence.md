@@ -22,5 +22,6 @@ Capture 无法从 CSS class、DOM 层级或截图可靠判断作者希望 Agent 
 - DS Component Contract 需要纳入 semantic role policy。
 - 静态检查负责发现属性不成对和疑似 CSS-only 节点；Runtime/Core 负责确定性完整性门禁。
 - 所有参与者使用相同仓库 Skill、Authoring Contract、检查单和 CI，不按人员角色维护不同规范。
+- 语义身份允许大小写敏感的驼峰业务 key，直接保留作者原值；稳定性由对象身份承担，不以强制全小写或自动改写保证。其它资源 ID 的语法不随之放宽。
 
 精确规则见[语义标记与证据门禁](../reference/semantic-authoring.md)。

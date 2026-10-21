@@ -31,6 +31,8 @@ ProtoBridge 的唯一产品语义层，包含可执行 Evidence Contract、Captu
 
 入口包不得复制 Core Schema、状态、Case identity、risk 或 active-ref 解析。
 
+`PbId` / `PbKey` 保留大小写敏感的驼峰业务标识；其它资源 ID 继续使用小写规则。身份语法见[语义标记规范](../../docs/reference/semantic-authoring.md#3-identity-四分法)。
+
 ## 开发
 
 ```bash

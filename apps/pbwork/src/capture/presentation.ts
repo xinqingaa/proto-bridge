@@ -1,5 +1,6 @@
 import {
   incompleteCaseCount,
+  SEMANTIC_ID_RULE,
   type CaptureJob,
   type PrototypeLifecycleRecord,
 } from "@proto-bridge/core/v2";
@@ -216,13 +217,15 @@ type FailureCopy = { title: string; message: string; action: string };
 const FAILURE_COPY: Record<CaptureFailureKind, FailureCopy> = {
   occluded: {
     title: "区域被其它层遮挡",
-    message: "这些必需区域的中心点被别的元素盖住，采集无法确认用户能看到并点到它们。",
+    message:
+      "这些必需区域的中心点被别的元素盖住，采集无法确认用户能看到并点到它们。",
     action: "检查浮层、底部栏、固定定位或 z-index 层级；重新采集不能解决。",
   },
   "missing-fragment": {
     title: "必需区域没有出现",
     message: "页面或场景检查点要求的区域在采集时不存在。",
-    action: "确认场景动作确实会让该区域出现，并核对 data-pb-id 与 Registry 声明一致。",
+    action:
+      "确认场景动作确实会让该区域出现，并核对 data-pb-id 与 Registry 声明一致。",
   },
   "missing-role": {
     title: "区域缺少语义角色",
@@ -232,7 +235,8 @@ const FAILURE_COPY: Record<CaptureFailureKind, FailureCopy> = {
   "invalid-identity": {
     title: "原型身份不合法",
     message: "有 Screen、Fragment 或 pbKey 不符合稳定身份规则。",
-    action: "改 Registry 和页面上的 data-pb-key：只用小写字母、数字、'.'、'-'、'_'，不要用中文显示文字、纯数字、CSS selector 或 DOM path。",
+    action:
+      "检查 Registry 和页面身份：资源 ID 保持小写；pbId/pbKey 以小写字母开头，允许驼峰、数字、'.'、'-'、'_'，不要用显示文案、纯数字、CSS selector 或 DOM path。",
   },
   "duplicate-identity": {
     title: "存在重复采集标识",
@@ -259,6 +263,7 @@ export function classifyCaptureFailure(reason: string): CaptureFailureKind {
     return "duplicate-identity";
   }
   if (
+    reason.includes(SEMANTIC_ID_RULE) ||
     reason.includes("must be a stable lowercase identifier") ||
     reason.includes("failed schema validation")
   ) {
@@ -293,8 +298,11 @@ export function groupCaptureFailures(
   const groups = new Map<CaptureFailureKind, CaptureFailureGroup>();
   for (const failure of failures) {
     const kind = classifyCaptureFailure(failure.reason);
-    const group =
-      groups.get(kind) ?? { kind, ...FAILURE_COPY[kind], cases: [] };
+    const group = groups.get(kind) ?? {
+      kind,
+      ...FAILURE_COPY[kind],
+      cases: [],
+    };
     const fragment = failedFragmentOf(failure.reason);
     group.cases.push({
       caseId: failure.caseId,
@@ -328,8 +336,7 @@ export function formatCaptureError(error: unknown): string {
     error && typeof error === "object" && "code" in error
       ? String((error as { code?: unknown }).code)
       : undefined;
-  const raw =
-    error instanceof Error ? error.message : "证据采集操作失败。";
+  const raw = error instanceof Error ? error.message : "证据采集操作失败。";
   if (code === "capacity-exceeded") {
     const counts = capacityCounts(error, raw);
     return `采集上限不够：需要 ${counts.selected} 项，当前上限 ${counts.maxCases}。`;
@@ -356,9 +363,8 @@ function capacityCounts(error: unknown, message: string) {
     details && typeof details === "object"
       ? (details as Record<string, unknown>)
       : undefined;
-  const fromMessage = /expands to (\d+) Cases; the configured maximum is (\d+)/.exec(
-    message,
-  );
+  const fromMessage =
+    /expands to (\d+) Cases; the configured maximum is (\d+)/.exec(message);
   return {
     selected:
       typeof record?.selected === "number"
@@ -508,9 +514,7 @@ export function buildCaptureTaskPresentations(
     const incomplete =
       job.status === "completed" ? incompleteCasesOf(state, job) : 0;
     const resolvedBy =
-      job.status === "failed" ||
-      job.status === "interrupted" ||
-      incomplete > 0
+      job.status === "failed" || job.status === "interrupted" || incomplete > 0
         ? resolvingJob(state, job)
         : undefined;
     const snapshot =

@@ -36,6 +36,8 @@ PBWork Token / Theme
 
 ## 2. 稳定身份
 
+`pbId` / `pbKey` 的语法、驼峰支持和大小写规则以[语义身份规范](./semantic-authoring.md#3-identity-四分法)为准；业务字段参与身份拼接时保留原值。
+
 | 对象       | 身份                                           |
 | ---------- | ---------------------------------------------- |
 | Prototype  | 稳定 `prototypeId`                             |
