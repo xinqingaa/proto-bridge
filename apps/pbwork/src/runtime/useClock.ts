@@ -4,13 +4,17 @@ const now = ref(new Date());
 let timer: number | undefined;
 let subscribers = 0;
 
+/** Synchronize derived time before observing a fixed Capture clock; no timer delay is needed. */
+export function synchronizeRuntimeClock() {
+  const instant = Date.now();
+  if (now.value.getTime() !== instant) now.value = new Date(instant);
+}
+
 function acquire() {
   subscribers += 1;
   if (subscribers > 1 || typeof window === "undefined") return;
-  now.value = new Date();
-  timer = window.setInterval(() => {
-    now.value = new Date();
-  }, 1000);
+  synchronizeRuntimeClock();
+  timer = window.setInterval(synchronizeRuntimeClock, 1000);
 }
 
 function release() {

@@ -111,7 +111,7 @@ PBWork 的数据位于 `src/design-system/theme/` 与 `theme-packs/base/`。`loa
 
 PrototypeRecord 的 themePackId 取代 defaultThemeId。Registry 调用 Core validateThemePacks 检查包存在、作用域、继承与全部组合；任何 block 阻断启动。当前 Web Runtime 支持 light/dark 模式，system 只用于偏好。
 
-Runtime URL 使用 variant/theme/mode；缺省主题/模式取 manifest 默认值。Core Case URL 只写 mode；`CaseKey.themeId` 只表示模式。Playwright 的 `colorScheme` 取该模式，只接受 `light` / `dark`。业务 routeQuery 禁止覆盖 `variant` 与 `mode`。Selection 携带 `themePack`（包 ID、包摘要、默认主题、默认模式）；actual 与 Selection 的身份不一致时阻断为 `environment.theme-digest-mismatch`。内部 Workbench bridge 的 `themeId` 仍是模式字符串，不进入严格 Capture 响应。
+Runtime URL 使用 variant/theme/mode；缺省主题/模式取 manifest 默认值。Core Case URL 显式写入 theme 与 mode；新 `CaseKey.theme` 固定命名主题，`CaseKey.themeId` 仍表示模式。旧 Case 缺少 theme 时按其固定 Run 的默认主题读取，不改写历史身份。Playwright 的 `colorScheme` 取该模式，只接受 `light` / `dark`。业务 routeQuery 禁止覆盖 `variant`、`theme` 与 `mode`。Selection 携带 `themePack`（包 ID、包摘要、默认主题、默认模式）；actual 与 Selection 的身份不一致时阻断为 `environment.theme-digest-mismatch`。内部 Workbench bridge 的 `themeId` 仍是模式字符串，不进入严格 Capture 响应。
 
 DS 与冷链消费者已完成迁移，Runtime 仅生成新表的变量。原有 154 项值作为测试夹具保留：102 项迁入语义层、11 项进入组件层、9 项成为包私有 Primitive、32 项对应 31 个实现常量。所有等价断言均已落地，不再保留 todo。
 
@@ -121,10 +121,10 @@ Capture 的 token Catalog 只含键定义（类型、是否可绑定、是否随
 
 PBWork 在既有 RuntimeSemanticNode.props 中保留 name 及语义节点所属装饰图标的 icons（名称、owner、sourceFile、颜色策略、尺寸档位和 tone）。大型表盘用显式 data-pb-artwork 声明 packId、assetId、逻辑 file、源文件标识、sessionAsset/layerAsset、views 与受控状态；Runtime 校验逻辑文件在源包 files 中存在、子 image 实际 URL 与声明资源一致且 fragment view 已登记，再输出 props.artwork 的 declared、sourceDigest 和实际 image view/可见性。声明与图像观测分别保留，不推导 Target 路径或动态绘图算法。这是现有 props 的增量数据，不是新的通用资产 Contract 或 resolver。
 
-本批 Runtime inputVersion 含 resourceUsageVersion、所选包图形元数据及公共/当前原型图标源输入摘要，避免复用缺少新使用信息或资源输入已变的旧 Case；不改写历史输入、Case identity 或 scope hash。新输出沿用协议 3 的可扩展 props 通道，旧固定 Handoff 不补造资源使用信息。图标逐项源摘要与 Target 真实使用校验仍是后续范围，不能将当前信息宣称为通用精确资源解析。Workbench 展示记录仍是主题表生成的展示数据，不是第二份 Token 语义源。
+Runtime inputVersion 含源码 sourceDigest、resourceUsageVersion、所选包图形元数据及公共/当前原型图标源输入摘要，避免复用缺少新使用信息或资源输入已变的旧 Case；不改写历史输入或 scope hash。新输出沿用协议 3 的可扩展 props 通道，旧固定 Handoff 不补造资源使用信息。当前不提供图标逐项源摘要或 Target 真实使用自动校验。Workbench 展示记录仍是主题表生成的展示数据，不是第二份 Token 语义源。
 
 PBWork 的主题资产加载器使用 `?url&no-inline` 提供资源 URL，在开发与构建环境中均保留源文件字节，避免 SVG 内联优化改写空白和引号后与清单摘要不一致。
 
-Runtime 协议版本为 3。清单必填 `theme` 与 `clock`。`clock` 声明采集用的当前时刻和时区；Playwright 安装该时钟，交互模式仍走真实时间。`useClock()` 读取 `Date`。Preflight 在采集前对每个 Screen 的 default Variant、每个主题和每个模式比较语义树（节点身份、role、可见性、bbox 是否非零、componentId、排序后的 tokenBindings、语义父节点）。分叉是 Authoring Diagnostic `theme.mode-divergence`，不写入 Evidence。MCP `read_theme_pack` 只读 Handoff 固定的 theme-pack Catalog：默认组合 `captured: true`，其它组合返回该表并标注 `captured: false`。`read_screen_packet` 的 token 清单在该 Catalog 存在时附带默认主题与模式的 `resolvedValue`、`chain` 和 `tier`。CLI 不再接受 `--theme`；`snapshot inspect` 打印 `packId@digest/theme/mode`。
+Runtime 协议版本为 3。清单必填 `theme` 与 `clock`。`clock` 声明采集用的当前时刻和时区；Playwright 安装该时钟，交互模式仍走真实时间。`useClock()` 读取 `Date`。Preflight 在采集前对每个 Screen 的 default Variant、每个主题和每个模式比较语义树（节点身份、role、可见性、bbox 是否非零、componentId、排序后的 tokenBindings、语义父节点）。分叉是 Authoring Diagnostic `theme.mode-divergence`，不写入 Evidence。MCP `read_theme_pack` 只读 Handoff 固定的 theme-pack Catalog：`captured` 由 Handoff 中实际 resolved Case 的主题与模式判断，未采集的组合仍可读取固定取值表，但标注 `captured: false`，Catalog 存在本身不代表页面已采集。`read_screen_packet` 的 token 清单在该 Catalog 存在时保留默认主题与模式的 `resolvedValue`、`chain` 和 `tier`，并用 `resolvedVariants` 列出实际引用 Case 的各主题／模式取值和 Case 关联。CLI 不再接受 `--theme`；`snapshot inspect` 打印 `packId@digest/theme/mode`。
 
 声明时钟随原型元信息存入固定的 prototype Catalog。`read_handoff_index.captureClock` 由 Core 从同 Workspace、Bundle 且被该 Handoff 的 `prototype-catalog` resource ref 精确固定的修订中读取，只接受与 Catalog 原型身份一致的唯一条目及合法时钟；返回 `now`、`timeZone`、`catalogRevisionId`。缺失、非法或有歧义时返回 `null`，不猜默认时刻、不回退更新修订或当前 Runtime。该字段是消费投影，不新增 Handoff 持久字段或时钟语义。

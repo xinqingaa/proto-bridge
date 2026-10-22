@@ -62,7 +62,7 @@ const toolDefinitions: JsonValue[] = [
   tool('inspect_evidence_workspace', '检查 Evidence Workspace', '返回 MCP 当前绑定的逻辑 Workspace。', {}),
   tool('read_handoff_index', '读取 Handoff 索引', '默认消费入口：返回固定引用、固定原型 Catalog 中的采集时钟、全部风险、Screen 顺序、Case/Scenario 计数和 Screenshot digest 分组，不展开完整 Facts 或 Acceptance dimensions。', { handoffId: { type: 'string' } }, ['handoffId']),
   tool('read_screen_packet', '读取 Screen 包', '按固定 Handoff 读取单个 Screen 的 Case/Scenario 地图、紧凑 baseline、canonicalBrief（主滚动/状态矩阵/业务数据）、截图分组，以及按组件/Token、regionId、role、slot 和 caseId 聚合的实施 inventory。Token 清单附默认主题取值、引用链和层。', { handoffId: { type: 'string' }, screenId: { type: 'string' } }, ['handoffId', 'screenId']),
-  tool('read_theme_pack', '读取主题包取值表', '只经 Handoff 固定的 theme-pack Catalog 读取解析值。默认返回 Handoff 的默认主题与模式；请求其它组合时返回该表并标注 captured: false。不回退 active 或 latest。', {
+  tool('read_theme_pack', '读取主题包取值表', '只经 Handoff 固定的 theme-pack Catalog 读取解析值。默认返回 Handoff 的默认主题与模式；captured 按固定 resolved Case 的主题与模式判断，未采集组合仍可读取取值表。不回退 active 或 latest。', {
     handoffId: { type: 'string' },
     theme: { type: 'string' },
     mode: { type: 'string' },

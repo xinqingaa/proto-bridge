@@ -1,3 +1,4 @@
+import { CaseKey, computeCaseId } from './case.js';
 import { z } from 'zod';
 import {
   AttemptId,
@@ -31,14 +32,18 @@ export type Risk = z.infer<typeof Risk>;
 
 const HandoffCaseBase = {
   caseId: CaseId,
+  caseKey: CaseKey.optional(),
   captureScope: NormalizedCaptureScope,
   scopeKey: ScopeKey,
 };
 
 function validateHandoffCaseScope(
-  ref: { captureScope: z.infer<typeof NormalizedCaptureScope>; scopeKey: z.infer<typeof ScopeKey> },
+  ref: { caseId: string; caseKey?: import('./case.js').CaseKey | undefined; captureScope: z.infer<typeof NormalizedCaptureScope>; scopeKey: z.infer<typeof ScopeKey> },
   ctx: z.RefinementCtx,
 ): void {
+  if (ref.caseKey && computeCaseId(ref.caseKey) !== ref.caseId) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'caseKey does not match caseId', path: ['caseKey'] });
+  }
   const expectedScopeKey = computeScopeKey(ref.captureScope);
   if (ref.scopeKey !== expectedScopeKey) {
     ctx.addIssue({

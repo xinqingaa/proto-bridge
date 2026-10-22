@@ -40,6 +40,8 @@ export type ReconstructionAcceptanceContract = {
     caseId: string;
     screenId: string;
     variantId: string;
+    theme?: string;
+    mode?: string;
     scenario?: EvidenceCaseReadModel['scenario'];
     blobIds: string[];
   }>;
@@ -88,6 +90,8 @@ export function buildReconstructionAcceptanceContract(input: {
         caseId: evidenceCase.caseId,
         screenId: evidenceCase.screenId,
         variantId: evidenceCase.variantId,
+        ...(evidenceCase.theme ? { theme: evidenceCase.theme } : {}),
+        mode: evidenceCase.themeId,
         ...(evidenceCase.scenario ? { scenario: evidenceCase.scenario } : {}),
         blobIds: evidenceCase.screenshotBlobIds,
       });

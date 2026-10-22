@@ -150,6 +150,7 @@ function draft(sourcePolicy = false): SelectionDraft {
         screenId: 'sample.task-list',
         variants: { mode: 'explicit', variantIds: ['default'] },
         deviceIds: ['iphone-14'],
+        themeModes: [{ mode: 'light' }],
         scenarios: { mode: 'none' },
         captureScope: {
           fragments: [],

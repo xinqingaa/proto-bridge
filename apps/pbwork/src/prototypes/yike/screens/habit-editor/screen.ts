@@ -43,6 +43,7 @@ export default defineScreen({
     {
       id: "cancel-create",
       label: "取消新建",
+      appearancePolicy: "shared" as const,
       initialVariantId: "default",
       actionIds: ["cancel"],
       checkpoints: [
@@ -59,6 +60,7 @@ export default defineScreen({
     {
       id: "save-edit",
       label: "保存已有习惯",
+      appearancePolicy: "shared" as const,
       initialVariantId: "edit",
       actionIds: ["save"],
       checkpoints: [

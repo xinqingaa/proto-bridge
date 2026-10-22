@@ -54,6 +54,7 @@ export default defineScreen({
     {
       id: "browse-day-records",
       label: "查看前一天并返回当天后关闭",
+      appearancePolicy: "shared" as const,
       initialVariantId: "day-detail",
       actionIds: ["previous-day", "next-day", "close-day"],
       checkpoints: [
@@ -68,6 +69,7 @@ export default defineScreen({
     {
       id: "browse-history",
       label: "翻阅上一周再返回",
+      appearancePolicy: "shared" as const,
       initialVariantId: "history",
       actionIds: ["previous", "next"],
       checkpoints: [

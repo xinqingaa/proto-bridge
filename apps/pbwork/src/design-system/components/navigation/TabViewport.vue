@@ -103,6 +103,7 @@ usePbInspect({
       :key="item.value"
       :value="item.value"
       :eager="keepMounted"
+      :data-pb-capture-inactive="active !== item.value ? 'true' : undefined"
     >
       <div class="pb-tab-viewport-panel" role="tabpanel">
         <slot name="item" :value="item.value" :active="active === item.value" />

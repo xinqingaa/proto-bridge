@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useYikeRenderFace } from "../../render-theme";
+import { useCaptureState } from "@/runtime/capture-state";
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { vPb } from "@/authoring/pb-style";
@@ -95,6 +97,10 @@ function remove() {
   store.presentation.message = `已删除：${name}`;
   void nav().home("checkin");
 }
+useCaptureState("yike", "yike.habit-detail", () => ({
+  deleting: deleting.value,
+}));
+const renderFace = useYikeRenderFace();
 </script>
 <template>
   <PrototypeShell
@@ -245,7 +251,7 @@ function remove() {
           <h2>最近一年</h2>
           <YikeHabitYear
             :inspect-id="scope.id('year')"
-            :face="store.data.preferences.face"
+            :face="renderFace"
             :today="today"
             :created-on="habit.createdOn"
             :days="

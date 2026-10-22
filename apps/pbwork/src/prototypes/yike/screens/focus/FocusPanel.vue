@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, inject } from "vue";
+import { ThemeTableKey } from "@/design-system/theme/runtime-theme";
 import { useRoute, useRouter } from "vue-router";
 import { vPb } from "@/authoring/pb-style";
 import { useClock } from "@/runtime/useClock";
 import { useReducedMotion } from "@/runtime/useReducedMotion";
-import { useYikeStore } from "../../model";
+import { useYikeStore, type YikeFace } from "../../model";
 import { useFrameClock } from "../../frame-clock";
 import { useYikeSession } from "../../session";
 import { elapsedMs, type YikeTimerMode } from "../../timer-engine";
@@ -29,7 +30,9 @@ const store = useYikeStore(),
   commands = useYikeSession(),
   now = useClock(),
   reducedMotion = useReducedMotion();
-const face = computed(() => store.data.preferences.face);
+// Rendering follows the resolved theme; resetting saved preferences is independent.
+const themeTable = inject(ThemeTableKey)!;
+const face = computed(() => themeTable.value.identity.theme as YikeFace);
 const countdownSeconds = commands.countdownSeconds;
 const presets = computed(() =>
   store.data.preferences.countdownPresets.filter(

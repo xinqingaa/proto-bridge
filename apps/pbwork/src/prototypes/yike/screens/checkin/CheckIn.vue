@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useYikeRenderFace } from "../../render-theme";
+import { useCaptureState } from "@/runtime/capture-state";
 import { computed, ref, watch } from "vue";
 import Icon from "@/design-system/components/action/Icon.vue";
 import { useRoute, useRouter } from "vue-router";
@@ -24,7 +26,7 @@ const archivedOpen = ref(false);
 const archived = computed(() =>
   store.data.habits.filter((habit) => habit.archivedOn),
 );
-const face = computed(() => store.data.preferences.face);
+const face = useYikeRenderFace();
 const nav = () => yikeNavigation(router, route, store);
 
 const showReset = ref(false);
@@ -113,6 +115,12 @@ function resetCorruptData() {
   store.reset();
   showReset.value = false;
 }
+useCaptureState("yike", "yike.checkin", () => ({
+  archivedOpen: archivedOpen.value,
+  showReset: showReset.value,
+  notice: notice.value,
+  noticeText: noticeText.value,
+}));
 </script>
 
 <template>

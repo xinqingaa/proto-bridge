@@ -33,13 +33,13 @@ Selection 描述一次采集意图。每个 Selected Case 由稳定维度组成�
 
 - Prototype/Screen；
 - Variant；
-- Theme；
+- 命名 Theme 与浅深 Mode；
 - Device/Viewport；
 - Fixture；
 - Scenario；
 - Capture Scope。
 
-Case identity 只由规范化维度决定，不包含 Run ID、时间、Attempt 或截图路径。相同输入必须产生相同 Case ID。
+Case identity 只由规范化维度决定，不包含 Run ID、时间、Attempt 或截图路径。相同输入必须产生相同 Case ID。新 Case 在原复合身份后增加 `::theme=<命名主题>`；`themeId` 保留模式语义。缺少 theme 的旧记录继续使用原身份。NormalizedSelection 可固定 `declaredThemeModes`；主题组合的覆盖与所选 Case 的完成计数分别展示，历史缺失声明保持未知。主题覆盖以固定 source Run 的 Selection 去掉命名主题／模式后的基础矩阵为分母，保留 Screen、Variant、设备、Scenario Checkpoint 与 Scope，并对每个声明组合报告 `expectedCaseCount`、`capturedCaseCount`、`missingCaseCount`。组合中出现一张截图不表示该组合全部状态完成；不属于此分母的历史页面、重复截图或其他 Scope 不能补足缺项。Handoff 投影只针对它固定的所选范围重新计算，不能借用其他 Case 宣称覆盖。
 
 Capture Scope 可以是 Screen 或稳定 Fragment 集合。Scope key 是可复算身份；Fragment 只接受 `screenId + pbId + optional pbKey`。
 
@@ -49,7 +49,7 @@ Job 是可恢复的执行控制对象，可以 queued、running、cancelling 或
 
 Run 是一次已终结 Selection 的不可变记录。可信 Run 即使零成功也会形成 Coverage 和新 Snapshot；Store 提交失败则不能宣称 Run/Snapshot 已更新。
 
-Attempt 是某 Case 在本 Run 中的实际执行结果。失败 Attempt 与 active successful Evidence 分开保存，防止一次失败抹掉上次可用结果。
+Attempt 是某 Case 在本 Run 中的实际采集结果。主题／模式不同的逻辑 Case 可以共用一次业务准备与交互执行，各自仍须真实采集对应外观；执行组是调度单位，不改变稳定 Case identity。失败 Attempt 与 active successful Evidence 分开保存，防止一次失败抹掉上次可用结果。
 
 ## Evidence revision
 
@@ -83,9 +83,17 @@ active slot 的激活遵循防降级规则：失败、取消、低 Evidence Leve
 
 收敛版本中，正式 Handoff 所需的 Prototype、Screen、Component 和 Token Catalog 必须由 Snapshot 固定；缺少交付范围所需 Catalog 时不得把组件/Token 事实声明为完整。Handoff 同时必填主题包身份，并固定一份 theme-pack Catalog。有 tokenBindings 时还要求 token Catalog。
 
+### 业务执行来源
+
+Case 的 `${screenId}.runtime.execution` Fact 以 `executionId` 固定业务执行，`sourceCaseId` 指向真实执行业务准备／动作的来源 Case，`sourceTheme` 记录该次执行的主题与模式。`mode=independent` 表示本 Case 是执行来源；`mode=shared-appearance` 表示本外观已实际观测，但引用同组一次业务执行，没有在此外观独立重放交互。可选 `stateDigest` 记录保持的业务状态。动作与 Scenario 定义仍是 authored declaration，不能单凭声明或六张截图推断六次独立交互执行。
+
+`sourceCaseId` 只是来源身份声明，不是固定 revision 引用。读模型仅在同一固定范围中找到相同 `sourceCaseId`、`executionId`、Scope 且为独立执行的来源时，输出 `sourceExecutionStatus=matched` 和 `sourceRevisionId`；来源已被另一执行替换时为 `mismatch`，来源不在固定范围时为 `not-in-fixed-selection`，均不追读 active/latest。Handoff 依据自身固定的 Case/revision 再核对，不能沿用更大 Snapshot 范围的匹配结论。
+
+读模型、Screen packet、Case delta 与明细保留此来源；Handoff index 分别统计独立、共享、未记录执行来源的 Case 与不同执行数。缺失或未 resolved 的执行 Fact 保持未知，不从 Case 数、主题相同或源码相同补造。组件定义和主题解析值依旧从固定 Catalog 读取，页面事实记录组件使用、组合、绑定与实际状态；目标 Agent 自行决定复用还是自建实现。
+
 ## Catalog
 
-Catalog revision 固定 Prototype、Screen、Variant、Component、Token、theme-pack、Action 和 Scenario 等目录事实。Token Catalog 只含键定义。theme-pack Catalog 以包摘要为 `inputDigest`，保存包清单和每个「主题 × 模式」的解析值与 provenance。Catalog 与页面 Evidence 分开版本化，避免目录变化重写历史 revision。读模型从 Handoff 默认主题与模式的取值表派生 `resolvedValue`、`chain` 和 `tier`，不把取值复制到每个 Case 节点。
+Catalog revision 固定 Prototype、Screen、Variant、Component、Token、theme-pack、Action 和 Scenario 等目录事实。Token Catalog 只含键定义。theme-pack Catalog 以包摘要为 `inputDigest`，保存包清单和每个「主题 × 模式」的解析值与 provenance。Catalog 与页面 Evidence 分开版本化，避免目录变化重写历史 revision。读模型从 Handoff 默认主题与模式的取值表派生 `resolvedValue`、`chain` 和 `tier`，并用 `resolvedVariants` 关联各实际 Case 的主题／模式取值，不把取值复制到每个 Case 节点。
 
 ## Issue 与 Coverage
 

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useYikeRenderFace } from "../render-theme";
+import { useCaptureState } from "@/runtime/capture-state";
 import { computed, provide, watch, ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { resolvePbIcon } from "@/design-system/components/_shared/icons";
@@ -72,6 +74,8 @@ function tab(slug: string) {
     slug as "focus" | "checkin" | "review",
   );
 }
+useCaptureState("yike", "local.root", () => ({ launching: launching.value }));
+const renderFace = useYikeRenderFace();
 </script>
 
 <template>
@@ -86,9 +90,7 @@ function tab(slug: string) {
         :screen-id="`yike.${active}`"
         :launch="launching"
       >
-        <template #launch
-          ><Brand :face="store.data.preferences.face"
-        /></template>
+        <template #launch><Brand :face="renderFace" /></template>
         <template #app-bar><span /></template>
         <TabViewport
           :key="store.presentation.revision"

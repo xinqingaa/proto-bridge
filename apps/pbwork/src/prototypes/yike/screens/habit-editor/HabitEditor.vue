@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useCaptureState } from "@/runtime/capture-state";
 import { computed, ref, watch, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { vPb } from "@/authoring/pb-style";
@@ -68,6 +69,12 @@ async function save(value: YikeHabitDraft) {
   open.value = false;
   await nav().editorSaved(savedId, Boolean(id.value));
 }
+useCaptureState("yike", "yike.habit-editor", () => ({
+  draft: draft.value,
+  open: open.value,
+  saving: saving.value,
+  leaving: leaving.value,
+}));
 </script>
 <template>
   <BottomSheet

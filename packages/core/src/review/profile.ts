@@ -124,7 +124,7 @@ export function selectReviewProfileForConsumer(
       scenarioCase: item.scenario !== undefined,
       tags: [
         ...(item.caseId === baseline?.caseId ? ['baseline' as const] : []),
-        ...(baseline && item.themeId !== baseline.themeId ? ['theme' as const] : []),
+        ...(baseline && (item.themeId !== baseline.themeId || item.theme !== baseline.theme) ? ['theme' as const] : []),
         ...(baseline && item.deviceId !== baseline.deviceId ? ['narrow' as const] : []),
         ...(item.scenario ? ['key-state' as const, 'core-journey' as const] : []),
       ],

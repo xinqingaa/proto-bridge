@@ -6,6 +6,7 @@ export function buildRuntimeCaseUrl(input: {
   path: string;
   variantId: string;
   themeId: string;
+  theme?: string;
   routeQuery?: Record<string, string>;
 }): string {
   const base = new URL(input.runtimeBaseUrl);
@@ -35,6 +36,7 @@ export function buildRuntimeCaseUrl(input: {
   url.search = '';
   url.searchParams.set('variant', input.variantId);
   url.searchParams.set('mode', input.themeId);
+  if (input.theme) url.searchParams.set('theme', input.theme);
   const parsedRouteQuery = RuntimeRouteQuery.safeParse(input.routeQuery ?? {});
   if (!parsedRouteQuery.success) {
     throw new V2ContractError(

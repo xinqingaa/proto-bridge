@@ -123,6 +123,7 @@ function draft(): SelectionDraft {
           variantIds: ['default', 'claimable'],
         },
         deviceIds: ['iphone-14'],
+        themeModes: [{ mode: 'light' }],
         scenarios: { mode: 'explicit', scenarioIds: ['open-claimable-task'] },
         captureScope: {
           fragments: [],
@@ -186,6 +187,31 @@ describe('V2 Selection normalization and Preflight', () => {
       { record: 'task-claimable' },
       { record: 'task-default' },
     ]);
+  });
+
+  it('captures every named theme and mode, including Scenario checkpoints, with distinct identities', () => {
+    const contract = manifest();
+    contract.theme.themes = ['default', 'water', 'sundial'];
+    const all = draft();
+    delete all.screens[0]!.themeModes;
+    const resolved = resolveSelectionMatrix(all, contract);
+    expect(resolved.matrix).toHaveLength(18);
+    expect(new Set(resolved.selection.cases.map((item) => item.caseId)).size).toBe(18);
+    for (const theme of contract.theme.themes) {
+      for (const mode of contract.theme.modes) {
+        const cases = resolved.selection.cases.filter((item) => item.caseKey.theme === theme && item.caseKey.themeId === mode);
+        expect(cases).toHaveLength(3);
+        expect(cases.some((item) => item.caseKey.scenario)).toBe(true);
+      }
+    }
+    expect(() => preflightSelection(all, contract, { maxCases: 17 })).toThrow('18 Cases');
+    expect(resolveSelectionMatrix({ ...all, screens: [...all.screens].reverse() }, contract).selection).toEqual(resolved.selection);
+  });
+
+  it('rejects undeclared theme/mode pairs instead of falling back to defaults', () => {
+    const invalid = draft();
+    invalid.screens[0]!.themeModes = [{ theme: 'unknown', mode: 'dark' }];
+    expect(() => resolveSelectionMatrix(invalid, manifest())).toThrow('Runtime theme/mode');
   });
 
   it('normalizes a stable Fragment scope without changing Case identity', () => {

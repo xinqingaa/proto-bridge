@@ -26,7 +26,7 @@ describe("PBWork V2 capture store", () => {
     expect(draft).not.toBeNull();
     const resolved = resolveSelectionMatrix(draft!, manifest);
     const count = resolved.matrix.length;
-    expect(count).toBe(26);
+    expect(count).toBe(52);
     expect(manifest.theme.packId).toBe("pbwork-base");
     expect(manifest.clock).toEqual({
       now: "2026-07-28T00:00:00.000Z",
@@ -36,10 +36,19 @@ describe("PBWork V2 capture store", () => {
       manifest.catalogs.find((catalog) => catalog.kind === "theme-pack")
         ?.inputDigest,
     ).toBe(manifest.theme.packDigest);
-    expect(resolved.matrix.every((entry) => entry.selectedCase.caseKey.themeId === "light")).toBe(true);
+    expect(new Set(resolved.matrix.map((entry) => entry.selectedCase.caseKey.themeId))).toEqual(new Set(["light", "dark"]));
+    expect(resolved.matrix.every((entry) => entry.selectedCase.caseKey.theme === "default")).toBe(true);
     expect(resolved.selection.themePack).toEqual(draft!.themePack);
     expect(count).toBeLessThanOrEqual(DEFAULT_CAPTURE_MAX_CASES);
     expect(createPrototypeCaptureDraft("unknown-prototype")).toBeNull();
+  });
+
+  it("includes all three yike themes and both modes in the formal Draft", () => {
+    const draft = createPrototypeCaptureDraft("yike")!;
+    const resolved = resolveSelectionMatrix(draft, buildRuntimeCaptureManifest("yike"));
+    expect(resolved.matrix).toHaveLength(414);
+    expect(resolved.selection.declaredThemeModes).toHaveLength(6);
+    expect(new Set(resolved.matrix.map((entry) => entry.selectedCase.caseId)).size).toBe(414);
   });
 
   it("drops local lifecycle after CLI reset when the session generation changes", async () => {

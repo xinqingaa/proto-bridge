@@ -60,5 +60,10 @@ describe('selection retry draft', () => {
     };
     const resolved = preflightSelection(draft, manifest);
     expect(resolved.selection.cases).toEqual(original.cases);
+    const named = { ...original.cases[0]!, caseKey: { ...original.cases[0]!.caseKey, theme: 'default', themeId: 'dark' } };
+    named.caseId = `${named.caseKey.screenId}::${named.caseKey.variantId}::dark::${named.caseKey.deviceId}::theme=default`;
+    const mixed = [original.cases[0]!, named];
+    const retried = preflightSelection(selectionDraftFromSelectedCases(original.prototypeId, mixed, original.themePack), manifest);
+    expect(new Set(retried.selection.cases.map((item) => item.caseId))).toEqual(new Set(mixed.map((item) => item.caseId)));
   });
 });

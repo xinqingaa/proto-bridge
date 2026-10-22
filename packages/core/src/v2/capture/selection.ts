@@ -49,6 +49,18 @@ export const ScreenSelectionDraft = z
     screenId: ScreenId,
     variants: VariantSelection,
     deviceIds: z.array(DeviceId).min(1),
+    /** Omitted means every declared theme/mode. Missing theme is legacy retry only. */
+    themeModes: z
+      .array(
+        z
+          .object({
+            theme: ThemeIdentity.shape.theme.optional(),
+            mode: ThemeIdentity.shape.mode,
+          })
+          .strict(),
+      )
+      .min(1)
+      .optional(),
     scenarios: ScenarioSelection.default({ mode: 'none' }),
     captureScope: CaptureScopeInput,
   })
@@ -100,6 +112,7 @@ export function selectionDraftFromSelectedCases(
     {
       screenId: string;
       themeId: string;
+      theme?: string;
       deviceId: string;
       captureScope: SelectedCase['captureScope'];
       variantIds: Set<string>;
@@ -112,12 +125,14 @@ export function selectionDraftFromSelectedCases(
     const key = JSON.stringify({
       screenId,
       themeId: selected.caseKey.themeId,
+      ...(selected.caseKey.theme ? { theme: selected.caseKey.theme } : {}),
       deviceId: selected.caseKey.deviceId,
       captureScope: selected.captureScope,
     });
     const group = groups.get(key) ?? {
       screenId,
       themeId: selected.caseKey.themeId,
+      ...(selected.caseKey.theme ? { theme: selected.caseKey.theme } : {}),
       deviceId: selected.caseKey.deviceId,
       captureScope: selected.captureScope,
       variantIds: new Set<string>(),
@@ -137,6 +152,9 @@ export function selectionDraftFromSelectedCases(
         variantIds: [...group.variantIds],
       },
       deviceIds: [group.deviceId],
+      themeModes: [
+        { ...(group.theme ? { theme: group.theme } : {}), mode: group.themeId },
+      ],
       scenarios:
         group.scenarioIds.size > 0
           ? {
@@ -243,21 +261,41 @@ export function resolveSelectionMatrix(
       screenDraft.screenId,
     );
     const variants = selectedVariantIds(screen, screenDraft.variants);
-    const themeId = manifest.theme.defaultMode;
+    const themeModes =
+      screenDraft.themeModes ??
+      [...manifest.theme.themes]
+        .sort()
+        .flatMap((theme) =>
+          [...manifest.theme.modes].sort().map((mode) => ({ theme, mode })),
+        );
+    for (const combination of themeModes) {
+      if (
+        !manifest.theme.themes.includes(
+          combination.theme ?? draft.themePack.theme,
+        ) ||
+        !manifest.theme.modes.includes(combination.mode)
+      ) {
+        throw unknownReferenceError('Runtime theme/mode', combination);
+      }
+    }
     const devices = [...new Set(screenDraft.deviceIds)].sort();
     devices.forEach((deviceId) => resolveCaptureDevice(deviceId));
 
-    for (const variantId of variants) {
-      const variant = screen.variants.find(
-        (candidate) => candidate.variantId === variantId,
-      )!;
-      for (const deviceId of devices) {
+    for (const combination of themeModes) {
+      const themeId = combination.mode;
+      const themeKey = combination.theme ? { theme: combination.theme } : {};
+      for (const variantId of variants) {
+        const variant = screen.variants.find(
+          (candidate) => candidate.variantId === variantId,
+        )!;
+        for (const deviceId of devices) {
           entries.push(
             makeEntry({
               caseKey: {
                 screenId: screen.screenId,
                 variantId,
                 themeId,
+                ...themeKey,
                 deviceId,
               },
               captureScope: screenDraft.captureScope,
@@ -269,38 +307,38 @@ export function resolveSelectionMatrix(
                 : {}),
             }),
           );
+        }
       }
-    }
 
-    for (const scenario of selectedScenarios(screen, screenDraft.scenarios)) {
-      const initialVariant = screen.variants.find(
-        (variant) => variant.variantId === scenario.initialVariantId,
-      );
-      if (!initialVariant) {
-        throw unknownReferenceError(
-          'Scenario initial Variant manifest',
-          scenario.initialVariantId,
+      for (const scenario of selectedScenarios(screen, screenDraft.scenarios)) {
+        const initialVariant = screen.variants.find(
+          (variant) => variant.variantId === scenario.initialVariantId,
         );
-      }
-      for (const checkpoint of [...scenario.checkpoints].sort((a, b) =>
-        a.checkpointId.localeCompare(b.checkpointId),
-      )) {
-        const checkpointScreen = requireScreen(
-          manifest,
-          draft.prototypeId,
-          checkpoint.screenId,
-        );
-        if (
-          !checkpointScreen.variants.some(
-            (variant) => variant.variantId === checkpoint.variantId,
-          )
-        ) {
+        if (!initialVariant) {
           throw unknownReferenceError(
-            'Scenario checkpoint Variant manifest',
-            checkpoint.variantId,
+            'Scenario initial Variant manifest',
+            scenario.initialVariantId,
           );
         }
-        for (const deviceId of devices) {
+        for (const checkpoint of [...scenario.checkpoints].sort((a, b) =>
+          a.checkpointId.localeCompare(b.checkpointId),
+        )) {
+          const checkpointScreen = requireScreen(
+            manifest,
+            draft.prototypeId,
+            checkpoint.screenId,
+          );
+          if (
+            !checkpointScreen.variants.some(
+              (variant) => variant.variantId === checkpoint.variantId,
+            )
+          ) {
+            throw unknownReferenceError(
+              'Scenario checkpoint Variant manifest',
+              checkpoint.variantId,
+            );
+          }
+          for (const deviceId of devices) {
             const scenarioScope = {
               ...screenDraft.captureScope,
               // Fragment identities authored for the initial Screen cannot
@@ -320,6 +358,7 @@ export function resolveSelectionMatrix(
                   screenId: checkpoint.screenId,
                   variantId: checkpoint.variantId,
                   themeId,
+                  ...themeKey,
                   deviceId,
                   scenario: {
                     ownerScreenId: scenario.ownerScreenId,
@@ -340,6 +379,7 @@ export function resolveSelectionMatrix(
           }
         }
       }
+    }
   }
 
   const themePack = draft.themePack;
@@ -376,6 +416,11 @@ export function resolveSelectionMatrix(
   const selection = {
     prototypeId: draft.prototypeId,
     themePack,
+    declaredThemeModes: [...manifest.theme.themes]
+      .sort()
+      .flatMap((theme) =>
+        [...manifest.theme.modes].sort().map((mode) => ({ theme, mode })),
+      ),
     cases: entries.map((entry) => entry.selectedCase),
     acceptedWarningIds: [...new Set(draft.acceptedWarningIds)].sort(),
   };

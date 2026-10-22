@@ -33,7 +33,7 @@ function writeE2eWorkspaceConfig(): string {
         root: process.env.PBWORK_E2E_STORE_ROOT ?? path.join(dir, "store"),
         retainArchivedSnapshots: 1,
       },
-      capture: { maxCases: 200 },
+      capture: { maxCases: 500 },
       delivery: { targetRoot: deliveryTargetRoot },
       service: { host: "127.0.0.1", port: servicePort, allowedOrigins: [] },
     }, null, 2)}\n`,

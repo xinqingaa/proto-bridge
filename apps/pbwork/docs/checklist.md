@@ -66,7 +66,8 @@
 - [ ] 根目的地各注册 Screen、共用壳 `view`；切 Tab 用 `replace` 更新 slug；栈页 `push`；跨 Tab 进栈 parent 正确
 - [ ] 返回与完成流符合 shell-and-nav（含嵌入 Runtime）
 - [ ] 产品离开拦截先认 `isForcedRuntimeNavigation()`；Workbench / Capture 换页由 Runtime 强制导航打开目标页
-- [ ] keepMounted 下各面板 ownsVariant
+- [ ] keepMounted 下各面板 ownsVariant，非当前面板由共享 TabViewport 标记采集边界；当前面板隐藏状态与 Overlay 仍有证据
+- [ ] 正式采集覆盖声明的全部主题／浅深模式，Case 身份包含命名主题，不能用取值表或页面完成计数代替主题覆盖
 - [ ] 选项 Sheet 选中行使用 `check` Icon 与 `typography.label`
 - [ ] Screen / Variant 已注册且可经 URL 打开
 - [ ] 叠加/校验等关键态有 Variant；theme ≠ variant
@@ -122,3 +123,5 @@
 - [ ] authoring lint、Registry validation 和 Runtime Capture 的 Block 为零；每个 Warning 已修复或记录理由
 
 - [ ] GlassSurface 已检查背景滤镜/高光、宿主形状继承和降低透明度降级；LaunchScreen 使用完整设备内容区；SVG/PNG 导出内容、倍率和实际像素一致
+
+- [ ] 若启用跨主题共享执行：Scenario 仅对主题无关动作显式声明 `appearancePolicy: "shared"`（缺省独立）；`captureState: true` 已有完整 business、每 Screen 和嵌套局部 UI 读取器，渲染主题不改业务偏好，主题相关偏好选中态页面的读取器声明 `appearancePolicy: "independent"`，缺覆盖/状态变化回退独立；每主题的截图、语义与失败检查仍执行。

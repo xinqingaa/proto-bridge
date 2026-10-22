@@ -1,7 +1,10 @@
-import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as atomicFile from '../../../src/v2/store/atomic-file.js';
+import { computeCaseId } from '../../../src/v2/contracts/case.js';
+import type { CaseAttempt } from '../../../src/v2/contracts/attempt.js';
 import { LocalFileStore } from '../../../src/v2/store/local-file-store.js';
 import { referenceCaseSlice } from '../../../src/v2/fixtures/index.js';
 import { V2ContractError } from '../../../src/v2/contracts/errors.js';
@@ -474,6 +477,103 @@ describe('LocalFileStore: Workspace generation and root identity', () => {
 
 describe('LocalFileStore: Job lifecycle and orphan/restart finalization', () => {
   const selection: NormalizedSelection = RUN_1.selection;
+
+  async function stagingJob(count = 1) {
+    const store = new LocalFileStore({ root, workspaceId: WORKSPACE_ID });
+    await store.init();
+    const cases = Array.from({ length: count }, (_, i) => {
+      const caseKey = { ...selection.cases[0]!.caseKey, variantId: `staging-${i}` };
+      return { ...selection.cases[0]!, caseKey, caseId: computeCaseId(caseKey) };
+    });
+    const job = await store.createJob({ bundleId: BUNDLE_ID, selection: { ...selection, cases }, inputVersion: RUN_1.inputVersion });
+    await store.startJob(job.jobId, RUN_1_ID);
+    const attempts: CaseAttempt[] = cases.map((item, i) => ({
+      ...RUN_1.attempts[0]!, caseId: item.caseId, attemptId: `attempt-staging-${i}`,
+      result: 'failed', reason: 'Test capture failure', revisionId: undefined,
+    }));
+    return { store, job, attempts };
+  }
+
+  it('stages concurrent Cases durably with unique sequences and only one historical scan', async () => {
+    const { store, job, attempts } = await stagingJob(24);
+    try {
+      const scans = vi.spyOn(store, 'listStagedJobCases');
+      await Promise.all(attempts.map((attempt) => store.stageJobCase(job.jobId, { attempt })));
+      expect(scans).toHaveBeenCalledTimes(1);
+      const records = await store.listStagedJobCases(job.jobId);
+      expect(records.map((item) => item.sequence)).toEqual(Array.from({ length: 24 }, (_, i) => i + 1));
+      expect(new Set(records.map((item) => item.attempt.caseId)).size).toBe(24);
+      expect(records.map((item) => item.attempt)).toEqual(attempts.map(({ revisionId: _, ...attempt }) => attempt));
+    } finally {
+      await store.close();
+    }
+  });
+
+  it('rejects simultaneous duplicate Cases without leaving a second durable record', async () => {
+    const { store, job, attempts } = await stagingJob();
+    try {
+      const results = await Promise.allSettled([
+        store.stageJobCase(job.jobId, { attempt: attempts[0]! }),
+        store.stageJobCase(job.jobId, { attempt: { ...attempts[0]!, attemptId: 'attempt-duplicate' } }),
+      ]);
+      expect(results[0]!.status).toBe('fulfilled');
+      expect(results[1]).toMatchObject({ status: 'rejected', reason: { code: 'immutable-violation' } });
+      expect(await store.listStagedJobCases(job.jobId)).toHaveLength(1);
+    } finally {
+      await store.close();
+    }
+  });
+
+  it('recovers its index once from durable records, including non-contiguous sequences', async () => {
+    const { store, job, attempts } = await stagingJob(2);
+    try {
+      const dir = path.join(root, 'job-staging', job.jobId, 'cases');
+      await mkdir(dir, { recursive: true });
+      await writeFile(path.join(dir, '000007-recovered.json'), JSON.stringify({ sequence: 7, attempt: attempts[0], binaries: [] }));
+      await expect(store.stageJobCase(job.jobId, { attempt: attempts[0]! })).rejects.toMatchObject({ code: 'immutable-violation' });
+      await store.stageJobCase(job.jobId, { attempt: attempts[1]! });
+      expect((await store.listStagedJobCases(job.jobId)).map((item) => item.sequence)).toEqual([7, 8]);
+    } finally {
+      await store.close();
+    }
+  });
+
+  it('does not reserve a Case or sequence on failed writes, and reconciles ambiguous writes', async () => {
+    const { store, job, attempts } = await stagingJob(2);
+    const write = atomicFile.writeImmutableJson;
+    try {
+      const failure = vi.spyOn(atomicFile, 'writeImmutableJson').mockRejectedValueOnce(new Error('write failed'));
+      await expect(store.stageJobCase(job.jobId, { attempt: attempts[0]! })).rejects.toThrow('write failed');
+      failure.mockRestore();
+      await store.stageJobCase(job.jobId, { attempt: attempts[0]! });
+      const ambiguous = vi.spyOn(atomicFile, 'writeImmutableJson').mockImplementationOnce(async (...args) => {
+        await write(...args);
+        throw new Error('directory sync failed after rename');
+      });
+      await expect(store.stageJobCase(job.jobId, { attempt: attempts[1]! })).rejects.toThrow('directory sync failed');
+      ambiguous.mockRestore();
+      await expect(store.stageJobCase(job.jobId, { attempt: { ...attempts[1]!, attemptId: 'attempt-retry' } })).rejects.toMatchObject({ code: 'immutable-violation' });
+      expect((await store.listStagedJobCases(job.jobId)).map((item) => item.sequence)).toEqual([1, 2]);
+      expect((await readdir(path.join(root, 'job-staging', job.jobId, 'cases')))).toHaveLength(2);
+    } finally {
+      vi.restoreAllMocks();
+      await store.close();
+    }
+  });
+
+  it('serializes terminal cleanup after in-flight staging and rejects later staging', async () => {
+    const { store, job, attempts } = await stagingJob(2);
+    try {
+      await Promise.all([
+        store.stageJobCase(job.jobId, { attempt: attempts[0]! }),
+        store.finalizeJob(job.jobId, 'failed'),
+      ]);
+      await expect(access(path.join(root, 'job-staging', job.jobId))).rejects.toMatchObject({ code: 'ENOENT' });
+      await expect(store.stageJobCase(job.jobId, { attempt: attempts[1]! })).rejects.toMatchObject({ code: 'immutable-violation' });
+    } finally {
+      await store.close();
+    }
+  });
 
   it('accepts, runs and finalizes a Job normally', async () => {
     const store = await freshStoreWithBundle();

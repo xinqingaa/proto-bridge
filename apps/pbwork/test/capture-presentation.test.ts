@@ -3,6 +3,7 @@ import type { CaptureJob } from "@proto-bridge/core/v2";
 import type { CaptureConsoleState } from "@proto-bridge/core/v2/service-contract";
 import {
   buildCaptureTaskPresentations,
+  caseDisplayLabel,
   formatCaptureError,
   groupCaptureFailures,
   translateCaptureFailure,
@@ -353,4 +354,10 @@ describe("capture task presentation", () => {
       "payload.manifest.screens.6.variants.2.requiredFragments.1.pbKey: Invalid",
     );
   });
+});
+
+it("keeps Scenario labels and named theme/mode visible in new composite Case IDs", () => {
+  const label = caseDisplayLabel("cold-chain-ops.shipment-detail::default::dark::iphone-14::theme=water::scenario=cold-chain-ops.shipment-detail.start-resolution@resolution-form");
+  expect(label).toContain("场景");
+  expect(label).toContain("water/深色");
 });

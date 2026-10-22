@@ -1,3 +1,10 @@
+import { readCaptureState, canonicalCaptureState } from "./capture-state";
+import {
+  pinCaptureTheme,
+  clearCaptureTheme,
+  fixedCaptureTheme,
+} from "./capture-environment";
+import runtimeSourceDigest from "virtual:pb-runtime-source";
 import {
   datasetTokenBindings,
   TokenEvidenceError,
@@ -273,6 +280,9 @@ function toScreenManifest(
       label: scenario.label,
       ownerScreenId: screen.screenId,
       initialVariantId: scenario.initialVariantId,
+      ...(scenario.appearancePolicy
+        ? { appearancePolicy: scenario.appearancePolicy }
+        : {}),
       actionIds: scenario.actionIds,
       checkpoints: scenario.checkpoints.map((checkpoint) => ({
         checkpointId: checkpoint.id,
@@ -507,9 +517,11 @@ export function buildRuntimeCaptureManifest(
     protocolVersion: RUNTIME_CAPTURE_PROTOCOL_VERSION,
     theme,
     clock: prototype.clock,
+    sourceDigest: runtimeSourceDigest,
     inputVersion: digestText(
       JSON.stringify({
-        resourceUsageVersion: 1,
+        sourceDigest: runtimeSourceDigest,
+        resourceUsageVersion: 2,
         artwork: assets.map(({ packId, file }) =>
           themeArtworkEntry(packId, file),
         ),
@@ -529,6 +541,9 @@ export function buildRuntimeCaptureManifest(
       "semantic-snapshot",
       "reset",
       "scenario",
+      ...(prototype.captureState
+        ? ["capture-state" as const, "set-render-theme" as const]
+        : []),
     ],
     screens,
     catalogs,
@@ -564,7 +579,7 @@ function sameDimensions(
 function markerElements(): HTMLElement[] {
   return Array.from(
     document.querySelectorAll<HTMLElement>("[data-pb-role][data-pb-id]"),
-  );
+  ).filter((element) => !element.closest('[data-pb-capture-inactive="true"]'));
 }
 
 function markerIdentity(
@@ -731,14 +746,25 @@ async function waitForStableSemanticMarkers(
   );
 }
 
+type MarkerIndex = Map<string, HTMLElement[]>;
+function indexMarkers(elements = markerElements()): MarkerIndex {
+  const index: MarkerIndex = new Map();
+  for (const element of elements) {
+    const key = element.dataset.pbId!;
+    const matches = index.get(key) ?? [];
+    matches.push(element);
+    index.set(key, matches);
+  }
+  return index;
+}
+
 function findFragments(
   fragment: RuntimeFragmentIdentity,
   context: RuntimeContext,
+  index = indexMarkers(),
 ): HTMLElement[] {
   if (fragment.screenId !== context.screenId) return [];
-  return Array.from(
-    document.querySelectorAll<HTMLElement>("[data-pb-id][data-pb-role]"),
-  ).filter(
+  return (index.get(fragment.pbId) ?? []).filter(
     (element) =>
       element.dataset.pbId === fragment.pbId &&
       (fragment.pbKey === undefined ||
@@ -776,6 +802,7 @@ function inspectRequiredFragment(
   fragment: RuntimeFragmentIdentity,
   context: RuntimeContext,
   strict: boolean,
+  index = indexMarkers(),
 ): ProtocolFailure | null | undefined {
   if (strict && fragment.pbId.startsWith("ds.")) {
     return new ProtocolFailure(
@@ -784,7 +811,7 @@ function inspectRequiredFragment(
       fragment,
     );
   }
-  const matches = findFragments(fragment, context);
+  const matches = findFragments(fragment, context, index);
   if (matches.length === 0) {
     const idOnly = Array.from(
       document.querySelectorAll<HTMLElement>("[data-pb-id]"),
@@ -890,12 +917,14 @@ export function inspectCurrentScreen(
       nextAction:
         "Fix the authored node before Capture; the live check does not write Evidence.",
     });
+  const index = indexMarkers();
   for (const fragment of required) {
     try {
       const failure = inspectRequiredFragment(
         fragment,
         context,
         requiresStrictEvidence(screen.screenId),
+        index,
       );
       if (failure) report(failure, fragment.pbId);
       else if (failure === undefined)
@@ -969,15 +998,16 @@ async function waitForFragments(
   const deadline = performance.now() + timeoutMs;
   while (performance.now() < deadline) {
     await options.waitForStable();
+    const index = indexMarkers();
     const failure = fragments
       .map((fragment) => {
-        return inspectRequiredFragment(fragment, context, strict);
+        return inspectRequiredFragment(fragment, context, strict, index);
       })
       .find((result) => result !== null && result !== undefined);
     if (
       !failure &&
       fragments.every(
-        (fragment) => findFragments(fragment, context).length === 1,
+        (fragment) => findFragments(fragment, context, index).length === 1,
       )
     )
       return;
@@ -1149,6 +1179,26 @@ class ProtocolFailure extends Error {
 export function installRuntimeCaptureProtocol(
   options: CaptureProtocolOptions,
 ): () => void {
+  const manifests = new Map<string, RuntimeCaptureManifest>();
+  const manifestFor = (prototypeId: string, known?: RuntimeCaptureManifest) => {
+    let manifest = manifests.get(prototypeId);
+    if (!manifest) {
+      const prototype = loadPrototypes().find(
+        (item) => item.id === prototypeId,
+      );
+      // Job-local producer reuse is valid only for this exact compiled source revision.
+      const reusable =
+        known &&
+        known.sourceDigest === runtimeSourceDigest &&
+        known.theme.packId === prototype?.themePackId &&
+        canonicalCaptureState(known.clock) ===
+          canonicalCaptureState(prototype?.clock) &&
+        known.screens.every((screen) => screen.prototypeId === prototypeId);
+      manifest = reusable ? known : buildRuntimeCaptureManifest(prototypeId);
+      manifests.set(prototypeId, manifest);
+    }
+    return manifest;
+  };
   async function handle(
     payload: RuntimeCaptureRequestPayload,
   ): Promise<unknown> {
@@ -1162,7 +1212,7 @@ export function installRuntimeCaptureProtocol(
           "Runtime route has not resolved.",
         );
       }
-      return { manifest: buildRuntimeCaptureManifest(prototypeId) };
+      return { manifest: manifestFor(prototypeId, payload.knownManifest) };
     }
     if (!context) {
       throw new ProtocolFailure(
@@ -1170,7 +1220,147 @@ export function installRuntimeCaptureProtocol(
         "Runtime route has not resolved.",
       );
     }
-    const manifest = buildRuntimeCaptureManifest(context.prototypeId);
+    const manifest = manifestFor(context.prototypeId);
+
+    if (
+      payload.kind === "capture-state" ||
+      payload.kind === "set-render-theme"
+    ) {
+      const stateDigest = async () => {
+        const current = options.getContext();
+        const authored =
+          current && readCaptureState(current.prototypeId, current.screenId);
+        if (
+          !current ||
+          !loadPrototypes().find((item) => item.id === current.prototypeId)
+            ?.captureState ||
+          authored === undefined
+        ) {
+          throw new ProtocolFailure(
+            "capture-state-unsupported",
+            "Authored business and Screen state readers are required for appearance reuse.",
+          );
+        }
+        const active = (element: Element) =>
+          !element.closest('[data-pb-capture-inactive="true"]');
+        const identity = (element: Element): string => {
+          const path: string[] = [];
+          let current: Element | null = element;
+          while (current) {
+            const id = current.getAttribute("data-pb-id") || current.id;
+            if (id) {
+              path.unshift(id);
+              break;
+            }
+            const siblings: Element[] = current.parentElement
+              ? Array.from(current.parentElement.children)
+              : [];
+            path.unshift(`${current.tagName}:${siblings.indexOf(current)}`);
+            current = current.parentElement;
+          }
+          return path.join("/");
+        };
+        const route = new URL(window.location.href);
+        route.searchParams.delete("theme");
+        route.searchParams.delete("mode");
+        route.searchParams.sort();
+        const elements = Array.from(
+          document.querySelectorAll<HTMLElement>("*"),
+        ).filter(active);
+        const value = canonicalCaptureState({
+          authored,
+          sourceDigest: runtimeSourceDigest,
+          now: Date.now(),
+          route: route.pathname + route.search + route.hash,
+          screenId: current.screenId,
+          variantId: current.variantId,
+          fixtureId: current.fixtureId,
+          scroll: elements
+            .filter((element) => element.scrollTop || element.scrollLeft)
+            .map((element) => [
+              identity(element),
+              element.scrollTop,
+              element.scrollLeft,
+            ]),
+          viewportScroll: [window.scrollX, window.scrollY],
+          forms: elements
+            .filter((element) => element.matches("input,textarea,select"))
+            .map((element) => {
+              const input = element as HTMLInputElement;
+              return [
+                identity(element),
+                input.value,
+                input.checked,
+                input.disabled,
+              ];
+            }),
+          overlays: elements
+            .filter((element) =>
+              element.matches('[role="dialog"],[aria-modal="true"]'),
+            )
+            .map((element) => [
+              identity(element),
+              element.getAttribute("aria-hidden"),
+              element.getAttribute("data-state"),
+            ]),
+          focus:
+            document.activeElement && document.activeElement !== document.body
+              ? identity(document.activeElement)
+              : null,
+        });
+        const bytes = await crypto.subtle.digest(
+          "SHA-256",
+          new TextEncoder().encode(value),
+        );
+        return `sha256:${Array.from(new Uint8Array(bytes), (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+      };
+      await options.waitForStable();
+      const before = await stateDigest();
+      if (payload.kind === "capture-state")
+        return {
+          actual: actualDimensions(options.getContext()!),
+          stateDigest: before,
+        };
+      if (before !== payload.expectedStateDigest)
+        throw new ProtocolFailure(
+          "capture-state-changed",
+          "Business/UI state changed before appearance rendering.",
+        );
+      const theme = payload.theme;
+      if (
+        theme.packId !== manifest.theme.packId ||
+        theme.packDigest !== manifest.theme.packDigest ||
+        !manifest.theme.themes.includes(theme.theme) ||
+        !manifest.theme.modes.includes(theme.mode)
+      ) {
+        throw new ProtocolFailure(
+          "dimension-mismatch",
+          "Appearance is not part of the fixed Runtime theme pack.",
+        );
+      }
+      const previous = fixedCaptureTheme(context.prototypeId) ?? context.theme;
+      pinCaptureTheme(context.prototypeId, theme);
+      try {
+        await options.waitForStable();
+        const after = await stateDigest();
+        const current = options.getContext();
+        if (after !== before)
+          throw new ProtocolFailure(
+            "capture-state-changed",
+            "Appearance rendering changed business/UI state.",
+          );
+        if (!current || !sameTheme(current.theme, theme))
+          throw new ProtocolFailure(
+            "dimension-mismatch",
+            "Runtime did not apply the requested appearance.",
+          );
+        return { actual: actualDimensions(current), stateDigest: after };
+      } catch (error) {
+        pinCaptureTheme(context.prototypeId, previous);
+        await options.waitForStable();
+        throw error;
+      }
+    }
 
     if (payload.kind === "prepare") {
       if (!sameDimensions(context, payload.expected)) {
@@ -1180,6 +1370,7 @@ export function installRuntimeCaptureProtocol(
           { actual: context, expected: payload.expected },
         );
       }
+      pinCaptureTheme(context.prototypeId, context.theme);
       saveBaseline(context);
       await options.prepareCase?.();
       await options.waitForStable();
@@ -1244,11 +1435,12 @@ export function installRuntimeCaptureProtocol(
         );
       }
       const all = await waitForStableSemanticMarkers(options, current);
+      const index = indexMarkers(all);
       const selected =
         payload.fragments.length === 0
           ? all
           : payload.fragments.map((fragment) => {
-              const matches = findFragments(fragment, current);
+              const matches = findFragments(fragment, current, index);
               if (matches.length !== 1) {
                 throw new ProtocolFailure(
                   matches.length === 0
@@ -1470,6 +1662,7 @@ export function installRuntimeCaptureProtocol(
   window[RUNTIME_CAPTURE_GLOBAL] = api;
   return () => {
     if (window[RUNTIME_CAPTURE_GLOBAL] === api) {
+      clearCaptureTheme();
       delete window[RUNTIME_CAPTURE_GLOBAL];
     }
   };

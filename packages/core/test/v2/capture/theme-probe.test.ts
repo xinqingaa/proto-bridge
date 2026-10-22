@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { probeThemeConsistency } from '../../../src/v2/capture/theme-probe.js';
+import { probeThemeConsistency, ThemeProbeCache } from '../../../src/v2/capture/theme-probe.js';
 import { compareModeSemanticTrees } from '../../../src/v2/runtime-contract/theme-probe-compare.js';
 import type { RuntimeCaptureManifest, RuntimeSemanticNode } from '../../../src/v2/runtime-contract/protocol.js';
 
@@ -93,5 +93,24 @@ describe('theme consistency probe', () => {
       nodeId: 'badge',
       fields: ['visible'],
     });
+  });
+});
+
+describe('Theme probe cache', () => {
+  it('reuses only an exact fixed input and reruns on changed source, viewport or failure', async () => {
+    const cache = new ThemeProbeCache();
+    let calls = 0;
+    const probe = async () => { calls++; return []; };
+    await cache.run('source-a/viewport-a', probe);
+    await cache.run('source-a/viewport-a', probe);
+    expect(calls).toBe(1);
+    await cache.run('source-b/viewport-a', probe);
+    await cache.run('source-a/viewport-b', probe);
+    await cache.run(undefined, probe);
+    await cache.run(undefined, probe);
+    expect(calls).toBe(5);
+    await expect(cache.run('failed', async () => { throw new Error('unreachable'); })).rejects.toThrow('unreachable');
+    await cache.run('failed', probe);
+    expect(calls).toBe(6);
   });
 });

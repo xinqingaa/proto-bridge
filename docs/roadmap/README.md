@@ -13,9 +13,6 @@
 
 上述升级已完成。现行规则查 Product、Architecture、Reference 和 PBWork 手册；新平台提案不以某个业务原型的制作进度作为平台完成状态。
 
-## 当前收敛范围
+## 当前行为
 
-- [DS 资产引用与页面采集优化](./asset-reference-capture.md)：当前只解除正常采集的重复归档依赖、补充代表资源使用信息并验证历史兼容；通用资源 resolver 等扩展延期。
-- [产品文档与动效交付范围](./evidence-delivery-upgrade.md)：产品文档改为 Target 本地职责文档，MCP 文档快照取消，真实动效平台延期，生成脚本复制后续实现。
-
-业务原型的计划与进度仅在各自 `prototypes/{prototypeId}/docs/` 维护，本目录不维护其入口或排期。
+采集与资源交付的现行行为分别见[采集链路](../architecture/capture-pipeline.md)、[Evidence 模型](../architecture/evidence-model.md)和[主题包解析](../architecture/theme-packs.md)。已落地能力归入对应职责文档，本目录不保留未实现方案或业务原型进度。

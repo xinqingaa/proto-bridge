@@ -1,7 +1,7 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import type { BrowserContext, Page } from 'playwright';
+import type { Browser, BrowserContext, Page } from 'playwright';
 import type { Fact } from '../contracts/evidence.js';
 import type { EvidenceLevel } from '../contracts/vocabulary.js';
 import {
@@ -11,12 +11,17 @@ import {
   type RuntimeScreenManifest,
   type RuntimeSemanticNode,
   type RuntimeStructureAssertion,
+  type RuntimeCaptureManifest,
   type RuntimeVariantManifest,
 } from '../runtime-contract/index.js';
 import type { CapturePreflight } from './preflight.js';
 import type { CaseMatrixEntry } from './selection.js';
 import { resolveCaptureDevice } from './devices.js';
-import { requestRuntimeCapture } from './runtime-client.js';
+import {
+  requestRuntimeCapture,
+  RuntimeProtocolError,
+} from './runtime-client.js';
+import { randomUUID } from 'node:crypto';
 import { buildRuntimeCaseUrl } from './runtime-url.js';
 
 export type CapturedBinary = {
@@ -49,6 +54,10 @@ export type CaptureCaseInput = {
 
 export interface CaseCaptureDriver {
   captureCase(input: CaptureCaseInput): Promise<CapturedCase>;
+  /** Discard state whose source Case could not be durably accepted. */
+  discardPrepared?(): Promise<void>;
+  /** Job-scoped browser process; each business execution has an isolated Context. */
+  openSession?(): Promise<CaseCaptureDriver & { dispose(): Promise<void> }>;
 }
 
 export class CaseCaptureFailure extends Error {
@@ -239,7 +248,8 @@ function nodeFacts(nodes: RuntimeSemanticNode[]): Fact[] {
       });
     }
     if (node.tokenBindings && Object.keys(node.tokenBindings).length > 0) {
-      const bindingEvidence = node.tokenBindingEvidence ??
+      const bindingEvidence =
+        node.tokenBindingEvidence ??
         Object.entries(node.tokenBindings).map(([slot, tokenId]) => ({
           slot,
           tokenId,
@@ -378,7 +388,8 @@ function structureContractFacts(input: {
     };
   });
 
-  const shellPolicy = input.variant.shellPolicy ??
+  const shellPolicy =
+    input.variant.shellPolicy ??
     (input.screen.shellFragments.length > 0 ? 'inherit' : undefined);
   if (!shellPolicy) return facts;
   const visible = new Set(
@@ -386,11 +397,12 @@ function structureContractFacts(input: {
       .filter((node) => node.visible)
       .map((node) => fragmentKey(node.fragment)),
   );
-  const missingShell = shellPolicy === 'inherit'
-    ? input.screen.shellFragments.filter(
-        (fragment) => !visible.has(fragmentKey(fragment)),
-      )
-    : [];
+  const missingShell =
+    shellPolicy === 'inherit'
+      ? input.screen.shellFragments.filter(
+          (fragment) => !visible.has(fragmentKey(fragment)),
+        )
+      : [];
   const shellValue = {
     policy: shellPolicy,
     shellFragments: input.screen.shellFragments,
@@ -434,10 +446,7 @@ function semanticCoverageFact(input: {
   requiredFragments: RuntimeFragmentIdentity[] | undefined;
   observedNodes: RuntimeSemanticNode[];
   scopeSource:
-    | 'selection'
-    | 'variant-contract'
-    | 'scenario-contract'
-    | 'undeclared';
+    'selection' | 'variant-contract' | 'scenario-contract' | 'undeclared';
 }): Fact {
   const observedFragments = uniqueFragments(
     input.observedNodes.map((node) => node.fragment),
@@ -520,7 +529,11 @@ function actionFacts(
         requested.size === 0 || requested.has(fragmentKey(action.target)),
     )
     .map((action) => {
-      const value = { actionId: action.actionId, kind: action.kind, target: action.target };
+      const value = {
+        actionId: action.actionId,
+        kind: action.kind,
+        target: action.target,
+      };
       return {
         factId: `${screen.screenId}.action.${action.actionId}`,
         candidates: [
@@ -600,21 +613,27 @@ async function assertRenderedImagesLoaded(page: Page): Promise<void> {
                 style.display === 'none' ||
                 style.visibility === 'hidden' ||
                 Number(style.opacity) === 0
-              ) return;
+              )
+                return;
             }
-            const source = element instanceof HTMLImageElement
-              ? element.currentSrc || element.src
-              : (element as SVGImageElement).href.baseVal;
-            const identity = element.closest('[data-pb-id]')?.getAttribute('data-pb-id')
-              ?? element.tagName;
-            if (!source) throw new Error(`Page image has no source: ${identity}`);
-            const image = element instanceof HTMLImageElement ? element : new Image();
+            const source =
+              element instanceof HTMLImageElement
+                ? element.currentSrc || element.src
+                : (element as SVGImageElement).href.baseVal;
+            const identity =
+              element.closest('[data-pb-id]')?.getAttribute('data-pb-id') ??
+              element.tagName;
+            if (!source)
+              throw new Error(`Page image has no source: ${identity}`);
+            const image =
+              element instanceof HTMLImageElement ? element : new Image();
             if (!(element instanceof HTMLImageElement)) {
               image.src = new URL(source, document.baseURI).href;
             }
             try {
               await image.decode();
-              if (!image.naturalWidth || !image.naturalHeight) throw new Error('empty image');
+              if (!image.naturalWidth || !image.naturalHeight)
+                throw new Error('empty image');
             } catch {
               throw new Error(`Page image failed to load: ${identity}`);
             }
@@ -622,7 +641,10 @@ async function assertRenderedImagesLoaded(page: Page): Promise<void> {
         );
       }),
       new Promise<never>((_resolve, reject) => {
-        timeout = setTimeout(() => reject(new Error('Page image loading timed out.')), 10_000);
+        timeout = setTimeout(
+          () => reject(new Error('Page image loading timed out.')),
+          10_000,
+        );
       }),
     ]);
   } finally {
@@ -658,7 +680,10 @@ async function screenshotBinaries(
   return binaries;
 }
 
-async function captureGenericFacts(page: Page, screenId: string): Promise<Fact[]> {
+async function captureGenericFacts(
+  page: Page,
+  screenId: string,
+): Promise<Fact[]> {
   const nodes = await page.evaluate(() =>
     Array.from(
       document.querySelectorAll<HTMLElement>('h1,h2,h3,button,input,[role]'),
@@ -720,16 +745,156 @@ async function stopTrace(
   }
 }
 
-/**
- * Node-only Case driver. Each Case gets a fresh Browser and Context, so
- * cookies, storage, service workers and in-memory app state cannot leak
- * across Matrix entries.
- */
+export type CaptureDriverMetrics = {
+  browserLaunches: number;
+  contextsCreated: number;
+  pageNavigations: number;
+  actionsExecuted: number;
+  sharedAppearanceCases: number;
+  independentCases: number;
+  appearanceFallbacks: number;
+  manifestReuses: number;
+  semanticSnapshots: number;
+  screenshots: number;
+  phaseMilliseconds: Record<
+    | 'initialization'
+    | 'manifest'
+    | 'statePreparation'
+    | 'observation'
+    | 'screenshots',
+    number
+  >;
+};
+
+export type CaptureDriverOptions = {
+  /** Diagnostic comparison only; all observations and gates remain enabled. */
+  reuseAppearances?: boolean;
+};
+
+/** Equal business inputs may be adjacent even when their appearances differ. */
+export function captureExecutionKey(entry: CaseMatrixEntry): string {
+  const {
+    theme: _theme,
+    themeId: _mode,
+    ...businessKey
+  } = entry.selectedCase.caseKey;
+  return JSON.stringify({
+    businessKey,
+    scope: entry.selectedCase.captureScope,
+    runtimePath: entry.runtimePath,
+    initialScreenId: entry.initialScreenId,
+    initialVariantId: entry.initialVariantId,
+    routeQuery: entry.initialRouteQuery,
+    scenario: entry.scenario,
+  });
+}
+
+type PreparedAppearance = {
+  key: string;
+  page: Page;
+  context: BrowserContext;
+  browser: Browser;
+  tempRoot: string;
+  manifest: RuntimeCaptureManifest;
+  stateDigest: string;
+  executionId: string;
+  sourceCaseId: string;
+  sourceTheme: { theme: string; mode: string };
+  diagnostics: CaptureDiagnostics;
+};
+
+/** A fresh Context per business state; explicitly supported appearances share that state. */
 export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
-  async captureCase(input: CaptureCaseInput): Promise<CapturedCase> {
-    if (input.signal?.aborted) throw new Error('Capture cancelled before Case start.');
+  private prepared: PreparedAppearance | undefined;
+  private knownManifest?: RuntimeCaptureManifest;
+  readonly metrics: CaptureDriverMetrics;
+
+  constructor(
+    private readonly sharedBrowser?: Browser,
+    private readonly options: CaptureDriverOptions = {},
+    metrics?: CaptureDriverMetrics,
+  ) {
+    this.metrics = metrics ?? {
+      browserLaunches: 0,
+      contextsCreated: 0,
+      pageNavigations: 0,
+      actionsExecuted: 0,
+      sharedAppearanceCases: 0,
+      independentCases: 0,
+      appearanceFallbacks: 0,
+      manifestReuses: 0,
+      semanticSnapshots: 0,
+      screenshots: 0,
+      phaseMilliseconds: {
+        initialization: 0,
+        manifest: 0,
+        statePreparation: 0,
+        observation: 0,
+        screenshots: 0,
+      },
+    };
+  }
+
+  private async releasePrepared(): Promise<void> {
+    const prepared = this.prepared;
+    this.prepared = undefined;
+    if (!prepared) return;
+    await prepared.context.tracing.stop().catch(() => undefined);
+    await prepared.context.close().catch(() => undefined);
+    if (!this.sharedBrowser)
+      await prepared.browser.close().catch(() => undefined);
+    await rm(prepared.tempRoot, { recursive: true, force: true });
+  }
+
+  async openSession(): Promise<
+    CaseCaptureDriver & { dispose(): Promise<void> }
+  > {
     const { chromium } = await import('playwright');
-    const profile = resolveCaptureDevice(input.entry.selectedCase.caseKey.deviceId);
+    let browser: Promise<Browser> | undefined;
+    let driver: PlaywrightCaseCaptureDriver | undefined;
+    return {
+      captureCase: async (input) => {
+        if (input.signal?.aborted)
+          throw new Error('Capture cancelled before Case start.');
+        if (!browser) {
+          this.metrics.browserLaunches += 1;
+          browser = chromium.launch({ headless: true });
+        }
+        driver ??= new PlaywrightCaseCaptureDriver(
+          await browser,
+          this.options,
+          this.metrics,
+        );
+        return driver.captureCase(input);
+      },
+      dispose: async () => {
+        await driver?.releasePrepared();
+        await (
+          await browser?.catch(() => undefined)
+        )
+          ?.close()
+          .catch(() => undefined);
+      },
+      discardPrepared: async () => {
+        await driver?.releasePrepared();
+      },
+    };
+  }
+
+  async captureCase(input: CaptureCaseInput): Promise<CapturedCase> {
+    return this.captureAppearance(input, false);
+  }
+
+  private async captureAppearance(
+    input: CaptureCaseInput,
+    forceIndependent: boolean,
+  ): Promise<CapturedCase> {
+    if (input.signal?.aborted)
+      throw new Error('Capture cancelled before Case start.');
+    const { chromium } = await import('playwright');
+    const profile = resolveCaptureDevice(
+      input.entry.selectedCase.caseKey.deviceId,
+    );
     const mode = input.entry.selectedCase.caseKey.themeId;
     if (mode !== 'light' && mode !== 'dark') {
       throw new Error(
@@ -739,121 +904,184 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
     const theme = {
       packId: input.preflight.selection.themePack.packId,
       packDigest: input.preflight.selection.themePack.packDigest,
-      theme: input.preflight.selection.themePack.theme,
+      theme:
+        input.entry.selectedCase.caseKey.theme ??
+        input.preflight.selection.themePack.theme,
       mode,
     };
-    const diagnostics: CaptureDiagnostics = {
+    const executionKey = JSON.stringify([
+      input.runtimeBaseUrl,
+      input.preflight.inputVersion,
+      captureExecutionKey(input.entry),
+    ]);
+    if (this.prepared?.key !== executionKey || forceIndependent)
+      await this.releasePrepared();
+    const shared = this.prepared;
+    const diagnostics: CaptureDiagnostics = shared?.diagnostics ?? {
       console: [],
       pageErrors: [],
       failedRequests: [],
     };
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), 'pb-v2-capture-'));
-    const browser = await chromium.launch({ headless: true });
-    const context = await browser.newContext({
-      viewport: profile.viewport,
-      deviceScaleFactor: profile.deviceScaleFactor,
-      isMobile: profile.isMobile,
-      hasTouch: profile.hasTouch,
-      locale: 'zh-CN',
-      timezoneId: input.preflight.clock.timeZone,
-      colorScheme: mode,
-      reducedMotion: 'reduce',
-      serviceWorkers: 'block',
-    });
-    await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
-    const page = await context.newPage();
-    await page.clock.install({ time: new Date(input.preflight.clock.now) });
-    page.on('console', (message) => {
-      diagnostics.console.push(`${message.type()}: ${message.text()}`.slice(0, 1000));
-    });
-    page.on('pageerror', (error) => {
-      diagnostics.pageErrors.push(error.message.slice(0, 1000));
-    });
-    page.on('requestfailed', (request) => {
-      diagnostics.failedRequests.push(
-        `${request.method()} ${sanitizedUrl(request.url())}: ${request.failure()?.errorText ?? 'failed'}`.slice(
-          0,
-          1000,
-        ),
-      );
-    });
-    const runtimeOrigin = new URL(input.runtimeBaseUrl).origin;
-    await context.route('**/*', async (route) => {
-      const url = route.request().url();
-      let allowed = url.startsWith('data:') || url.startsWith('blob:');
-      if (!allowed) {
-        try {
-          allowed = new URL(url).origin === runtimeOrigin;
-        } catch {
-          allowed = false;
-        }
-      }
-      if (allowed) {
-        await route.continue();
-      } else {
-        await route.abort('blockedbyclient');
-      }
-    });
+    const tempRoot =
+      shared?.tempRoot ??
+      (await mkdtemp(path.join(os.tmpdir(), 'pb-v2-capture-')));
+    let browser: Browser | undefined;
+    let context: BrowserContext | undefined;
     let traceStopped = false;
+    let keepContext = false;
+    let fallback = false;
+    const abortCase = () => {
+      void context?.close().catch(() => undefined);
+    };
+    let phaseStarted = performance.now();
     try {
-      const url = buildRuntimeCaseUrl({
-        runtimeBaseUrl: input.runtimeBaseUrl,
-        path: input.entry.runtimePath,
-        variantId: input.entry.initialVariantId,
-        themeId: input.entry.selectedCase.caseKey.themeId,
-        ...(input.entry.initialRouteQuery
-          ? { routeQuery: input.entry.initialRouteQuery }
-          : {}),
-      });
-      await page.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: 30_000,
-      });
-      await page
-        .addStyleTag({
-          content:
-            '*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;caret-color:transparent!important}',
-        })
-        .catch(() => undefined);
-      await page.evaluate(() => document.fonts.ready);
-      const actualEnvironment = await page.evaluate(() => ({
-        width: window.innerWidth,
-        height: window.innerHeight,
-        deviceScaleFactor: window.devicePixelRatio,
-        pathname: window.location.pathname,
-        variantId: new URL(window.location.href).searchParams.get('variant'),
-        themeId: new URL(window.location.href).searchParams.get('mode'),
-      }));
-      if (
-        actualEnvironment.width !== profile.viewport.width ||
-        actualEnvironment.height !== profile.viewport.height ||
-        actualEnvironment.deviceScaleFactor !== profile.deviceScaleFactor ||
-        actualEnvironment.pathname !== input.entry.runtimePath ||
-        actualEnvironment.variantId !== input.entry.initialVariantId ||
-        actualEnvironment.themeId !== input.entry.selectedCase.caseKey.themeId
-      ) {
-        throw new Error(
-          `Browser environment does not match the prepared Case: ${JSON.stringify(
-            actualEnvironment,
-          )}.`,
-        );
+      if (!shared && !this.sharedBrowser) this.metrics.browserLaunches += 1;
+      browser =
+        shared?.browser ??
+        this.sharedBrowser ??
+        (await chromium.launch({ headless: true }));
+      if (!shared) this.metrics.contextsCreated += 1;
+      context =
+        shared?.context ??
+        (await browser.newContext({
+          viewport: profile.viewport,
+          deviceScaleFactor: profile.deviceScaleFactor,
+          isMobile: profile.isMobile,
+          hasTouch: profile.hasTouch,
+          locale: 'zh-CN',
+          timezoneId: input.preflight.clock.timeZone,
+          colorScheme: mode,
+          reducedMotion: 'reduce',
+          serviceWorkers: 'block',
+        }));
+      input.signal?.addEventListener('abort', abortCase, { once: true });
+      if (input.signal?.aborted) throw new Error('Capture cancelled.');
+      if (!shared)
+        await context.tracing.start({
+          screenshots: true,
+          snapshots: true,
+          sources: true,
+        });
+      const page = shared?.page ?? (await context.newPage());
+      if (!shared) {
+        await page.clock.install({ time: new Date(input.preflight.clock.now) });
+        page.on('console', (message) => {
+          diagnostics.console.push(
+            `${message.type()}: ${message.text()}`.slice(0, 1000),
+          );
+        });
+        page.on('pageerror', (error) => {
+          diagnostics.pageErrors.push(error.message.slice(0, 1000));
+        });
+        page.on('requestfailed', (request) => {
+          diagnostics.failedRequests.push(
+            `${request.method()} ${sanitizedUrl(request.url())}: ${request.failure()?.errorText ?? 'failed'}`.slice(
+              0,
+              1000,
+            ),
+          );
+        });
+        const runtimeOrigin = new URL(input.runtimeBaseUrl).origin;
+        await context.route('**/*', async (route) => {
+          const url = route.request().url();
+          let allowed = url.startsWith('data:') || url.startsWith('blob:');
+          if (!allowed) {
+            try {
+              allowed = new URL(url).origin === runtimeOrigin;
+            } catch {
+              allowed = false;
+            }
+          }
+          if (allowed) {
+            await route.continue();
+          } else {
+            await route.abort('blockedbyclient');
+          }
+        });
+        const url = buildRuntimeCaseUrl({
+          runtimeBaseUrl: input.runtimeBaseUrl,
+          path: input.entry.runtimePath,
+          variantId: input.entry.initialVariantId,
+          themeId: input.entry.selectedCase.caseKey.themeId,
+          theme: theme.theme,
+          ...(input.entry.initialRouteQuery
+            ? { routeQuery: input.entry.initialRouteQuery }
+            : {}),
+        });
+        this.metrics.pageNavigations += 1;
+        await page.goto(url, {
+          waitUntil: 'domcontentloaded',
+          timeout: 30_000,
+        });
+        await page
+          .addStyleTag({
+            content:
+              '*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;caret-color:transparent!important}',
+          })
+          .catch(() => undefined);
+        await page.evaluate(() => document.fonts.ready);
+        const actualEnvironment = await page.evaluate(() => ({
+          width: window.innerWidth,
+          height: window.innerHeight,
+          deviceScaleFactor: window.devicePixelRatio,
+          pathname: window.location.pathname,
+          variantId: new URL(window.location.href).searchParams.get('variant'),
+          themeId: new URL(window.location.href).searchParams.get('mode'),
+        }));
+        if (
+          actualEnvironment.width !== profile.viewport.width ||
+          actualEnvironment.height !== profile.viewport.height ||
+          actualEnvironment.deviceScaleFactor !== profile.deviceScaleFactor ||
+          actualEnvironment.pathname !== input.entry.runtimePath ||
+          actualEnvironment.variantId !== input.entry.initialVariantId ||
+          actualEnvironment.themeId !== input.entry.selectedCase.caseKey.themeId
+        ) {
+          throw new Error(
+            `Browser environment does not match the prepared Case: ${JSON.stringify(
+              actualEnvironment,
+            )}.`,
+          );
+        }
       }
       if (input.signal?.aborted) throw new Error('Capture cancelled.');
 
-      const mode = input.entry.selectedCase.captureScope.evidenceInputMode;
+      this.metrics.phaseMilliseconds.initialization +=
+        performance.now() - phaseStarted;
+      phaseStarted = performance.now();
+      const inputMode = input.entry.selectedCase.captureScope.evidenceInputMode;
       let facts: Fact[] = [];
       let evidenceLevel: EvidenceLevel;
-      if (mode === 'instrumented') {
+      if (inputMode === 'instrumented') {
         await page.waitForFunction(
           (globalName) =>
             Boolean((window as unknown as Record<string, unknown>)[globalName]),
           RUNTIME_CAPTURE_GLOBAL,
           { timeout: 10_000 },
         );
-        const described = await requestRuntimeCapture(page, { kind: 'describe' });
+        const described = shared
+          ? {
+              kind: 'describe' as const,
+              payload: { manifest: shared.manifest },
+            }
+          : await requestRuntimeCapture(page, {
+              kind: 'describe',
+              ...(this.knownManifest?.sourceDigest
+                ? { knownManifest: this.knownManifest }
+                : {}),
+            });
+        if (!shared) {
+          if (
+            this.knownManifest?.sourceDigest &&
+            this.knownManifest.sourceDigest ===
+              described.payload.manifest.sourceDigest
+          )
+            this.metrics.manifestReuses += 1;
+          this.knownManifest = described.payload.manifest;
+        }
         if (
           described.kind !== 'describe' ||
-          described.payload.manifest.inputVersion !== input.preflight.inputVersion
+          described.payload.manifest.inputVersion !==
+            input.preflight.inputVersion
         ) {
           throw new Error(
             `Runtime manifest changed after Preflight (${input.preflight.inputVersion}).`,
@@ -871,17 +1099,46 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
             `environment.theme-digest-mismatch: Runtime ${manifestTheme.packId}@${manifestTheme.packDigest}/${manifestTheme.defaultTheme}/${manifestTheme.defaultMode} does not match Selection ${selectedTheme.packId}@${selectedTheme.packDigest}/${selectedTheme.theme}/${selectedTheme.mode}.`,
           );
         }
+        this.metrics.phaseMilliseconds.manifest +=
+          performance.now() - phaseStarted;
+        phaseStarted = performance.now();
         const expectedInitial = {
           prototypeId: input.preflight.selection.prototypeId,
           screenId: input.entry.initialScreenId,
           variantId: input.entry.initialVariantId,
           theme,
         };
-        const prepared = await requestRuntimeCapture(page, {
-          kind: 'prepare',
-          expected: expectedInitial,
-        });
-        if (prepared.kind !== 'prepare') throw new Error('Unexpected prepare response.');
+        if (shared) {
+          try {
+            await page.emulateMedia({ colorScheme: mode });
+            const switched = await requestRuntimeCapture(page, {
+              kind: 'set-render-theme',
+              theme,
+              expectedStateDigest: shared.stateDigest,
+            });
+            if (switched.payload.stateDigest !== shared.stateDigest)
+              throw new Error(
+                'Appearance changed the prepared business state.',
+              );
+          } catch (error) {
+            if (
+              error instanceof RuntimeProtocolError &&
+              ['capture-state-changed', 'capture-state-unsupported'].includes(
+                error.code,
+              )
+            ) {
+              fallback = true;
+            }
+            throw error;
+          }
+        } else {
+          const prepared = await requestRuntimeCapture(page, {
+            kind: 'prepare',
+            expected: expectedInitial,
+          });
+          if (prepared.kind !== 'prepare')
+            throw new Error('Unexpected prepare response.');
+        }
 
         const targetScreen = described.payload.manifest.screens.find(
           (screen) =>
@@ -897,11 +1154,10 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
           );
         }
 
-        if (input.entry.scenario) {
+        if (input.entry.scenario && !shared) {
           const ownerScreen = described.payload.manifest.screens.find(
             (screen) =>
-              screen.screenId ===
-              input.entry.scenario!.scenario.ownerScreenId,
+              screen.screenId === input.entry.scenario!.scenario.ownerScreenId,
           );
           // Only the first action must exist in the initial state. Later
           // targets can be revealed by earlier actions (for example a Sheet).
@@ -923,6 +1179,7 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
             throw new Error('Unexpected initial readiness response.');
           }
           for (const actionId of input.entry.scenario.scenario.actionIds) {
+            this.metrics.actionsExecuted += 1;
             const executed = await requestRuntimeCapture(page, {
               kind: 'execute-action',
               scenarioId: input.entry.scenario.scenario.scenarioId,
@@ -942,6 +1199,35 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
           }
         }
 
+        if (shared && input.entry.scenario) {
+          await requestRuntimeCapture(page, {
+            kind: 'verify-checkpoint',
+            scenarioId: input.entry.scenario.scenario.scenarioId,
+            checkpointId: input.entry.scenario.checkpoint.checkpointId,
+          });
+        }
+        const canShare = Boolean(
+          this.sharedBrowser &&
+          !forceIndependent &&
+          this.options.reuseAppearances !== false &&
+          input.entry.selectedCase.captureScope.screenshots.mode !==
+            'selected' &&
+          described.payload.manifest.capabilities.includes('capture-state') &&
+          described.payload.manifest.capabilities.includes(
+            'set-render-theme',
+          ) &&
+          (!input.entry.scenario ||
+            input.entry.scenario.scenario.appearancePolicy === 'shared'),
+        );
+        if (!shared && canShare) {
+          await page.clock.setFixedTime(
+            new Date(await page.evaluate(() => Date.now())),
+          );
+        }
+
+        this.metrics.phaseMilliseconds.statePreparation +=
+          performance.now() - phaseStarted;
+        phaseStarted = performance.now();
         const selectedFragments =
           input.entry.selectedCase.captureScope.fragments;
         const declaredRequiredFragments =
@@ -967,7 +1253,9 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
           },
           requiredFragments,
         });
-        if (ready.kind !== 'readiness') throw new Error('Unexpected readiness response.');
+        if (ready.kind !== 'readiness')
+          throw new Error('Unexpected readiness response.');
+        this.metrics.semanticSnapshots += 1;
         const snapshot = await requestRuntimeCapture(page, {
           kind: 'semantic-snapshot',
           fragments: input.entry.selectedCase.captureScope.fragments,
@@ -975,10 +1263,83 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
         if (snapshot.kind !== 'semantic-snapshot') {
           throw new Error('Unexpected semantic-snapshot response.');
         }
+        let stateDigest = shared?.stateDigest;
+        if (canShare) {
+          try {
+            const state = await requestRuntimeCapture(page, {
+              kind: 'capture-state',
+            });
+            if (shared && state.payload.stateDigest !== shared.stateDigest) {
+              throw new Error(
+                'Business state changed during the appearance observation.',
+              );
+            }
+            stateDigest = state.payload.stateDigest;
+          } catch (error) {
+            if (!(
+              error instanceof RuntimeProtocolError &&
+              error.code === 'capture-state-unsupported'
+            ))
+              throw error;
+          }
+        }
+        const execution = {
+          executionId: shared?.executionId ?? `execution-${randomUUID()}`,
+          sourceCaseId: shared?.sourceCaseId ?? input.entry.selectedCase.caseId,
+          mode: shared ? 'shared-appearance' : 'independent',
+          sourceTheme: shared?.sourceTheme ?? {
+            theme: theme.theme,
+            mode: theme.mode,
+          },
+          ...(stateDigest ? { stateDigest } : {}),
+        };
+        if (canShare && stateDigest) {
+          this.prepared = {
+            key: executionKey,
+            page,
+            context,
+            browser,
+            tempRoot,
+            stateDigest,
+            manifest: described.payload.manifest,
+            executionId: execution.executionId,
+            sourceCaseId: execution.sourceCaseId,
+            sourceTheme: execution.sourceTheme,
+            diagnostics,
+          };
+        }
         facts = [
+          {
+            factId: `${input.entry.selectedCase.caseKey.screenId}.runtime.execution`,
+            resolution: 'resolved',
+            effectiveValue: execution,
+            candidates: [
+              {
+                value: execution,
+                provenance: {
+                  source: 'runtime-observation',
+                  locator: 'capture.execution',
+                },
+              },
+            ],
+          },
           actualFact(snapshot.payload.actual, 'screenId'),
           actualFact(snapshot.payload.actual, 'variantId'),
           actualFact(snapshot.payload.actual, 'themeId'),
+          {
+            factId: `${snapshot.payload.actual.screenId}.runtime.theme`,
+            resolution: 'resolved',
+            effectiveValue: snapshot.payload.actual.theme,
+            candidates: [
+              {
+                value: snapshot.payload.actual.theme,
+                provenance: {
+                  source: 'runtime-contract',
+                  locator: 'capture-protocol.semantic-snapshot.actual.theme',
+                },
+              },
+            ],
+          },
           semanticCoverageFact({
             screenId: input.entry.selectedCase.caseKey.screenId,
             requiredFragments: declaredRequiredFragments,
@@ -994,11 +1355,11 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
           }),
           ...actionFacts(
             input.entry.scenario
-              ? described.payload.manifest.screens.find(
+              ? (described.payload.manifest.screens.find(
                   (screen) =>
                     screen.screenId ===
                     input.entry.scenario!.scenario.ownerScreenId,
-                ) ?? targetScreen
+                ) ?? targetScreen)
               : targetScreen,
             selectedFragments,
           ),
@@ -1016,7 +1377,7 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
         // future Source adapter may promote this level after resolving source
         // facts; until then the driver must report the evidence it actually has.
         evidenceLevel = 'instrumented-runtime';
-      } else if (mode === 'generic-runtime') {
+      } else if (inputMode === 'generic-runtime') {
         facts = await captureGenericFacts(
           page,
           input.entry.selectedCase.caseKey.screenId,
@@ -1026,25 +1387,113 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
         evidenceLevel = 'screenshot-only';
       }
 
+      this.metrics.phaseMilliseconds.observation +=
+        performance.now() - phaseStarted;
+      phaseStarted = performance.now();
       await assertRenderedImagesLoaded(page);
       const binaries = await screenshotBinaries(page, input.entry);
-      await context.tracing.stop();
-      traceStopped = true;
+      if (this.prepared?.context === context) {
+        const observed = await requestRuntimeCapture(page, {
+          kind: 'capture-state',
+        });
+        if (observed.payload.stateDigest !== this.prepared.stateDigest) {
+          throw new Error(
+            'Business state changed between semantic observation and screenshot completion.',
+          );
+        }
+      }
+      this.metrics.phaseMilliseconds.screenshots +=
+        performance.now() - phaseStarted;
+      this.metrics.screenshots += binaries.length;
+      if (shared) this.metrics.sharedAppearanceCases += 1;
+      else this.metrics.independentCases += 1;
+      keepContext = this.prepared?.context === context;
+      if (!keepContext) {
+        await context.tracing.stop();
+        traceStopped = true;
+      }
       return {
         evidenceLevel,
         facts,
         requiredFactsTotal: facts.length,
-        requiredFactsResolved: facts.filter((fact) => fact.resolution === 'resolved')
-          .length,
+        requiredFactsResolved: facts.filter(
+          (fact) => fact.resolution === 'resolved',
+        ).length,
         binaries,
         diagnostics,
       };
     } catch (error) {
-      const trace = traceStopped ? [] : await stopTrace(context, tempRoot);
+      this.prepared = undefined;
+      const trace =
+        traceStopped || !context ? [] : await stopTrace(context, tempRoot);
       traceStopped = true;
       const debugBytes = new TextEncoder().encode(
         `${JSON.stringify(diagnostics, null, 2)}\n`,
       );
+      if (fallback) {
+        this.metrics.appearanceFallbacks += 1;
+        await context?.close().catch(() => undefined);
+        await rm(tempRoot, { recursive: true, force: true });
+        const rejectedSharing = {
+          code:
+            error instanceof RuntimeProtocolError
+              ? error.code
+              : 'capture-state-changed',
+          reason: error instanceof Error ? error.message : String(error),
+          executionId: shared!.executionId,
+          sourceCaseId: shared!.sourceCaseId,
+          sourceTheme: shared!.sourceTheme,
+        };
+        const fallbackBinaries: CapturedBinary[] = [
+          ...trace,
+          {
+            kind: 'debug',
+            mediaType: 'application/json',
+            bytes: new TextEncoder().encode(
+              JSON.stringify({ rejectedSharing, diagnostics }),
+            ),
+          },
+        ];
+        try {
+          const independent = await this.captureAppearance(input, true);
+          const fact: Fact = {
+            factId: `${input.entry.selectedCase.caseKey.screenId}.runtime.appearanceFallback`,
+            resolution: 'resolved',
+            effectiveValue: rejectedSharing,
+            candidates: [
+              {
+                value: rejectedSharing,
+                provenance: {
+                  source: 'runtime-observation',
+                  locator: 'capture.appearance-fallback',
+                },
+              },
+            ],
+          };
+          return {
+            ...independent,
+            facts: [...independent.facts, fact],
+            requiredFactsTotal: independent.requiredFactsTotal + 1,
+            requiredFactsResolved: independent.requiredFactsResolved + 1,
+            binaries: [...independent.binaries, ...fallbackBinaries],
+          };
+        } catch (retryError) {
+          throw new CaseCaptureFailure(
+            retryError instanceof Error
+              ? retryError.message
+              : String(retryError),
+            retryError instanceof CaseCaptureFailure
+              ? retryError.diagnostics
+              : diagnostics,
+            [
+              ...fallbackBinaries,
+              ...(retryError instanceof CaseCaptureFailure
+                ? retryError.binaries
+                : []),
+            ],
+          );
+        }
+      }
       throw new CaseCaptureFailure(
         error instanceof Error ? error.message : String(error),
         diagnostics,
@@ -1054,10 +1503,13 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
         ],
       );
     } finally {
-      if (!traceStopped) await context.tracing.stop().catch(() => undefined);
-      await context.close();
-      await browser.close();
-      await rm(tempRoot, { recursive: true, force: true });
+      input.signal?.removeEventListener('abort', abortCase);
+      if (!keepContext) {
+        if (!traceStopped) await context?.tracing.stop().catch(() => undefined);
+        await context?.close().catch(() => undefined);
+        if (!this.sharedBrowser) await browser?.close().catch(() => undefined);
+        await rm(tempRoot, { recursive: true, force: true });
+      }
     }
   }
 }

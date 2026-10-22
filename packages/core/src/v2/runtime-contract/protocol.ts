@@ -1,10 +1,10 @@
-import { z } from 'zod';
-import { SemanticRole } from '../contracts/vocabulary.js';
-import { CatalogEntry, CatalogKind } from '../contracts/catalog.js';
-import { AuthoringDiagnostic } from '../contracts/authoring-diagnostic.js';
-import { FragmentRef } from '../contracts/fragment.js';
-import { PbKey, STABLE_ID_PATTERN, STABLE_ID_RULE } from '../contracts/ids.js';
-import { ThemeIdentity } from '../theme/schema.js';
+import { z } from "zod";
+import { SemanticRole } from "../contracts/vocabulary.js";
+import { CatalogEntry, CatalogKind } from "../contracts/catalog.js";
+import { AuthoringDiagnostic } from "../contracts/authoring-diagnostic.js";
+import { FragmentRef } from "../contracts/fragment.js";
+import { PbKey, STABLE_ID_PATTERN, STABLE_ID_RULE } from "../contracts/ids.js";
+import { ThemeIdentity } from "../theme/schema.js";
 
 /**
  * Browser-safe V2 Runtime Capture Protocol.
@@ -14,13 +14,13 @@ import { ThemeIdentity } from '../theme/schema.js';
  * boundary.
  */
 export const RUNTIME_CAPTURE_PROTOCOL_VERSION = 3 as const;
-export const RUNTIME_CAPTURE_GLOBAL = '__PROTO_BRIDGE_CAPTURE_V2__' as const;
+export const RUNTIME_CAPTURE_GLOBAL = "__PROTO_BRIDGE_CAPTURE_V2__" as const;
 
 const StableId = z.string().regex(STABLE_ID_PATTERN, STABLE_ID_RULE);
 const RuntimeRouteQueryKey = z
   .string()
   .regex(/^[a-z][a-z0-9_-]*$/)
-  .refine((key) => key !== 'variant' && key !== 'mode');
+  .refine((key) => key !== "variant" && key !== "mode" && key !== "theme");
 export const RuntimeRouteQuery = z.record(
   RuntimeRouteQueryKey,
   z.string().max(512),
@@ -34,56 +34,56 @@ export const RuntimeFragmentIdentity = FragmentRef;
 export type RuntimeFragmentIdentity = FragmentRef;
 
 export const RuntimePositioning = z.enum([
-  'flow',
-  'sticky',
-  'fixed',
-  'overlay',
+  "flow",
+  "sticky",
+  "fixed",
+  "overlay",
 ]);
 export type RuntimePositioning = z.infer<typeof RuntimePositioning>;
 
-export const RuntimeScrollOwner = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('viewport') }).strict(),
+export const RuntimeScrollOwner = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("viewport") }).strict(),
   z
     .object({
-      kind: z.literal('fragment'),
+      kind: z.literal("fragment"),
       fragment: RuntimeFragmentIdentity,
     })
     .strict(),
 ]);
 export type RuntimeScrollOwner = z.infer<typeof RuntimeScrollOwner>;
 
-export const RuntimeStructureAssertion = z.discriminatedUnion('kind', [
+export const RuntimeStructureAssertion = z.discriminatedUnion("kind", [
   z
     .object({
-      kind: z.literal('parent'),
+      kind: z.literal("parent"),
       child: RuntimeFragmentIdentity,
       parent: RuntimeFragmentIdentity,
     })
     .strict(),
   z
     .object({
-      kind: z.literal('scroll-owner'),
+      kind: z.literal("scroll-owner"),
       fragment: RuntimeFragmentIdentity,
       owner: RuntimeScrollOwner,
     })
     .strict(),
   z
     .object({
-      kind: z.literal('order'),
+      kind: z.literal("order"),
       parent: RuntimeFragmentIdentity,
       children: z.array(RuntimeFragmentIdentity).min(2),
     })
     .strict(),
   z
     .object({
-      kind: z.literal('positioning'),
+      kind: z.literal("positioning"),
       fragment: RuntimeFragmentIdentity,
       value: RuntimePositioning,
     })
     .strict(),
   z
     .object({
-      kind: z.literal('visibility'),
+      kind: z.literal("visibility"),
       fragment: RuntimeFragmentIdentity,
       visible: z.boolean(),
     })
@@ -107,7 +107,7 @@ export const RuntimeVariantManifest = z
      */
     requiredFragments: z.array(RuntimeFragmentIdentity).optional(),
     /** Whether the Variant keeps the Screen shell or intentionally replaces it. */
-    shellPolicy: z.enum(['inherit', 'replace']).optional(),
+    shellPolicy: z.enum(["inherit", "replace"]).optional(),
     structureAssertions: z.array(RuntimeStructureAssertion).default([]),
   })
   .strict();
@@ -116,7 +116,7 @@ export type RuntimeVariantManifest = z.infer<typeof RuntimeVariantManifest>;
 export const RuntimeActionManifest = z
   .object({
     actionId: StableId,
-    kind: z.literal('click'),
+    kind: z.literal("click"),
     target: RuntimeFragmentIdentity,
   })
   .strict();
@@ -165,6 +165,8 @@ export const RuntimeScenarioManifest = z
     initialVariantId: StableId,
     actionIds: z.array(StableId).min(1),
     checkpoints: z.array(RuntimeCheckpointManifest).min(1),
+    /** Omitted means independent execution for each appearance. */
+    appearancePolicy: z.enum(["shared", "independent"]).optional(),
   })
   .strict();
 export type RuntimeScenarioManifest = z.infer<typeof RuntimeScenarioManifest>;
@@ -174,7 +176,7 @@ export const RuntimeScreenManifest = z
     prototypeId: StableId,
     screenId: StableId,
     screenSlug: StableId,
-    path: z.string().startsWith('/prototype/'),
+    path: z.string().startsWith("/prototype/"),
     sourcePath: z.string().min(1).optional(),
     defaultVariantId: StableId,
     variants: z.array(RuntimeVariantManifest).min(1),
@@ -185,7 +187,7 @@ export const RuntimeScreenManifest = z
     shellFragments: z.array(RuntimeFragmentIdentity).default([]),
     structureAssertions: z.array(RuntimeStructureAssertion).default([]),
     /** New Screens are strict; omitted only by pre-convergence producers. */
-    evidencePolicy: z.enum(['strict', 'legacy']).optional(),
+    evidencePolicy: z.enum(["strict", "legacy"]).optional(),
   })
   .strict();
 export type RuntimeScreenManifest = z.infer<typeof RuntimeScreenManifest>;
@@ -226,17 +228,24 @@ export const RuntimeCaptureManifest = z
   .object({
     protocolVersion: z.literal(RUNTIME_CAPTURE_PROTOCOL_VERSION),
     inputVersion: z.string().min(1),
+    /** Complete producer source fingerprint; required to reuse theme probes. */
+    sourceDigest: z
+      .string()
+      .regex(/^sha256:[0-9a-f]{64}$/)
+      .optional(),
     theme: RuntimeThemeManifest,
     clock: RuntimeClockManifest,
     capabilities: z
       .array(
         z.enum([
-          'describe',
-          'prepare',
-          'readiness',
-          'semantic-snapshot',
-          'reset',
-          'scenario',
+          "describe",
+          "prepare",
+          "readiness",
+          "semantic-snapshot",
+          "reset",
+          "scenario",
+          "capture-state",
+          "set-render-theme",
         ]),
       )
       .min(5),
@@ -305,9 +314,9 @@ export const RuntimeSemanticNode = z
             slot: TokenBindingSlot,
             tokenId: StableId,
             source: z.enum([
-              'component-contract',
-              'runtime-registration',
-              'data-pb',
+              "component-contract",
+              "runtime-registration",
+              "data-pb",
             ]),
           })
           .strict(),
@@ -327,10 +336,25 @@ export const RuntimeSemanticNode = z
   .strict();
 export type RuntimeSemanticNode = z.infer<typeof RuntimeSemanticNode>;
 
-const DescribeRequest = z.object({ kind: z.literal('describe') }).strict();
+const DescribeRequest = z
+  .object({
+    kind: z.literal("describe"),
+    knownManifest: RuntimeCaptureManifest.optional(),
+  })
+  .strict();
+const CaptureStateRequest = z
+  .object({ kind: z.literal("capture-state") })
+  .strict();
+const SetRenderThemeRequest = z
+  .object({
+    kind: z.literal("set-render-theme"),
+    theme: ThemeIdentity,
+    expectedStateDigest: z.string().min(1),
+  })
+  .strict();
 const PrepareRequest = z
   .object({
-    kind: z.literal('prepare'),
+    kind: z.literal("prepare"),
     expected: z
       .object({
         prototypeId: StableId,
@@ -344,7 +368,7 @@ const PrepareRequest = z
   .strict();
 const ReadinessRequest = z
   .object({
-    kind: z.literal('readiness'),
+    kind: z.literal("readiness"),
     expected: RuntimeActualDimensions.omit({ viewport: true }).extend({
       viewport: RuntimeActualDimensions.shape.viewport.pick({
         width: true,
@@ -356,28 +380,30 @@ const ReadinessRequest = z
   .strict();
 const SemanticSnapshotRequest = z
   .object({
-    kind: z.literal('semantic-snapshot'),
+    kind: z.literal("semantic-snapshot"),
     fragments: z.array(RuntimeFragmentIdentity).default([]),
   })
   .strict();
-const ResetRequest = z.object({ kind: z.literal('reset') }).strict();
+const ResetRequest = z.object({ kind: z.literal("reset") }).strict();
 const ExecuteActionRequest = z
   .object({
-    kind: z.literal('execute-action'),
+    kind: z.literal("execute-action"),
     scenarioId: StableId,
     actionId: StableId,
   })
   .strict();
 const VerifyCheckpointRequest = z
   .object({
-    kind: z.literal('verify-checkpoint'),
+    kind: z.literal("verify-checkpoint"),
     scenarioId: StableId,
     checkpointId: StableId,
   })
   .strict();
 
-export const RuntimeCaptureRequestPayload = z.discriminatedUnion('kind', [
+export const RuntimeCaptureRequestPayload = z.discriminatedUnion("kind", [
   DescribeRequest,
+  CaptureStateRequest,
+  SetRenderThemeRequest,
   PrepareRequest,
   ReadinessRequest,
   SemanticSnapshotRequest,
@@ -410,15 +436,27 @@ const successEnvelope = <T extends z.ZodTypeAny>(kind: string, payload: T) =>
     .strict();
 
 export const RuntimeDescribeSuccess = successEnvelope(
-  'describe',
+  "describe",
   z.object({ manifest: RuntimeCaptureManifest }).strict(),
 );
+export const RuntimeCaptureStateSuccess = successEnvelope(
+  "capture-state",
+  z
+    .object({ actual: RuntimeActualDimensions, stateDigest: z.string().min(1) })
+    .strict(),
+);
+export const RuntimeSetRenderThemeSuccess = successEnvelope(
+  "set-render-theme",
+  z
+    .object({ actual: RuntimeActualDimensions, stateDigest: z.string().min(1) })
+    .strict(),
+);
 export const RuntimePrepareSuccess = successEnvelope(
-  'prepare',
+  "prepare",
   z.object({ actual: RuntimeActualDimensions }).strict(),
 );
 export const RuntimeReadinessSuccess = successEnvelope(
-  'readiness',
+  "readiness",
   z
     .object({
       actual: RuntimeActualDimensions,
@@ -428,7 +466,7 @@ export const RuntimeReadinessSuccess = successEnvelope(
     .strict(),
 );
 export const RuntimeSemanticSnapshotSuccess = successEnvelope(
-  'semantic-snapshot',
+  "semantic-snapshot",
   z
     .object({
       actual: RuntimeActualDimensions,
@@ -437,36 +475,38 @@ export const RuntimeSemanticSnapshotSuccess = successEnvelope(
     .strict(),
 );
 export const RuntimeResetSuccess = successEnvelope(
-  'reset',
+  "reset",
   z.object({ actual: RuntimeActualDimensions }).strict(),
 );
 export const RuntimeExecuteActionSuccess = successEnvelope(
-  'execute-action',
+  "execute-action",
   z.object({ actionId: StableId, actual: RuntimeActualDimensions }).strict(),
 );
 export const RuntimeVerifyCheckpointSuccess = successEnvelope(
-  'verify-checkpoint',
+  "verify-checkpoint",
   z
     .object({ checkpointId: StableId, actual: RuntimeActualDimensions })
     .strict(),
 );
 
 export const RUNTIME_CAPTURE_ERROR_CODES = [
-  'protocol-mismatch',
-  'invalid-request',
-  'dimension-mismatch',
-  'unknown-action',
-  'unknown-scenario',
-  'unknown-checkpoint',
-  'fragment-not-found',
-  'duplicate-fragment-identity',
-  'invalid-semantic-marker',
-  'invalid-fragment-role',
-  'invalid-business-identity',
-  'fragment-not-visible',
-  'fragment-occluded',
-  'runtime-not-ready',
-  'command-failed',
+  "protocol-mismatch",
+  "invalid-request",
+  "dimension-mismatch",
+  "unknown-action",
+  "unknown-scenario",
+  "unknown-checkpoint",
+  "fragment-not-found",
+  "duplicate-fragment-identity",
+  "invalid-semantic-marker",
+  "invalid-fragment-role",
+  "invalid-business-identity",
+  "fragment-not-visible",
+  "fragment-occluded",
+  "runtime-not-ready",
+  "capture-state-unsupported",
+  "capture-state-changed",
+  "command-failed",
 ] as const;
 
 export const RuntimeCaptureFailure = z
@@ -486,8 +526,10 @@ export const RuntimeCaptureFailure = z
   .strict();
 export type RuntimeCaptureFailure = z.infer<typeof RuntimeCaptureFailure>;
 
-export const RuntimeCaptureSuccess = z.discriminatedUnion('kind', [
+export const RuntimeCaptureSuccess = z.discriminatedUnion("kind", [
   RuntimeDescribeSuccess,
+  RuntimeCaptureStateSuccess,
+  RuntimeSetRenderThemeSuccess,
   RuntimePrepareSuccess,
   RuntimeReadinessSuccess,
   RuntimeSemanticSnapshotSuccess,

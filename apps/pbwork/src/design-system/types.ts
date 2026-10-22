@@ -176,6 +176,8 @@ export type PrototypeScreenGroup = {
 };
 
 export type PrototypeRecord = {
+  /** Authored state readers cover business and local UI state for appearance sweeps. */
+  captureState?: boolean;
   id: string;
   label: string;
   lifecycle: PrototypeLifecycle;
@@ -265,6 +267,8 @@ export type PrototypeCheckpoint = {
 };
 
 export type PrototypeScenario = {
+  /** Missing means independent execution per appearance. */
+  appearancePolicy?: "shared" | "independent";
   id: string;
   label: string;
   initialVariantId: string;

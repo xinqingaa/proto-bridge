@@ -141,6 +141,7 @@ export async function evaluateAgentHandoff(
       attemptIncomplete = true;
       selectedRefs.push({
         caseId: selected.caseId,
+        caseKey: selected.caseKey,
         captureScope: selected.captureScope,
         scopeKey,
         resolution: 'missing',
@@ -159,6 +160,7 @@ export async function evaluateAgentHandoff(
     }
     selectedRefs.push({
       caseId: selected.caseId,
+      caseKey: selected.caseKey,
       captureScope: selected.captureScope,
       scopeKey,
       resolution: 'resolved',

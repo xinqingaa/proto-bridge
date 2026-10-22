@@ -1,3 +1,4 @@
+import { projectThemeCoverage, projectExecutionSources } from './evidence-read-model.js';
 import {
   ACCEPTANCE_DIMENSIONS,
   type AcceptanceDimension,
@@ -97,6 +98,13 @@ export type HandoffIndexProjection = {
     revisionIds: string[];
   };
   captureClock: (RuntimeClockManifest & { catalogRevisionId: string }) | null;
+  themeCoverage: EvidenceReadModel['themeCoverage'] | null;
+  executionSummary: {
+    independentCaseCount: number;
+    sharedAppearanceCaseCount: number;
+    unrecordedCaseCount: number;
+    distinctExecutionCount: number;
+  };
   mandatoryRisks: AgentHandoff['risks'];
   readiness: ReconstructionAcceptanceContract['readiness'];
   coverageStatus: AgentHandoff['coverageStatus'];
@@ -133,8 +141,10 @@ export type ScreenPacketProjection = {
     revisionId: string;
     variantId: string;
     themeId: string;
+    theme?: string;
     deviceId: string;
     scenario?: EvidenceCaseReadModel['scenario'];
+    execution?: EvidenceCaseReadModel['execution'];
     screenshotBlobIds: string[];
     screenshotDigests: string[];
     unknownCount: number;
@@ -145,6 +155,7 @@ export type ScreenPacketProjection = {
     ownerScreenId: string;
     scenarioId: string;
     checkpointId: string;
+    execution?: EvidenceCaseReadModel['execution'];
   }>;
   baseline: {
     structure: ScreenStructureProjection;
@@ -300,6 +311,8 @@ export type TokenInventoryItem = {
   occurrenceCount: number;
   occurrences: TokenInventoryOccurrence[];
   resolvedValue?: unknown;
+  /** Values actually referenced by the selected Cases, grouped by named theme/mode. */
+  resolvedVariants?: Array<{ theme: string; mode: string; caseIds: string[]; value?: unknown; chain: string[] }>;
   chain?: string[];
   tier?: string;
 };
@@ -374,6 +387,7 @@ export type CaseDeltaProjection = {
   caseId: string;
   baselineUnavailable: false;
   scenario?: EvidenceCaseReadModel['scenario'];
+  execution?: EvidenceCaseReadModel['execution'];
   screenshotGroups: ConsumerScreenshotGroup[];
   sameScreenshotContentAsBaseline: boolean;
   patches: SemanticCasePatch[];
@@ -420,6 +434,7 @@ export type EvidenceDetailItem =
       itemKey: string;
       source: 'acceptance-requirement';
       requirement: AcceptanceRequirement;
+      execution?: EvidenceCaseReadModel['execution'];
     }
   | {
       itemKey: string;
@@ -427,6 +442,7 @@ export type EvidenceDetailItem =
       caseId: string;
       revisionId: string;
       fact: EvidenceReadableFact;
+      execution?: EvidenceCaseReadModel['execution'];
     };
 
 export type EvidenceDetailProjectionResult = {
@@ -474,6 +490,16 @@ export function buildHandoffIndex(
 ): HandoffIndexProjection {
   const prepared = prepare(input);
   const screenshotGroups = buildScreenshotGroups(prepared);
+  const selectedCases = prepared.selectedScreens.flatMap((screen) => screen.cases);
+  const expectedCases = input.handoff.selectedCases.flatMap((selected) => {
+    const observed = selectedCases.find((item) => item.caseId === selected.caseId && item.revisionId === (selected.resolution === 'resolved' ? selected.revisionId : undefined));
+    const key = observed ?? selected.caseKey;
+    return key ? [{ screenId: key.screenId, variantId: key.variantId, deviceId: key.deviceId, ...(key.scenario ? { scenario: key.scenario } : {}), scopeKey: selected.scopeKey }] : [];
+  });
+  const coverageCases = selectedCases.map((item) => {
+    const scopeKey = input.handoff.selectedCases.find((selected) => selected.caseId === item.caseId && selected.resolution === 'resolved' && selected.revisionId === item.revisionId)?.scopeKey ?? item.scopeKey;
+    return { ...item, ...(scopeKey ? { scopeKey } : {}) };
+  });
   const warnings = screenshotGroups
     .filter((group) => group.metadataStatus === 'missing')
     .map(
@@ -495,6 +521,15 @@ export function buildHandoffIndex(
       ).sort(),
     },
     captureClock: readFixedCaptureClock(input),
+    themeCoverage: input.evidence.themeCoverage
+      ? projectThemeCoverage(input.evidence.themeCoverage.declared, coverageCases, input.handoff.themePack.defaultTheme, expectedCases)
+      : null,
+    executionSummary: {
+      independentCaseCount: selectedCases.filter((item) => item.execution?.mode === 'independent').length,
+      sharedAppearanceCaseCount: selectedCases.filter((item) => item.execution?.mode === 'shared-appearance').length,
+      unrecordedCaseCount: selectedCases.filter((item) => !item.execution).length,
+      distinctExecutionCount: new Set(selectedCases.flatMap((item) => item.execution ? [item.execution.executionId] : [])).size,
+    },
     mandatoryRisks: input.handoff.risks.map((risk) => ({
       ...risk,
       refs: [...risk.refs],
@@ -806,7 +841,15 @@ function attachResolvedTokens(
     input.handoff.themePack.defaultTheme,
     input.handoff.themePack.defaultMode,
   );
-  const tokenCatalog = input.catalogs?.find((candidate) => candidate.kind === 'token');
+  const casesById = new Map(
+    input.evidence.screens
+      .flatMap((screen) => screen.cases)
+      .map((item) => [item.caseId, item]),
+  );
+  const tables = new Map<string, ReturnType<typeof readThemePackTable>>();
+  const tokenCatalog = input.catalogs?.find(
+    (candidate) => candidate.kind === 'token',
+  );
   return {
     ...inventory,
     tokens: inventory.tokens.map((item) => {
@@ -814,11 +857,53 @@ function attachResolvedTokens(
         (entry) => entry.objectId === item.tokenId,
       )?.value as { tier?: string } | undefined;
       const provenance = table.provenance[item.tokenId];
-      if (table.values[item.tokenId] === undefined && !provenance && !definition?.tier) {
+      if (
+        table.values[item.tokenId] === undefined &&
+        !provenance &&
+        !definition?.tier
+      ) {
         return item;
       }
       return {
         ...item,
+        resolvedVariants: [
+          ...new Set(
+            item.occurrences.flatMap((occurrence) => occurrence.caseIds),
+          ),
+        ].reduce<NonNullable<TokenInventoryItem['resolvedVariants']>>(
+          (groups, caseId) => {
+            const evidenceCase = casesById.get(caseId);
+            if (!evidenceCase) return groups;
+            const theme =
+              evidenceCase.theme ?? input.handoff.themePack.defaultTheme;
+            const mode = evidenceCase.themeId;
+            const existing = groups.find(
+              (group) => group.theme === theme && group.mode === mode,
+            );
+            if (existing) existing.caseIds.push(caseId);
+            else {
+              const tableKey = `${theme}/${mode}`;
+              const actual =
+                tables.get(tableKey) ??
+                readThemePackTable(
+                  catalog,
+                  input.handoff.themePack.packId,
+                  theme,
+                  mode,
+                );
+              tables.set(tableKey, actual);
+              groups.push({
+                theme,
+                mode,
+                caseIds: [caseId],
+                value: actual.values[item.tokenId],
+                chain: actual.provenance[item.tokenId]?.chain ?? [],
+              });
+            }
+            return groups;
+          },
+          [],
+        ),
         ...(table.values[item.tokenId] !== undefined
           ? { resolvedValue: table.values[item.tokenId] }
           : {}),
@@ -835,7 +920,7 @@ export function buildScreenPacket(
 ): ScreenPacketProjection {
   const prepared = prepare(input);
   const screen = requireScreen(prepared, screenId);
-  const baseline = selectBaseline(screen.cases);
+  const baseline = selectBaseline(screen.cases, input.handoff.themePack);
   const baselineStructure = buildStructureIR(input, screenId, baseline.caseModel.caseId);
   const baselineState = buildStateSnapshot(input, baseline.caseModel);
   const screenObligations = compileReconstructionObligations(input.acceptance).filter((item) => item.screenId === screenId);
@@ -867,8 +952,10 @@ export function buildScreenPacket(
       revisionId: item.revisionId,
       variantId: item.variantId,
       themeId: item.themeId,
+      ...(item.theme ? { theme: item.theme } : {}),
       deviceId: item.deviceId,
       ...(item.scenario ? { scenario: { ...item.scenario } } : {}),
+      ...(item.execution ? { execution: { ...item.execution, sourceTheme: { ...item.execution.sourceTheme } } } : {}),
       screenshotBlobIds: [...item.screenshotBlobIds].sort(),
       screenshotDigests: unique(
         item.screenshotBlobIds.flatMap((blobId) => {
@@ -887,6 +974,7 @@ export function buildScreenPacket(
               ownerScreenId: item.scenario.ownerScreenId,
               scenarioId: item.scenario.scenarioId,
               checkpointId: item.scenario.checkpointId,
+              ...(item.execution ? { execution: { ...item.execution, sourceTheme: { ...item.execution.sourceTheme } } } : {}),
             },
           ]
         : [],
@@ -1153,7 +1241,7 @@ export function buildCaseDelta(
 ): CaseDeltaProjection {
   const prepared = prepare(input);
   const screen = requireScreen(prepared, screenId);
-  const baseline = selectBaseline(screen.cases).caseModel;
+  const baseline = selectBaseline(screen.cases, input.handoff.themePack).caseModel;
   const selected = screen.cases.find((item) => item.caseId === caseId);
   if (!selected) {
     throw unknownReferenceError('Screen Case', { screenId, caseId });
@@ -1182,6 +1270,7 @@ export function buildCaseDelta(
     caseId,
     baselineUnavailable: false,
     ...(selected.scenario ? { scenario: { ...selected.scenario } } : {}),
+    ...(selected.execution ? { execution: { ...selected.execution, sourceTheme: { ...selected.execution.sourceTheme } } } : {}),
     screenshotGroups,
     sameScreenshotContentAsBaseline:
       selectedDigests.length > 0 &&
@@ -1716,17 +1805,17 @@ export function buildReconstructionObligationProjection(
 
 function prepare(input: ConsumerProjectionInput): PreparedProjection {
   assertFixedIdentity(input);
-  const selectedCaseIds = new Set(
-    input.handoff.selectedCases.map((selected) => selected.caseId),
-  );
+  const fixedCases = projectExecutionSources(input.evidence.screens.flatMap((screen) => screen.cases).filter((item) =>
+    input.handoff.selectedCases.some((selected) => selected.caseId === item.caseId && selected.resolution === 'resolved' && selected.revisionId === item.revisionId),
+  ));
   const handoffOrder = new Map(
     input.handoff.selectedCases.map((selected, index) => [selected.caseId, index]),
   );
   const selectedScreens = input.evidence.screens
     .map((screen) => ({
       screenId: screen.screenId,
-      cases: screen.cases
-        .filter((item) => selectedCaseIds.has(item.caseId))
+      cases: fixedCases
+        .filter((item) => item.screenId === screen.screenId)
         .sort((left, right) => {
           const bySelection =
             (handoffOrder.get(left.caseId) ?? Number.MAX_SAFE_INTEGER) -
@@ -1792,17 +1881,18 @@ function requireScreen(
   return screen;
 }
 
-function selectBaseline(cases: EvidenceCaseReadModel[]): {
+function selectBaseline(cases: EvidenceCaseReadModel[], defaults?: AgentHandoff['themePack']): {
   caseModel: EvidenceCaseReadModel;
   reason: ScreenPacketProjection['baselineSelectionReason'];
 } {
-  const defaultCase = cases.find(
+  const ordered = [...cases].sort((a, b) => Number((b.theme ?? defaults?.defaultTheme) === defaults?.defaultTheme && b.themeId === defaults?.defaultMode) - Number((a.theme ?? defaults?.defaultTheme) === defaults?.defaultTheme && a.themeId === defaults?.defaultMode));
+  const defaultCase = ordered.find(
     (item) => !item.scenario && item.variantId === 'default',
   );
   if (defaultCase) {
     return { caseModel: defaultCase, reason: 'default-non-scenario' };
   }
-  const nonScenario = cases.find((item) => !item.scenario);
+  const nonScenario = ordered.find((item) => !item.scenario);
   if (nonScenario) {
     return { caseModel: nonScenario, reason: 'first-non-scenario' };
   }
@@ -1905,6 +1995,7 @@ function detailItems(
             source: 'evidence-fact' as const,
             caseId: item.caseId,
             revisionId: item.revisionId,
+            ...(item.execution ? { execution: item.execution } : {}),
             fact,
           })),
       );
@@ -1918,6 +2009,8 @@ function detailItems(
   return requirements.map((requirement) => ({
     itemKey: requirement.requirementId,
     source: 'acceptance-requirement' as const,
+    ...(screenCases.find((item) => item.caseId === requirement.caseId)?.execution
+      ? { execution: screenCases.find((item) => item.caseId === requirement.caseId)!.execution } : {}),
     requirement: {
       ...requirement,
       evidenceRefs: [...requirement.evidenceRefs],

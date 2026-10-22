@@ -191,6 +191,7 @@ test("Core Capture opens a cold-chain Variant with its authored Screen route and
           variantIds: ["active-excursion"],
         },
         deviceIds: ["iphone-14"],
+        themeModes: [{ mode: "light" }],
         scenarios: { mode: "none" },
         captureScope: {
           fragments: [],
@@ -266,6 +267,7 @@ test("cold-chain sequential Sheet actions resolve at their actual scenario step"
           variantIds: ["active-excursion", "action-sheet-open"],
         },
         deviceIds: ["iphone-14"],
+        themeModes: [{ mode: "light" }],
         scenarios: {
           mode: "explicit",
           scenarioIds: ["reveal-response-options", "start-resolution"],
@@ -686,6 +688,7 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
         screenId: "cold-chain-ops.exception-queue",
         variants: { mode: "explicit", variantIds: ["default"] },
         deviceIds: ["iphone-14"],
+        themeModes: [{ mode: "light" }],
         scenarios: {
           mode: "explicit",
           scenarioIds: ["focus-critical", "inspect-primary-exception"],
@@ -708,6 +711,7 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
         screenId: "cold-chain-ops.exception-queue",
         variants: { mode: "explicit", variantIds: ["default"] },
         deviceIds: ["iphone-14"],
+        themeModes: [{ mode: "light" }],
         scenarios: { mode: "none" },
         captureScope: {
           ...baseScope,
@@ -995,6 +999,7 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
           screenId: "cold-chain-ops.exception-queue",
           variants: { mode: "explicit", variantIds: ["default"] },
           deviceIds: ["iphone-14"],
+        themeModes: [{ mode: "light" }],
           scenarios: { mode: "none" },
           captureScope: {
             fragments: [],
@@ -1033,6 +1038,7 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
           screenId: "cold-chain-ops.exception-queue",
           variants: { mode: "explicit", variantIds: ["empty"] },
           deviceIds: ["iphone-14"],
+        themeModes: [{ mode: "light" }],
           scenarios: { mode: "none" },
           captureScope: {
             fragments: [],

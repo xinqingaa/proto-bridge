@@ -169,6 +169,7 @@ function draft(variants: string[]): SelectionDraft {
         screenId: 'sample.task-list',
         variants: { mode: 'explicit', variantIds: variants },
         deviceIds: ['iphone-14'],
+        themeModes: [{ mode: 'light' }],
         scenarios: { mode: 'none' },
         captureScope: {
           fragments: [],
@@ -229,6 +230,45 @@ afterEach(async () => {
 });
 
 describe('Capture reliability: required Blob and Issue writes', () => {
+  it('discards a prepared appearance when its source Screenshot cannot be staged before the next theme', async () => {
+    const runtime = manifest('runtime-appearance-source-staging-failure');
+    runtime.theme.themes = ['default', 'water'];
+    const selection = draft(['claimable']);
+    delete selection.screens[0]!.themeModes;
+    const preflight = preflightSelection(selection, runtime);
+    let prepared = false;
+    const preparedBeforeCapture: boolean[] = [];
+    const order: string[] = [];
+    const discardPrepared = vi.fn(async () => { prepared = false; });
+    const driver: CaseCaptureDriver = {
+      async captureCase(input) {
+        preparedBeforeCapture.push(prepared);
+        prepared = true;
+        order.push(input.entry.selectedCase.caseId);
+        return capturedCase(input);
+      },
+      discardPrepared,
+    };
+    let failFirstScreenshot = true;
+    faults.failBytes = () => {
+      const fail = failFirstScreenshot;
+      failFirstScreenshot = false;
+      return fail;
+    };
+    const result = await capturePreflightToStore({
+      store, bundleId: fixture.BUNDLE_ID, preflight,
+      runtimeBaseUrl: 'http://127.0.0.1:3977', driver,
+    });
+    expect(order).toHaveLength(4);
+    expect(preparedBeforeCapture).toEqual([false, false, true, true]);
+    expect(discardPrepared).toHaveBeenCalledTimes(1);
+    expect(result.run.attempts[0]).toMatchObject({ caseId: order[0], result: 'failed' });
+    expect(result.run.attempts[0]!.reason).toMatch(/screenshot/i);
+    expect(result.run.attempts.slice(1).map((attempt) => attempt.result)).toEqual(['captured', 'captured', 'captured']);
+    expect(result.snapshot.activeSlots.some((slot) => slot.caseId === order[0])).toBe(false);
+    expect(result.snapshot.coverage.counts).toMatchObject({ selected: 4, captured: 3, failed: 1 });
+  });
+
   it('marks a Case failed when its required screenshot Blob cannot be written', async () => {
     const preflight = preflightSelection(
       draft(['empty', 'claimable']),

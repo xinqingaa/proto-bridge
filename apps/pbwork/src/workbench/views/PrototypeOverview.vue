@@ -8,6 +8,7 @@ import { useCaptureStore } from "@/app/stores/capture";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import { captureServiceClient } from "@/capture/service-client";
 import ScreenshotThumb from "@/capture/ScreenshotThumb.vue";
+import { readCaseIdParts } from "@proto-bridge/core/v2";
 import type { ScreenshotIndex } from "@proto-bridge/core/v2/service-contract";
 import {
   classifyWorkbenchResults,
@@ -123,8 +124,8 @@ function thumbBlobId(slug: string) {
   );
   return (
     matches.find((shot) => {
-      const [, variantId = "", , , scenario = ""] = shot.caseId.split("::");
-      return variantId === screen.defaultVariantId && !scenario.startsWith("scenario=");
+      const parts = readCaseIdParts(shot.caseId);
+      return parts?.variantId === screen.defaultVariantId && !parts.scenario;
     })?.blobId ??
     matches[0]?.blobId ??
     ""

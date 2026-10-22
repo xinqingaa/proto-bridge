@@ -111,6 +111,7 @@ function screenshotDraft() {
         screenId: 'sample.task-list',
         variants: { mode: 'explicit', variantIds: ['default'] },
         deviceIds: ['iphone-14'],
+        themeModes: [{ mode: 'light' }],
         scenarios: { mode: 'none' },
         captureScope: {
           fragments: [],
@@ -205,7 +206,7 @@ function coldChainManifest() {
 }
 
 describe('ProtoBridge CLI', () => {
-  it('expands whole-Prototype and one-Screen deliver intent to 24 and 7 Cases', async () => {
+  it('expands whole-Prototype and one-Screen deliver intent across light/dark to 48 and 14 Cases', async () => {
     const root = await tempRoot();
     const manifestPath = path.join(root, 'manifest.json');
     await writeFile(manifestPath, JSON.stringify(coldChainManifest()));
@@ -225,7 +226,7 @@ describe('ProtoBridge CLI', () => {
     );
     expect(
       preflightSelection(whole!, coldChainManifest() as any).matrix,
-    ).toHaveLength(24);
+    ).toHaveLength(48);
 
     const oneScreen = await resolveDeliverDraft(
       parseCliArgs([
@@ -241,7 +242,7 @@ describe('ProtoBridge CLI', () => {
     );
     expect(
       preflightSelection(oneScreen!, coldChainManifest() as any).matrix,
-    ).toHaveLength(7);
+    ).toHaveLength(14);
   });
   it('exposes the Evidence commands directly without a legacy prefix', async () => {
     const root = await tempRoot();

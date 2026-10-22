@@ -251,6 +251,10 @@ export class LocalFileStore implements V2Store {
   private resetInterrupted = false;
   private lifecycleWriteTail: Promise<void> = Promise.resolve();
   private readonly operationWriteTails = new Map<string, Promise<void>>();
+  private readonly stagedCaseIndexes = new Map<JobId, {
+    caseIds: Set<string>;
+    nextSequence: number;
+  }>();
 
   constructor(options: LocalFileStoreOptions) {
     this.root = options.root;
@@ -332,6 +336,7 @@ export class LocalFileStore implements V2Store {
     await this.releaseLock?.();
     this.releaseLock = undefined;
     this.lockIdentity = undefined;
+    this.stagedCaseIndexes.clear();
   }
 
   async getWorkspaceLifecycle(refresh = false): Promise<import('./types.js').WorkspaceLifecycle> {
@@ -387,6 +392,7 @@ export class LocalFileStore implements V2Store {
           rm(path.join(this.root, entry.name), { recursive: true, force: true }),
         ),
     );
+    this.stagedCaseIndexes.clear();
     try {
       await this.beforeResetManifest?.();
       await writeJsonAtomic(workspaceManifestPath(this.root), nextManifest);
@@ -1213,6 +1219,10 @@ export class LocalFileStore implements V2Store {
     jobId: JobId,
     status: TerminalJobStatus,
   ): Promise<CaptureJob> {
+    return this.withWriteLock(`job-staging:${jobId}`, () => this.finalizeJobLocked(jobId, status));
+  }
+
+  private async finalizeJobLocked(jobId: JobId, status: TerminalJobStatus): Promise<CaptureJob> {
     await this.assertWritableStore();
     const job = await this.requireJob(jobId);
     assertJobStatusTransition(job.status, status);
@@ -1227,6 +1237,7 @@ export class LocalFileStore implements V2Store {
       ],
     });
     await writeJsonAtomic(jobPath(this.root, jobId), next);
+    this.stagedCaseIndexes.delete(jobId);
     await rm(jobStagingDir(this.root, jobId), { recursive: true, force: true });
     return next;
   }
@@ -1267,6 +1278,10 @@ export class LocalFileStore implements V2Store {
   }
 
   async stageJobCase(jobId: JobId, input: StageJobCaseInput): Promise<void> {
+    await this.withWriteLock(`job-staging:${jobId}`, () => this.stageJobCaseLocked(jobId, input));
+  }
+
+  private async stageJobCaseLocked(jobId: JobId, input: StageJobCaseInput): Promise<void> {
     await this.assertWritableStore();
     const job = await this.requireExecutingJob(jobId);
     const attempt = this.parseOrThrow(CaseAttempt, input.attempt, 'CaseAttempt');
@@ -1295,8 +1310,18 @@ export class LocalFileStore implements V2Store {
         `Staged Case ${attempt.caseId} must carry exactly the revision of its captured Attempt.`,
       );
     }
-    const staged = await this.listStagedJobCases(jobId);
-    if (staged.some((item) => item.attempt.caseId === attempt.caseId)) {
+    // The writer lock owns the staging directory. Load existing durable records
+    // once, rather than rereading every prior revision for every completed Case.
+    let index = this.stagedCaseIndexes.get(jobId);
+    if (!index) {
+      const staged = await this.listStagedJobCases(jobId);
+      index = {
+        caseIds: new Set(staged.map((item) => item.attempt.caseId)),
+        nextSequence: staged.reduce((next, item) => Math.max(next, item.sequence + 1), 1),
+      };
+      this.stagedCaseIndexes.set(jobId, index);
+    }
+    if (index.caseIds.has(attempt.caseId)) {
       throw new V2ContractError(
         'immutable-violation',
         `Case ${attempt.caseId} is already staged for Job ${jobId}.`,
@@ -1331,7 +1356,7 @@ export class LocalFileStore implements V2Store {
         byteLength: binary.bytes.byteLength,
       });
     }
-    const sequence = staged.length + 1;
+    const sequence = index.nextSequence;
     const record: StagedJobCase = {
       sequence,
       attempt,
@@ -1347,14 +1372,24 @@ export class LocalFileStore implements V2Store {
         binary.bytes,
       );
     }
-    await writeImmutableJson(
-      path.join(
-        jobStagingCasesDir(this.root, jobId),
-        `${String(sequence).padStart(6, '0')}-${attempt.attemptId}.json`,
-      ),
-      'StagedJobCase',
-      record,
-    );
+    try {
+      await writeImmutableJson(
+        path.join(
+          jobStagingCasesDir(this.root, jobId),
+          `${String(sequence).padStart(6, '0')}-${attempt.attemptId}.json`,
+        ),
+        'StagedJobCase',
+        record,
+      );
+    } catch (error) {
+      // A rename may have succeeded before a directory fsync failed. Reconcile
+      // the disk on retry instead of trusting an ambiguous in-memory index.
+      this.stagedCaseIndexes.delete(jobId);
+      throw error;
+    }
+    // Never reserve an identity or sequence until its complete record is durable.
+    index.caseIds.add(attempt.caseId);
+    index.nextSequence = sequence + 1;
   }
 
   async stageJobCatalogAssets(
@@ -1611,6 +1646,7 @@ export class LocalFileStore implements V2Store {
         ],
       }),
     );
+    this.stagedCaseIndexes.delete(job.jobId);
     await rm(jobStagingDir(this.root, job.jobId), { recursive: true, force: true });
   }
 
@@ -1630,6 +1666,7 @@ export class LocalFileStore implements V2Store {
         journal: [...job.journal, { at: now, event: 'finalized-orphan', detail }],
       }),
     );
+    this.stagedCaseIndexes.delete(job.jobId);
     await rm(jobStagingDir(this.root, job.jobId), { recursive: true, force: true });
   }
 

@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { LocalFileStore } from "@proto-bridge/core/v2/store";
+import { buildEvidenceReadModel } from "@proto-bridge/core/v2/evidence-read-model";
 import { test, expect, type Page } from "@playwright/test";
 import {
   PlaywrightCaseCaptureDriver,
@@ -86,7 +87,7 @@ test("Core Capture preserves settings camelCase keys and produces its screenshot
     ],
     acceptedWarningIds: [],
   };
-  const preflight = preflightSelection(draft, manifest);
+  const preflight = preflightSelection(draft, manifest, { maxCases: 500 });
   const captured = await new PlaywrightCaseCaptureDriver().captureCase({
     entry: preflight.matrix[0]!,
     preflight,
@@ -260,10 +261,189 @@ test("DS artwork identity and observed views survive theme and countdown changes
   }
 });
 
+test("Core Capture keeps all six rendering environments while reset restores business preferences", async ({
+  page,
+}) => {
+  await page.goto("/prototype/yike/__manifest__");
+  const {
+    payload: { manifest },
+  } = await runtimeRequest(page, { kind: "describe" });
+  const preflight = preflightSelection(
+    {
+      prototypeId: "yike",
+      themePack: {
+        packId: manifest.theme.packId,
+        packDigest: manifest.theme.packDigest,
+        theme: manifest.theme.defaultTheme,
+        mode: manifest.theme.defaultMode,
+      },
+      screens: [
+        {
+          screenId: "yike.settings",
+          variants: { mode: "explicit", variantIds: [] },
+          deviceIds: ["iphone-14"],
+          scenarios: { mode: "explicit", scenarioIds: ["reset-data"] },
+          captureScope: {
+            fragments: [],
+            screenshots: { mode: "all" },
+            sourcePolicy: false,
+            debugPolicy: false,
+            evidenceInputMode: "instrumented",
+            minEvidenceLevel: "instrumented-runtime",
+          },
+        },
+      ],
+      acceptedWarningIds: [],
+    },
+    manifest,
+  );
+  expect(preflight.matrix).toHaveLength(6);
+  const driver = await new PlaywrightCaseCaptureDriver().openSession();
+  try {
+    for (const entry of preflight.matrix) {
+      const result = await driver.captureCase({
+        entry,
+        preflight,
+        runtimeBaseUrl: new URL(page.url()).origin,
+      });
+      expect(
+        result.facts.find((fact) => fact.factId === "yike.focus.runtime.theme")
+          ?.effectiveValue,
+      ).toMatchObject({
+        theme: entry.selectedCase.caseKey.theme,
+        mode: entry.selectedCase.caseKey.themeId,
+      });
+      expect(
+        result.binaries.some(
+          (binary) =>
+            binary.kind === "screenshot" && binary.bytes.byteLength > 0,
+        ),
+      ).toBe(true);
+    }
+  } finally {
+    await driver.dispose();
+  }
+});
+
+test("appearance reuse preserves all six observations and executes shared actions once", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  await page.goto("/prototype/yike/__manifest__");
+  const {
+    payload: { manifest },
+  } = await runtimeRequest(page, { kind: "describe" });
+  const preflight = preflightSelection(
+    {
+      prototypeId: "yike",
+      themePack: {
+        packId: manifest.theme.packId,
+        packDigest: manifest.theme.packDigest,
+        theme: manifest.theme.defaultTheme,
+        mode: manifest.theme.defaultMode,
+      },
+      screens: [
+        {
+          screenId: "yike.focus",
+          variants: { mode: "explicit", variantIds: ["default"] },
+          deviceIds: ["iphone-14"],
+          scenarios: { mode: "explicit", scenarioIds: ["discard-focus"] },
+          captureScope: {
+            fragments: [],
+            screenshots: { mode: "all" },
+            sourcePolicy: false,
+            debugPolicy: false,
+            evidenceInputMode: "instrumented",
+            minEvidenceLevel: "instrumented-runtime",
+          },
+        },
+        {
+          screenId: "yike.settings",
+          variants: { mode: "explicit", variantIds: ["default"] },
+          deviceIds: ["iphone-14"],
+          scenarios: { mode: "none" },
+          captureScope: {
+            fragments: [],
+            screenshots: { mode: "all" },
+            sourcePolicy: false,
+            debugPolicy: false,
+            evidenceInputMode: "instrumented",
+            minEvidenceLevel: "instrumented-runtime",
+          },
+        },
+      ],
+      acceptedWarningIds: [],
+    },
+    manifest,
+  );
+  expect(preflight.matrix).toHaveLength(18);
+  const results = new Map<
+    string,
+    { facts: unknown; screenshotCount: number }
+  >();
+  for (const reuseAppearances of [true, false]) {
+    const driver = new PlaywrightCaseCaptureDriver(undefined, {
+      reuseAppearances,
+    });
+    const session = await driver.openSession();
+    try {
+      // Selection identity is unchanged; only execution order groups equal business inputs.
+      const entries = [...preflight.matrix].sort(
+        (a, b) => Number(Boolean(a.scenario)) - Number(Boolean(b.scenario)),
+      );
+      for (const entry of entries) {
+        const result = await session.captureCase({
+          entry,
+          preflight,
+          runtimeBaseUrl: new URL(page.url()).origin,
+        });
+        const screenId = entry.selectedCase.caseKey.screenId;
+        expect(
+          result.facts.find(
+            (fact) => fact.factId === `${screenId}.runtime.theme`,
+          )?.effectiveValue,
+        ).toMatchObject({
+          theme: entry.selectedCase.caseKey.theme,
+          mode: entry.selectedCase.caseKey.themeId,
+        });
+        expect(result.diagnostics.pageErrors).toEqual([]);
+        const comparable = {
+          facts: result.facts.filter(
+            (fact) => !fact.factId.endsWith(".runtime.execution"),
+          ),
+          screenshotCount: result.binaries.filter(
+            (binary) =>
+              binary.kind === "screenshot" && binary.bytes.byteLength > 0,
+          ).length,
+        };
+        expect(comparable.screenshotCount).toBeGreaterThan(0);
+        if (reuseAppearances)
+          results.set(entry.selectedCase.caseId, comparable);
+        else expect(comparable).toEqual(results.get(entry.selectedCase.caseId));
+      }
+    } finally {
+      await session.dispose();
+    }
+    expect(driver.metrics.sharedAppearanceCases).toBe(
+      reuseAppearances ? 10 : 0,
+    );
+    expect(driver.metrics.contextsCreated).toBe(reuseAppearances ? 8 : 18);
+    expect(driver.metrics.actionsExecuted).toBe(reuseAppearances ? 1 : 6);
+    expect(driver.metrics.appearanceFallbacks).toBe(0);
+    console.log(
+      JSON.stringify({
+        label: "Yike paired appearance sample",
+        reuseAppearances,
+        driver: driver.metrics,
+      }),
+    );
+  }
+});
+
 test("full yike Capture creates its first Bundle and Handoff with DS references only", async ({
   page,
 }) => {
-  test.setTimeout(360_000);
+  test.setTimeout(900_000);
   await page.goto("/prototype/yike/__manifest__");
   const described = await runtimeRequest(page, { kind: "describe" });
   const manifest = described.payload.manifest;
@@ -308,23 +488,78 @@ test("full yike Capture creates its first Bundle and Handoff with DS references 
       })),
       acceptedWarningIds: [],
     };
-    const preflight = preflightSelection(draft, manifest);
+    const preflight = preflightSelection(draft, manifest, { maxCases: 500 });
     expect(preflight.ready, JSON.stringify(preflight.diagnostics)).toBe(true);
+    expect(preflight.matrix).toHaveLength(414);
+    const pairs = new Map<string, number>();
+    for (const entry of preflight.matrix) {
+      const key = `${entry.selectedCase.caseKey.theme}/${entry.selectedCase.caseKey.themeId}`;
+      pairs.set(key, (pairs.get(key) ?? 0) + 1);
+    }
+    expect([...pairs.values()]).toEqual([69, 69, 69, 69, 69, 69]);
+    const driver = new PlaywrightCaseCaptureDriver(undefined, {
+      reuseAppearances: process.env.PB_CAPTURE_INDEPENDENT !== "1",
+    });
     const result = await capturePreflightToStore({
       store,
       bundleId: "bundle-yike-reference-test",
       preflight,
       runtimeBaseUrl: new URL(page.url()).origin,
-      driver: new PlaywrightCaseCaptureDriver(),
+      driver,
     });
     expect(
       result.run.attempts.filter((attempt) => attempt.result !== "captured"),
     ).toEqual([]);
     expect(result.run.attempts.length).toBe(preflight.matrix.length);
+    if (process.env.PB_CAPTURE_INDEPENDENT !== "1") {
+      expect(driver.metrics.sharedAppearanceCases).toBeGreaterThan(200);
+      expect(driver.metrics.contextsCreated).toBeLessThan(200);
+    }
+    const screenshots = (
+      await store.listBlobRecords(result.snapshot.bundleId)
+    ).filter((blob) => blob.kind === "screenshot");
+    expect(
+      new Set(
+        screenshots.flatMap((blob) =>
+          blob.ownerRefs
+            .filter((owner) => owner.kind === "revision")
+            .map((owner) => owner.objectId),
+        ),
+      ).size,
+    ).toBe(414);
+    for (const entry of preflight.matrix.filter(
+      (entry) =>
+        entry.selectedCase.caseKey.screenId === "yike.focus" &&
+        entry.selectedCase.caseKey.variantId === "default" &&
+        !entry.scenario,
+    )) {
+      const slot = result.snapshot.activeSlots.find(
+        (slot) => slot.caseId === entry.selectedCase.caseId,
+      )!;
+      const revision = await store.getEvidenceRevision(
+        result.snapshot.bundleId,
+        slot.revisionId,
+      );
+      const actual = revision!.facts.find(
+        (fact) => fact.factId === "yike.focus.runtime.theme",
+      )!.effectiveValue;
+      expect(actual).toMatchObject({
+        theme: entry.selectedCase.caseKey.theme,
+        mode: entry.selectedCase.caseKey.themeId,
+      });
+      expect(
+        revision!.facts.some(
+          (fact) =>
+            fact.factId.startsWith("yike.checkin.") ||
+            fact.factId.startsWith("yike.review."),
+        ),
+      ).toBe(false);
+    }
     const focus = result.snapshot.activeSlots.find(
       (slot) =>
-        slot.caseId.startsWith("yike.focus::default::") &&
-        !slot.caseId.includes("scenario="),
+        slot.caseId.startsWith(
+          "yike.focus::default::light::iphone-14::theme=mechanical",
+        ) && !slot.caseId.includes("scenario="),
     )!;
     const revision = await store.getEvidenceRevision(
       result.snapshot.bundleId,
@@ -378,8 +613,62 @@ test("full yike Capture creates its first Bundle and Handoff with DS references 
       acknowledgedRiskKinds: evaluation.risks.map((risk) => risk.kind),
     });
     expect(handoff.snapshotId).toBe(result.snapshot.snapshotId);
+    const revisions = await Promise.all(
+      result.snapshot.activeSlots.map(
+        async (slot) =>
+          (await store.getEvidenceRevision(
+            result.snapshot.bundleId,
+            slot.revisionId,
+          ))!,
+      ),
+    );
+    const evidence = buildEvidenceReadModel({
+      snapshot: result.snapshot,
+      runs: [result.run],
+      revisions,
+      blobs: await store.listBlobRecords(result.snapshot.bundleId),
+    });
+    expect(evidence.themeCoverage?.status).toBe("complete");
+    expect(
+      evidence.themeCoverage?.combinations.map((combination) => ({
+        expected: combination.expectedCaseCount,
+        captured: combination.capturedCaseCount,
+      })),
+    ).toEqual(Array(6).fill({ expected: 69, captured: 69 }));
+    const observed = evidence.screens.flatMap((screen) => screen.cases);
+    expect(observed).toHaveLength(414);
+    expect(
+      observed.every(
+        (item) =>
+          item.execution?.sourceExecutionStatus === "matched" &&
+          item.execution.sourceRevisionId,
+      ),
+    ).toBe(true);
+    expect(
+      observed.filter((item) => item.execution?.mode === "shared-appearance"),
+    ).toHaveLength(driver.metrics.sharedAppearanceCases);
     console.log(
-      `Yike reference-only Capture: ${result.run.attempts.length} Cases; first Bundle, Snapshot and Handoff committed.`,
+      JSON.stringify({
+        label: "Yike full theme Capture",
+        cases: result.run.attempts.length,
+        driver: driver.metrics,
+        runSeconds:
+          (Date.parse(result.run.endedAt) - Date.parse(result.run.startedAt)) /
+          1000,
+        mechanicalLightCaseSeconds: result.run.attempts
+          .filter((attempt) =>
+            attempt.caseId.includes("::light::iphone-14::theme=mechanical"),
+          )
+          .reduce(
+            (sum, attempt) =>
+              sum +
+              (Date.parse(attempt.endedAt) - Date.parse(attempt.startedAt)) /
+                1000,
+            0,
+          ),
+        screenshots: screenshots.length,
+        firstBundleSnapshotHandoff: true,
+      }),
     );
   } finally {
     await store.close();

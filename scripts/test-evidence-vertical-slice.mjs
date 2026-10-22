@@ -121,8 +121,11 @@ try {
       themePack.packDigest?.startsWith("sha1:") &&
       themePack.captured === true &&
       Object.keys(themePack.values ?? {}).length > 100 &&
-      darkTheme.captured === false &&
-      Object.keys(darkTheme.values ?? {}).length > 100,
+      darkTheme.captured === true &&
+      Object.keys(darkTheme.values ?? {}).length > 100 &&
+      index.themeCoverage?.declared.length === 2 &&
+      index.themeCoverage?.captured.length === 2 &&
+      index.themeCoverage?.missing.length === 0,
     "Handoff theme pack did not expose the digest and full value table.",
   );
 

@@ -34,7 +34,7 @@ and per-prototype v2 preferences. DS/prototype consumers now use the new keys an
 All foundations, theme modes and registered DS components now use the shared phone preview in
 `src/workbench/preview/`, with real Registry-bound prototype contexts, explicit
 samples, atomic theme identity and isolated device sessions. Prototype variants and own components use explicit metadata plus validated module associations in `workbench/preview/extensions`; production resources come from explicit prototype registrations, with isolated fixture coverage for the registration mechanism. Preview registration never replaces Runtime/Evidence gates. Constants never enter bindings, the token Catalog, or Target mapping.
-Capture pins the pack digest and every theme×mode value table; Handoff names the default theme and mode. Case identity stays the mode id.
+Capture pins the pack digest and every theme×mode value table; Handoff names the default theme and mode. New Case identities include the named theme plus the existing mode id; legacy identities remain readable.
 See the architecture document for the current activation boundary.
 
 ## Component atomicity

@@ -62,6 +62,7 @@ export default defineScreen({
     {
       id: "checkin-today",
       label: "完成今日打卡",
+      appearancePolicy: "shared" as const,
       initialVariantId: "default",
       actionIds: ["toggle-first"],
       checkpoints: [
@@ -85,6 +86,7 @@ export default defineScreen({
     {
       id: "open-detail",
       label: "查看习惯详情",
+      appearancePolicy: "shared" as const,
       initialVariantId: "default",
       actionIds: ["open-first"],
       checkpoints: [
@@ -101,6 +103,7 @@ export default defineScreen({
     {
       id: "open-editor",
       label: "新建习惯入口",
+      appearancePolicy: "shared" as const,
       initialVariantId: "default",
       actionIds: ["create"],
       checkpoints: [

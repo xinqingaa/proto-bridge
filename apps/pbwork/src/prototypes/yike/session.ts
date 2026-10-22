@@ -173,6 +173,13 @@ export function createYikeSession(store: YikeStore, now = () => Date.now()) {
     }
   }
   return {
+    captureState: () => ({
+      mode: mode.value,
+      countdownSeconds: countdownSeconds.value,
+      pendingMode: pendingMode.value,
+      pendingRecord: pendingRecord.value,
+      dismissedCompletion: [...dismissedCompletion].sort(),
+    }),
     pendingRecord,
     resolveRecord,
     mode,

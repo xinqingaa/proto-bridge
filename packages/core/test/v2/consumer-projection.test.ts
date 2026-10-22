@@ -4,6 +4,7 @@ import {
   buildCaseDelta,
   buildEvidenceDetail,
   buildHandoffIndex,
+  projectThemeCoverage,
   buildImplementationPlan,
   buildImplementationTranche,
   buildReconstructionObligationProjection,
@@ -86,6 +87,60 @@ describe('Consumer projection', () => {
     expect(buildHandoffIndex(input).captureClock).toBeNull();
     input.catalogs = [{ ...catalog, workspaceId: 'other-workspace' }];
     expect(buildHandoffIndex(input).captureClock).toBeNull();
+  });
+
+  it('reports theme Screenshot coverage only inside the fixed Handoff selection', () => {
+    const input = projectionFixture();
+    expect(buildHandoffIndex(input).themeCoverage).toBeNull();
+    input.evidence.themeCoverage = {
+      declared: [{ theme: 'default', mode: 'light' }, { theme: 'water', mode: 'light' }],
+      captured: [{ theme: 'default', mode: 'light', caseCount: 10 }, { theme: 'water', mode: 'light', caseCount: 10 }], missing: [],
+      status: 'complete', combinations: [],
+    };
+    input.handoff.selectedCases = input.handoff.selectedCases.filter((item) => item.caseId === DEFAULT_CASE);
+    const index = buildHandoffIndex(input);
+    expect(index.themeCoverage?.captured).toEqual([{ theme: 'default', mode: 'light', caseCount: 1 }]);
+    expect(index.themeCoverage?.missing).toEqual([{ theme: 'water', mode: 'light' }]);
+    const selected = input.evidence.screens.flatMap((screen) => screen.cases).find((item) => item.caseId === DEFAULT_CASE)!;
+    expect(projectThemeCoverage([{ theme: 'default', mode: 'light' }], [selected, selected], 'default').captured[0]?.caseCount).toBe(1);
+  });
+
+  it('preserves shared execution provenance across packets, deltas and interaction detail', () => {
+    const input = projectionFixture();
+    const selected = input.evidence.screens.flatMap((screen) => screen.cases).find((item) => item.caseId === SCENARIO_CASE)!;
+    selected.execution = {
+      executionId: 'execution-fixed', sourceCaseId: DEFAULT_CASE, mode: 'shared-appearance',
+      sourceTheme: { theme: 'default', mode: 'light' }, stateDigest: 'state-fixed',
+    };
+    const packet = buildScreenPacket(input, SCREEN);
+    expect(packet.cases.find((item) => item.caseId === SCENARIO_CASE)?.execution).toEqual({ ...selected.execution, sourceExecutionStatus: 'mismatch' });
+    expect(packet.scenarioMap.find((item) => item.caseId === SCENARIO_CASE)?.execution).toEqual({ ...selected.execution, sourceExecutionStatus: 'mismatch' });
+    expect(buildCaseDelta(input, SCREEN, SCENARIO_CASE).execution).toEqual({ ...selected.execution, sourceExecutionStatus: 'mismatch' });
+    const detail = buildEvidenceDetail(input, { handoffId: input.handoff.handoffId, screenId: SCREEN, projection: 'interactions', caseId: SCENARIO_CASE });
+    expect(detail.items[0]?.execution).toEqual({ ...selected.execution, sourceExecutionStatus: 'mismatch' });
+    expect(buildHandoffIndex(input).executionSummary).toEqual({
+      independentCaseCount: 0, sharedAppearanceCaseCount: 1, unrecordedCaseCount: 4, distinctExecutionCount: 1,
+    });
+  });
+
+  it('rechecks execution source against fixed Handoff revisions and excludes an unselected source', () => {
+    const input = projectionFixture();
+    const cases = input.evidence.screens.flatMap((screen) => screen.cases);
+    const source = cases.find((item) => item.caseId === DEFAULT_CASE)!;
+    const shared = cases.find((item) => item.caseId === SCENARIO_CASE)!;
+    source.execution = { executionId: 'execution-original', sourceCaseId: DEFAULT_CASE, mode: 'independent', sourceTheme: { theme: 'default', mode: 'light' } };
+    shared.execution = { ...source.execution, mode: 'shared-appearance' };
+    expect(buildScreenPacket(input, SCREEN).cases.find((item) => item.caseId === SCENARIO_CASE)?.execution).toMatchObject({ sourceExecutionStatus: 'matched', sourceRevisionId: source.revisionId });
+    // A different revision of the source Case must not resolve through its Case ID.
+    source.revisionId = 'unselected-new-revision';
+    expect(buildScreenPacket(input, SCREEN).cases.find((item) => item.caseId === SCENARIO_CASE)?.execution).toMatchObject({ sourceExecutionStatus: 'not-in-fixed-selection' });
+    source.revisionId = 'revision-default';
+    source.execution.executionId = 'execution-replacement';
+    expect(buildScreenPacket(input, SCREEN).cases.find((item) => item.caseId === SCENARIO_CASE)?.execution).toMatchObject({ sourceExecutionStatus: 'mismatch' });
+    input.handoff.selectedCases = input.handoff.selectedCases.filter((item) => item.caseId === SCENARIO_CASE);
+    const execution = buildScreenPacket(input, SCREEN).cases[0]!.execution;
+    expect(execution?.sourceExecutionStatus).toBe('not-in-fixed-selection');
+    expect(execution?.sourceRevisionId).toBeUndefined();
   });
 
   it('fails terminally instead of falling back when a required capability is missing', () => {

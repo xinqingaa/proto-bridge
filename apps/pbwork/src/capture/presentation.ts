@@ -1,5 +1,6 @@
 import {
   incompleteCaseCount,
+  readCaseIdParts,
   SEMANTIC_ID_RULE,
   type CaptureJob,
   type PrototypeLifecycleRecord,
@@ -179,14 +180,15 @@ function caseLabel(caseId: string | undefined): string {
 
 /** "页面 · 状态" or "页面 · 场景「…」" for one Case identity. */
 export function caseDisplayLabel(caseId: string): string {
-  const [screenId = "", variantId = "", , , scenarioPart] = caseId.split("::");
+  const parts = readCaseIdParts(caseId);
+  if (!parts) return caseId;
+  const { screenId, variantId } = parts;
+  const themeSuffix = parts.theme ? ` · ${parts.theme}/${parts.themeId === "dark" ? "深色" : parts.themeId === "light" ? "浅色" : parts.themeId}` : "";
   const screens = loadPrototypeScreens();
   const screen = screens.find((item) => item.screenId === screenId);
   const screenLabel = screen?.label ?? screenId;
-  if (scenarioPart?.startsWith("scenario=")) {
-    const [scenarioRef = "", checkpointId = ""] = scenarioPart
-      .slice("scenario=".length)
-      .split("@");
+  if (parts.scenario) {
+    const { ref: scenarioRef, checkpointId } = parts.scenario;
     const scenario = screens
       .flatMap((owner) =>
         (owner.scenarios ?? []).map((item) => ({
@@ -195,12 +197,12 @@ export function caseDisplayLabel(caseId: string): string {
         })),
       )
       .find((item) => item.ref === scenarioRef);
-    return `${screenLabel} · 场景「${scenario?.label ?? (checkpointId || scenarioRef)}」`;
+    return `${screenLabel} · 场景「${scenario?.label ?? (checkpointId || scenarioRef)}」${themeSuffix}`;
   }
   const variantLabel =
     screen?.variants.find((variant) => variant.id === variantId)?.label ??
     variantId;
-  return variantLabel ? `${screenLabel} · ${variantLabel}` : screenLabel;
+  return (variantLabel ? `${screenLabel} · ${variantLabel}` : screenLabel) + themeSuffix;
 }
 
 export type CaptureFailureKind =

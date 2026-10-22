@@ -51,6 +51,7 @@ import { scope } from './screen';
 - `prototypeNavigation(router, route, prototypeId)`：`enter` 进栈并写父路径链，`replace`/`variant` 保留父引用，`back` 在嵌入画布恢复父级、独立窗口返回历史；深链回退到显式 fallback。`tab` replace 根目的地，跨 Tab `enter(to, targetHome)` 先规范父级，`home` replace 清空中间链。
 - 主题偏好 API：复用 `useThemePackPreference`、`writeThemePackPreference`、`useSystemThemeMode`，实际主题应用仍由 RuntimeLayout 统一完成。返回时按原型当前主题与模式盖章，system 转成具体模式。
 - `useClock()`：复用 Date 时钟；Capture 从 `prototype.ts` 的 `clock` 声明安装时间与时区，交互模式读真实时间。
+- `useCaptureState(prototypeId, scope, read, options?)`：从 `@/runtime/capture-state` 引入；`scope` 分别使用 `business`、当前完整 `screenId` 或稳定的嵌套局部名称。读取器只读返回完整业务/命令私有状态与局部 UI 状态，在 Vue scope 销毁时注销。例如 `useCaptureState("demo", "demo.home", () => ({ draft: draft.value, open: open.value }))`。仅在覆盖全部可采 Screen 及影响检查点的嵌套状态后，在 `prototype.ts` 声明 `captureState: true`。缺少 business/当前 Screen 覆盖不会自动从 DOM 补齐。第 4 参数 `options.appearancePolicy` 缺省 `shared`；任何当前挂载读取器声明 `independent` 都拒绝整个原型的外观复用，适用于偏好选中态随主题改变的设置页。此默认值不绕过原型 opt-in 和状态覆盖要求。Scenario 的 `appearancePolicy` 缺省 `independent`，只有主题无关业务流程显式声明 `shared`。完整边界见[原型制作规范](../../../../docs/reference/prototype-authoring.md#跨主题共享执行的作者声明)。
 - `usePrototypeCaseReset(reset)`：在当前 view 注册 authored fixture 的同步准备函数。Capture `prepare` 和 `reset` 均触发，即使 URL 未变化；函数应复位共享业务状态、表单、Overlay、选中和滚动等局部状态。普通产品导航不触发此钩子，不能以路由 query 的改变代替实际状态准备。演示 fixture 与真实首次数据分离，隔离保存副作用。
 
 Runtime 的稳定等待会等字体、Vue 渲染及当前有限动画结束，再检查语义节点；共享面板退出期间仍存在的遮罩不会被视作稳定结果。循环环境动效不纳入该等待，检查目标被真正遮挡时仍应失败。

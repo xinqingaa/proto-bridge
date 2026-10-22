@@ -7,6 +7,7 @@ import type {
   Provenance,
 } from "./contracts/evidence.js";
 import type { Run } from "./contracts/run.js";
+import { computeScopeKey } from "./contracts/scope.js";
 import type { BundleSnapshot } from "./contracts/snapshot.js";
 import type { ThemeIdentity } from "./theme/schema.js";
 
@@ -54,11 +55,23 @@ export type EvidenceSemanticRegionReadModel = {
   facts: EvidenceReadableFact[];
 };
 
+export type EvidenceExecutionReadModel = {
+  executionId: string;
+  sourceCaseId: string;
+  mode: "independent" | "shared-appearance";
+  sourceTheme: { theme: string; mode: string };
+  stateDigest?: string;
+  /** Checked only against the current fixed Snapshot/Handoff Case revisions. */
+  sourceExecutionStatus?: "matched" | "not-in-fixed-selection" | "mismatch";
+  sourceRevisionId?: string;
+};
+
 export type EvidenceCaseReadModel = {
   caseId: string;
   screenId: string;
   variantId: string;
   themeId: string;
+  theme?: string;
   deviceId: string;
   scenarioLabel?: string;
   scenario?: {
@@ -67,6 +80,9 @@ export type EvidenceCaseReadModel = {
     checkpointId: string;
   };
   revisionId: string;
+  scopeKey?: string;
+  /** Absent for historical Evidence; never infer execution from declarations. */
+  execution?: EvidenceExecutionReadModel;
   evidenceLevel: CaseEvidenceRevision["evidenceLevel"];
   scopeKind: "page" | "fragment";
   fragmentLabels: string[];
@@ -92,6 +108,7 @@ export type EvidenceFailedAttemptReadModel = {
   screenId: string;
   variantId: string;
   themeId: string;
+  theme?: string;
   deviceId: string;
   scenario?: {
     ownerScreenId: string;
@@ -112,6 +129,19 @@ export type EvidenceReadModel = {
   snapshotId: string;
   /** Pack, named theme and mode fixed by the source Run. Case `themeId` is the mode. */
   themePack?: ThemeIdentity;
+  themeCoverage?: {
+    declared: Array<{ theme: string; mode: string }>;
+    captured: Array<{ theme: string; mode: string; caseCount: number }>;
+    missing: Array<{ theme: string; mode: string }>;
+    status: "complete" | "partial";
+    combinations: Array<{
+      theme: string;
+      mode: string;
+      expectedCaseCount: number;
+      capturedCaseCount: number;
+      missingCaseCount: number;
+    }>;
+  };
   sourceRunId: string;
   committedAt: string;
   deliveryStatus: "ready" | "attention";
@@ -163,7 +193,7 @@ function categoryFor(factId: string): EvidenceFactCategory {
   }
   if (factId.endsWith(".bbox")) return "visual";
   if (factId.endsWith(".runtime.semantic-coverage")) return "coverage";
-  if (factId.includes(".runtime.actual.")) return "environment";
+  if (factId.includes(".runtime.actual.") || factId.endsWith(".runtime.execution")) return "environment";
   return "other";
 }
 
@@ -339,6 +369,50 @@ function screenshotOwners(blobs: BlobRecord[]): Map<string, string[]> {
   return byRevision;
 }
 
+function executionOf(facts: EvidenceReadableFact[], screenId: string): EvidenceExecutionReadModel | undefined {
+  const fact = facts.find((item) => item.factId === `${screenId}.runtime.execution` && item.resolution === "resolved");
+  const value = fact?.value;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const execution = value as Record<string, unknown>;
+  const theme = execution.sourceTheme;
+  if (typeof execution.executionId !== "string" || !execution.executionId ||
+      typeof execution.sourceCaseId !== "string" || !execution.sourceCaseId ||
+      (execution.mode !== "independent" && execution.mode !== "shared-appearance") ||
+      !theme || typeof theme !== "object" || Array.isArray(theme)) return undefined;
+  const sourceTheme = theme as Record<string, unknown>;
+  if (typeof sourceTheme.theme !== "string" || typeof sourceTheme.mode !== "string") return undefined;
+  return {
+    executionId: execution.executionId,
+    sourceCaseId: execution.sourceCaseId,
+    mode: execution.mode,
+    sourceTheme: { theme: sourceTheme.theme, mode: sourceTheme.mode },
+    ...(typeof execution.stateDigest === "string" ? { stateDigest: execution.stateDigest } : {}),
+  };
+}
+
+/** Case identity is a declaration, not a revision ref; never resolve it through active/latest. */
+export function projectExecutionSources(cases: EvidenceCaseReadModel[]): EvidenceCaseReadModel[] {
+  return cases.map((item) => {
+    if (!item.execution) return item;
+    const { sourceRevisionId: _previousRevision, sourceExecutionStatus: _previousStatus, ...execution } = item.execution;
+    const sources = cases.filter((source) => source.caseId === execution.sourceCaseId);
+    const matched = sources.find((source) =>
+      source.scopeKey === item.scopeKey &&
+      source.execution?.executionId === execution.executionId &&
+      source.execution.mode === "independent",
+    );
+    return {
+      ...item,
+      execution: {
+        ...execution,
+        sourceTheme: { ...execution.sourceTheme },
+        sourceExecutionStatus: matched ? "matched" : sources.length ? "mismatch" : "not-in-fixed-selection",
+        ...(matched ? { sourceRevisionId: matched.revisionId } : {}),
+      },
+    };
+  });
+}
+
 /**
  * Human- and Agent-facing projection over immutable V2 objects. It never
  * invents facts: every displayed value retains the Fact's provenance and
@@ -367,11 +441,13 @@ export function buildEvidenceReadModel(
     const facts = revision.facts.map(readableFact);
     const regions = semanticRegions(facts);
     const scenario = selected.caseKey.scenario;
+    const execution = executionOf(facts, selected.caseKey.screenId);
     const model: EvidenceCaseReadModel = {
       caseId: selected.caseId,
       screenId: selected.caseKey.screenId,
       variantId: selected.caseKey.variantId,
       themeId: selected.caseKey.themeId,
+      ...(selected.caseKey.theme ? { theme: selected.caseKey.theme } : {}),
       deviceId: selected.caseKey.deviceId,
       ...(scenario
         ? {
@@ -384,6 +460,8 @@ export function buildEvidenceReadModel(
           }
         : {}),
       revisionId: revision.revisionId,
+      scopeKey: slot.scopeKey,
+      ...(execution ? { execution } : {}),
       evidenceLevel: revision.evidenceLevel,
       scopeKind:
         revision.captureScope.fragments.length > 0 ? "fragment" : "page",
@@ -434,6 +512,7 @@ export function buildEvidenceReadModel(
       screenId: selected.caseKey.screenId,
       variantId: selected.caseKey.variantId,
       themeId: selected.caseKey.themeId,
+      ...(selected.caseKey.theme ? { theme: selected.caseKey.theme } : {}),
       deviceId: selected.caseKey.deviceId,
       ...(scenario
         ? {
@@ -454,10 +533,11 @@ export function buildEvidenceReadModel(
     });
   }
 
+  const fixedCases = projectExecutionSources([...screens.values()].flat());
   const screenModels = [...screens.entries()].map(
-    ([screenId, screenCases]) => ({
+    ([screenId]) => ({
       screenId,
-      cases: screenCases,
+      cases: fixedCases.filter((item) => item.screenId === screenId),
     }),
   );
   const allCases = screenModels.flatMap((screen) => screen.cases);
@@ -506,6 +586,10 @@ export function buildEvidenceReadModel(
     bundleId: input.snapshot.bundleId,
     snapshotId: input.snapshot.snapshotId,
     ...(sourceRun ? { themePack: sourceRun.selection.themePack } : {}),
+    ...(sourceRun?.selection.declaredThemeModes ? {
+      themeCoverage: projectThemeCoverage(sourceRun.selection.declaredThemeModes!, [...screens.values()].flat(), sourceRun.selection.themePack.theme,
+        sourceRun.selection.cases.map((item) => ({ screenId: item.caseKey.screenId, variantId: item.caseKey.variantId, deviceId: item.caseKey.deviceId, ...(item.caseKey.scenario ? { scenario: item.caseKey.scenario } : {}), scopeKey: computeScopeKey(item.captureScope) }))),
+    } : {}),
     sourceRunId: input.snapshot.sourceRunId,
     committedAt: input.snapshot.committedAt,
     deliveryStatus:
@@ -531,5 +615,33 @@ export function buildEvidenceReadModel(
     screens: screenModels,
     failedAttempts,
     messages,
+  };
+}
+
+/** Theme tables are declarations; only selected Cases with Screenshot refs count here. */
+export function projectThemeCoverage(
+  declared: Array<{ theme: string; mode: string }>,
+  cases: EvidenceCaseReadModel[],
+  defaultTheme: string,
+  expectedCases: Array<Pick<EvidenceCaseReadModel, "screenId" | "variantId" | "deviceId" | "scenario" | "scopeKey">> = cases,
+): NonNullable<EvidenceReadModel['themeCoverage']> {
+  const baseKey = (item: typeof expectedCases[number]) => JSON.stringify({
+    screenId: item.screenId, variantId: item.variantId, deviceId: item.deviceId,
+    scenario: item.scenario ? { ownerScreenId: item.scenario.ownerScreenId, scenarioId: item.scenario.scenarioId, checkpointId: item.scenario.checkpointId } : null,
+    scopeKey: item.scopeKey ?? null,
+  });
+  const expected = new Set(expectedCases.map(baseKey));
+  const combinations = declared.map(({ theme, mode }) => {
+    const observed = new Set(cases.filter((item) =>
+      (item.theme ?? defaultTheme) === theme && item.themeId === mode && item.screenshotBlobIds.length > 0,
+    ).map(baseKey).filter((key) => expected.has(key)));
+    return { theme, mode, expectedCaseCount: expected.size, capturedCaseCount: observed.size, missingCaseCount: expected.size - observed.size };
+  });
+  return {
+    declared,
+    captured: combinations.flatMap((item) => item.capturedCaseCount ? [{ theme: item.theme, mode: item.mode, caseCount: item.capturedCaseCount }] : []),
+    missing: combinations.filter((item) => item.missingCaseCount > 0).map(({ theme, mode }) => ({ theme, mode })),
+    status: combinations.every((item) => item.expectedCaseCount > 0 && item.missingCaseCount === 0) ? "complete" : "partial",
+    combinations,
   };
 }

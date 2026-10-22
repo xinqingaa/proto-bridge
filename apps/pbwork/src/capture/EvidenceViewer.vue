@@ -125,9 +125,9 @@ const coverageTitle = computed(() => {
     return `采集不完整：${successfulCount.value}/${current.summary.selected} 项有效，${current.summary.selected - successfulCount.value} 项没有可用结果`;
   }
   if (current.deliveryStatus === "attention") {
-    return "采集完整，但有需要注意的事实";
+    return "所选采集范围已完成，但有需要注意的事实";
   }
-  return "采集完整，所有事实已解析";
+  return "所选采集范围已完成，所有事实已解析";
 });
 const verdictMessages = computed(() => {
   const current = model.value;
@@ -242,7 +242,10 @@ function variantLabel(item: EvidenceCaseReadModel) {
   );
 }
 function caseTitle(item: EvidenceCaseReadModel) {
-  return `${screenLabel(item.screenId)} · ${variantLabel(item)}`;
+  return `${screenLabel(item.screenId)} · ${variantLabel(item)} · ${themeLabel(item)}`;
+}
+function themeLabel(item: EvidenceCaseReadModel) {
+  return `${item.theme ?? model.value?.themePack?.theme ?? "历史主题"} / ${item.themeId === "dark" ? "深色" : item.themeId === "light" ? "浅色" : item.themeId}`;
 }
 function scenarioSummary(item: EvidenceCaseReadModel) {
   if (!item.scenario) return "页面本身的状态";
@@ -389,6 +392,8 @@ watch(
         <div class="verdict-copy">
           <strong v-if="resultCopy">{{ resultCopy.headline }}</strong>
           <p v-if="coverageTitle">{{ coverageTitle }}</p>
+          <p v-if="model?.themeCoverage">主题／浅深模式：{{ model.themeCoverage.combinations.filter(item => item.expectedCaseCount > 0 && item.missingCaseCount === 0).length }}/{{ model.themeCoverage.declared.length }} 种组合已覆盖全部所需状态<span v-if="model.themeCoverage.status === 'partial'">，仍有状态截图缺失</span>。</p>
+          <p v-else-if="model">历史记录没有声明完整主题范围；页面数量完成不代表全部主题已采集。</p>
           <p v-for="message in verdictMessages" :key="message">{{ message }}</p>
         </div>
         <WorkbenchButton
@@ -440,7 +445,7 @@ watch(
                 <Route v-if="item.scenario" :size="12" />
                 {{ variantLabel(item) }}
               </strong>
-              <small>{{ scenarioSummary(item) }}</small>
+              <small>{{ themeLabel(item) }} · {{ scenarioSummary(item) }}</small>
             </span>
           </button>
         </section>
@@ -490,6 +495,18 @@ watch(
         </div>
 
         <div class="inspector-body">
+            <p v-if="selectedCase.execution?.mode === 'shared-appearance'" class="scope-notice">
+              本外观已实际采集；业务准备与交互引用 {{ selectedCase.execution.sourceTheme.theme }}/{{ selectedCase.execution.sourceTheme.mode }} 的同次执行，本外观未独立重放交互。
+              <code>来源声明 Case：{{ selectedCase.execution.sourceCaseId }}</code>
+            </p>
+            <p v-else-if="selectedCase.execution" class="lead-note">业务准备与交互在本外观执行。</p>
+            <p v-else class="lead-note">此历史证据未记录业务执行来源，不推断独立交互覆盖。</p>
+            <p v-if="selectedCase.execution?.sourceExecutionStatus === 'matched'" class="lead-note">
+              已核对固定来源 Revision：<code>{{ selectedCase.execution.sourceRevisionId }}</code>
+            </p>
+            <p v-else-if="selectedCase.execution" class="scope-notice">
+              {{ selectedCase.execution.sourceExecutionStatus === 'mismatch' ? '固定范围内的来源 Case 已不是同一次业务执行，不能作为本次共享来源读取。' : '本固定范围未包含可核对的来源 Revision；保留执行来源声明，不读取当前或最新记录替代。' }}
+            </p>
           <template v-if="inspectorTab === 'summary'">
             <p class="lead">{{ scenarioSummary(selectedCase) }}</p>
             <p class="lead-note">在「结构」或「交互」里点一项，它在画面上的位置会被标出来。</p>

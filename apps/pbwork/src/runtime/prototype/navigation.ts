@@ -3,6 +3,7 @@ import type {
   RouteLocationNormalizedLoaded,
   LocationQueryRaw,
 } from "vue-router";
+import { fixedCaptureTheme } from "../capture-environment";
 import { announceBackNavigation } from "../navigation-intent";
 import {
   readThemePackPreference,
@@ -36,6 +37,8 @@ export function prototypeNavigation(
       ? environment.state().pbPrototype
       : { prototypeId };
   const theme = () => {
+    const fixed = fixedCaptureTheme(prototypeId);
+    if (fixed) return { theme: fixed.theme, mode: fixed.mode };
     const preference = readThemePackPreference(prototypeId);
     return {
       theme:

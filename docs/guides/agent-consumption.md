@@ -33,8 +33,8 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 
 1. 读取资源 `proto-bridge://guides/handoff-consumer`。
 2. 调用 `inspect_evidence_workspace`，校验 Workspace、projection contract version 和 capabilities。能力缺失时停止，不回退旧链路。
-3. 调用 `read_handoff_index`，在编辑前原样报告 `mandatoryRisks` 的全部风险，并固定 Screen 顺序、Case/Scenario 范围与 Screenshot digest 分组。
-4. 每个实现范围内的 Screen 调用一次 `read_screen_packet`。用 `canonicalBrief`、baseline Structure 与 state 理解主滚动边界、主 section、状态矩阵和固定业务数据；主滚动看 `canonicalBrief.primaryScroll` 与 `baseline.structure.scrollContainers`（packet 的 compact regions **不含** per-region `scrollOwner`）。Evidence Region 用于定位与验收，不是目标侧组件边界、列表项边界或文件边界。
+3. 调用 `read_handoff_index`，在编辑前原样报告 `mandatoryRisks` 的全部风险，并固定 Screen 顺序、Case/Scenario 范围与 Screenshot digest 分组。主题覆盖查看逐组合的 expected/captured/missing 状态数；所选范围完成与所有声明外观完成分开判断。
+4. 每个实现范围内的 Screen 调用一次 `read_screen_packet`。用 `canonicalBrief`、baseline Structure 与 state 理解主滚动边界、主 section、状态矩阵和固定业务数据；主滚动看 `canonicalBrief.primaryScroll` 与 `baseline.structure.scrollContainers`（packet 的 compact regions **不含** per-region `scrollOwner`）。Evidence Region 用于定位与验收，不是目标侧组件边界、列表项边界或文件边界。Case 的 `execution` 说明业务执行来源：`shared-appearance` 是该外观真实截图与状态观测、共享来源 Case 的一次交互执行，不代表此主题独立重放。来源身份不等于 revision 引用；只把 `sourceExecutionStatus=matched` 附带的 `sourceRevisionId` 当作本固定范围可核对的来源，`mismatch` 或 `not-in-fixed-selection` 如实披露，不追 active/latest。没有执行来源的历史记录保持未知；主题特有行为须有独立证据。组件、Token 与资源定义读取固定 Catalog，页面使用事实不要求目标工程采用同一组件实现。
 5. 每份不同 Screenshot 内容使用 digest group 的 `representativeBlobId` 调用 `read_evidence_screenshot`，确认 MCP ImageContent，并记录覆盖的全部 Case。相同 digest 不重复注入；metadata、base64 文本和相似 Variant 不能替代 Screenshot。
 6. 每个 Screen 在编辑前调用 `inspect_target_readiness`，记录 resolver coverage、component/token candidate/conflict/unresolved 与 `pending`（Target 待实现，必须披露、不得替换实现；语义见 [Target 适配器](../architecture/proto-bridge.md)）、五维 machine authority 和 blockers。用 `implementationInventory` 的 `regionId`/`caseId` 批量解析组件和 Token。缺少 machine authority 的维度在最终结论中保持未验证或说明人工依据，不要求向目标工程加入实验性 Runtime Harness。`read_implementation_plan` / `read_implementation_tranche` 仅诊断或 Review 辅助，不是默认实施路径。
 7. 非 baseline 或包含状态/场景差异的 Case 调用 `read_case_delta`。Delta 使用语义 ID patch；需要来源时再定向调用 `read_evidence_detail`。
@@ -53,9 +53,9 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 | Tool | 用途 |
 | --- | --- |
 | `inspect_evidence_workspace` | 确认 Workspace、能力、契约版本、构建与进程身份、Store generation |
-| `read_handoff_index` | 默认入口：固定 refs、采集时钟、风险、Screen/Case/Scenario 摘要和 digest 分组；时钟读取规则见主题包解析模型 |
+| `read_handoff_index` | 默认入口：固定 refs、采集时钟、主题范围与已有截图组合、风险、Screen/Case/Scenario 摘要和 digest 分组；时钟读取规则见主题包解析模型 |
 | `read_screen_packet` | 单 Screen 的 baseline、canonicalBrief、inventory、Case/Scenario 和 Screenshot 分组；token 清单可附默认主题与模式的解析值 |
-| `read_theme_pack` | 只读 Handoff 固定的 theme-pack Catalog。默认组合已采集；其它组合返回取值表并标注未采集 |
+| `read_theme_pack` | 只读 Handoff 固定的 theme-pack Catalog。按固定 Handoff 的 resolved Case 判断组合是否采集；取值表存在不等于页面已采集 |
 | `read_implementation_plan` | 诊断：Region tranche 索引与 obligation 计数（非默认实施路径） |
 | `read_implementation_tranche` | 诊断：展开单个 tranche 的 obligations（非默认实施路径） |
 | `read_case_delta` | 指定 Case 相对 baseline 的语义 patch（regionId/caseId） |

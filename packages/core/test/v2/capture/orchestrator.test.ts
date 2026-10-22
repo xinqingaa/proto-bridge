@@ -182,6 +182,7 @@ function draft(variants: string[]): SelectionDraft {
         screenId: 'sample.task-list',
         variants: { mode: 'explicit', variantIds: variants },
         deviceIds: ['iphone-14'],
+        themeModes: [{ mode: 'light' }],
         scenarios: { mode: 'none' },
         captureScope: {
           fragments: [],
@@ -226,6 +227,41 @@ function now(): Date {
 }
 
 describe('V2 Capture Orchestrator + real Store', () => {
+  it('groups matching business Cases across appearances, runs the default first, and preserves the fixed selection', async () => {
+    const runtime = manifest('runtime-appearance-execution-order');
+    runtime.theme.themes = ['amber', 'default'];
+    const selection = draft(['empty', 'claimable']);
+    delete selection.screens[0]!.themeModes;
+    const preflight = preflightSelection(selection, runtime);
+    // Deliberately interleave business states and put the default appearance last.
+    preflight.matrix.sort((a, b) => {
+      const ka = a.selectedCase.caseKey;
+      const kb = b.selectedCase.caseKey;
+      return `${ka.theme}/${ka.themeId}/${ka.variantId}`.localeCompare(`${kb.theme}/${kb.themeId}/${kb.variantId}`);
+    });
+    const fixedSelection = structuredClone(preflight.selection);
+    const matrixOrder = preflight.matrix.map((entry) => entry.selectedCase.caseId);
+    const driver = new FakeDriver();
+    const captures = vi.spyOn(driver, 'captureCase');
+    const result = await capturePreflightToStore({
+      store, bundleId: fixture.BUNDLE_ID, preflight,
+      runtimeBaseUrl: 'http://127.0.0.1:3977', driver, now,
+    });
+    const executed = captures.mock.calls.map(([input]) => input.entry.selectedCase);
+    expect(executed).toHaveLength(8);
+    expect(new Set(executed.map((item) => item.caseId))).toEqual(new Set(matrixOrder));
+    for (let index = 0; index < executed.length; index += 4) {
+      const group = executed.slice(index, index + 4);
+      expect(new Set(group.map((item) => item.caseKey.variantId)).size).toBe(1);
+      expect(group[0]!.caseKey).toMatchObject({ theme: 'default', themeId: 'light' });
+      expect(new Set(group.map((item) => `${item.caseKey.theme}/${item.caseKey.themeId}`)).size).toBe(4);
+    }
+    expect(result.run.selection).toEqual(fixedSelection);
+    expect(preflight.selection).toEqual(fixedSelection);
+    expect(preflight.matrix.map((entry) => entry.selectedCase.caseId)).toEqual(matrixOrder);
+    expect(result.run.coverage.counts).toMatchObject({ selected: 8, captured: 8, failed: 0 });
+  });
+
   it.each([false, true])('captures without fetching DS bytes (existing Bundle: %s)', async (existing) => {
     let requests = 0;
     const server = createServer((_request, response) => {

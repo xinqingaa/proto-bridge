@@ -5,14 +5,12 @@ import { compareModeSemanticTrees } from '../runtime-contract/theme-probe-compar
 import type { ThemeIdentity } from '../theme/schema.js';
 import type { RuntimeCaptureRequestPayload } from '../runtime-contract/protocol.js';
 
-export type ThemeProbeRequest = (
-  payload: {
-    kind: string;
-    expected?: unknown;
-    requiredFragments?: unknown;
-    fragments?: unknown;
-  },
-) => Promise<unknown>;
+export type ThemeProbeRequest = (payload: {
+  kind: string;
+  expected?: unknown;
+  requiredFragments?: unknown;
+  fragments?: unknown;
+}) => Promise<unknown>;
 
 export type ThemeProbeTarget = {
   path: string;
@@ -23,6 +21,34 @@ export type ThemeProbeTarget = {
 };
 
 export type ThemeProbeOpen = (target: ThemeProbeTarget) => Promise<void>;
+
+/** Only complete source fingerprints may opt into reuse. Failed probes never cache. */
+export class ThemeProbeCache {
+  private readonly entries = new Map<
+    string,
+    { expiresAt: number; result: Promise<AuthoringDiagnostic[]> }
+  >();
+
+  async run(
+    key: string | undefined,
+    probe: () => Promise<AuthoringDiagnostic[]>,
+  ): Promise<AuthoringDiagnostic[]> {
+    if (!key) return probe();
+    const existing = this.entries.get(key);
+    if (existing && existing.expiresAt > Date.now()) return existing.result;
+    this.entries.delete(key);
+    const result = probe();
+    this.entries.set(key, { expiresAt: Date.now() + 300_000, result });
+    if (this.entries.size > 32)
+      this.entries.delete(this.entries.keys().next().value!);
+    try {
+      return await result;
+    } catch (error) {
+      this.entries.delete(key);
+      throw error;
+    }
+  }
+}
 
 /**
  * Renders each selected Screen's default Variant in every declared theme and

@@ -179,6 +179,16 @@ Checkpoint 必须声明实际 Screen、Variant 和非空 required Fragments。Ru
 
 会卸载当前 document 且无法保持 Capture Protocol 连续性的导航必须标记 unsupported。不要用延时或忽略窗口伪装成功。
 
+### 跨主题共享执行的作者声明
+
+Scenario 的 `appearancePolicy` 可选 `shared` 或 `independent`，省略时按 `independent` 执行。只有业务动作、状态转换与主题无关的 Scenario 才能显式声明 `shared`；主题设置、系统模式和主题专属交互保持独立执行。共享声明不减少每种主题模式的页面截图、语义观测、状态和完整性门禁。
+
+原型仅在作者已覆盖完整状态时声明 `PrototypeRecord.captureState: true`。作者通过 `useCaptureState` 提供一个 `business` 读取器、每个可采 Screen 的完整局部 UI 读取器，以及影响检查点的嵌套局部状态读取器；必须覆盖业务 Store、命令/session 的私有状态、表单 draft/校验、选中项、Overlay 和恢复状态。不能仅 hash Store 或从 DOM 猜测作者状态。读取器第 4 参数可声明 `{ appearancePolicy: "independent" }`；在原型已显式启用且完整覆盖状态的前提下，读取器省略此参数默认为 `shared`。任一挂载的读取器声明独立时，整个当前原型拒绝共享，包括静态 Variant。主题设置页的当前已选主题/模式来自业务偏好，不能仅切渲染主题后沿用原选中态；一刻设置页整页采用该独立策略。
+
+实际渲染主题必须独立于业务偏好，渲染切换不能写偏好、重放动作或触发 fixture reset。接口见[制作工具](../../apps/pbwork/docs/prototypes/authoring-tools.md#共享运行套件)。
+
+Runtime 仅对显式启用且具备 `business` 与当前 Screen 读取器的页面开放 `capture-state` / `set-render-theme`。状态指纹同时包含源码版本、固定业务时刻、业务路由、实际滚动、表单、Overlay 和焦点；切换渲染前后均须保持不变。缺少作者覆盖返回 `capture-state-unsupported`；状态变化返回 `capture-state-changed`，由 Capture 回退独立准备与执行，不能声明共享成功。指纹相等只证明已声明及观测的边界未变化，不替代作者完整性责任或各主题实际视觉校验。
+
 ## 11. Readiness 与 Reset
 
 Runtime 在 readiness 成功前必须完成：
@@ -274,3 +284,7 @@ Workbench 浏览不以整页制作检查阻断页面，正式 Preflight 与完�
 ## 已同步图形的页面证据
 
 DS 资源本体由同步链路维护，页面采集不重复归档 SVG。图标名称及语义节点所属装饰图标进入既有 props；原型自有大型表盘可用 `data-pb-artwork` 显式声明已登记 packId/file/assetId、views、sessionAsset/layerAsset 和当前状态。Runtime 核对真实子 image 与该声明，不从临时 URL 猜资源身份；具体当前输出和边界见 [主题包与 Capture](../architecture/theme-packs.md#原型绑定与-capture-边界)。原稿存在或 PNG 已同步都不能替代页面缺图检查、状态行为与视觉验证。
+
+## 当前面板的采集边界
+
+共享 TabViewport 在非当前保活面板声明 `data-pb-capture-inactive="true"`。Runtime 的节点扫描、稳定性检查和 Fragment 查找均排除这些子树，不能把其它 Screen 的节点改挂到当前 Screen。当前面板内部隐藏节点、共享外壳及 Overlay 仍保留；所需 Fragment 的可见性、非零 bbox、合法 role 与 Token Evidence 门禁不变。业务页面不得用该属性隐藏应交付的证据节点。

@@ -15,6 +15,7 @@
 ## 行为要点
 
 - `modelValue` 与 items 决定唯一可见面板，切换通过 `update:modelValue` 回传。
+- 非当前保活面板声明 `data-pb-capture-inactive="true"`，正式 Capture 不把它们归入当前页面；当前面板内部隐藏状态仍保留。
 - `keepMounted` 保持非当前面板状态；`swipe` 与 `mouseSwipe` 分别控制触摸和鼠标手势。
 - 根目的地关闭横滑，`transitionDuration` 使用 `motion.duration-instant`。
 - 面板以完整视口宽度平移；相邻面板不得从裁剪边缘泄漏。

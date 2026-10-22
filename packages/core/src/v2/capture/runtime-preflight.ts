@@ -3,11 +3,17 @@ import { V2ContractError } from '../contracts/errors.js';
 import type { RuntimeCaptureManifest } from '../runtime-contract/index.js';
 import { RUNTIME_CAPTURE_GLOBAL } from '../runtime-contract/index.js';
 import { resolveCaptureDevice } from './devices.js';
-import { preflightSelection, type CapturePreflight } from './preflight.js';
+import {
+  digestCaptureInput,
+  preflightSelection,
+  type CapturePreflight,
+} from './preflight.js';
 import { requestRuntimeCapture } from './runtime-client.js';
 import { buildRuntimeCaseUrl } from './runtime-url.js';
 import type { SelectionDraft } from './selection.js';
-import { probeThemeConsistency } from './theme-probe.js';
+import { probeThemeConsistency, ThemeProbeCache } from './theme-probe.js';
+
+const themeProbeCache = new ThemeProbeCache();
 
 export type InstrumentedRuntimePreflightInput = {
   draft: SelectionDraft;
@@ -115,30 +121,51 @@ export async function preflightInstrumentedRuntime(
     const described = await requestRuntimeCapture(page, { kind: 'describe' });
     const manifest = described.payload.manifest;
     await page.clock.install({ time: new Date(manifest.clock.now) });
-    const probeDiagnostics = await probeThemeConsistency({
+    // Validate references/capacity before doing any expensive theme rendering.
+    preflightSelection(
+      input.draft,
       manifest,
-      screenIds: input.draft.screens.map((screen) => screen.screenId),
-      viewport: firstDevice.viewport,
-      open: async (target) => {
-        const url = new URL(
-          buildRuntimeCaseUrl({
-            runtimeBaseUrl: input.runtimeBaseUrl,
-            path: target.path,
-            variantId: target.variantId,
-            themeId: target.mode,
-            ...(target.routeQuery ? { routeQuery: target.routeQuery } : {}),
-          }),
-        );
-        url.searchParams.set('theme', target.theme);
-        await page.goto(url.toString(), { waitUntil: 'domcontentloaded' });
-        await waitForProtocol(page);
-      },
-      request: (payload) =>
-        requestRuntimeCapture(
-          page,
-          payload as Parameters<typeof requestRuntimeCapture>[1],
-        ),
-    });
+      input.maxCases === undefined ? {} : { maxCases: input.maxCases },
+    );
+    const probeKey = manifest.sourceDigest
+      ? digestCaptureInput({
+          runtimeBaseUrl: input.runtimeBaseUrl,
+          manifest,
+          screens: [
+            ...new Set(input.draft.screens.map((screen) => screen.screenId)),
+          ].sort(),
+          device: firstDevice,
+        })
+      : undefined;
+    const probeDiagnostics = await themeProbeCache.run(probeKey, () =>
+      probeThemeConsistency({
+        manifest,
+        screenIds: input.draft.screens.map((screen) => screen.screenId),
+        viewport: firstDevice.viewport,
+        open: async (target) => {
+          const url = new URL(
+            buildRuntimeCaseUrl({
+              runtimeBaseUrl: input.runtimeBaseUrl,
+              path: target.path,
+              variantId: target.variantId,
+              themeId: target.mode,
+              theme: target.theme,
+              ...(target.routeQuery ? { routeQuery: target.routeQuery } : {}),
+            }),
+          );
+          url.searchParams.set('theme', target.theme);
+          if (target.mode === 'light' || target.mode === 'dark')
+            await page.emulateMedia({ colorScheme: target.mode });
+          await page.goto(url.toString(), { waitUntil: 'domcontentloaded' });
+          await waitForProtocol(page);
+        },
+        request: (payload) =>
+          requestRuntimeCapture(
+            page,
+            payload as Parameters<typeof requestRuntimeCapture>[1],
+          ),
+      }),
+    );
     if (
       !manifest.screens.some(
         (screen) => screen.prototypeId === input.draft.prototypeId,
@@ -154,19 +181,13 @@ export async function preflightInstrumentedRuntime(
       authoringDiagnostics: probeDiagnostics,
     });
 
-    for (const screenDraft of input.draft.screens) {
-      if (screenDraft.captureScope.fragments.length === 0) continue;
-      const entry = preflight.matrix.find(
-        (candidate) =>
-          candidate.selectedCase.caseKey.screenId === screenDraft.screenId &&
-          candidate.selectedCase.caseKey.scenario === undefined,
-      );
-      if (!entry) {
-        throw new V2ContractError(
-          'unknown-reference',
-          `Fragment Screen ${screenDraft.screenId} has no Base Case in the Matrix.`,
-        );
-      }
+    for (const entry of preflight.matrix) {
+      if (
+        entry.scenario ||
+        entry.selectedCase.captureScope.fragments.length === 0
+      )
+        continue;
+      const fragments = entry.selectedCase.captureScope.fragments;
       const device = resolveCaptureDevice(entry.selectedCase.caseKey.deviceId);
       await page.setViewportSize(device.viewport);
       await page.goto(
@@ -175,6 +196,8 @@ export async function preflightInstrumentedRuntime(
           path: entry.runtimePath,
           variantId: entry.initialVariantId,
           themeId: entry.selectedCase.caseKey.themeId,
+          theme:
+            entry.selectedCase.caseKey.theme ?? input.draft.themePack.theme,
           ...(entry.initialRouteQuery
             ? { routeQuery: entry.initialRouteQuery }
             : {}),
@@ -190,6 +213,8 @@ export async function preflightInstrumentedRuntime(
           variantId: entry.selectedCase.caseKey.variantId,
           theme: {
             ...input.draft.themePack,
+            theme:
+              entry.selectedCase.caseKey.theme ?? input.draft.themePack.theme,
             mode: entry.selectedCase.caseKey.themeId,
           },
         },
@@ -200,13 +225,13 @@ export async function preflightInstrumentedRuntime(
           ...prepared.payload.actual,
           viewport: device.viewport,
         },
-        requiredFragments: screenDraft.captureScope.fragments,
+        requiredFragments: fragments,
       });
       const snapshot = await requestRuntimeCapture(page, {
         kind: 'semantic-snapshot',
-        fragments: screenDraft.captureScope.fragments,
+        fragments: fragments,
       });
-      for (const fragment of screenDraft.captureScope.fragments) {
+      for (const fragment of fragments) {
         const found = snapshot.payload.nodes.some(
           (node) =>
             node.fragment.screenId === fragment.screenId &&

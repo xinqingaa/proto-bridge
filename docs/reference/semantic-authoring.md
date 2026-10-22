@@ -166,3 +166,7 @@ Workbench 当前 Screen 的实时检查复用 Runtime 的 required boundary、�
 7. 对每个 warning 给出修复或保留理由。
 
 检查单见 [PBWork 交付检查单](../../apps/pbwork/docs/checklist.md)。
+
+## 当前面板的采集边界
+
+共享 TabViewport 在非当前保活面板声明 `data-pb-capture-inactive="true"`。Runtime 的节点扫描、稳定性检查和 Fragment 查找均排除这些子树，不能把其它 Screen 的节点改挂到当前 Screen。当前面板内部隐藏节点、共享外壳及 Overlay 仍保留；所需 Fragment 的可见性、非零 bbox、合法 role 与 Token Evidence 门禁不变。业务页面不得用该属性隐藏应交付的证据节点。

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useCaptureState } from "@/runtime/capture-state";
 import { useReducedMotion } from "@/runtime/useReducedMotion";
 const reducedMotion = useReducedMotion();
 import { computed, ref } from "vue";
@@ -91,6 +92,10 @@ function save() {
     return;
   emit("save", { ...props.modelValue, name: props.modelValue.name.trim() });
 }
+useCaptureState("yike", "local.habit-form", () => ({
+  attempted: attempted.value,
+  draft: props.modelValue,
+}));
 </script>
 <template>
   <form

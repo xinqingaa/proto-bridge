@@ -7,6 +7,7 @@ export default {
   owners: ["一刻产品"],
   roles: ["日常使用者"],
   themePackId: "yike",
+  captureState: true,
   clock: {
     now: "2026-10-16T02:24:00.000Z",
     timeZone: "Asia/Shanghai",

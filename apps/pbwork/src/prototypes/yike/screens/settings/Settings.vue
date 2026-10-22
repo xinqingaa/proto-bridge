@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useCaptureState } from "@/runtime/capture-state";
 import { computed, ref, watch, nextTick, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { vPb } from "@/authoring/pb-style";
@@ -318,6 +319,29 @@ async function reset() {
   await nextTick();
   await nav().home("focus");
 }
+useCaptureState(
+  "yike",
+  "yike.settings",
+  () => ({
+    theming: theming.value,
+    setting: setting.value,
+    settingDraft: settingDraft.value,
+    settingError: settingError.value,
+    resetOpen: resetOpen.value,
+    feedback: feedback.value,
+    thresholdOpen: thresholdOpen.value,
+    thresholdDraft: thresholdDraft.value,
+    thresholdStep: thresholdStep.value,
+    customThresholdSeconds: customThresholdSeconds.value,
+    thresholdError: thresholdError.value,
+    presetsOpen: presetsOpen.value,
+    presetStep: presetStep.value,
+    presetSlot: presetSlot.value,
+    presetDraft: presetDraft.value,
+    presetError: presetError.value,
+  }),
+  { appearancePolicy: "independent" },
+);
 </script>
 <template>
   <PrototypeShell

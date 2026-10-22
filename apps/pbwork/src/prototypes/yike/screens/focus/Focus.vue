@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useCaptureState } from "@/runtime/capture-state";
 import { computed, ref } from "vue";
 import Icon from "@/design-system/components/action/Icon.vue";
 import { useRoute, useRouter } from "vue-router";
@@ -111,6 +112,12 @@ function abandon() {
   confirmAbandon.value = false;
   syncVariant();
 }
+useCaptureState("yike", "yike.focus", () => ({
+  confirmAbandon: confirmAbandon.value,
+  customOpen: customOpen.value,
+  customSeconds: customSeconds.value,
+  customError: customError.value,
+}));
 </script>
 
 <template>

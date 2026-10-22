@@ -51,6 +51,8 @@ import { loadPrototypeThemePack } from "@/design-system/loaders";
 import { buildCanonicalRuntimeUrl, resolveRuntimeRoute } from "@/runtime/url";
 import InspectHost from "@/runtime/inspect/InspectHost.vue";
 import { PrototypeCaseRevisionKey } from "@/runtime/prototype/case";
+import { fixedCaptureTheme } from "@/runtime/capture-environment";
+import { synchronizeRuntimeClock } from "@/runtime/useClock";
 import { installRuntimeCaptureProtocol } from "@/runtime/capture-protocol";
 import ScreenTransition from "@/design-system/components/navigation/ScreenTransition.vue";
 import type { ScreenTransitionNavigation } from "@/design-system/components/navigation/screenTransition";
@@ -96,6 +98,15 @@ const savedPreference = useThemePackPreference(() =>
 );
 const systemMode = useSystemThemeMode();
 function themeSync(preferSaved = false) {
+  const fixed = fixedCaptureTheme(String(route.params.prototypeId));
+  if (fixed && (fixed.mode === "light" || fixed.mode === "dark")) {
+    return {
+      action: "keep" as const,
+      theme: fixed.theme,
+      mode: fixed.mode,
+      preference: { theme: fixed.theme, mode: fixed.mode },
+    };
+  }
   const result = resolved.value;
   const fallback = { theme: "default", mode: "light" as const };
   const pack = result.ok ? loadPrototypeThemePack(result.prototype.id) : null;
@@ -431,6 +442,9 @@ onMounted(() => {
       await nextTick();
     },
     waitForStable: async () => {
+      // Date can be fixed between interval ticks. Update all derived business time
+      // before readiness, semantic snapshots and appearance state fingerprints.
+      synchronizeRuntimeClock();
       await document.fonts.ready;
       await nextTick();
       // A closed shared Overlay can still cover the checkpoint during its

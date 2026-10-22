@@ -1,3 +1,4 @@
+import { useCaptureState } from "@/runtime/capture-state";
 import { watch, onMounted, onBeforeUnmount, type Ref } from "vue";
 import { useRoute } from "vue-router";
 import { useClock } from "@/runtime/useClock";
@@ -22,6 +23,16 @@ export function useYikeRuntime() {
   const store = useYikeStore();
   const session = sharedYikeSession(store);
   const clock = useClock();
+  useCaptureState("yike", "business", () => ({
+    clock: clock.value.getTime(),
+    data: store.data,
+    presentation: store.presentation,
+    storageIssue: store.storageIssue.value,
+    recoveryNeeded: store.recoveryNeeded.value,
+    recoveryAvailable: store.recoveryAvailable.value,
+    undoCheckin: store.undoCheckin.value,
+    session: session.captureState(),
+  }));
   watch(clock, (date) => session.tick(date.getTime()));
   session.tick();
   const preference = useThemePackPreference("yike");

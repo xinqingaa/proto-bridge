@@ -13,6 +13,8 @@ export type EvidenceBriefScreenshotGroup = {
     caseId: string;
     screenId: string;
     variantId: string;
+    theme?: string;
+    mode?: string;
     checkpointId?: string;
   }>;
 };

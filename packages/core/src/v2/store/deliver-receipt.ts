@@ -134,10 +134,14 @@ function reviewFileName(input: {
   screenId: string;
   variantId: string;
   checkpointId?: string;
+  theme?: string;
+  mode?: string;
 }): string {
   const slug = [
     input.screenId.split('.').at(-1),
     input.variantId,
+    input.theme,
+    input.mode,
     input.checkpointId,
   ]
     .filter(Boolean)
@@ -261,6 +265,8 @@ export async function writeDeliveryReceipt(
         caseId: item.caseId,
         screenId: item.screenId,
         variantId: item.variantId,
+        ...(item.theme ? { theme: item.theme } : {}),
+        ...(item.mode ? { mode: item.mode } : {}),
         ...(item.scenario?.checkpointId
           ? { checkpointId: item.scenario.checkpointId }
           : {}),
@@ -278,6 +284,8 @@ export async function writeDeliveryReceipt(
         index: screenshotIndex,
         screenId: item.screenId,
         variantId: item.variantId,
+        ...(item.theme ? { theme: item.theme } : {}),
+        ...(item.mode ? { mode: item.mode } : {}),
         ...(item.scenario?.checkpointId
           ? { checkpointId: item.scenario.checkpointId }
           : {}),

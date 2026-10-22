@@ -27,7 +27,10 @@ import {
   issuesForCapturedRevisions,
 } from '../store/snapshot-builder.js';
 import type { CapturedBinary, CaseCaptureDriver } from './playwright-driver.js';
-import { CaseCaptureFailure } from './playwright-driver.js';
+import {
+  CaseCaptureFailure,
+  captureExecutionKey,
+} from './playwright-driver.js';
 import {
   assertPreflightReady,
   digestCaptureInput,
@@ -111,9 +114,11 @@ export async function capturePreflightToStore(
     );
   }
   await input.store.startJob(job.jobId, runId);
+  let session: (CaseCaptureDriver & { dispose(): Promise<void> }) | undefined;
   try {
+    session = await input.driver.openSession?.();
     return await executeStartedJob(
-      input,
+      { ...input, driver: session ?? input.driver },
       job.jobId,
       job.acceptedAt,
       runId,
@@ -132,6 +137,8 @@ export async function capturePreflightToStore(
       await input.store.finalizeJob(job.jobId, 'failed');
     }
     throw error;
+  } finally {
+    await session?.dispose();
   }
 }
 
@@ -239,6 +246,8 @@ async function executeStartedJob(
     }
     attempts.push(staged.attempt);
     if (staged.revision) revisions.push(staged.revision);
+    if (staged.attempt.result !== 'captured')
+      await input.driver.discardPrepared?.();
     await store.appendJobJournal(jobId, {
       event: 'case-finished',
       detail:
@@ -248,7 +257,23 @@ async function executeStartedJob(
     });
   };
 
+  // Case identity and Selection stay fixed. Only execution order groups the
+  // same business state so supported appearances can share its preparation.
+  const groups = new Map<string, typeof input.preflight.matrix>();
   for (const entry of input.preflight.matrix) {
+    const key = captureExecutionKey(entry);
+    const group = groups.get(key) ?? [];
+    group.push(entry);
+    groups.set(key, group);
+  }
+  const defaults = input.preflight.selection.themePack;
+  const isDefault = (entry: (typeof input.preflight.matrix)[number]) =>
+    (entry.selectedCase.caseKey.theme ?? defaults.theme) === defaults.theme &&
+    entry.selectedCase.caseKey.themeId === defaults.mode;
+  const ordered = [...groups.values()].flatMap((group) =>
+    group.sort((a, b) => Number(isDefault(b)) - Number(isDefault(a))),
+  );
+  for (const entry of ordered) {
     if (input.signal?.aborted) {
       cancelled = true;
       break;

@@ -51,3 +51,9 @@ Issue 持久化与 Fact 固定引用遵守 [Evidence 模型](../../docs/architec
 ### DS 资源与 Capture
 
 正常 Capture 暂存固定 Catalog 元数据并执行页面 Case，不独立下载或归档 DS SVG。浏览器仍加载并检查当前 Case 的可见 HTML/SVG 图像；资源使用信息随现有节点 props 固定。历史 theme-asset Blob 与旧 Catalog staging 仍可读取/恢复。完整职责及未覆盖边界见 [采集链路](../../docs/architecture/capture-pipeline.md) 和 [主题包模型](../../docs/architecture/theme-packs.md#原型绑定与-capture-边界)。
+
+## 主题覆盖与采集复用
+
+Core 将每个 Screen 的选定状态与 Scenario Checkpoint 展开到清单声明的全部主题／模式。新 `CaseKey.theme` 区分命名主题，`themeId` 保留模式；旧 Case ID 仍可读取。`ScreenSelectionDraft.themeModes` 显式固定重试组合，省略时展开全部；`NormalizedSelection.declaredThemeModes` 固定声明范围。Case 完成计数只证明所选范围，取值表不证明页面已采集。
+
+Job 通过 Driver 的可选 `openSession()` 复用浏览器进程，每个 Case 仍创建独立 Context，终结后 `dispose()` 释放进程。全部 Case 复用历史证据时不启动浏览器。主题探测只在 Runtime 提供完整源码 `sourceDigest` 时按固定输入缓存，规则见[采集链路](../../docs/architecture/capture-pipeline.md)。

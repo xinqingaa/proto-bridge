@@ -2,10 +2,11 @@ import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
 import vuetify from "vite-plugin-vuetify";
+import { runtimeSourcePlugin } from "./build/runtime-source";
 import { themeAssetsPlugin } from "./build/theme-assets";
 
 export default defineConfig({
-  plugins: [themeAssetsPlugin(), vue(), vuetify({ autoImport: true })],
+  plugins: [runtimeSourcePlugin(), themeAssetsPlugin(), vue(), vuetify({ autoImport: true })],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

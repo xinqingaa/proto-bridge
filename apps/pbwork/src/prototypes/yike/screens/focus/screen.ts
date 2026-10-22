@@ -234,6 +234,7 @@ export default defineScreen({
       {
         id: "confirm-short-record",
         label: "确认保存短时专注",
+        appearancePolicy: "shared" as const,
         initialVariantId: "short-record",
         actionIds: ["confirm-short-record"],
         variant: "default",
@@ -241,6 +242,7 @@ export default defineScreen({
       {
         id: "save-custom-duration",
         label: "确认自定义倒计时",
+        appearancePolicy: "shared" as const,
         initialVariantId: "custom-duration",
         actionIds: ["custom-save"],
         variant: "default",
@@ -248,6 +250,7 @@ export default defineScreen({
       {
         id: "discard-focus",
         label: "确认放弃回待开始",
+        appearancePolicy: "shared" as const,
         initialVariantId: "abandon-confirm",
         actionIds: ["abandon-confirm"],
         variant: "default",
@@ -255,6 +258,7 @@ export default defineScreen({
       {
         id: "cancel-mode-switch",
         label: "取消切模式保留会话",
+        appearancePolicy: "shared" as const,
         initialVariantId: "switch-confirm",
         actionIds: ["switch-cancel"],
         variant: "paused",
@@ -274,6 +278,7 @@ export default defineScreen({
       {
         id: "pause-focus",
         label: "暂停专注",
+        appearancePolicy: "shared" as const,
         initialVariantId: "running",
         actionIds: ["start"],
         variant: "paused",
@@ -281,6 +286,7 @@ export default defineScreen({
       {
         id: "record-stopwatch",
         label: "停止并记录正计时",
+        appearancePolicy: "shared" as const,
         initialVariantId: "stopwatch-paused",
         actionIds: ["finish"],
         variant: "default",
@@ -288,6 +294,7 @@ export default defineScreen({
       {
         id: "repeat-countdown",
         label: "到点按原时长再计一次",
+        appearancePolicy: "shared" as const,
         initialVariantId: "countdown-due",
         actionIds: ["repeat"],
         variant: "countdown-running",
@@ -295,6 +302,7 @@ export default defineScreen({
       {
         id: "start-break",
         label: "完成后开始休息",
+        appearancePolicy: "shared" as const,
         initialVariantId: "finished",
         actionIds: ["start"],
         variant: "short-break",
@@ -302,6 +310,7 @@ export default defineScreen({
       {
         id: "lap-stopwatch",
         label: "正计时计圈",
+        appearancePolicy: "shared" as const,
         initialVariantId: "stopwatch-running",
         actionIds: ["lap"],
         variant: "stopwatch-running",
@@ -320,6 +329,7 @@ export default defineScreen({
     {
       id: "start-focus",
       label: "开始一轮专注",
+      appearancePolicy: "shared" as const,
       initialVariantId: "default",
       actionIds: ["start"],
       checkpoints: [

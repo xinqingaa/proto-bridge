@@ -1,3 +1,4 @@
+import { readCaseIdParts } from './contracts/case.js';
 import type { CatalogRevision } from './contracts/catalog.js';
 import { V2ContractError, unknownReferenceError } from './contracts/errors.js';
 import type { AgentHandoff } from './contracts/handoff.js';
@@ -110,9 +111,11 @@ export function projectThemePack(input: {
     defaultMode: input.handoff.themePack.defaultMode,
     theme,
     mode,
-    captured:
-      theme === input.handoff.themePack.defaultTheme &&
-      mode === input.handoff.themePack.defaultMode,
+    captured: input.handoff.selectedCases.some((selected) => {
+      if (selected.resolution !== 'resolved') return false;
+      const key = selected.caseKey ?? readCaseIdParts(selected.caseId);
+      return Boolean(key && (key.theme ?? input.handoff.themePack.defaultTheme) === theme && key.themeId === mode);
+    }),
     catalogRevisionId: input.catalog.catalogRevisionId,
     values,
     provenance,

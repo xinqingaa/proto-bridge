@@ -61,6 +61,7 @@ export default defineScreen({
     {
       id: "edit-habit",
       label: "打开编辑",
+      appearancePolicy: "shared" as const,
       initialVariantId: "default",
       actionIds: ["edit"],
       checkpoints: [
@@ -80,6 +81,7 @@ export default defineScreen({
     {
       id: "archive-habit",
       label: "归档返回列表",
+      appearancePolicy: "shared" as const,
       initialVariantId: "default",
       actionIds: ["archive"],
       checkpoints: [

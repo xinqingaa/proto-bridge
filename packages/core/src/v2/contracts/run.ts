@@ -24,6 +24,8 @@ export const NormalizedSelection = z
     prototypeId: PrototypeId,
     /** Default theme and mode fixed for this matrix. Case `themeId` is the mode. */
     themePack: ThemeIdentity,
+    /** Full authored theme/mode domain; legacy Runs leave it unknown. */
+    declaredThemeModes: z.array(ThemeIdentity.pick({ theme: true, mode: true })).min(1).optional(),
     cases: z.array(SelectedCase).min(1),
     acceptedWarningIds: z.array(IssueId).default([]),
   })

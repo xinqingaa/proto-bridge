@@ -98,6 +98,8 @@ Keep formal authoring and Evidence gates intact.
   in delivery scope.
 - Define Actions, Scenarios, and Checkpoints for key interactions.
 - Make Runtime prepare, readiness, snapshot, and reset deterministic.
+- Appearance reuse is opt-in: Scenario `appearancePolicy` defaults to `independent`. Mark `shared` only for theme-independent business actions. Declare Prototype `captureState: true` only after authored `useCaptureState` readers cover business/private session state, every Screen and nested UI state affecting checkpoints. Read render style from the resolved theme without rewriting business preferences; missing coverage or changed state falls back to independent execution. See the authoritative prototype authoring contract for the boundary.
+- Exclude only shared TabViewport inactive panel subtrees from Capture; do not hide required nodes with `data-pb-capture-inactive`. Preserve hidden states inside the current panel and Overlay Evidence.
 - Do not enlarge Evidence exception allowlists for new work.
 
 ## Change locations

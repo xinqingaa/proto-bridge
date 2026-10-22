@@ -1,9 +1,11 @@
-import type { Page } from 'playwright';
+import type { Page } from "playwright";
 import {
   RUNTIME_CAPTURE_GLOBAL,
   RUNTIME_CAPTURE_PROTOCOL_VERSION,
   RuntimeCaptureResponse,
   type RuntimeDescribeSuccess,
+  type RuntimeCaptureStateSuccess,
+  type RuntimeSetRenderThemeSuccess,
   type RuntimeExecuteActionSuccess,
   type RuntimePrepareSuccess,
   type RuntimeReadinessSuccess,
@@ -12,9 +14,9 @@ import {
   type RuntimeVerifyCheckpointSuccess,
   type RuntimeCaptureRequestPayload,
   type RuntimeCaptureSuccess,
-} from '../runtime-contract/index.js';
-import { generateOperationalId } from '../store/id-generator.js';
-import { formatSchemaIssues } from '../contracts/errors.js';
+} from "../runtime-contract/index.js";
+import { generateOperationalId } from "../store/id-generator.js";
+import { formatSchemaIssues } from "../contracts/errors.js";
 
 export class RuntimeProtocolError extends Error {
   constructor(
@@ -23,18 +25,20 @@ export class RuntimeProtocolError extends Error {
     readonly details?: unknown,
   ) {
     super(message);
-    this.name = 'RuntimeProtocolError';
+    this.name = "RuntimeProtocolError";
   }
 }
 
 type RuntimeSuccessByKind = {
   describe: typeof RuntimeDescribeSuccess._output;
+  "capture-state": typeof RuntimeCaptureStateSuccess._output;
+  "set-render-theme": typeof RuntimeSetRenderThemeSuccess._output;
   prepare: typeof RuntimePrepareSuccess._output;
   readiness: typeof RuntimeReadinessSuccess._output;
-  'semantic-snapshot': typeof RuntimeSemanticSnapshotSuccess._output;
+  "semantic-snapshot": typeof RuntimeSemanticSnapshotSuccess._output;
   reset: typeof RuntimeResetSuccess._output;
-  'execute-action': typeof RuntimeExecuteActionSuccess._output;
-  'verify-checkpoint': typeof RuntimeVerifyCheckpointSuccess._output;
+  "execute-action": typeof RuntimeExecuteActionSuccess._output;
+  "verify-checkpoint": typeof RuntimeVerifyCheckpointSuccess._output;
 };
 
 export async function requestRuntimeCapture<
@@ -42,28 +46,28 @@ export async function requestRuntimeCapture<
 >(
   page: Page,
   payload: TPayload,
-): Promise<RuntimeSuccessByKind[TPayload['kind']]> {
+): Promise<RuntimeSuccessByKind[TPayload["kind"]]> {
   const request = {
     protocolVersion: RUNTIME_CAPTURE_PROTOCOL_VERSION,
-    requestId: generateOperationalId('request'),
+    requestId: generateOperationalId("request"),
     payload,
   };
   let raw: unknown;
-  const retryable = new Set<RuntimeCaptureRequestPayload['kind']>([
-    'describe',
-    'prepare',
-    'readiness',
-    'semantic-snapshot',
-    'verify-checkpoint',
+  const retryable = new Set<RuntimeCaptureRequestPayload["kind"]>([
+    "describe",
+    "prepare",
+    "readiness",
+    "semantic-snapshot",
+    "verify-checkpoint",
   ]).has(payload.kind);
   for (let attempt = 0; ; attempt += 1) {
     try {
       raw = await page.evaluate(
         async ({ globalName, protocolRequest }) => {
-          const api = (window as unknown as Record<string, unknown>)[globalName] as
-            | { request(input: unknown): Promise<unknown> }
-            | undefined;
-          if (!api || typeof api.request !== 'function') {
+          const api = (window as unknown as Record<string, unknown>)[
+            globalName
+          ] as { request(input: unknown): Promise<unknown> } | undefined;
+          if (!api || typeof api.request !== "function") {
             throw new Error(`Runtime does not expose ${globalName}.`);
           }
           return api.request(protocolRequest);
@@ -74,9 +78,9 @@ export async function requestRuntimeCapture<
     } catch (error) {
       const navigationDestroyed =
         error instanceof Error &&
-        error.message.includes('Execution context was destroyed');
+        error.message.includes("Execution context was destroyed");
       if (!retryable || !navigationDestroyed || attempt >= 2) throw error;
-      await page.waitForLoadState('domcontentloaded');
+      await page.waitForLoadState("domcontentloaded");
       await page.waitForFunction(
         (globalName) =>
           Boolean((window as unknown as Record<string, unknown>)[globalName]),
@@ -88,7 +92,7 @@ export async function requestRuntimeCapture<
   const parsed = RuntimeCaptureResponse.safeParse(raw);
   if (!parsed.success) {
     throw new RuntimeProtocolError(
-      'command-failed',
+      "command-failed",
       formatSchemaIssues(parsed.error, raw),
       parsed.error.issues,
     );
@@ -101,5 +105,5 @@ export async function requestRuntimeCapture<
       response.error.details,
     );
   }
-  return response as RuntimeSuccessByKind[TPayload['kind']];
+  return response as RuntimeSuccessByKind[TPayload["kind"]];
 }

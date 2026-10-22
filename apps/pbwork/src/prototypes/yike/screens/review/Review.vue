@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useYikeRenderFace } from "../../render-theme";
+import { useCaptureState } from "@/runtime/capture-state";
 import {
   computed,
   ref,
@@ -74,13 +76,7 @@ const summary = computed(() =>
 const canNext = computed(
   () => period.value.start < reviewPeriod(today.value, range.value).start,
 );
-const face = computed(() =>
-  (route.query.theme ?? store.data.preferences.face) === "water"
-    ? "water"
-    : (route.query.theme ?? store.data.preferences.face) === "sundial"
-      ? "sundial"
-      : "mechanical",
-);
+const face = useYikeRenderFace();
 const selectedRecords = computed(() =>
   store.data.focusRecords
     .flatMap((record) => {
@@ -179,6 +175,12 @@ watch(chartContent, (element, previous) => {
   if (element) chartObserver?.observe(element);
 });
 onBeforeUnmount(() => chartObserver?.disconnect());
+useCaptureState("yike", "yike.review", () => ({
+  range: range.value,
+  anchor: anchor.value,
+  selected: selected.value,
+  detailOpen: detailOpen.value,
+}));
 </script>
 <template>
   <div
