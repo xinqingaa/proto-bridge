@@ -5,6 +5,7 @@ import { AuthoringDiagnostic } from "../contracts/authoring-diagnostic.js";
 import { FragmentRef } from "../contracts/fragment.js";
 import { PbKey, STABLE_ID_PATTERN, STABLE_ID_RULE } from "../contracts/ids.js";
 import { ThemeIdentity } from "../theme/schema.js";
+import { AppearanceDimension } from "../contracts/run.js";
 
 /**
  * Browser-safe V2 Runtime Capture Protocol.
@@ -171,6 +172,19 @@ export const RuntimeScenarioManifest = z
   .strict();
 export type RuntimeScenarioManifest = z.infer<typeof RuntimeScenarioManifest>;
 
+export const RuntimeAppearanceEvidence = z.object({
+  rules: z.array(z.object({
+    ruleId: StableId,
+    variantIds: z.array(StableId),
+    scenarioIds: z.array(StableId),
+    dimensions: z.array(AppearanceDimension).min(1),
+    representativeVariantIds: z.array(StableId),
+    observations: z.array(ThemeIdentity.pick({ theme: true, mode: true })),
+    rationale: z.string().min(1),
+  }).strict()),
+}).strict();
+export type RuntimeAppearanceEvidence = z.infer<typeof RuntimeAppearanceEvidence>;
+
 export const RuntimeScreenManifest = z
   .object({
     prototypeId: StableId,
@@ -188,6 +202,7 @@ export const RuntimeScreenManifest = z
     structureAssertions: z.array(RuntimeStructureAssertion).default([]),
     /** New Screens are strict; omitted only by pre-convergence producers. */
     evidencePolicy: z.enum(["strict", "legacy"]).optional(),
+    appearanceEvidence: RuntimeAppearanceEvidence.optional(),
   })
   .strict();
 export type RuntimeScreenManifest = z.infer<typeof RuntimeScreenManifest>;

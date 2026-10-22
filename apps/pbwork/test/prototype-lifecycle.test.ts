@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import { useCaptureStore } from "@/app/stores/capture";
-import { captureServiceClient } from "@/capture/service-client";
+import { captureServiceClient, LocalServiceClientError } from "@/capture/service-client";
 import { prototypes } from "@/prototypes/registry";
 
 const OPERATION_KEY = "00000000-0000-4000-8000-000000000001";
@@ -231,6 +231,116 @@ describe("Workspace-persisted prototype lifecycle", () => {
     expect(lifecycle.risksAcceptedFor(second.id)).toBe(false);
     expect(lifecycle.risksAcceptedFor("missing-preview")).toBe(false);
     expect(lifecycle.warningsAcceptedFor("missing-preflight")).toBe(false);
+  });
+
+  it("rebuilds the fixed plan and clears warning consent when capture purpose changes", async () => {
+    const prototype = prototypes[0]!;
+    const lifecycle = usePrototypeLifecycleStore();
+    const capture = useCaptureStore();
+    capture.session = {} as never;
+    lifecycle.replaceRecord({
+      ...capturingRecord(prototype.id),
+      operation: {
+        kind: "finalizing",
+        operationKey: OPERATION_KEY,
+        phase: "awaiting-confirmation",
+        capturePurpose: "implementation-delivery",
+        acceptedWarningIds: ["old-warning"],
+        acknowledgedRiskKinds: [],
+        startedAt: STARTED_AT,
+      },
+    });
+    lifecycle.acceptedWarnings = { [prototype.id]: ["old-warning"] };
+    vi.spyOn(lifecycle, "persist").mockResolvedValue(undefined);
+    const preflight = vi.spyOn(captureServiceClient, "createPreflight").mockResolvedValue({
+      preflightId: "audit-preflight",
+      result: { ready: true, warnings: [], unacceptedWarningIds: [] },
+    } as never);
+
+    await lifecycle.prepareFinalization(prototype, "appearance-audit");
+
+    expect(preflight.mock.calls[0]?.[0].capturePurpose).toBe("appearance-audit");
+    expect(lifecycle.acceptedWarningsFor(prototype.id)).toEqual([]);
+    expect(lifecycle.recordFor(prototype.id)?.operation).toMatchObject({
+      operationKey: OPERATION_KEY,
+      phase: "awaiting-confirmation",
+      capturePurpose: "appearance-audit",
+      acceptedWarningIds: [],
+    });
+    lifecycle.replaceRecord(capturingRecord(prototype.id));
+    await expect(lifecycle.prepareFinalization(prototype, "appearance-audit")).rejects.toThrow("采集开始后");
+  });
+
+  it.each([
+    new TypeError("Failed to fetch"),
+    Object.assign(new Error("Request aborted during navigation"), { name: "AbortError" }),
+  ])("keeps the finalization recoverable when a preflight request is interrupted: %s", async (error) => {
+    const prototype = prototypes[0]!;
+    const lifecycle = usePrototypeLifecycleStore();
+    const capture = useCaptureStore();
+    capture.session = {} as never;
+    lifecycle.replaceRecord({
+      ...capturingRecord(prototype.id),
+      operation: {
+        kind: "finalizing",
+        operationKey: OPERATION_KEY,
+        phase: "awaiting-confirmation",
+        capturePurpose: "appearance-audit",
+        acceptedWarningIds: ["old-warning"],
+        acknowledgedRiskKinds: [],
+        startedAt: STARTED_AT,
+      },
+    });
+    lifecycle.preflights = { [prototype.id]: { preflightId: "stale-preflight" } as never };
+    lifecycle.acceptedWarnings = { [prototype.id]: ["old-warning"] };
+    vi.spyOn(lifecycle, "persist").mockResolvedValue(undefined);
+    const request = vi.spyOn(captureServiceClient, "createPreflight").mockRejectedValueOnce(error)
+      .mockResolvedValue({
+        preflightId: "fresh-preflight",
+        result: { ready: true, warnings: [{ warningId: "old-warning" }], unacceptedWarningIds: ["old-warning"] },
+      } as never);
+    const fail = vi.spyOn(lifecycle, "failOperation");
+
+    await expect(lifecycle.prepareFinalization(prototype)).resolves.toBe(false);
+
+    expect(fail).not.toHaveBeenCalled();
+    expect(lifecycle.recordFor(prototype.id)?.operation).toMatchObject({
+      kind: "finalizing",
+      phase: "awaiting-confirmation",
+      capturePurpose: "appearance-audit",
+      acceptedWarningIds: [],
+    });
+    expect(lifecycle.preflightFor(prototype.id)).toBeNull();
+    expect(lifecycle.connectionIssues[prototype.id]).toContain("预检连接中断");
+    expect(lifecycle.acceptedWarningsFor(prototype.id)).toEqual([]);
+
+    await lifecycle.prepareFinalization(prototype);
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(lifecycle.preflightFor(prototype.id)?.preflightId).toBe("fresh-preflight");
+    expect(lifecycle.warningsAcceptedFor(prototype.id)).toBe(false);
+    expect(lifecycle.connectionIssues[prototype.id]).toBeUndefined();
+  });
+
+  it("keeps service-side preflight validation errors terminal", async () => {
+    const prototype = prototypes[0]!;
+    const lifecycle = usePrototypeLifecycleStore();
+    const capture = useCaptureStore();
+    capture.session = {} as never;
+    lifecycle.replaceRecord({
+      ...capturingRecord(prototype.id),
+      operation: { kind: "idle" },
+    });
+    vi.spyOn(lifecycle, "persist").mockResolvedValue(undefined);
+    vi.spyOn(captureServiceClient, "createPreflight").mockRejectedValue(
+      new LocalServiceClientError("invalid-schema", "Required Fragment is invalid."),
+    );
+
+    await lifecycle.prepareFinalization(prototype);
+
+    expect(lifecycle.recordFor(prototype.id)?.operation).toMatchObject({
+      kind: "failed",
+      message: expect.stringContaining("Required Fragment is invalid."),
+    });
   });
 
   it("does not confirm risks or continue finalization before the preview exists", async () => {

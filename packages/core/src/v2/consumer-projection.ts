@@ -1,4 +1,4 @@
-import { projectThemeCoverage, projectExecutionSources } from './evidence-read-model.js';
+import { projectThemeCoverage, projectExecutionSources, projectCaptureCoverage, capturePlanCoversSelection } from './evidence-read-model.js';
 import {
   ACCEPTANCE_DIMENSIONS,
   type AcceptanceDimension,
@@ -13,6 +13,7 @@ import { sha1Hex } from './contracts/hash-sha1.js';
 import type { AgentHandoff } from './contracts/handoff.js';
 import { RuntimeClockManifest } from './runtime-contract/protocol.js';
 import type {
+  CaptureCoverageProjection,
   EvidenceCaseReadModel,
   EvidenceReadModel,
   EvidenceReadableFact,
@@ -36,6 +37,7 @@ export const CONSUMER_PROJECTION_CAPABILITIES = [
   'evidence-detail',
   'reconstruction-obligations',
   'image-content-screenshot',
+  'capture-coverage',
 ] as const;
 export type ConsumerProjectionCapability =
   (typeof CONSUMER_PROJECTION_CAPABILITIES)[number];
@@ -99,6 +101,8 @@ export type HandoffIndexProjection = {
   };
   captureClock: (RuntimeClockManifest & { catalogRevisionId: string }) | null;
   themeCoverage: EvidenceReadModel['themeCoverage'] | null;
+  /** Summary only; Screen packets expose the fixed derivation sources. */
+  captureCoverage: Omit<CaptureCoverageProjection, 'derivations'> | null;
   executionSummary: {
     independentCaseCount: number;
     sharedAppearanceCaseCount: number;
@@ -131,6 +135,7 @@ export type ScreenPacketProjection = {
   handoffId: string;
   snapshotId: string;
   screenId: string;
+  appearanceEvidence: CompactAppearanceEvidenceProjection | null;
   baselineCaseId: string;
   baselineSelectionReason:
     | 'default-non-scenario'
@@ -176,6 +181,39 @@ export type ScreenPacketProjection = {
   complete: true;
   omittedCategories: string[];
   warnings: string[];
+};
+
+/** Dictionaries are local to this fixed packet; declarations and source refs appear once. */
+export type CompactAppearanceEvidenceProjection = Omit<CaptureCoverageProjection, 'derivations'> & {
+  rules: Array<{
+    ruleKey: string;
+    ruleScreenId: string;
+    ruleId: string;
+    rationale: string;
+    dimensions: CaptureCoverageProjection['derivations'][number]['dimensions'][number]['dimension'][];
+  }>;
+  sources: Array<{
+    sourceId: string;
+    caseId: string;
+    scopeKey: string;
+    revisionId: string;
+  }>;
+  referenceSets: Array<{ referenceSetId: string; sourceIds: string[] }>;
+  derivations: Array<{
+    caseId: string;
+    scopeKey: string;
+    variantId: string;
+    theme?: string;
+    mode: string;
+    ruleKey: string;
+    status: 'rule-derived' | 'unchecked';
+    businessSource: 'reference-reuse' | 'unchecked';
+    baselineSourceId?: string;
+    representativeSetId: string;
+    uncheckedDimensions?: CaptureCoverageProjection['derivations'][number]['dimensions'][number]['dimension'][];
+    missingSourceCaseIds?: string[];
+    pixels: 'unobserved';
+  }>;
 };
 
 export type ScreenCanonicalBrief = {
@@ -506,6 +544,10 @@ export function buildHandoffIndex(
       (group) =>
         `Screenshot metadata is missing for ${group.representativeBlobId}.`,
     );
+  const captureCoverage = fixedCaptureCoverage(input, coverageCases);
+  if (captureCoverage?.themeRules.uncheckedDerivationCount) {
+    warnings.push(`${captureCoverage.themeRules.uncheckedDerivationCount} appearance derivations lack reliable sources inside this fixed Handoff.`);
+  }
   return {
     projectionVersion: CONSUMER_PROJECTION_VERSION,
     handoffId: input.handoff.handoffId,
@@ -524,6 +566,10 @@ export function buildHandoffIndex(
     themeCoverage: input.evidence.themeCoverage
       ? projectThemeCoverage(input.evidence.themeCoverage.declared, coverageCases, input.handoff.themePack.defaultTheme, expectedCases)
       : null,
+    captureCoverage: captureCoverage ? {
+      purpose: captureCoverage.purpose, baseline: captureCoverage.baseline, fullCaseCount: captureCoverage.fullCaseCount,
+      business: captureCoverage.business, screenshots: captureCoverage.screenshots, themeRules: captureCoverage.themeRules,
+    } : null,
     executionSummary: {
       independentCaseCount: selectedCases.filter((item) => item.execution?.mode === 'independent').length,
       sharedAppearanceCaseCount: selectedCases.filter((item) => item.execution?.mode === 'shared-appearance').length,
@@ -945,6 +991,7 @@ export function buildScreenPacket(
     handoffId: input.handoff.handoffId,
     snapshotId: input.handoff.snapshotId,
     screenId,
+    appearanceEvidence: compactAppearanceEvidence(fixedCaptureCoverage(input, prepared.selectedScreens.flatMap((item) => item.cases), screenId)),
     baselineCaseId: baseline.caseModel.caseId,
     baselineSelectionReason: baseline.reason,
     cases: screen.cases.map((item) => ({
@@ -1801,6 +1848,61 @@ export function buildReconstructionObligationProjection(
       ? ACCEPTANCE_DIMENSIONS.filter((item) => item !== query.dimension)
       : [],
   };
+}
+
+function compactAppearanceEvidence(coverage: CaptureCoverageProjection | null): CompactAppearanceEvidenceProjection | null {
+  if (!coverage) return null;
+  const rules = new Map<string, CompactAppearanceEvidenceProjection['rules'][number]>();
+  const sources = new Map<string, CompactAppearanceEvidenceProjection['sources'][number]>();
+  const referenceSets = new Map<string, CompactAppearanceEvidenceProjection['referenceSets'][number]>();
+  const sourceId = (ref: NonNullable<CaptureCoverageProjection['derivations'][number]['baseline']>): string => {
+    const key = canonical(ref);
+    let stored = sources.get(key);
+    if (!stored) {
+      stored = { sourceId: `source-${sources.size + 1}`, ...ref };
+      sources.set(key, stored);
+    }
+    return stored.sourceId;
+  };
+  const derivations = coverage.derivations.map((item): CompactAppearanceEvidenceProjection['derivations'][number] => {
+    if (!rules.has(item.ruleKey)) rules.set(item.ruleKey, {
+      ruleKey: item.ruleKey, ruleScreenId: item.ruleScreenId, ruleId: item.ruleId, rationale: item.rationale,
+      dimensions: item.dimensions.map((dimension) => dimension.dimension),
+    });
+    const baselineSourceId = item.baseline ? sourceId(item.baseline) : undefined;
+    const representativeIds = item.representatives.map(sourceId).sort();
+    const setKey = canonical(representativeIds);
+    let refSet = referenceSets.get(setKey);
+    if (!refSet) {
+      refSet = { referenceSetId: `reference-set-${referenceSets.size + 1}`, sourceIds: representativeIds };
+      referenceSets.set(setKey, refSet);
+    }
+    const uncheckedDimensions = item.dimensions.filter((dimension) => dimension.source === 'unchecked').map((dimension) => dimension.dimension);
+    return {
+      caseId: item.caseId, scopeKey: item.scopeKey, variantId: item.variantId,
+      ...(item.theme ? { theme: item.theme } : {}), mode: item.mode, ruleKey: item.ruleKey,
+      status: item.status, businessSource: item.businessSource,
+      ...(baselineSourceId ? { baselineSourceId } : {}), representativeSetId: refSet.referenceSetId,
+      ...(uncheckedDimensions.length ? { uncheckedDimensions } : {}),
+      ...(item.missingSourceCaseIds.length ? { missingSourceCaseIds: item.missingSourceCaseIds } : {}),
+      pixels: 'unobserved',
+    };
+  });
+  const { derivations: _rawDerivations, ...summary } = coverage;
+  return { ...summary, rules: [...rules.values()], sources: [...sources.values()], referenceSets: [...referenceSets.values()], derivations };
+}
+
+function fixedCaptureCoverage(
+  input: ConsumerProjectionInput,
+  cases: EvidenceCaseReadModel[],
+  screenId?: string,
+): CaptureCoverageProjection | null {
+  const plan = input.evidence.capturePlan;
+  if (!plan) return null;
+  const selected = input.handoff.selectedCases.flatMap((item) => item.caseKey && (!screenId || item.caseKey.screenId === screenId)
+    ? [{ caseId: item.caseId, caseKey: item.caseKey, captureScope: item.captureScope }] : []);
+  if (!capturePlanCoversSelection(plan, selected)) return null;
+  return projectCaptureCoverage(plan, cases, selected);
 }
 
 function prepare(input: ConsumerProjectionInput): PreparedProjection {

@@ -306,6 +306,9 @@ function toScreenManifest(
       : {}),
     shellFragments: screen.shellFragments ?? [],
     structureAssertions: screen.structureAssertions ?? [],
+    ...(screen.appearanceEvidence
+      ? { appearanceEvidence: screen.appearanceEvidence }
+      : {}),
     evidencePolicy: requiresStrictEvidence(screen.screenId)
       ? "strict"
       : "legacy",
@@ -325,6 +328,7 @@ export function buildRuntimeCaptureManifest(
     variants: screen.variants,
     actions: screen.actions,
     scenarios: screen.scenarios,
+    appearanceEvidence: screen.appearanceEvidence,
   }));
   const catalogValues = [
     {

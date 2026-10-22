@@ -54,7 +54,10 @@ keyboard access and device identity. Explicit prototype extension metadata is lo
   sidecar after Service verifies every fixed artifact reference; rejected
   legacy Evidence remains diagnostic. Workspace reset clears the sidecar.
 - PBWork delivery begins only at the `review -> final` lifecycle transition.
-  Build the whole-Prototype Draft automatically; do not expose range selection
+  Build the whole-Prototype business scope automatically. Offer capture purpose:
+  implementation delivery by default, or exhaustive appearance audit. Show the
+  Core-fixed plan and separate business, rule, and actual screenshot coverage;
+  purpose changes require a new Preflight and warning confirmation. Do not expose range selection
   or manual Screen, Fragment, Component, control, or Prototype capture buttons.
 - Run Preflight, Capture, Handoff, and prompt creation as one finalization flow.
   Require the convergence confirmation and confirm warnings and risks

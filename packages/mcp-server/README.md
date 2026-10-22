@@ -41,7 +41,9 @@ pnpm pb:mcp -- --print-config
 
 `read_handoff_index.captureClock` 返回固定原型 Catalog 中的 `now`、`timeZone` 和来源 `catalogRevisionId`；缺失、非法或有歧义时为 `null`，不回退当前 Runtime。固定读取边界见[主题包解析模型](../../docs/architecture/theme-packs.md#原型绑定与-capture-边界)。
 
-`read_theme_pack` 只经 Handoff 固定的 theme-pack Catalog 读取解析值。默认返回 Handoff 的默认主题与模式；`captured` 按固定 resolved Case 判断，未采集组合仍可读取取值表并标注 `captured: false`。不回退 active 或 latest。`read_screen_packet` 返回 baseline Structure、`canonicalBrief` 与按 `regionId`/`caseId` 聚合的 inventory；token 清单在固定 theme-pack Catalog 存在时附带默认主题与模式的 `resolvedValue`、`chain` 和 `tier`，以及实际 Case 的各主题／模式 `resolvedVariants`。`read_case_delta` 返回紧凑语义 patch；完整 provenance 必须定向读取。`read_reconstruction_obligations` 按 Screen/维度分页，用于实施后五维复查。`summarize_reconstruction_review` 严格校验每个 observation 的依据和理由，分别输出 Case/Screenshot/Scenario/obligation Review completeness 与五维 findings；它仍是 consumer-reported summary，不冒充独立 Runtime 或视觉验收。
+`read_handoff_index.captureCoverage` 分开报告业务状态、计划截图与主题规则覆盖；`themeCoverage` 始终表示穷举实际截图范围。`read_screen_packet.appearanceEvidence` 通过 packet 内共用的 `rules`、`sources` 和 `referenceSets` 提供未实拍外观的规则、维度和固定来源，不能把派生条目当作观测 revision。能力 `capture-coverage` 让 Consumer 显式识别这一边界；完整语义见 [Evidence 模型](../../docs/architecture/evidence-model.md)。
+
+`read_theme_pack` 只经 Handoff 固定的 theme-pack Catalog 读取解析值。默认返回 Handoff 的默认主题与模式；`captured` 只表示存在 resolved Case，`pageCoverage` 给出数量并明确 `allStates=not-evaluated`。未采集组合仍可读取取值表并标注 `captured: false`。不回退 active 或 latest。`read_screen_packet` 返回 baseline Structure、`canonicalBrief` 与按 `regionId`/`caseId` 聚合的 inventory；token 清单在固定 theme-pack Catalog 存在时附带默认主题与模式的 `resolvedValue`、`chain` 和 `tier`，以及实际 Case 的各主题／模式 `resolvedVariants`。`read_case_delta` 返回紧凑语义 patch；完整 provenance 必须定向读取。`read_reconstruction_obligations` 按 Screen/维度分页，用于实施后五维复查。`summarize_reconstruction_review` 严格校验每个 observation 的依据和理由，分别输出 Case/Screenshot/Scenario/obligation Review completeness 与五维 findings；它仍是 consumer-reported summary，不冒充独立 Runtime 或视觉验收。
 
 普通 JSON 响应没有按字节截断规则；detail/obligation continuation 绑定固定 Snapshot 和规范化查询。整包 Snapshot、Case、revision、Catalog 和 Acceptance Contract 等旧入口不在 MCP 表面。
 

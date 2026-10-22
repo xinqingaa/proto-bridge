@@ -115,7 +115,7 @@ Workbench 与 iframe 使用带 `runtimeId` 和 `requestId` 的消息信封：
 
 ## Capture UI
 
-PBWork 不提供页面、控件、Fragment 或整个原型的手工采集入口。待确定原型执行“定稿并采集”时，生命周期 Store 自动构造整原型 Draft，并直接通过 Capture Service Contract 创建 Preflight 与用户确认后的 Job；warning/risk 勾选以 `prototypeId` 隔离，不读写 Capture Store 的全局 draft、preflight、Job 或风险确认字段。Capture Store 在此流程只提供 Service 连接、任务/证据查看和交付路径等 UI 状态。用户不选择采集范围，也不单独点击生成提示词。定稿确认页只读展示 Agent 提示词将指向的绝对路径（Local Service session 上的 `deliveryTargetRoot`，来自 `proto-bridge.json` 的 `delivery.targetRoot`）。改路径只能改配置后重启 `pnpm pb:up`。
+PBWork 不提供页面、控件、Fragment 或整个原型的手工采集入口。待确定原型执行“定稿并采集”时，生命周期 Store 自动构造整原型 Draft，并直接通过 Capture Service Contract 创建 Preflight 与用户确认后的 Job；warning/risk 勾选以 `prototypeId` 隔离，不读写 Capture Store 的全局 draft、preflight、Job 或风险确认字段。Capture Store 在此流程只提供 Service 连接、任务/证据查看和交付路径等 UI 状态。用户可选择“实现交付（默认）”或“全部外观检查”用途，业务范围始终为整个原型；用途交由 Core 生成固定采集计划，切换后重新预检并确认 warning。界面分别报告业务覆盖、主题规则与实际截图范围，未实拍的外观明确标记。用户不单独点击生成提示词。定稿确认页只读展示 Agent 提示词将指向的绝对路径（Local Service session 上的 `deliveryTargetRoot`，来自 `proto-bridge.json` 的 `delivery.targetRoot`）。改路径只能改配置后重启 `pnpm pb:up`。
 
 生命周期 Store 只编排动作并保存正式产物引用，不复制 Selection、Case identity、Coverage 或 risk 算法。持久 Evidence 仍由 Local Service/Store 管理，Preflight、Job、Handoff 和 Delivery 仍使用 Core Service Contract。只有生命周期记录绑定的已定稿或已归档产物出现在“定稿采集”页；CLI 和其它入口创建的 Bundle 不会自动成为 PBWork 定稿产物。PBWork 在 Capture Service Contract 上提交人类确认并显示服务端生命周期文档；Job 接受后，Local Service reconciliation 负责恢复和推进自动阶段。不同原型的 Preflight、warning 与 risk 确认按 Prototype ID 隔离；未提交的 UI 勾选只存在当前页签，warning 在创建 Job 前、risk 在开始提示词生成前写入 Workspace 生命周期记录。
 

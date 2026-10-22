@@ -1,6 +1,7 @@
 import type {
   EvidenceCaseReadModel,
   EvidenceReadModel,
+  CaptureCoverageProjection,
 } from './evidence-read-model.js';
 import { TOKEN_BINDING_LITERALS } from './contracts/vocabulary.js';
 
@@ -32,6 +33,7 @@ export type ReconstructionAcceptanceContract = {
   workspaceId: string;
   bundleId: string;
   snapshotId: string;
+  captureCoverage?: Omit<CaptureCoverageProjection, 'derivations'>;
   readiness: {
     status: 'ready' | 'partial';
     blockers: string[];
@@ -83,6 +85,12 @@ export function buildReconstructionAcceptanceContract(input: {
   };
   const blockers: string[] = [];
   const screenshots: ReconstructionAcceptanceContract['screenshots'] = [];
+  const captureCoverage = input.evidence.captureCoverage;
+  if (captureCoverage) {
+    if (captureCoverage.business.missingCaseCount) blockers.push(`${captureCoverage.business.missingCaseCount} planned business states have no successful fixed source.`);
+    if (captureCoverage.screenshots.missingCaseCount) blockers.push(`${captureCoverage.screenshots.missingCaseCount} planned Screenshot observations are missing.`);
+    if (captureCoverage.themeRules.uncheckedDerivationCount) blockers.push(`${captureCoverage.themeRules.uncheckedDerivationCount} appearance rules lack reliable fixed sources.`);
+  }
 
   for (const screen of input.evidence.screens) {
     for (const evidenceCase of screen.cases) {
@@ -229,6 +237,10 @@ export function buildReconstructionAcceptanceContract(input: {
     workspaceId: input.workspaceId,
     bundleId: input.evidence.bundleId,
     snapshotId: input.evidence.snapshotId,
+    ...(captureCoverage ? { captureCoverage: {
+      purpose: captureCoverage.purpose, baseline: captureCoverage.baseline, fullCaseCount: captureCoverage.fullCaseCount,
+      business: captureCoverage.business, screenshots: captureCoverage.screenshots, themeRules: captureCoverage.themeRules,
+    } } : {}),
     readiness: {
       status: blockers.length === 0 ? 'ready' : 'partial',
       blockers: [...new Set(blockers)].sort(),
@@ -317,6 +329,12 @@ export function acceptanceChecklistMarkdown(
     `- Handoff: \`${contract.handoffId}\``,
     `- Snapshot: \`${contract.snapshotId}\``,
     `- Readiness: ${contract.readiness.status}`,
+    ...(contract.captureCoverage ? [
+      `- Capture purpose: ${contract.captureCoverage.purpose}`,
+      `- Business states: ${contract.captureCoverage.business.observedCaseCount}/${contract.captureCoverage.business.expectedCaseCount}`,
+      `- Screenshot observations: ${contract.captureCoverage.screenshots.observedCaseCount}/${contract.captureCoverage.screenshots.plannedCaseCount}`,
+      `- Rule-supported appearances: ${contract.captureCoverage.themeRules.supportedDerivationCount}/${contract.captureCoverage.themeRules.expectedDerivationCount}; ${contract.captureCoverage.screenshots.unobservedAppearanceCount} appearance pixels were not observed.`,
+    ] : []),
     '',
     '## Selected Case review',
     '',

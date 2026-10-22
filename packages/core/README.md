@@ -54,6 +54,6 @@ Issue 持久化与 Fact 固定引用遵守 [Evidence 模型](../../docs/architec
 
 ## 主题覆盖与采集复用
 
-Core 将每个 Screen 的选定状态与 Scenario Checkpoint 展开到清单声明的全部主题／模式。新 `CaseKey.theme` 区分命名主题，`themeId` 保留模式；旧 Case ID 仍可读取。`ScreenSelectionDraft.themeModes` 显式固定重试组合，省略时展开全部；`NormalizedSelection.declaredThemeModes` 固定声明范围。Case 完成计数只证明所选范围，取值表不证明页面已采集。
+Core 固定每个 Screen 的选定状态与 Scenario Checkpoint 及完整主题／模式域。默认 `implementation-delivery` 采用完整业务基准与 authored 代表外观；`appearance-audit` 逐项实采全部外观。`ScreenSelectionDraft.themeModes` 显式固定重试组合；`NormalizedSelection.capturePlan` 固定观察和派生来源，按 `ruleKey` 共用规则与最小 Case/Scope 引用。`CaseKey.theme` 区分命名主题，`themeId` 保留模式；旧 Case ID 仍可读取。`captureCoverage` 分开表达业务、规则和计划截图，`themeCoverage` 保留穷举实际截图含义；详见 [Evidence 模型](../../docs/architecture/evidence-model.md)。
 
 Job 通过 Driver 的可选 `openSession()` 复用浏览器进程，每个 Case 仍创建独立 Context，终结后 `dispose()` 释放进程。全部 Case 复用历史证据时不启动浏览器。主题探测只在 Runtime 提供完整源码 `sourceDigest` 时按固定输入缓存，规则见[采集链路](../../docs/architecture/capture-pipeline.md)。

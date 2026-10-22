@@ -36,7 +36,19 @@ Draft 表达用户意图，不表达执行结果。状态和场景均使用 auth
 
 Preflight 固定 manifest/input version、规范化 Selection、warning、risk 和 Case Matrix。主题一致性探测仅在 Runtime 提供完整 `sourceDigest` 时复用：缓存键包括 Runtime URL、完整 Manifest、Screen 范围和设备。缓存最多 32 项、有效期 5 分钟；任何输入变化或探测异常都重新执行，没有源码摘要的 Runtime 每次探测。容量与引用先校验，不能为超容量矩阵先执行大量页面探测。Preflight 有有效期；Runtime 输入变化或过期后必须重新执行。
 
-Matrix 展开顺序必须稳定。Case ID 与 Scope key 在 PBWork 和 CLI 间一致，不能包含数组位置、生成时间或 authored route query；route query 是执行 baseline 输入，不是新的 Case identity 维度。矩阵默认展开清单声明的全部命名主题与浅深模式；`CaseKey.theme` 是命名主题，`CaseKey.themeId` 保留模式语义。新 Case ID 加入 `::theme=<主题>`，旧 Case 没有该字段时保留原身份。Screen Draft 可用显式 `themeModes` 固定重试范围，省略时展开全部组合；NormalizedSelection 的 `declaredThemeModes` 固定完整主题域，Case 数量完成只说明所选范围完成。Selection 必须携带与清单默认主题一致的 `themePack`。主题包摘要、键目录摘要和声明时钟进入 `inputVersion`。取值表、探针与时钟的当前规则见[主题包解析模型](./theme-packs.md#原型绑定与-capture-边界)。
+Matrix 展开顺序必须稳定。Case ID 与 Scope key 在 PBWork 和 CLI 间一致，不能包含数组位置、生成时间或 authored route query；route query 是执行 baseline 输入，不是新的 Case identity 维度。Core 先展开清单声明的全部命名主题与浅深模式，再按采集用途固定实际观察计划；`CaseKey.theme` 是命名主题，`CaseKey.themeId` 保留模式语义。新 Case ID 加入 `::theme=<主题>`，旧 Case 没有该字段时保留原身份。Screen Draft 可用显式 `themeModes` 固定重试范围，省略时由采集计划决定实拍与派生范围；NormalizedSelection 的 `declaredThemeModes` 固定完整主题域，Case 数量完成只说明所选范围完成。Selection 必须携带与清单默认主题一致的 `themePack`。主题包摘要、键目录摘要和声明时钟进入 `inputVersion`。取值表、探针与时钟的当前规则见[主题包解析模型](./theme-packs.md#原型绑定与-capture-边界)。
+
+### 采集用途与外观计划
+
+`SelectionDraft.capturePurpose` 默认为 `implementation-delivery`（实现交付）；`appearance-audit`（全部外观检查）保留完整主题 × 模式 × 业务状态矩阵。用途不是质量门禁开关：每个实际选择的 Case 仍执行全部语义、状态、交互、资源和截图检查。
+
+实现交付保留每个选中 Variant 与 Scenario Checkpoint 在清单默认外观下的真实观察。Screen 可声明 `appearanceEvidence.rules`，明确覆盖的 Variant/Scenario、使用关系与理由、structure/components/bindings/resources/layout 维度，以及需要实拍的代表 Variant 与主题/模式组合。Core 合并代表样本，多个规则共用一个实际 Case；其余外观只保存固定基准、代表来源和规则派生记录，不创建伪造的 Case revision。声明针对原型的实例、参数、状态、绑定槽位和组合，不以“同一个 Token 已出现”作为整个页面可复用的证明。
+
+规则只有在完整源码摘要存在、五个维度均声明、全部代表 Variant 已在同一设备及 Scope 的业务选择内、使用 instrumented 全屏截图时才能减少观察。未声明、新增状态、跨页终态、缺少代表样本或局部 Fragment 范围保留受影响 Case 的全部外观。规则中的未知身份、重叠覆盖或未知主题组合在 Core validation 阻断。显式 `themeModes` 用于精确重试/重采，保持请求的 Case 身份，不再应用选择性缩减。
+
+NormalizedSelection 的 `capturePlan` 固定用途、inputVersion/sourceDigest、默认外观、完整外观数量、基准业务项、实际观察项和派生项。派生记录保留精确 Case/Scope 来源及规则理由；其像素始终是 `unobserved`，未生成 bbox 或截图事实。源码、主题包、Catalog、状态或设备输入改变时，重新 Preflight 并固定新计划。来源观察失败或固定 Handoff 没有包含其来源时，派生支持转为未核验，不借历史 active/latest 补齐。
+
+业务状态覆盖、主题规则支持和实际截图范围分别投影。实际截图计划完成不等于全部主题状态均实拍；原有 `themeCoverage` 继续报告完整像素矩阵的缺口。共享定义仍固定在 Catalog；同内容图片由 Blob digest 共用，Scenario 的动作与状态证明保持独立。
 
 ## 4. 浏览器隔离
 
@@ -52,11 +64,11 @@ Playwright Driver 在一个 Job 内复用 Chromium 进程。业务维度与 Capt
 
 网络、console、page errors 和 failed requests 进入 diagnostics。执行组之间不能共享业务状态。组内在一个外观下准备业务状态并执行共享 Scenario，再仅切换采集渲染环境，逐个外观实际读取语义、校验 required boundary、检查资源并截图。外观切换不得触发 fixture 重建、业务偏好写入或 Scenario 重放；业务状态发生变化或 Runtime 不支持该能力时，回退独立 Case 执行。主题特有交互须独立验证，不能由共享执行推断。
 
-共享要求 Runtime 显式提供 `capture-state` 与 `set-render-theme`，以及完整的作者业务／局部状态读者。Scenario 还须声明 `appearancePolicy: shared`，缺省独立执行。来源执行完成后固定观察时刻并同步界面时钟；外观切换前后、语义观察后及截图完成后均核对状态指纹。指纹包含源码、业务和局部 UI 状态、路由、滚动、表单、焦点与 Overlay。截图完成前发生状态漂移会使 Case 失败；切换时不支持共享或状态已改变则独立重采，并保留拒绝共享的原因、trace 和 debug。`selected` Fragment 截图会主动滚动到目标，因此保持独立执行。
+共享要求 Runtime 显式提供 `capture-state` 与 `set-render-theme`，以及完整的作者业务／局部状态读者。Scenario 还须声明 `appearancePolicy: shared`，缺省独立执行。来源执行完成后固定观察时刻并同步界面时钟；外观切换前后、语义观察前后及截图完成后均核对状态指纹。提供状态读取能力的独立全屏观察也执行语义/截图前后的指纹检查；短暂反馈场景独立准备，并把反馈节点列入 Checkpoint 必需边界。指纹包含源码、业务和局部 UI 状态、路由、滚动、表单、焦点与 Overlay。截图完成前发生状态漂移会使 Case 失败；切换时不支持共享或状态已改变则独立重采，并保留拒绝共享的原因、trace 和 debug。`selected` Fragment 截图会主动滚动到目标，因此保持独立执行。
 
 每个 Case 的 `${screenId}.runtime.execution` Fact 记录 `executionId`、`sourceCaseId`、`mode`、`sourceTheme` 和可选 `stateDigest`。真实执行业务准备／动作的来源 Case 为 `independent`；同组其他外观为 `shared-appearance`，不表示在其主题下独立重放动作。历史没有此 Fact 的记录保持执行来源未知。
 
-Job 正常、失败或取消后释放进程；取消时关闭当前 Context。单 Case 直接调用仍独立启动并释放浏览器，初始化异常同样进入清理。正式截图、语义与失败检查不因分组而减少；诊断 trace 与正式 Evidence 分开处理。
+Job 正常、失败或取消后释放进程；取消时关闭当前 Context。单 Case 直接调用仍独立启动并释放浏览器，初始化异常同样进入清理。计划内正式截图、语义与失败检查不因执行分组而减少；诊断 trace 与正式 Evidence 分开处理。
 
 ## 5. Prepare 与 Readiness
 
@@ -173,4 +185,4 @@ PBWork 定稿的 `awaiting-risks` 阶段由 Local Service 每秒 reconciliation 
 
 Playwright Driver 的 `metrics` 记录浏览器、Context、导航、动作、共享／独立 Case、回退、语义快照、截图数量和各阶段累计耗时。诊断用 `reuseAppearances: false` 可关闭跨外观复用，保持同一 Selection 与质量检查，以便对照。Yike 浏览器全量测试通过 `PB_CAPTURE_INDEPENDENT=1` 启用该对照路径；它不是产品采集范围选项。
 
-`scripts/measure-capture-process.mjs --output <report.json> -- <command>` 包装命令，采样其进程树的累计 CPU 时间和峰值 RSS，并记录 wall time、退出码与采样间隔。CPU 与 RSS 是采样估计：短命进程及采样间峰值可能遗漏，共享内存页可能重复累计；无 `ps` 权限时明确报告 unavailable，不能据此推断 CPU 或内存为零。性能比较必须使用相同 Case 范围，同时核对截图归属、语义与状态检查、共享来源及 Snapshot/Handoff 结果。
+`scripts/measure-capture-process.mjs --output <report.json> -- <command>` 包装命令，采样其进程树的累计 CPU 时间和峰值 RSS，并记录 wall time、退出码与采样间隔。CPU 与 RSS 是采样估计：短命进程及采样间峰值可能遗漏，共享内存页可能重复累计；无 `ps` 权限时明确报告 unavailable，不能据此推断 CPU 或内存为零。执行复用性能比较必须使用相同 Case 范围；采集用途比较则使用相同源码、业务范围和完整主题域，分别报告实际观察数量和未实拍范围，并核对公共 Case 的语义与状态检查、图片归属、固定来源及 Snapshot/Handoff 结果。Yike 全量浏览器测试可通过 `PB_CAPTURE_PURPOSE=implementation-delivery` 比较默认交付计划，缺省以 `appearance-audit` 验证完整外观；`PB_CAPTURE_REPORT_PATH` 将该次测量和逐 Case 事实摘要写入指定诊断文件。

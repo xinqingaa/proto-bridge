@@ -44,6 +44,10 @@ import {
   LEGACY_EVIDENCE_SCREEN_IDS,
   requiresStrictEvidence,
 } from "@/prototypes/evidence-policy";
+import {
+  RuntimeAppearanceEvidence,
+  validateRuntimeAppearanceRules,
+} from "@proto-bridge/core/v2/runtime-contract";
 
 const RESERVED_QUERY_KEYS = new Set(["variant", "theme", "mode"]);
 
@@ -677,6 +681,46 @@ export function validateRegistries(input?: {
   const slugByPrototype = new Map<string, Set<string>>();
 
   for (const screen of screens) {
+    if (screen.appearanceEvidence) {
+      const policy = RuntimeAppearanceEvidence.safeParse(screen.appearanceEvidence);
+      if (!policy.success) {
+        for (const issue of policy.error.issues)
+          pushError(errors, {
+            resourceType: "screen",
+            resourceId: screen.screenId,
+            instancePath: `/appearanceEvidence/${issue.path.join("/")}`,
+            keyword: "appearanceEvidence",
+            message: issue.message,
+          });
+      } else {
+        const prototype = prototypes.find((item) => item.id === screen.prototypeId);
+        const pack = prototype && runtimeThemeSources.packs.get(prototype.themePackId);
+        if (pack) {
+          try {
+            validateRuntimeAppearanceRules({
+              theme: {
+                themes: pack.manifest.themes.map((theme) => theme.id),
+                modes: pack.manifest.modes,
+              },
+              screens: [{
+                screenId: screen.screenId,
+                variants: screen.variants.map((variant) => ({ variantId: variant.id })),
+                scenarios: (screen.scenarios ?? []).map((scenario) => ({ scenarioId: scenario.id })),
+                appearanceEvidence: policy.data,
+              }],
+            });
+          } catch (error) {
+            pushError(errors, {
+              resourceType: "screen",
+              resourceId: screen.screenId,
+              instancePath: "/appearanceEvidence",
+              keyword: "appearanceEvidence",
+              message: error instanceof Error ? error.message : String(error),
+            });
+          }
+        }
+      }
+    }
     if (!prototypeIds.has(screen.prototypeId)) {
       pushError(errors, {
         resourceType: "screen",

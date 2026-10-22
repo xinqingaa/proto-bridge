@@ -8,6 +8,7 @@ import {
   WorkspaceId,
 } from './ids.js';
 import { RiskKind } from './vocabulary.js';
+import { CapturePurpose } from './run.js';
 
 export const PrototypeLifecycleStage = z.enum([
   'active',
@@ -59,6 +60,7 @@ export const PrototypeLifecycleOperation = z.discriminatedUnion('kind', [
       operationKey: LifecycleOperationKey,
       requestDigest: OperationRequestDigest.optional(),
       phase: FinalizationPhase,
+      capturePurpose: CapturePurpose.optional(),
       startedAt: z.string().datetime(),
       jobId: JobId.optional(),
       bundleId: BundleId.optional(),
@@ -281,6 +283,12 @@ export function assertPrototypeLifecycleUpdate(
     ) {
       if (oldOperation.operationKey !== nextOperation.operationKey) {
         throw new Error('An active finalization cannot change operationKey.');
+      }
+      if (
+        PHASE_ORDER[oldOperation.phase] >= PHASE_ORDER.capturing &&
+        oldOperation.capturePurpose !== nextOperation.capturePurpose
+      ) {
+        throw new Error('Capture purpose cannot change after capture has started.');
       }
       if (PHASE_ORDER[nextOperation.phase] < PHASE_ORDER[oldOperation.phase] ||
           PHASE_ORDER[nextOperation.phase] > PHASE_ORDER[oldOperation.phase] + 1) {

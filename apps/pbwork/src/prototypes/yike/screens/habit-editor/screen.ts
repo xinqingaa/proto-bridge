@@ -1,6 +1,8 @@
+import { yikeAppearanceEvidence } from "../../appearance-evidence";
 import { defineScreen, fragment, screenScope } from "@/authoring/define-screen";
 export const scope = screenScope("yike", "habit-editor");
 export default defineScreen({
+  appearanceEvidence: yikeAppearanceEvidence["habit-editor"],
   prototypeId: "yike",
   slug: "habit-editor",
   navigation: "flow",
@@ -60,7 +62,8 @@ export default defineScreen({
     {
       id: "save-edit",
       label: "保存已有习惯",
-      appearancePolicy: "shared" as const,
+      // The saved Toast must remain present in every appearance observation.
+      appearancePolicy: "independent" as const,
       initialVariantId: "edit",
       actionIds: ["save"],
       checkpoints: [
@@ -70,6 +73,7 @@ export default defineScreen({
           variantId: "default",
           requiredFragments: [
             { screenId: "yike.habit-detail", pbId: "yike.habit-detail.name" },
+            { screenId: "yike.habit-detail", pbId: "yike.habit-detail.saved" },
           ],
         },
       ],

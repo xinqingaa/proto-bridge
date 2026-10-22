@@ -430,11 +430,11 @@ async function workspaceReset(
 }
 
 async function loadDraft(args: CliArgs): Promise<SelectionDraft> {
-  return SelectionDraft.parse(
-    JSON.parse(
-      await readFile(requiredFlag(args, 'selection'), 'utf8'),
-    ) as unknown,
-  );
+  const draft = SelectionDraft.parse(JSON.parse(
+    await readFile(requiredFlag(args, 'selection'), 'utf8'),
+  ) as unknown);
+  const capturePurpose = flag(args, 'capture-purpose');
+  return capturePurpose ? SelectionDraft.parse({ ...draft, capturePurpose }) : draft;
 }
 
 function resolveScreenId(prototypeId: string, screen: string): string {
@@ -461,8 +461,8 @@ function parseFragmentFlag(
 
 /**
  * Builds a SelectionDraft from --selection or short deliver flags.
- * Defaults: all authored Screens, Variants and Scenarios. Mode is the
- * manifest default; there is no theme selector.
+ * Defaults: all authored Screens, Variants and Scenarios with the Core-owned
+ * implementation-delivery plan; there is no manual theme selector.
  * device=iphone-14. Repeated --only-* flags narrow by authored ids.
  * When --bundle and --snapshot are both set, SelectionDraft is not required
  * (resume path: handoff + prompt only).
@@ -555,6 +555,7 @@ export async function resolveDeliverDraft(
 
   return SelectionDraft.parse({
     prototypeId,
+    capturePurpose: flag(args, 'capture-purpose') ?? 'implementation-delivery',
     themePack: {
       packId: manifest.theme.packId,
       packDigest: manifest.theme.packDigest,
@@ -1745,7 +1746,7 @@ export function cliUsage(): string {
   proto-bridge workspace reinitialize --confirm-destroyed <workspaceId> [--json]
   proto-bridge preflight --selection <file> [--manifest <file>]
   proto-bridge capture run --selection <file> [--bundle <id>] [--acknowledge-unofficial-capture]
-  proto-bridge deliver --prototype <id> [--target <dir>] [--acknowledge-unofficial-capture]
+  proto-bridge deliver --prototype <id> [--capture-purpose implementation-delivery|appearance-audit] [--target <dir>] [--acknowledge-unofficial-capture]
   proto-bridge deliver --bundle <id> --snapshot <id> [--ack-risk <kind>] [--target <dir>] [--acknowledge-unofficial-capture]
   proto-bridge job status|cancel|retry --job <id>
   proto-bridge bundle list|inspect|fork|archive|clean

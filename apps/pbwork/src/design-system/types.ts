@@ -1,3 +1,5 @@
+import type { RuntimeAppearanceEvidence } from "@proto-bridge/core/v2/runtime-contract";
+
 export type TokenCategory =
   | "color"
   | "typography"
@@ -298,6 +300,8 @@ export type ScreenRecord = {
   /** Stable page chrome inherited by Variants unless they explicitly replace it. */
   shellFragments?: PrototypeFragmentRef[];
   structureAssertions?: PrototypeStructureAssertion[];
+  /** Explicit usage families and real appearance samples; Core owns planning. */
+  appearanceEvidence?: RuntimeAppearanceEvidence;
 };
 
 export type FixturePayload = { schemaVersion: 1 } & Record<string, unknown>;

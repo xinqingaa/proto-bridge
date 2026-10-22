@@ -392,7 +392,12 @@ watch(
         <div class="verdict-copy">
           <strong v-if="resultCopy">{{ resultCopy.headline }}</strong>
           <p v-if="coverageTitle">{{ coverageTitle }}</p>
-          <p v-if="model?.themeCoverage">主题／浅深模式：{{ model.themeCoverage.combinations.filter(item => item.expectedCaseCount > 0 && item.missingCaseCount === 0).length }}/{{ model.themeCoverage.declared.length }} 种组合已覆盖全部所需状态<span v-if="model.themeCoverage.status === 'partial'">，仍有状态截图缺失</span>。</p>
+          <template v-if="model?.captureCoverage">
+            <p data-testid="evidence-business-coverage">业务状态覆盖：{{ model.captureCoverage.business.observedCaseCount }}/{{ model.captureCoverage.business.expectedCaseCount }} 项<span v-if="model.captureCoverage.business.missingCaseCount">，缺少 {{ model.captureCoverage.business.missingCaseCount }} 项</span>。</p>
+            <p data-testid="evidence-theme-rule-coverage">主题规则：已支持 {{ model.captureCoverage.themeRules.supportedDerivationCount }}/{{ model.captureCoverage.themeRules.expectedDerivationCount }} 项派生外观<span v-if="model.captureCoverage.themeRules.uncheckedDerivationCount">，{{ model.captureCoverage.themeRules.uncheckedDerivationCount }} 项尚未核验</span>。</p>
+            <p data-testid="evidence-screenshot-coverage">实际截图：{{ model.captureCoverage.screenshots.observedCaseCount }}/{{ model.captureCoverage.screenshots.plannedCaseCount }} 项计划范围；全部外观范围共 {{ model.captureCoverage.fullCaseCount }} 项。<span v-if="model.captureCoverage.screenshots.unobservedAppearanceCount">{{ model.captureCoverage.screenshots.unobservedAppearanceCount }} 项外观未实拍，按固定规则和引用提供线索。</span></p>
+          </template>
+          <p v-else-if="model?.themeCoverage">主题／浅深模式：{{ model.themeCoverage.combinations.filter(item => item.expectedCaseCount > 0 && item.missingCaseCount === 0).length }}/{{ model.themeCoverage.declared.length }} 种组合已覆盖全部所需状态<span v-if="model.themeCoverage.status === 'partial'">，仍有状态截图缺失</span>。</p>
           <p v-else-if="model">历史记录没有声明完整主题范围；页面数量完成不代表全部主题已采集。</p>
           <p v-for="message in verdictMessages" :key="message">{{ message }}</p>
         </div>

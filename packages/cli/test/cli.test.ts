@@ -224,6 +224,7 @@ describe('ProtoBridge CLI', () => {
       ]),
       loaded,
     );
+    expect(whole!.capturePurpose).toBe('implementation-delivery');
     expect(
       preflightSelection(whole!, coldChainManifest() as any).matrix,
     ).toHaveLength(48);
@@ -243,6 +244,18 @@ describe('ProtoBridge CLI', () => {
     expect(
       preflightSelection(oneScreen!, coldChainManifest() as any).matrix,
     ).toHaveLength(14);
+    const audit = await resolveDeliverDraft(
+      parseCliArgs(['deliver', '--prototype', 'cold-chain-ops', '--manifest', manifestPath,
+        '--capture-purpose', 'appearance-audit']),
+      loaded,
+    );
+    expect(audit!.capturePurpose).toBe('appearance-audit');
+    expect(audit!.screens).toEqual(whole!.screens);
+    await expect(resolveDeliverDraft(
+      parseCliArgs(['deliver', '--prototype', 'cold-chain-ops', '--manifest', manifestPath,
+        '--capture-purpose', 'unchecked']),
+      loaded,
+    )).rejects.toThrow();
   });
   it('exposes the Evidence commands directly without a legacy prefix', async () => {
     const root = await tempRoot();

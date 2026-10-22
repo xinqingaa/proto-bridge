@@ -1,8 +1,10 @@
+import { yikeAppearanceEvidence } from "../../appearance-evidence";
 import { defineScreen, fragment, screenScope } from "@/authoring/define-screen";
 
 export const scope = screenScope("yike", "checkin");
 
 export default defineScreen({
+  appearanceEvidence: yikeAppearanceEvidence["checkin"],
   slug: "checkin",
   fragments: [
     fragment("root", { required: true }),
@@ -62,7 +64,8 @@ export default defineScreen({
     {
       id: "checkin-today",
       label: "完成今日打卡",
-      appearancePolicy: "shared" as const,
+      // The undo Toast expires; each appearance must observe a fresh outcome.
+      appearancePolicy: "independent" as const,
       initialVariantId: "default",
       actionIds: ["toggle-first"],
       checkpoints: [
@@ -72,6 +75,7 @@ export default defineScreen({
           variantId: "default",
           requiredFragments: [
             scope.ref("habit.habit-water.today", "habit-water"),
+            scope.ref("undo"),
           ],
           expectedStates: [
             {

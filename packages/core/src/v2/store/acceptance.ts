@@ -1,6 +1,8 @@
 import {
   buildEvidenceReadModel,
   buildReconstructionAcceptanceContract,
+  projectCaptureCoverage,
+  capturePlanCoversSelection,
   type EvidenceReadModel,
   type ReconstructionAcceptanceContract,
 } from '../index.js';
@@ -32,15 +34,20 @@ export async function buildAcceptanceContractFromStore(input: {
     revisions,
     blobs,
   });
-  const selectedIds = new Set(
-    input.handoff.selectedCases.map((selectedCase) => selectedCase.caseId),
-  );
+  const fixedCases = fullEvidence.screens.flatMap((screen) => screen.cases).filter((item) =>
+    input.handoff.selectedCases.some((selected) => selected.resolution === 'resolved' && selected.caseId === item.caseId
+      && selected.revisionId === item.revisionId));
+  const selected = input.handoff.selectedCases.flatMap((item) => item.caseKey
+    ? [{ caseId: item.caseId, caseKey: item.caseKey, captureScope: item.captureScope }] : []);
+  const { captureCoverage: _fullCaptureCoverage, ...evidenceBase } = fullEvidence;
   const evidence: EvidenceReadModel = {
-    ...fullEvidence,
+    ...evidenceBase,
+    ...(fullEvidence.capturePlan && capturePlanCoversSelection(fullEvidence.capturePlan, selected)
+      ? { captureCoverage: projectCaptureCoverage(fullEvidence.capturePlan, fixedCases, selected) } : {}),
     screens: fullEvidence.screens
       .map((screen) => ({
         ...screen,
-        cases: screen.cases.filter((item) => selectedIds.has(item.caseId)),
+        cases: fixedCases.filter((item) => item.screenId === screen.screenId),
       }))
       .filter((screen) => screen.cases.length > 0),
   };

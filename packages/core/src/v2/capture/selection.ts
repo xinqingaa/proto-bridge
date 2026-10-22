@@ -13,7 +13,8 @@ import {
   CaptureScopeInput,
   normalizeCaptureScope,
 } from '../contracts/scope.js';
-import type { NormalizedSelection, SelectedCase } from '../contracts/run.js';
+import { CapturePurpose, NormalizedSelection, type SelectedCase } from '../contracts/run.js';
+import { planAppearanceObservations } from './appearance-plan.js';
 import type {
   RuntimeCaptureManifest,
   RuntimeCheckpointManifest,
@@ -72,6 +73,7 @@ export const SelectionDraft = z
     prototypeId: PrototypeId,
     /** Must match the Runtime manifest's default theme and mode. */
     themePack: ThemeIdentity,
+    capturePurpose: CapturePurpose.optional(),
     screens: z.array(ScreenSelectionDraft).min(1),
     acceptedWarningIds: z.array(IssueId).default([]),
   })
@@ -413,7 +415,10 @@ export function resolveSelectionMatrix(
     }
     seen.add(identity);
   }
-  const selection = {
+  const planned = draft.screens.some((screen) => screen.themeModes)
+    ? { matrix: entries, plan: undefined }
+    : planAppearanceObservations(entries, manifest, draft.capturePurpose ?? 'implementation-delivery');
+  const selection = NormalizedSelection.parse({
     prototypeId: draft.prototypeId,
     themePack,
     declaredThemeModes: [...manifest.theme.themes]
@@ -421,9 +426,10 @@ export function resolveSelectionMatrix(
       .flatMap((theme) =>
         [...manifest.theme.modes].sort().map((mode) => ({ theme, mode })),
       ),
-    cases: entries.map((entry) => entry.selectedCase),
+    ...(planned.plan ? { capturePlan: planned.plan } : {}),
+    cases: planned.matrix.map((entry) => entry.selectedCase),
     acceptedWarningIds: [...new Set(draft.acceptedWarningIds)].sort(),
-  };
+  });
   assertSelectionReferences(selection);
-  return { selection, matrix: entries };
+  return { selection, matrix: planned.matrix };
 }

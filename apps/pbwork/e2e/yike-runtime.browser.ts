@@ -1,4 +1,5 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import os from "node:os";
 import path from "node:path";
@@ -336,6 +337,7 @@ test("appearance reuse preserves all six observations and executes shared action
   const preflight = preflightSelection(
     {
       prototypeId: "yike",
+      capturePurpose: "appearance-audit",
       themePack: {
         packId: manifest.theme.packId,
         packDigest: manifest.theme.packDigest,
@@ -440,6 +442,71 @@ test("appearance reuse preserves all six observations and executes shared action
   }
 });
 
+test("transient scenario outcomes keep their Toast in every independent appearance", async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.goto("/prototype/yike/__manifest__");
+  const { payload: { manifest } } = await runtimeRequest(page, { kind: "describe" });
+  const scenarios = [
+    { screenId: "yike.checkin", scenarioId: "checkin-today", toastId: "yike.checkin.undo", message: "今天已打卡" },
+    { screenId: "yike.habit-detail", scenarioId: "archive-habit", toastId: "yike.checkin.saved", message: "已归档" },
+    { screenId: "yike.habit-editor", scenarioId: "save-edit", toastId: "yike.habit-detail.saved", message: "已保存" },
+  ];
+  const preflight = preflightSelection({
+    prototypeId: "yike",
+    capturePurpose: "appearance-audit",
+    themePack: {
+      packId: manifest.theme.packId,
+      packDigest: manifest.theme.packDigest,
+      theme: manifest.theme.defaultTheme,
+      mode: manifest.theme.defaultMode,
+    },
+    screens: scenarios.map(({ screenId, scenarioId }) => ({
+      screenId,
+      variants: { mode: "explicit", variantIds: [] },
+      scenarios: { mode: "explicit", scenarioIds: [scenarioId] },
+      deviceIds: ["iphone-14"],
+      captureScope: {
+        fragments: [],
+        screenshots: { mode: "all" },
+        sourcePolicy: false,
+        debugPolicy: false,
+        evidenceInputMode: "instrumented",
+        minEvidenceLevel: "instrumented-runtime",
+      },
+    })),
+    acceptedWarningIds: ["warning-interaction-coverage"],
+  }, manifest);
+  expect(preflight.ready, JSON.stringify(preflight.diagnostics)).toBe(true);
+  expect(preflight.matrix).toHaveLength(18);
+  const driver = new PlaywrightCaseCaptureDriver();
+  const session = await driver.openSession();
+  try {
+    for (const entry of preflight.matrix) {
+      const result = await session.captureCase({
+        entry,
+        preflight,
+        runtimeBaseUrl: new URL(page.url()).origin,
+      });
+      const { toastId, message } = scenarios.find((item) =>
+        item.scenarioId === entry.selectedCase.caseKey.scenario!.scenarioId)!;
+      expect(result.facts.find((fact) => fact.factId === `${toastId}.visible`)?.effectiveValue).toBe(true);
+      expect(result.facts.find((fact) => fact.factId === `${toastId}.componentId`)?.effectiveValue).toBe("toast");
+      expect(result.facts.find((fact) => fact.factId === `${toastId}.text`)?.effectiveValue).toContain(message);
+      expect(result.facts.find((fact) => fact.factId.endsWith(".runtime.execution"))?.effectiveValue)
+        .toMatchObject({ mode: "independent" });
+      expect(result.binaries.filter((binary) => binary.kind === "screenshot" && binary.bytes.byteLength > 0)).toHaveLength(1);
+      expect(result.diagnostics.pageErrors).toEqual([]);
+    }
+  } finally {
+    await session.dispose();
+  }
+  expect(driver.metrics.independentCases).toBe(18);
+  expect(driver.metrics.sharedAppearanceCases).toBe(0);
+  expect(driver.metrics.contextsCreated).toBe(18);
+  expect(driver.metrics.actionsExecuted).toBe(18);
+  expect(driver.metrics.appearanceFallbacks).toBe(0);
+});
+
 test("full yike Capture creates its first Bundle and Handoff with DS references only", async ({
   page,
 }) => {
@@ -456,6 +523,7 @@ test("full yike Capture creates its first Bundle and Handoff with DS references 
   try {
     const draft: SelectionDraft = {
       prototypeId: "yike",
+      capturePurpose: process.env.PB_CAPTURE_PURPOSE === "implementation-delivery" ? "implementation-delivery" : "appearance-audit",
       themePack: {
         packId: manifest.theme.packId,
         packDigest: manifest.theme.packDigest,
@@ -490,13 +558,20 @@ test("full yike Capture creates its first Bundle and Handoff with DS references 
     };
     const preflight = preflightSelection(draft, manifest, { maxCases: 500 });
     expect(preflight.ready, JSON.stringify(preflight.diagnostics)).toBe(true);
-    expect(preflight.matrix).toHaveLength(414);
+    const selective = draft.capturePurpose === "implementation-delivery";
+    expect(preflight.selection.capturePlan?.businessCases).toHaveLength(69);
+    expect(preflight.selection.capturePlan?.fullCaseCount).toBe(414);
+    if (selective) {
+      expect(preflight.matrix.length).toBeLessThan(250);
+      expect(preflight.selection.capturePlan!.derivations.length).toBe(414 - preflight.matrix.length);
+    } else expect(preflight.matrix).toHaveLength(414);
     const pairs = new Map<string, number>();
     for (const entry of preflight.matrix) {
       const key = `${entry.selectedCase.caseKey.theme}/${entry.selectedCase.caseKey.themeId}`;
       pairs.set(key, (pairs.get(key) ?? 0) + 1);
     }
-    expect([...pairs.values()]).toEqual([69, 69, 69, 69, 69, 69]);
+    if (!selective) expect([...pairs.values()]).toEqual([69, 69, 69, 69, 69, 69]);
+    expect(pairs.get("mechanical/light")).toBe(69);
     const driver = new PlaywrightCaseCaptureDriver(undefined, {
       reuseAppearances: process.env.PB_CAPTURE_INDEPENDENT !== "1",
     });
@@ -512,7 +587,7 @@ test("full yike Capture creates its first Bundle and Handoff with DS references 
     ).toEqual([]);
     expect(result.run.attempts.length).toBe(preflight.matrix.length);
     if (process.env.PB_CAPTURE_INDEPENDENT !== "1") {
-      expect(driver.metrics.sharedAppearanceCases).toBeGreaterThan(200);
+      expect(driver.metrics.sharedAppearanceCases).toBeGreaterThan(selective ? 0 : 200);
       expect(driver.metrics.contextsCreated).toBeLessThan(200);
     }
     const screenshots = (
@@ -526,7 +601,7 @@ test("full yike Capture creates its first Bundle and Handoff with DS references 
             .map((owner) => owner.objectId),
         ),
       ).size,
-    ).toBe(414);
+    ).toBe(preflight.matrix.length);
     for (const entry of preflight.matrix.filter(
       (entry) =>
         entry.selectedCase.caseKey.screenId === "yike.focus" &&
@@ -628,15 +703,18 @@ test("full yike Capture creates its first Bundle and Handoff with DS references 
       revisions,
       blobs: await store.listBlobRecords(result.snapshot.bundleId),
     });
-    expect(evidence.themeCoverage?.status).toBe("complete");
-    expect(
+    expect(evidence.themeCoverage?.status).toBe(selective ? "partial" : "complete");
+    expect(evidence.captureCoverage?.business.status).toBe("complete");
+    expect(evidence.captureCoverage?.themeRules.status).toBe("complete");
+    expect(evidence.captureCoverage?.screenshots.status).toBe("complete");
+    if (!selective) expect(
       evidence.themeCoverage?.combinations.map((combination) => ({
         expected: combination.expectedCaseCount,
         captured: combination.capturedCaseCount,
       })),
     ).toEqual(Array(6).fill({ expected: 69, captured: 69 }));
     const observed = evidence.screens.flatMap((screen) => screen.cases);
-    expect(observed).toHaveLength(414);
+    expect(observed).toHaveLength(preflight.matrix.length);
     expect(
       observed.every(
         (item) =>
@@ -647,9 +725,30 @@ test("full yike Capture creates its first Bundle and Handoff with DS references 
     expect(
       observed.filter((item) => item.execution?.mode === "shared-appearance"),
     ).toHaveLength(driver.metrics.sharedAppearanceCases);
+    if (process.env.PB_CAPTURE_REPORT_PATH) {
+      await writeFile(process.env.PB_CAPTURE_REPORT_PATH, JSON.stringify({
+        purpose: draft.capturePurpose,
+        inputVersion: preflight.inputVersion,
+        sourceDigest: manifest.sourceDigest,
+        plan: preflight.selection.capturePlan,
+        coverage: evidence.captureCoverage,
+        driver: driver.metrics,
+        runSeconds: (Date.parse(result.run.endedAt) - Date.parse(result.run.startedAt)) / 1000,
+        cases: revisions.map((revision) => ({
+          caseId: revision.caseId,
+          factsDigest: createHash("sha256").update(JSON.stringify(revision.facts.filter((fact) => !fact.factId.endsWith(".runtime.execution")))).digest("hex"),
+          factsCount: revision.facts.length,
+          comparableFacts: revision.facts.filter((fact) => !fact.factId.endsWith(".runtime.execution")),
+          usageFacts: revision.facts.filter((fact) => /\.(tokenBindings|props|componentId|role|semanticParent|visible)$/.test(fact.factId))
+            .map((fact) => ({ factId: fact.factId, value: fact.effectiveValue })),
+          screenshotDigests: screenshots.filter((blob) => blob.ownerRefs.some((owner) => owner.objectId === revision.revisionId)).map((blob) => blob.digest),
+        })),
+      }, null, 2));
+    }
     console.log(
       JSON.stringify({
-        label: "Yike full theme Capture",
+        label: "Yike capture purpose comparison",
+        purpose: draft.capturePurpose,
         cases: result.run.attempts.length,
         driver: driver.metrics,
         runSeconds:

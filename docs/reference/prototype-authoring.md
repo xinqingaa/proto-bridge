@@ -183,11 +183,25 @@ Checkpoint 必须声明实际 Screen、Variant 和非空 required Fragments。Ru
 
 Scenario 的 `appearancePolicy` 可选 `shared` 或 `independent`，省略时按 `independent` 执行。只有业务动作、状态转换与主题无关的 Scenario 才能显式声明 `shared`；主题设置、系统模式和主题专属交互保持独立执行。共享声明不减少每种主题模式的页面截图、语义观测、状态和完整性门禁。
 
+自动消失的结果提示也属于检查点状态。若提示的寿命不能保持到同组全部外观观察结束，Scenario 使用 `independent`，每种外观重新执行业务动作，并把提示节点列入 Checkpoint 的 required Fragments。一刻的今日打卡、归档习惯与保存编辑均采用此策略；不能因为业务更新已完成就允许截图遗漏撤销或保存反馈，也不能延长真实提示寿命来掩盖不稳定状态。
+
 原型仅在作者已覆盖完整状态时声明 `PrototypeRecord.captureState: true`。作者通过 `useCaptureState` 提供一个 `business` 读取器、每个可采 Screen 的完整局部 UI 读取器，以及影响检查点的嵌套局部状态读取器；必须覆盖业务 Store、命令/session 的私有状态、表单 draft/校验、选中项、Overlay 和恢复状态。不能仅 hash Store 或从 DOM 猜测作者状态。读取器第 4 参数可声明 `{ appearancePolicy: "independent" }`；在原型已显式启用且完整覆盖状态的前提下，读取器省略此参数默认为 `shared`。任一挂载的读取器声明独立时，整个当前原型拒绝共享，包括静态 Variant。主题设置页的当前已选主题/模式来自业务偏好，不能仅切渲染主题后沿用原选中态；一刻设置页整页采用该独立策略。
 
 实际渲染主题必须独立于业务偏好，渲染切换不能写偏好、重放动作或触发 fixture reset。接口见[制作工具](../../apps/pbwork/docs/prototypes/authoring-tools.md#共享运行套件)。
 
 Runtime 仅对显式启用且具备 `business` 与当前 Screen 读取器的页面开放 `capture-state` / `set-render-theme`。状态指纹同时包含源码版本、固定业务时刻、业务路由、实际滚动、表单、Overlay 和焦点；切换渲染前后均须保持不变。缺少作者覆盖返回 `capture-state-unsupported`；状态变化返回 `capture-state-changed`，由 Capture 回退独立准备与执行，不能声明共享成功。指纹相等只证明已声明及观测的边界未变化，不替代作者完整性责任或各主题实际视觉校验。
+
+### 实现交付的外观用法声明
+
+`ScreenRecord.appearanceEvidence.rules` 声明当前原型的用法分组。Core 在 `implementation-delivery` 采集目的下先保留每个所选业务 Variant 和 Scenario Checkpoint 的基准实采，再根据这些分组选择额外外观观察。`appearance-audit` 仍实采全部所选状态与声明主题、模式。业务执行共享的 `appearancePolicy` 不构成外观等价声明。
+
+每条规则显式列出 `ruleId`、`variantIds`、`scenarioIds`、`dimensions`、`representativeVariantIds`、`observations` 与 `rationale`。`dimensions` 只有完整覆盖 structure、components、bindings、resources、layout 时才允许减少该用法的观察。`rationale` 应说明语义实例、组件公开参数、状态、绑定槽位、资源选择及周围组合如何变化，以及代表态为何覆盖这些变化；某个 Token key 在别处出现过不能证明这里的用法。规则是 authored 来源，不能当作未观察的几何、实际像素或测试通过。
+
+代表态必须是同 Screen、设备和 Capture Scope 中已选中的静态 Variant；可引用同 Screen 的其它规则中的 Variant，但不能依赖未进入固定范围的口头约定。`observations` 的每个主题/模式都要实际观察全部代表态，并把这些来源固定到交付引用。条件绑定选键、资源分支、节点和选中状态变化必须有对应代表观察；固定 Token 表只能派生取值，不能抹去这些用法差异。空 `observations` 只适用于作者明确可由基准用法和固定定义解释的范围，未实拍像素仍未观察。
+
+规则不能用隐式“全部 Variant”覆盖未来状态。新增状态先保留其完整局部外观范围，审阅用法后再显式加入。没有源码摘要、未声明/不完整的规则、缺少所选代表态、跨 Screen 终态或不适合复用的 Fragment Scope 均由 Core 保留受影响 Case 的完整外观观察。重复规则身份、重叠用法归属和未知引用在正式采集前拒绝。规则随 Runtime 输入和固定 Catalog 进入版本；实现或声明变化时重新 Preflight，作者同时复核规则是否仍描述当前代码。
+
+一刻的声明位于 `src/prototypes/yike/appearance-evidence.ts`。例如水位表盘的休息/非休息深色文字、月图各强度的对比度选键和设置页主题偏好选择都有实采样本；跨页终态及没有静态等价态的打卡 Toast 等保持局部完整观察。DS 是否已同步到 Target 不进入这些 Source 声明。
 
 ## 11. Readiness 与 Reset
 

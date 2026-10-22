@@ -1,7 +1,9 @@
+import { yikeAppearanceEvidence } from "../../appearance-evidence";
 import { defineScreen, fragment, screenScope } from "@/authoring/define-screen";
 
 export const scope = screenScope("yike", "review");
 export default defineScreen({
+  appearanceEvidence: yikeAppearanceEvidence["review"],
   slug: "review",
   fragments: [
     fragment("root", { required: true }),

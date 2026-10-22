@@ -41,6 +41,16 @@ Selection 描述一次采集意图。每个 Selected Case 由稳定维度组成�
 
 Case identity 只由规范化维度决定，不包含 Run ID、时间、Attempt 或截图路径。相同输入必须产生相同 Case ID。新 Case 在原复合身份后增加 `::theme=<命名主题>`；`themeId` 保留模式语义。缺少 theme 的旧记录继续使用原身份。NormalizedSelection 可固定 `declaredThemeModes`；主题组合的覆盖与所选 Case 的完成计数分别展示，历史缺失声明保持未知。主题覆盖以固定 source Run 的 Selection 去掉命名主题／模式后的基础矩阵为分母，保留 Screen、Variant、设备、Scenario Checkpoint 与 Scope，并对每个声明组合报告 `expectedCaseCount`、`capturedCaseCount`、`missingCaseCount`。组合中出现一张截图不表示该组合全部状态完成；不属于此分母的历史页面、重复截图或其他 Scope 不能补足缺项。Handoff 投影只针对它固定的所选范围重新计算，不能借用其他 Case 宣称覆盖。
 
+`NormalizedSelection.capturePlan` 固定采集用途、输入版本、基准外观、完整业务范围、计划观察和外观派生声明。`implementation-delivery` 保留所有选中业务状态及场景，在基准外观观察，并按 authored 使用规则补充代表外观；`appearance-audit` 对所有声明主题与模式逐项观察。未知依赖回退到受影响范围的实际观察。显式主题重试保留原 Case 范围，不把历史记录重新解释为派生证据。
+
+计划中的 `derivations` 不是 Evidence revision。`rules` 按 `ruleKey` 固定规则身份、适用维度、理由与代表来源；每条派生只保存未实拍 SelectedCase、基准 `{caseId, scopeKey}` 引用和 `ruleKey`，始终保留 `pixels=unobserved`。代表来源也只保存 `{caseId, scopeKey}`，同一规则与来源不随派生条目重复展开。读模型只在固定源 Run 存在成功 Attempt、该 Attempt 的 revision 与所选固定 revision 一致、Runtime 依赖摘要匹配计划输入时，建立 `capturePlanSource`。失败后沿用的旧 active revision、其它 Scope 或 Handoff 范围外的来源均不能补足当前规则引用。
+
+本次较窄 Scope 成功复用 primary/covering revision 时，读模型通过 Core resolver 核对冻结 Snapshot 的解析结果，并将该请求 Scope 加入 `capturePlanSource.scopeKeys`；原 revision 的实际采集 Scope 不变。只有精确请求 Scope 的本次成功 Attempt、Snapshot 中固定的 Attempt 指针、revision 和输入摘要全部匹配，才能计入该范围的覆盖。来源引用中的 Scope 表示获证明的请求范围；它可以小于该 revision 的实际采集范围。失败重试或来源绑定失配时，旧图片仍可读取，但不能补全本次计划。
+
+`captureCoverage` 分开报告业务状态、计划截图和主题规则的支持情况。Screen packet 的 `appearanceEvidence` 按维度区分 `rule-derived` 与 `unchecked`，另用 `businessSource=reference-reuse` 说明业务来源复用，并提供可核对的固定来源 revision；没有伪造观测值或像素图。缺截图、unknown、conflict 或不完整语义的来源不能支持规则派生。`themeCoverage` 保留全外观实际截图的严格含义，所以实现交付可以完成业务和计划范围，同时诚实显示穷举截图范围未完成。Handoff 请求不在原计划内的 Scope 时，仍可按 Core resolver 读取固定的 primary/covering revision，但不授予该 Scope 的规则派生覆盖，Consumer 的计划覆盖为 `null`。历史没有计划的 Evidence 不自动获得派生声明。
+
+Screen packet 不重复展开每条派生的规则和来源。`appearanceEvidence.rules` 保存规则说明与维度；`sources` 保存精确的 Case/Scope/revision；`referenceSets` 保存共用的代表来源集合。派生条目通过 `ruleKey`、`baselineSourceId` 和 `representativeSetId` 引用这些字典，另列 `uncheckedDimensions` 与缺失来源。省略 `uncheckedDimensions` 表示该条目的规则维度均获支持，不表示像素已观察。`sourceId` 和 `referenceSetId` 仅在当前固定 packet 内有效，不能充当跨查询的持久身份；持久引用仍由字典中的 Case/Scope/revision 决定。完整内部读模型保留逐条展开的规则与来源，便于 UI 展示和核对。
+
 Capture Scope 可以是 Screen 或稳定 Fragment 集合。Scope key 是可复算身份；Fragment 只接受 `screenId + pbId + optional pbKey`。
 
 ## Job、Run 与 Attempt

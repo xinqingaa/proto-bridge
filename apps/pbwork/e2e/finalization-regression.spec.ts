@@ -231,6 +231,7 @@ async function routeFailedCapture(page: Page) {
 test("failed finalization reaches a visible grouped terminal state and survives refresh", async ({
   page,
 }) => {
+  test.setTimeout(120_000);
   await routeFailedCapture(page);
   await page.goto("/workbench/prototypes/all");
   const row = page.locator("article").filter({ hasText: "冷链异常处置台" });
@@ -271,9 +272,15 @@ test("failed finalization reaches a visible grouped terminal state and survives 
   await expect(failure).toHaveCount(0);
 });
 
-test("a sheet closed during confirmation reopens through 继续定稿", async ({
+test("capture purpose rebuilds the plan, clears consent, and survives confirmation recovery", async ({
   page,
-}) => {
+}, testInfo) => {
+  test.setTimeout(120_000);
+  const purposes: string[] = [];
+  await page.route("**/__pb_v2/preflights", async (route) => {
+    purposes.push(route.request().postDataJSON().draft.capturePurpose);
+    await route.continue();
+  });
   await isolateLifecycleDocument(page);
   await page.goto("/workbench/prototypes/all");
   const row = page.locator("article").filter({ hasText: "冷链异常处置台" });
@@ -282,12 +289,37 @@ test("a sheet closed during confirmation reopens through 继续定稿", async ({
   await row.getByRole("button", { name: "定稿并采集" }).click();
   const sheet = page.getByTestId("lifecycle-finalization-sheet");
   await expect(sheet.getByText("预检完成，等待确认候选方案已经收敛。")).toBeVisible({ timeout: 90_000 });
+  await expect(sheet.getByTestId("capture-plan")).toContainText("计划实采");
+  await expect.poll(() => purposes.at(-1)).toBe("implementation-delivery");
+  const purposeScreenshot = testInfo.outputPath("capture-purpose-default.png");
+  await sheet.screenshot({ path: purposeScreenshot });
+  await testInfo.attach("capture-purpose-default", {
+    path: purposeScreenshot,
+    contentType: "image/png",
+  });
+  const convergence = sheet.getByRole("checkbox", {
+    name: "候选方案已经收敛，正式入口和 Registry 只保留唯一方案",
+  });
+  await convergence.check();
+  await sheet.getByTestId("capture-purpose")
+    .getByText("实现交付（默认）", { exact: true }).click();
+  await page.getByRole("option", { name: "全部外观检查", exact: true }).click();
+  await expect.poll(() => purposes.at(-1)).toBe("appearance-audit");
+  await expect(sheet.getByText("正在重新计算采集计划…")).toBeHidden({ timeout: 90_000 });
+  await expect(convergence).not.toBeChecked();
+  await expect(sheet.getByRole("button", { name: "按计划开始采集" })).toBeDisabled();
   await sheet.getByRole("button", { name: "收起定稿流程" }).click();
   await expect(sheet).toBeHidden();
   const resume = row.getByRole("button", { name: "继续定稿" });
   await expect(resume).toBeEnabled();
   await resume.click();
   await expect(sheet.getByText("预检完成，等待确认候选方案已经收敛。")).toBeVisible({ timeout: 90_000 });
+  await expect(sheet.getByTestId("capture-purpose")).toContainText("全部外观检查");
+  await page.reload();
+  await row.getByRole("button", { name: "继续定稿" }).click();
+  await expect(sheet.getByText("预检完成，等待确认候选方案已经收敛。")).toBeVisible({ timeout: 90_000 });
+  await expect.poll(() => purposes.at(-1)).toBe("appearance-audit");
+  await expect(sheet.getByTestId("capture-purpose")).toContainText("全部外观检查");
 });
 
 test("formal and unbound results keep the same classification across overview, tasks, and review", async ({

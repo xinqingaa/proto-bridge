@@ -930,6 +930,7 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
     let traceStopped = false;
     let keepContext = false;
     let fallback = false;
+    let observedStateDigest: string | undefined;
     const abortCase = () => {
       void context?.close().catch(() => undefined);
     };
@@ -1206,6 +1207,9 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
             checkpointId: input.entry.scenario.checkpoint.checkpointId,
           });
         }
+        const canObserveState =
+          input.entry.selectedCase.captureScope.screenshots.mode !== 'selected' &&
+          described.payload.manifest.capabilities.includes('capture-state');
         const canShare = Boolean(
           this.sharedBrowser &&
           !forceIndependent &&
@@ -1219,7 +1223,7 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
           (!input.entry.scenario ||
             input.entry.scenario.scenario.appearancePolicy === 'shared'),
         );
-        if (!shared && canShare) {
+        if (!shared && canObserveState) {
           await page.clock.setFixedTime(
             new Date(await page.evaluate(() => Date.now())),
           );
@@ -1255,6 +1259,17 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
         });
         if (ready.kind !== 'readiness')
           throw new Error('Unexpected readiness response.');
+        if (canObserveState) {
+          try {
+            const before = await requestRuntimeCapture(page, { kind: 'capture-state' });
+            observedStateDigest = before.payload.stateDigest;
+            if (shared && observedStateDigest !== shared.stateDigest) {
+              throw new Error('Business state changed before the appearance observation.');
+            }
+          } catch (error) {
+            if (!(error instanceof RuntimeProtocolError && error.code === 'capture-state-unsupported')) throw error;
+          }
+        }
         this.metrics.semanticSnapshots += 1;
         const snapshot = await requestRuntimeCapture(page, {
           kind: 'semantic-snapshot',
@@ -1264,12 +1279,12 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
           throw new Error('Unexpected semantic-snapshot response.');
         }
         let stateDigest = shared?.stateDigest;
-        if (canShare) {
+        if (observedStateDigest) {
           try {
             const state = await requestRuntimeCapture(page, {
               kind: 'capture-state',
             });
-            if (shared && state.payload.stateDigest !== shared.stateDigest) {
+            if (state.payload.stateDigest !== observedStateDigest) {
               throw new Error(
                 'Business state changed during the appearance observation.',
               );
@@ -1392,11 +1407,11 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
       phaseStarted = performance.now();
       await assertRenderedImagesLoaded(page);
       const binaries = await screenshotBinaries(page, input.entry);
-      if (this.prepared?.context === context) {
+      if (observedStateDigest) {
         const observed = await requestRuntimeCapture(page, {
           kind: 'capture-state',
         });
-        if (observed.payload.stateDigest !== this.prepared.stateDigest) {
+        if (observed.payload.stateDigest !== observedStateDigest) {
           throw new Error(
             'Business state changed between semantic observation and screenshot completion.',
           );

@@ -8,7 +8,7 @@ Evidence Region 用于定位与验收，不是目标侧组件边界、列表项�
 
 1. 读取 `proto-bridge://guides/handoff-consumer`。
 2. 调用 `inspect_evidence_workspace`，核对 Workspace、projection contract version 和 capabilities；缺少 Handoff index 声明的能力时，以 `incompatible-consumer-capability` 停止，不尝试旧读取链路。
-3. 调用 `read_handoff_index`。在编辑前原样报告全部 `mandatoryRisks`，并固定其中的 Snapshot、revision、Screen 顺序和 Screenshot digest 分组。
+3. 调用 `read_handoff_index`。在编辑前原样报告全部 `mandatoryRisks`，并固定其中的 Snapshot、revision、Screen 顺序和 Screenshot digest 分组。分别理解业务状态覆盖、主题规则覆盖和实际截图范围；引用复用、规则派生与未核验外观不能当作已实拍页面。
 4. 逐个实现范围内的 Screen 调用 `read_screen_packet`。先按 baseline implementation packet 与 `canonicalBrief` 明确主滚动边界、主 section、状态矩阵和固定业务数据。主滚动看 `canonicalBrief.primaryScroll` 与 `baseline.structure.scrollContainers`（compact regions 不含 per-region `scrollOwner`）。
 5. 按 Handoff index 的 digest 分组，对每份不同 Screenshot 内容选择 `representativeBlobId` 调用 `read_evidence_screenshot`，确认返回 `type=image` 的 MCP ImageContent，并记录它覆盖的全部 Case；同一 digest 不重复读取图片内容。不能把 Blob metadata、base64 文本或相似 Variant 当作已查看 Screenshot。
 6. 每个 Screen 在编辑前调用 `inspect_target_readiness` 报告 resolver coverage、machine authority 和 blockers。直接使用 `implementationInventory.resolverInput` 批量解析组件和 Token，并按 inventory occurrence 核对 `regionId`、role、slot 与适用 `caseId`。此后只为非 baseline Case 消费 `read_case_delta.patches` 的 Region/内容/状态/业务 key/交互语义变化（patch 使用 `regionId` / `caseId`）。只为明确 unresolved 或 provenance 问题调用 `read_evidence_detail`。`read_implementation_plan` / `read_implementation_tranche` 仅用于诊断或 Review 辅助，不是默认实施路径，不得按 Region tranche 顺序编码。缺少 machine authority 的维度应在验证结论中保持未验证或说明人工依据，不得为了补齐 authority 而向目标工程加入实验性 Runtime Harness。
@@ -20,3 +20,7 @@ Evidence Region 用于定位与验收，不是目标侧组件边界、列表项�
 缺少固定对象、Snapshot、revision 或 Screenshot 时，报告阻塞项；只有它确实阻止实现时才暂停。
 
 Target resolver 的 `pending` 表示该键待实现；报告理由与影响，不猜测替代组件或 Token。`candidate`、`stale`、`conflict`、`unresolved`、`unsupported`、`pending` 均不能作为精确命中。
+
+设计定义从 Handoff 固定的组件、Token、主题表和资源目录读取；页面证据说明实例、参数、状态、绑定及组合关系。实现交付采用代表外观时，应依据声明规则和固定来源实现其余外观，并披露这些外观的像素结果未逐项观察。目标 DS 已同步的状态由 Target 查询核验，不能写回或扩充 Source Evidence。
+
+`appearanceEvidence` 的 `rules`、`sources` 和 `referenceSets` 在当前 Screen packet 内共用；按派生条目的 `ruleKey`、`baselineSourceId` 和 `representativeSetId` 读取其规则与精确 revision 来源。这些字典 ID 不作为跨查询的持久身份。`uncheckedDimensions` 表示缺乏可靠支持的维度；即使为空，`pixels=unobserved` 仍表示该外观没有实拍。

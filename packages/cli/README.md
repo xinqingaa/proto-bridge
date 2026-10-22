@@ -33,7 +33,7 @@ proto-bridge workspace reset [--apply --plan-id <id> --generation <id>] [--json]
 proto-bridge workspace reinitialize --confirm-destroyed <workspaceId> [--json]
 proto-bridge preflight --selection <file> [--manifest <file>]
 proto-bridge capture run --selection <file> [--bundle <id>] [--acknowledge-unofficial-capture]
-proto-bridge deliver --prototype <id> [--target <dir>] [--acknowledge-unofficial-capture]
+proto-bridge deliver --prototype <id> [--capture-purpose implementation-delivery|appearance-audit] [--target <dir>] [--acknowledge-unofficial-capture]
 proto-bridge deliver --bundle <id> --snapshot <id> [--ack-risk <kind>] [--target <dir>] [--acknowledge-unofficial-capture]
 proto-bridge job status|cancel|retry --job <id>
 proto-bridge bundle list|inspect|fork|archive|clean
@@ -68,7 +68,7 @@ proto-bridge service start
 
 ## Selection
 
-`--selection` 接受 Core `SelectionDraft` JSON。可以用 `--manifest` 提供离线 Runtime manifest，否则 Preflight 从配置的 instrumented Runtime 读取 manifest。
+`--selection` 接受 Core `SelectionDraft` JSON。`capturePurpose` 默认是 `implementation-delivery`；`appearance-audit` 请求全部外观实采。`--capture-purpose` 可覆盖 JSON 中的用途。Core 生成业务主干、代表实采与规则派生的固定计划；缺少适用规则的局部范围回退全外观实采，入口不自行推断等价。可以用 `--manifest` 提供离线 Runtime manifest，否则 Preflight 从配置的 instrumented Runtime 读取 manifest。
 
 PBWork 与 CLI 对同一规范化 Draft 必须生成相同 Case identity 和 Matrix。
 

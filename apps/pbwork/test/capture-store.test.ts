@@ -43,12 +43,16 @@ describe("PBWork V2 capture store", () => {
     expect(createPrototypeCaptureDraft("unknown-prototype")).toBeNull();
   });
 
-  it("includes all three yike themes and both modes in the formal Draft", () => {
-    const draft = createPrototypeCaptureDraft("yike")!;
+  it("can request an exhaustive appearance audit without changing business scope", () => {
+    const draft = createPrototypeCaptureDraft("yike", "appearance-audit")!;
     const resolved = resolveSelectionMatrix(draft, buildRuntimeCaptureManifest("yike"));
     expect(resolved.matrix).toHaveLength(414);
     expect(resolved.selection.declaredThemeModes).toHaveLength(6);
     expect(new Set(resolved.matrix.map((entry) => entry.selectedCase.caseId)).size).toBe(414);
+    const delivery = createPrototypeCaptureDraft("yike")!;
+    expect(delivery.capturePurpose).toBe("implementation-delivery");
+    expect(delivery.screens).toEqual(draft.screens);
+    expect(delivery.themePack).toEqual(draft.themePack);
   });
 
   it("drops local lifecycle after CLI reset when the session generation changes", async () => {

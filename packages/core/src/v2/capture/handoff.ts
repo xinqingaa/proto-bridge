@@ -22,6 +22,7 @@ import { resolveCaseEvidence } from '../resolver/active-ref-resolver.js';
 import type { V2Store } from '../store/types.js';
 import { generateOperationalId } from '../store/id-generator.js';
 import type { SnapshotCatalogRef } from '../contracts/snapshot.js';
+import { buildEvidenceReadModel, projectCaptureCoverage, capturePlanCoversSelection } from '../evidence-read-model.js';
 
 export type HandoffEvaluation = {
   selectedCases: AgentHandoff['selectedCases'];
@@ -295,6 +296,20 @@ export async function evaluateAgentHandoff(
       message: `${input.interactionCoverage.missingScenarioIds.length} required interaction Scenario(s) have no Evidence.`,
       refs: input.interactionCoverage.missingScenarioIds,
     });
+  }
+  if (sourceRun.selection.capturePlan && capturePlanCoversSelection(sourceRun.selection.capturePlan, selectedCases)) {
+    const evidence = buildEvidenceReadModel({ snapshot, runs, revisions, blobs });
+    const fixedCases = evidence.screens.flatMap((screen) => screen.cases).filter((item) =>
+      selectedRefs.some((selected) => selected.resolution === 'resolved' && selected.caseId === item.caseId
+        && selected.revisionId === item.revisionId));
+    const coverage = projectCaptureCoverage(sourceRun.selection.capturePlan, fixedCases, selectedCases);
+    if (coverage.themeRules.uncheckedDerivationCount) {
+      risks.push({
+        kind: 'reconstruction-readiness',
+        message: `${coverage.themeRules.uncheckedDerivationCount} appearance derivations lack reliable sources inside the fixed Handoff selection; their pixels remain unobserved.`,
+        refs: coverage.derivations.filter((item) => item.status === 'unchecked').map((item) => `${item.caseId}/${item.scopeKey}`),
+      });
+    }
   }
   for (const kind of requiredCatalogKinds) {
     if (!snapshot.catalogRefs.some((reference) => reference.kind === kind)) {

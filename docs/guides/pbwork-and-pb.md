@@ -35,14 +35,16 @@ DS 业务实例必须传稳定 `inspectId`。业务局部证据节点必须显�
 
 PBWork 的正式交付由“待确定 → 已定稿”生命周期动作触发。阶段、操作和固定产物引用保存在 Core Store root 下 `pbwork/<workspaceId>/lifecycle-v1.json`，由 Local Service 校验 Workspace generation 与 revision 后写入，并在 Job 结束或 Service 重启后继续 reconciliation。PBWork 的 `prototypeLifecycle` Pinia Store 缓存服务端文档；正式定稿直接调用 Capture Service Contract 创建 Preflight/Job，warning 与 risk UI 状态按 Prototype ID 隔离，不依赖 Capture Store 的全局采集字段。它触发整原型 `SelectionDraft` 并提交人的确认：
 
-1. 整原型 Preflight；
+1. 整原型 Preflight，默认用途为“实现交付”；
 2. 用户逐项确认现有 warning，并确认候选方案已经收敛；
 3. 执行整原型采集；
 4. 用户逐项确认现有 mandatory risk；
 5. Local Service 用同一 operation key 创建或复用 Handoff 和 Delivery，并原子发布 Agent Prompt、Receipt 与 Review 产物；
 6. 只有固定 Job/Bundle/Snapshot/Handoff/Delivery 都验证成功后，服务端才提交“已定稿”及该组引用。
 
-PBWork 不显示范围选择、页面采集、控件采集、重新采集或提示词生成/重生成按钮。已定稿和已归档只读取生命周期记录绑定的 Evidence 与提示词；刷新后按 `deliveryId` 回读已存在的 Agent prompt。已定稿若需修改，点击“回退待确定”后由 Local Service 清理该次定稿绑定的 Bundle 并解除正式产物引用；回退期间界面轮询服务端结果，失败会显示原因并提供“重试回退”。已归档永久只读。全量 Store 清理走 `pnpm pb:reset`，会同时清除生命周期 sidecar；Workbench 不提供对等清空按钮。旧 `pbwork.prototype-lifecycle.v2` 只在 sidecar 为空且 Workspace/generation 匹配时尝试迁移，Service 逐项验证 Job、Run、Snapshot Coverage、Handoff、Delivery Receipt 和 Prompt 固定引用；缺件或不一致的 final/archived 记录会降为“待确定”，明确标记 Evidence 仅作诊断。未绑定历史 Evidence 不提供人工认领。
+PBWork 定稿确认页提供“实现交付（默认）”和“全部外观检查”两种采集用途。实现交付完整覆盖业务状态与交互，依据 Core 固定的规则补采代表外观；缺少适用规则的范围保留全部外观实采。全部外观检查实拍每个业务项的全部声明主题与模式。界面展示业务项、计划实采项、规则派生项和全外观范围；切换用途或恢复确认面板时会重新预检；等待期间禁用确认和开始操作，并清除旧的 warning 确认。预检连接中断或页面刷新引起的请求取消保留操作与已选用途，恢复后可重新检查；服务端校验错误仍明确终止定稿。采集开始后不能切换用途。
+
+PBWork 不显示页面范围选择、页面采集、控件采集、重新采集或提示词生成/重生成按钮。已定稿和已归档只读取生命周期记录绑定的 Evidence 与提示词；刷新后按 `deliveryId` 回读已存在的 Agent prompt。已定稿若需修改，点击“回退待确定”后由 Local Service 清理该次定稿绑定的 Bundle 并解除正式产物引用；回退期间界面轮询服务端结果，失败会显示原因并提供“重试回退”。已归档永久只读。全量 Store 清理走 `pnpm pb:reset`，会同时清除生命周期 sidecar；Workbench 不提供对等清空按钮。旧 `pbwork.prototype-lifecycle.v2` 只在 sidecar 为空且 Workspace/generation 匹配时尝试迁移，Service 逐项验证 Job、Run、Snapshot Coverage、Handoff、Delivery Receipt 和 Prompt 固定引用；缺件或不一致的 final/archived 记录会降为“待确定”，明确标记 Evidence 仅作诊断。未绑定历史 Evidence 不提供人工认领。
 
 CLI 不受 PBWork 生命周期约束，继续支持 `deliver --prototype <id>`、`--screen <id|slug>`、`--only-variant <id>`、`--only-scenario <id>` 和 `--selection`。这些入口会发出非正式采集警告：交互终端确认 `y` / `yes`，非 TTY / `--json` 需要 `--acknowledge-unofficial-capture`。CLI 产生的 Bundle 不改变 PBWork 生命周期，也不会自动出现在“定稿采集”页。默认目标路径来自 Workspace `delivery.targetRoot`，`--target` 只覆盖单次命令。
 
@@ -51,7 +53,7 @@ PBWork 展示 Core 返回的：
 - 规范化 Selection；
 - Preflight ready/blocked；
 - warning 和接受状态；
-- Case Matrix（界面文案为「将采集 N 项」）；
+- 固定采集计划与 Case Matrix（分别列出业务范围、实采项与规则派生外观）；
 - 运行中的 Job；
 - Run、Snapshot、Coverage、Issue 和 Handoff。
 

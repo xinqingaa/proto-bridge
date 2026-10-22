@@ -6,10 +6,12 @@ import type {
   Fact,
   Provenance,
 } from "./contracts/evidence.js";
-import type { Run } from "./contracts/run.js";
+import { AppearanceDimension, type CapturePlan, type Run, type SelectedCase } from "./contracts/run.js";
 import { computeScopeKey } from "./contracts/scope.js";
 import type { BundleSnapshot } from "./contracts/snapshot.js";
 import type { ThemeIdentity } from "./theme/schema.js";
+import { V2ContractError } from "./contracts/errors.js";
+import { resolveActiveRef } from "./resolver/active-ref-resolver.js";
 
 export type EvidenceFactCategory =
   | "content"
@@ -83,6 +85,13 @@ export type EvidenceCaseReadModel = {
   scopeKey?: string;
   /** Absent for historical Evidence; never infer execution from declarations. */
   execution?: EvidenceExecutionReadModel;
+  /** Only set for a successful source-Run Attempt whose fixed dependency matches its plan. */
+  capturePlanSource?: {
+    runId: string;
+    inputVersion: string;
+    /** Exact requested Scopes proven by successful current-Run Attempts for this revision. */
+    scopeKeys: string[];
+  };
   evidenceLevel: CaseEvidenceRevision["evidenceLevel"];
   scopeKind: "page" | "fragment";
   fragmentLabels: string[];
@@ -129,6 +138,9 @@ export type EvidenceReadModel = {
   snapshotId: string;
   /** Pack, named theme and mode fixed by the source Run. Case `themeId` is the mode. */
   themePack?: ThemeIdentity;
+  /** Authored planning claims, separate from observed Case revisions. */
+  capturePlan?: CapturePlan;
+  captureCoverage?: CaptureCoverageProjection;
   themeCoverage?: {
     declared: Array<{ theme: string; mode: string }>;
     captured: Array<{ theme: string; mode: string; caseCount: number }>;
@@ -165,6 +177,138 @@ export type EvidenceReadModel = {
   failedAttempts: EvidenceFailedAttemptReadModel[];
   messages: string[];
 };
+
+export type CaptureCoverageProjection = {
+  purpose: CapturePlan['purpose'];
+  baseline: CapturePlan['baseline'];
+  fullCaseCount: number;
+  business: {
+    expectedCaseCount: number;
+    observedCaseCount: number;
+    missingCaseCount: number;
+    status: 'complete' | 'partial';
+  };
+  screenshots: {
+    plannedCaseCount: number;
+    observedCaseCount: number;
+    missingCaseCount: number;
+    unobservedAppearanceCount: number;
+    status: 'complete' | 'partial';
+  };
+  themeRules: {
+    expectedDerivationCount: number;
+    supportedDerivationCount: number;
+    uncheckedDerivationCount: number;
+    status: 'complete' | 'partial';
+  };
+  derivations: Array<{
+    caseId: string;
+    scopeKey: string;
+    screenId: string;
+    variantId: string;
+    theme?: string;
+    mode: string;
+    ruleScreenId: string;
+    ruleId: string;
+    ruleKey: string;
+    rationale: string;
+    status: 'rule-derived' | 'unchecked';
+    dimensions: Array<{
+      dimension: CapturePlan['rules'][number]['dimensions'][number];
+      source: 'rule-derived' | 'unchecked';
+    }>;
+    businessSource: 'reference-reuse' | 'unchecked';
+    baseline?: { caseId: string; scopeKey: string; revisionId: string };
+    representatives: Array<{ caseId: string; scopeKey: string; revisionId: string }>;
+    missingSourceCaseIds: string[];
+    pixels: 'unobserved';
+  }>;
+};
+
+/** Business identity retains state, action checkpoint, viewport and exact Scope. */
+export function captureBusinessKey(selected: SelectedCase): string {
+  const key = selected.caseKey;
+  return JSON.stringify({
+    screenId: key.screenId, variantId: key.variantId, deviceId: key.deviceId,
+    scenario: key.scenario ? { ownerScreenId: key.scenario.ownerScreenId, scenarioId: key.scenario.scenarioId, checkpointId: key.scenario.checkpointId } : null,
+    scopeKey: computeScopeKey(selected.captureScope),
+  });
+}
+
+/** A wider fixed revision remains readable, but a new requested Scope needs its own plan. */
+export function capturePlanCoversSelection(plan: CapturePlan, selectedCases: SelectedCase[]): boolean {
+  const business = new Set(plan.businessCases.map(captureBusinessKey));
+  return selectedCases.length > 0 && selectedCases.every((item) => business.has(captureBusinessKey(item)));
+}
+
+/** Re-evaluate authored derivation support using only the supplied fixed Case revisions. */
+export function projectCaptureCoverage(
+  plan: CapturePlan,
+  cases: EvidenceCaseReadModel[],
+  selectedCases?: SelectedCase[],
+): CaptureCoverageProjection {
+  if (selectedCases && !capturePlanCoversSelection(plan, selectedCases)) {
+    throw new V2ContractError('unknown-reference', 'Capture plan does not cover the selected business Scope.');
+  }
+  const selectedBusiness = selectedCases ? new Set(selectedCases.map(captureBusinessKey)) : undefined;
+  const inScope = (item: SelectedCase) => !selectedBusiness || selectedBusiness.has(captureBusinessKey(item));
+  const fixed = new Map(cases.flatMap((item) =>
+    (item.capturePlanSource?.scopeKeys ?? []).map((scopeKey) => [`${item.caseId}#${scopeKey}`, item] as const)));
+  const source = (ref: { caseId: string; scopeKey: string }) => {
+    const item = fixed.get(`${ref.caseId}#${ref.scopeKey}`);
+    if (item?.capturePlanSource?.inputVersion !== plan.inputVersion) return undefined;
+    return item.scopeKey === ref.scopeKey ? item : { ...item, scopeKey: ref.scopeKey };
+  };
+  const selectedSource = (selected: SelectedCase) => source({ caseId: selected.caseId, scopeKey: computeScopeKey(selected.captureScope) });
+  const rules = new Map(plan.rules.map((rule) => [rule.ruleKey, rule]));
+  const sourceRef = (item: EvidenceCaseReadModel | undefined) => item ? {
+    caseId: item.caseId, scopeKey: item.scopeKey!, revisionId: item.revisionId,
+  } : undefined;
+  const reliable = (item: EvidenceCaseReadModel | undefined) => Boolean(item
+    && item.screenshotBlobIds.length > 0 && item.unknownCount === 0 && item.conflictCount === 0
+    && item.semanticCoverage === 'declared');
+  const observations = plan.observations.filter((item) => inScope(item.selectedCase));
+  const business = plan.businessCases.filter(inScope);
+  const derivations: CaptureCoverageProjection['derivations'] = plan.derivations.filter((item) => inScope(item.selectedCase)).map((item) => {
+    const rule = rules.get(item.ruleKey);
+    if (!rule) throw new V2ContractError('unknown-reference', `Capture plan rule ${item.ruleKey} is missing.`);
+    const baseline = source(item.baseline);
+    const representatives = rule.representatives.map(source);
+    const sourcesSupported = reliable(baseline) && representatives.every(reliable);
+    const supported = sourcesSupported && AppearanceDimension.options.every((dimension) => rule.dimensions.includes(dimension));
+    const baselineRef = sourceRef(baseline);
+    return {
+      caseId: item.selectedCase.caseId,
+      scopeKey: computeScopeKey(item.selectedCase.captureScope),
+      screenId: item.selectedCase.caseKey.screenId,
+      variantId: item.selectedCase.caseKey.variantId,
+      ...(item.selectedCase.caseKey.theme ? { theme: item.selectedCase.caseKey.theme } : {}),
+      mode: item.selectedCase.caseKey.themeId,
+      ruleKey: rule.ruleKey, ruleScreenId: rule.ruleScreenId, ruleId: rule.ruleId, rationale: rule.rationale,
+      status: supported ? 'rule-derived' : 'unchecked',
+      dimensions: AppearanceDimension.options.map((dimension) => ({ dimension, source: sourcesSupported && rule.dimensions.includes(dimension) ? 'rule-derived' : 'unchecked' })),
+      businessSource: reliable(baseline) ? 'reference-reuse' : 'unchecked',
+      ...(baselineRef ? { baseline: baselineRef } : {}),
+      representatives: representatives.flatMap((candidate) => { const ref = sourceRef(candidate); return ref ? [ref] : []; }),
+      missingSourceCaseIds: [
+        ...(!reliable(baseline) ? [item.baseline.caseId] : []),
+        ...rule.representatives.filter((_, index) => !reliable(representatives[index])).map((candidate) => candidate.caseId),
+      ],
+      pixels: 'unobserved',
+    };
+  });
+  const businessObserved = business.filter((item) => selectedSource(item)).length;
+  const screenshotsObserved = observations.filter((item) => selectedSource(item.selectedCase)?.screenshotBlobIds.length).length;
+  const supported = derivations.filter((item) => item.status === 'rule-derived').length;
+  return {
+    purpose: plan.purpose, baseline: plan.baseline,
+    fullCaseCount: observations.length + derivations.length,
+    business: { expectedCaseCount: business.length, observedCaseCount: businessObserved, missingCaseCount: business.length - businessObserved, status: businessObserved === business.length ? 'complete' : 'partial' },
+    screenshots: { plannedCaseCount: observations.length, observedCaseCount: screenshotsObserved, missingCaseCount: observations.length - screenshotsObserved, unobservedAppearanceCount: derivations.length, status: screenshotsObserved === observations.length ? 'complete' : 'partial' },
+    themeRules: { expectedDerivationCount: derivations.length, supportedDerivationCount: supported, uncheckedDerivationCount: derivations.length - supported, status: supported === derivations.length ? 'complete' : 'partial' },
+    derivations,
+  };
+}
 
 export type BuildEvidenceReadModelInput = {
   snapshot: BundleSnapshot;
@@ -421,6 +565,9 @@ export function projectExecutionSources(cases: EvidenceCaseReadModel[]): Evidenc
 export function buildEvidenceReadModel(
   input: BuildEvidenceReadModelInput,
 ): EvidenceReadModel {
+  const sourceRun = input.runs.find((run) => run.runId === input.snapshot.sourceRunId);
+  const plan = sourceRun?.selection.capturePlan;
+  const sourceAttempts = new Map(sourceRun?.attempts.map((attempt) => [`${attempt.caseId}#${attempt.scopeKey}`, attempt]));
   const cases = new Map(
     input.runs.flatMap((run) =>
       run.selection.cases.map(
@@ -431,6 +578,39 @@ export function buildEvidenceReadModel(
   const revisions = new Map(
     input.revisions.map((revision) => [revision.revisionId, revision] as const),
   );
+  const planScopeKeysByRevision = new Map<string, Set<string>>();
+  if (plan && sourceRun?.inputVersion === plan.inputVersion) {
+    const slotsByCase = new Map<string, typeof input.snapshot.activeSlots>();
+    for (const slot of input.snapshot.activeSlots) {
+      const slots = slotsByCase.get(slot.caseId) ?? [];
+      slots.push(slot);
+      slotsByCase.set(slot.caseId, slots);
+    }
+    const latestAttempts = new Map(input.snapshot.latestAttempts.map((attempt) => [`${attempt.caseId}#${attempt.scopeKey}`, attempt]));
+    for (const { selectedCase } of plan.observations) {
+      const scopeKey = computeScopeKey(selectedCase.captureScope);
+      const requestKey = `${selectedCase.caseId}#${scopeKey}`;
+      const attempt = sourceAttempts.get(requestKey);
+      const latest = latestAttempts.get(requestKey);
+      if (!attempt?.revisionId || attempt.runId !== sourceRun.runId
+        || latest?.attemptId !== attempt.attemptId || latest.runId !== sourceRun.runId
+        || computeScopeKey(attempt.captureScope) !== scopeKey
+        || (attempt.result !== 'captured' && attempt.result !== 'reused')) continue;
+      const revision = revisions.get(attempt.revisionId);
+      if (!revision || revision.caseId !== selectedCase.caseId || !revision.dependencyDigests?.some((dependency) =>
+        dependency.dependencyId === `runtime:${selectedCase.caseKey.screenId}` && dependency.digest === plan.inputVersion)) continue;
+      const activeSlots = slotsByCase.get(selectedCase.caseId) ?? [];
+      if (activeSlots.some((slot) => !revisions.has(slot.revisionId))) continue;
+      const resolved = resolveActiveRef({
+        snapshot: { activeSlots }, caseId: selectedCase.caseId, requestedScope: selectedCase.captureScope,
+        revisionScopeOf: (revisionId) => revisions.get(revisionId)!.captureScope,
+      });
+      if (!('slot' in resolved) || resolved.slot.revisionId !== revision.revisionId) continue;
+      const scopeKeys = planScopeKeysByRevision.get(revision.revisionId) ?? new Set<string>();
+      scopeKeys.add(scopeKey);
+      planScopeKeysByRevision.set(revision.revisionId, scopeKeys);
+    }
+  }
   const screenshots = screenshotOwners(input.blobs);
   const screens = new Map<string, EvidenceCaseReadModel[]>();
 
@@ -442,6 +622,9 @@ export function buildEvidenceReadModel(
     const regions = semanticRegions(facts);
     const scenario = selected.caseKey.scenario;
     const execution = executionOf(facts, selected.caseKey.screenId);
+    const planScopeKeys = planScopeKeysByRevision.get(revision.revisionId);
+    const planSource = plan && sourceRun && planScopeKeys
+      ? { runId: sourceRun.runId, inputVersion: plan.inputVersion, scopeKeys: [...planScopeKeys].sort() } : undefined;
     const model: EvidenceCaseReadModel = {
       caseId: selected.caseId,
       screenId: selected.caseKey.screenId,
@@ -462,6 +645,7 @@ export function buildEvidenceReadModel(
       revisionId: revision.revisionId,
       scopeKey: slot.scopeKey,
       ...(execution ? { execution } : {}),
+      ...(planSource ? { capturePlanSource: planSource } : {}),
       evidenceLevel: revision.evidenceLevel,
       scopeKind:
         revision.captureScope.fragments.length > 0 ? "fragment" : "page",
@@ -579,13 +763,15 @@ export function buildEvidenceReadModel(
     messages.push("所选 Evidence 已完整解析，可继续创建 Handoff。");
   }
 
-  const sourceRun = input.runs.find(
-    (run) => run.runId === input.snapshot.sourceRunId,
-  );
+  const captureCoverage = plan ? projectCaptureCoverage(plan, allCases) : undefined;
+  if (captureCoverage?.themeRules.uncheckedDerivationCount) {
+    messages.push(`${captureCoverage.themeRules.uncheckedDerivationCount} 个外观的规则引用缺少本次固定范围内的可靠来源，保持未核验。`);
+  }
   return {
     bundleId: input.snapshot.bundleId,
     snapshotId: input.snapshot.snapshotId,
     ...(sourceRun ? { themePack: sourceRun.selection.themePack } : {}),
+    ...(plan && captureCoverage ? { capturePlan: plan, captureCoverage } : {}),
     ...(sourceRun?.selection.declaredThemeModes ? {
       themeCoverage: projectThemeCoverage(sourceRun.selection.declaredThemeModes!, [...screens.values()].flat(), sourceRun.selection.themePack.theme,
         sourceRun.selection.cases.map((item) => ({ screenId: item.caseKey.screenId, variantId: item.caseKey.variantId, deviceId: item.caseKey.deviceId, ...(item.caseKey.scenario ? { scenario: item.caseKey.scenario } : {}), scopeKey: computeScopeKey(item.captureScope) }))),
@@ -593,7 +779,7 @@ export function buildEvidenceReadModel(
     sourceRunId: input.snapshot.sourceRunId,
     committedAt: input.snapshot.committedAt,
     deliveryStatus:
-      partial || semanticLimited || unknown > 0 || conflicts > 0
+      partial || semanticLimited || unknown > 0 || conflicts > 0 || captureCoverage?.themeRules.status === 'partial'
         ? "attention"
         : "ready",
     coverageStatus: partial ? "partial" : "complete",

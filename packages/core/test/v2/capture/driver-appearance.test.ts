@@ -39,13 +39,13 @@ function input(theme = 'default', signal?: AbortSignal): CaptureCaseInput {
   };
 }
 
-function harness(options: { rejectSwitch?: boolean; retryFails?: boolean; mutateAfterScreenshot?: boolean; abortOnSwitch?: AbortController } = {}) {
+function harness(options: { rejectSwitch?: boolean; retryFails?: boolean; mutateAfterScreenshot?: boolean; mutateDuringSnapshot?: boolean; abortOnSwitch?: AbortController } = {}) {
   const contexts: ReturnType<typeof makeContext>[] = [];
   const pages: ReturnType<typeof makePage>[] = [];
   const browserClose = vi.fn(async () => undefined);
   function makePage() {
     const page = {
-      url: '', theme: { ...selection.themePack }, screenshots: 0,
+      url: '', theme: { ...selection.themePack }, screenshots: 0, snapshots: 0,
       clock: { install: vi.fn(async () => undefined), setFixedTime: vi.fn(async () => undefined) },
       on: vi.fn(), goto: vi.fn(async (url: string) => {
         page.url = url;
@@ -89,9 +89,9 @@ function harness(options: { rejectSwitch?: boolean; retryFails?: boolean; mutate
     switch (request.kind) {
       case 'describe': payload = { manifest }; break;
       case 'readiness': payload = { actual, stable: true, checks: ['ready'] }; break;
-      case 'semantic-snapshot': payload = { actual, nodes: [] }; break;
+      case 'semantic-snapshot': page.snapshots++; payload = { actual, nodes: [] }; break;
       case 'capture-state':
-      case 'set-render-theme': payload = { actual, stateDigest: options.mutateAfterScreenshot && page.screenshots > 0 ? 'changed-state' : 'same-state' }; break;
+      case 'set-render-theme': payload = { actual, stateDigest: ((options.mutateAfterScreenshot && page.screenshots > 0) || (options.mutateDuringSnapshot && page.snapshots > 0)) ? 'changed-state' : 'same-state' }; break;
       case 'execute-action': payload = { actual, actionId: 'advance' }; break;
       case 'verify-checkpoint': payload = { actual, checkpointId: 'done' }; break;
       default: payload = { actual };
@@ -105,6 +105,27 @@ function harness(options: { rejectSwitch?: boolean; retryFails?: boolean; mutate
 beforeEach(() => { vi.clearAllMocks(); });
 
 describe('Prepared business state across theme appearances', () => {
+  it('also rejects state drift during independent transient Scenario screenshots', async () => {
+    harness({ mutateAfterScreenshot: true });
+    const driver = new PlaywrightCaseCaptureDriver();
+    const session = await driver.openSession();
+    const request = input();
+    request.entry.scenario = { ...request.entry.scenario!, scenario: { ...scenario, appearancePolicy: 'independent' } };
+    try {
+      await expect(session.captureCase(request)).rejects.toThrow('Business state changed between semantic observation and screenshot completion.');
+      expect(driver.metrics.sharedAppearanceCases).toBe(0);
+    } finally { await session.dispose(); }
+  });
+
+  it('rejects state drift inside the semantic observation before taking a screenshot', async () => {
+    const h = harness({ mutateDuringSnapshot: true });
+    const session = await new PlaywrightCaseCaptureDriver().openSession();
+    try {
+      await expect(session.captureCase(input())).rejects.toThrow('Business state changed during the appearance observation.');
+      expect(h.pages[0]!.screenshot).not.toHaveBeenCalled();
+    } finally { await session.dispose(); }
+  });
+
   it('reuses preparation/actions but observes and screenshots every appearance', async () => {
     const h = harness();
     const driver = new PlaywrightCaseCaptureDriver();

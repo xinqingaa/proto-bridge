@@ -28,7 +28,7 @@ export async function finalizePrototype(page: Page, label: string) {
     })
     .check();
   await acceptAll(sheet);
-  await sheet.getByRole("button", { name: "开始完整采集" }).click();
+  await sheet.getByRole("button", { name: "按计划开始采集" }).click();
 
   await expect
     .poll(

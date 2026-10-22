@@ -67,7 +67,10 @@ function allSelections(screenId: string) {
 }
 
 /** Build the stable default whole-prototype selection used by formal finalization. */
-export function createPrototypeCaptureDraft(prototypeId: string): SelectionDraft | null {
+export function createPrototypeCaptureDraft(
+  prototypeId: string,
+  capturePurpose: SelectionDraft["capturePurpose"] = "implementation-delivery",
+): SelectionDraft | null {
   const prototype = loadPrototypes().find((item) => item.id === prototypeId);
   if (!prototype) return null;
   const screens = loadPrototypeScreens()
@@ -87,6 +90,7 @@ export function createPrototypeCaptureDraft(prototypeId: string): SelectionDraft
   );
   return {
     prototypeId,
+    capturePurpose,
     themePack: resolved.identity,
     screens,
     acceptedWarningIds: [],

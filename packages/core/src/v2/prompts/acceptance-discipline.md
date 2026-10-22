@@ -7,6 +7,7 @@
 - 只验收 Handoff 选中的 Screen、Case、Variant 和 Scenario；不得把未选中的 loading、error、empty 或其它状态扩展为本次范围。
 - 所有判断使用同一 Handoff 的固定 Snapshot、revision、Screenshot 和 Reconstruction Obligations。
 - 按 Screen 和单一维度读取 `read_reconstruction_obligations`；obligation 只规定实施后复查分母，不规定编码顺序。
+- 分别报告业务状态覆盖、主题规则覆盖和实际截图范围。代表页面、引用复用或规则派生只支持其明确声明的维度，不能扩展为所有主题、模式及状态的像素验收。
 
 ## 前置完整性
 

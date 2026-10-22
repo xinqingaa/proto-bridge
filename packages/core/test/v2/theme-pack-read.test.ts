@@ -14,9 +14,11 @@ describe('Fixed theme table capture status', () => {
       FIXTURE_THEME_PACK_CATALOG,
     ) as CatalogRevision;
     expect(projectThemePack({ handoff, catalog }).captured).toBe(true);
+    expect(projectThemePack({ handoff, catalog }).pageCoverage).toEqual({ resolvedCaseCount: 1, allStates: 'not-evaluated' });
     expect(projectThemePack({ handoff, catalog, mode: 'dark' }).captured).toBe(
       false,
     );
+    expect(projectThemePack({ handoff, catalog, mode: 'dark' }).pageCoverage).toEqual({ resolvedCaseCount: 0, allStates: 'not-evaluated' });
     const key = {
       ...fixtures.referenceCaseSlice.RUN_1.selection.cases[0]!.caseKey,
       theme: 'default',

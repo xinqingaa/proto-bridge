@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-vue-next";
 import type { PrototypeRecord } from "@/design-system/types";
+import type { SelectionDraft } from "@proto-bridge/core/v2/capture";
 import { useCaptureStore } from "@/app/stores/capture";
 import { usePrototypeLifecycleStore } from "@/app/stores/prototypeLifecycle";
 import { caseDisplayLabel, groupCaptureFailures } from "@/capture/presentation";
@@ -24,6 +25,7 @@ import CaptureFailureGroups from "@/capture/CaptureFailureGroups.vue";
 import WorkbenchButton from "@/workbench/ui/WorkbenchButton.vue";
 import WorkbenchCheckbox from "@/workbench/ui/WorkbenchCheckbox.vue";
 import WorkbenchIconButton from "@/workbench/ui/WorkbenchIconButton.vue";
+import WorkbenchSelect from "@/workbench/ui/WorkbenchSelect.vue";
 
 const props = defineProps<{
   modelValue: boolean;
@@ -39,6 +41,7 @@ const capture = useCaptureStore();
 const router = useRouter();
 const deliveryTargetRoot = computed(() => capture.deliveryTargetRoot);
 const converged = ref(false);
+const preparing = ref(false);
 const submitting = ref(false);
 const polling = ref(false);
 const copied = ref(false);
@@ -46,6 +49,14 @@ let pollTimer: ReturnType<typeof setInterval> | undefined;
 
 const record = computed(() => lifecycle.recordFor(props.prototype.id));
 const operation = computed(() => record.value?.operation ?? { kind: "idle" as const });
+const capturePurpose = computed(() => operation.value.kind === "finalizing"
+  ? operation.value.capturePurpose ?? "implementation-delivery"
+  : "implementation-delivery");
+const capturePlan = computed(() => lifecycle.preflightFor(props.prototype.id)?.result.selection.capturePlan);
+const purposeOptions = [
+  { value: "implementation-delivery", label: "实现交付（默认）" },
+  { value: "appearance-audit", label: "全部外观检查" },
+];
 const warnings = computed(() => lifecycle.preflightFor(props.prototype.id)?.result.warnings ?? []);
 const warningChecks = computed(() => warnings.value.map((warning) => presentWarning(warning)));
 const riskPreview = computed(() => lifecycle.handoffPreviewFor(props.prototype.id));
@@ -120,7 +131,8 @@ const statusText = computed(() => {
   if (current.kind === "failed") return current.message;
   if (final.value) return "定稿已写入本地生命周期记录，Evidence 与提示词已经固定。";
   if (current.kind !== "finalizing") return "正在准备定稿检查。";
-  if (current.phase === "preflighting") return "正在检查整个原型的正式范围。";
+  if (connectionIssue.value && ["preflighting", "awaiting-confirmation"].includes(current.phase)) return "预检尚未完成，恢复连接后可重新检查。";
+  if (current.phase === "preflighting" || (preparing.value && current.phase === "awaiting-confirmation")) return "正在检查整个原型的正式范围。";
   if (current.phase === "awaiting-confirmation") return "预检完成，等待确认候选方案已经收敛。";
   if (current.phase === "capturing") return `正在采集整个原型 · ${completedCases.value}/${totalCases.value}`;
   if (current.phase === "awaiting-risks" && !riskPreview.value) return "正在读取这次定稿的风险。";
@@ -132,24 +144,30 @@ const statusText = computed(() => {
 });
 
 async function initialize() {
+  if (preparing.value || submitting.value) return;
   converged.value = false;
   copied.value = false;
-  const current = operation.value;
-  const artifacts = record.value?.artifacts;
-  if (record.value?.stage === "final" && artifacts) {
-    if (
-      capture.deliveryArtifact?.deliveryId !== artifacts.deliveryId ||
-      !capture.agentPrompt
-    ) {
-      await capture.loadDelivery(artifacts.deliveryId);
+  preparing.value = true;
+  try {
+    const current = operation.value;
+    const artifacts = record.value?.artifacts;
+    if (record.value?.stage === "final" && artifacts) {
+      if (
+        capture.deliveryArtifact?.deliveryId !== artifacts.deliveryId ||
+        !capture.agentPrompt
+      ) {
+        await capture.loadDelivery(artifacts.deliveryId);
+      }
+      return;
     }
-    return;
-  }
-  if (current.kind === "failed") return;
-  if (current.kind === "finalizing") {
-    await lifecycle.recoverFinalization(props.prototype);
-  } else if (record.value?.stage === "review") {
-    await lifecycle.prepareFinalization(props.prototype);
+    if (current.kind === "failed") return;
+    if (current.kind === "finalizing") {
+      await lifecycle.recoverFinalization(props.prototype);
+    } else if (record.value?.stage === "review") {
+      await lifecycle.prepareFinalization(props.prototype);
+    }
+  } finally {
+    preparing.value = false;
   }
 }
 
@@ -181,6 +199,20 @@ async function advance() {
     } else if (current.phase === "awaiting-risks") {
       await lifecycle.completeFinalization(props.prototype);
     }
+  } finally {
+    submitting.value = false;
+  }
+}
+
+async function changeCapturePurpose(value: string) {
+  if (preparing.value || submitting.value || value === capturePurpose.value) return;
+  converged.value = false;
+  submitting.value = true;
+  try {
+    await lifecycle.prepareFinalization(
+      props.prototype,
+      value as SelectionDraft["capturePurpose"],
+    );
   } finally {
     submitting.value = false;
   }
@@ -283,6 +315,13 @@ onBeforeUnmount(() => {
       <div class="flow-body">
         <p v-if="connectionIssue" class="flow-connection" role="status">
           <AlertTriangle :size="16" />{{ connectionIssue }}
+          <WorkbenchButton
+            v-if="operation.kind === 'finalizing' && ['preflighting', 'awaiting-confirmation'].includes(operation.phase)"
+            size="small"
+            tone="neutral"
+            :disabled="preparing || submitting"
+            @click="recheck"
+          >重新检查</WorkbenchButton>
         </p>
 
         <section
@@ -301,12 +340,12 @@ onBeforeUnmount(() => {
         </section>
 
         <section
-          v-else-if="operation.kind === 'finalizing' && operation.phase === 'preflighting'"
+          v-else-if="operation.kind === 'finalizing' && (operation.phase === 'preflighting' || (preparing && operation.phase === 'awaiting-confirmation'))"
           class="capture-progress"
           aria-live="polite"
         >
           <LoaderCircle :size="34" class="spin" />
-          <strong>正在检查整个原型的正式范围</strong>
+          <strong>{{ connectionIssue ? "预检尚未完成" : "正在检查整个原型的正式范围" }}</strong>
         </section>
 
         <section
@@ -315,7 +354,7 @@ onBeforeUnmount(() => {
         >
           <div class="section-lead">
             <strong>确认正式入口已经收敛</strong>
-            <p>本次会采集所有正式页面、状态和场景。成功后，页面结果和唯一提示词会固定下来。</p>
+            <p>本次覆盖所有正式页面、业务状态和场景。选择采集用途后，预检会列出需要实拍的范围。</p>
             <p v-if="deliveryTargetRoot" class="delivery-target">
               Agent 提示词将指向：<code>{{ deliveryTargetRoot }}</code>
             </p>
@@ -323,8 +362,31 @@ onBeforeUnmount(() => {
               改路径请编辑 proto-bridge.json 的 delivery.targetRoot，然后重启 pnpm pb:up。
             </p>
           </div>
+          <div class="capture-purpose" data-testid="capture-purpose">
+            <WorkbenchSelect
+              :model-value="capturePurpose"
+              :items="purposeOptions"
+              label="采集用途"
+              :disabled="preparing || submitting"
+              @update:model-value="changeCapturePurpose"
+            />
+            <p v-if="capturePurpose === 'implementation-delivery'">
+              完整采集业务状态与交互；复用固定设计定义，并补采声明的外观差异。未实拍的外观会明确标为规则派生。
+            </p>
+            <p v-else>每个业务状态都在全部声明主题与浅深模式下实拍，适合全面检查外观。</p>
+            <p v-if="submitting" role="status">正在重新计算采集计划…</p>
+            <div v-else-if="capturePlan" class="capture-plan" data-testid="capture-plan">
+              <strong>{{ capturePlan.businessCases.length }} 项业务状态与场景结果</strong>
+              <span>计划实采 {{ capturePlan.observations.length }} 项 · 规则派生 {{ capturePlan.derivations.length }} 项外观 · 全外观范围 {{ capturePlan.fullCaseCount }} 项</span>
+              <span v-if="capturePlan.observations.some(item => item.reason === 'fallback')">
+                缺少可复用规则的范围将保留全部外观实采。
+              </span>
+              <span>规则派生不代表这些外观已经实拍。</span>
+            </div>
+          </div>
           <WorkbenchCheckbox
             v-model="converged"
+            :disabled="preparing || submitting"
             label="候选方案已经收敛，正式入口和 Registry 只保留唯一方案"
           />
           <div v-if="warningChecks.length" class="check-list">
@@ -343,6 +405,7 @@ onBeforeUnmount(() => {
               </div>
               <WorkbenchCheckbox
                 :model-value="lifecycle.acceptedWarningsFor(props.prototype.id).includes(check.id)"
+                :disabled="preparing || submitting"
                 label="已了解"
                 @update:model-value="lifecycle.toggleWarning(props.prototype.id, check.id, $event)"
               />
@@ -438,10 +501,10 @@ onBeforeUnmount(() => {
           v-if="operation.kind === 'finalizing' && operation.phase === 'awaiting-confirmation'"
           tone="primary"
           :loading="submitting"
-          :disabled="!converged || !lifecycle.warningsAcceptedFor(props.prototype.id)"
+          :disabled="preparing || submitting || !converged || !lifecycle.warningsAcceptedFor(props.prototype.id)"
           @click="advance"
         >
-          <ScanLine :size="15" />开始完整采集
+          <ScanLine :size="15" />按计划开始采集
         </WorkbenchButton>
         <WorkbenchButton
           v-else-if="operation.kind === 'finalizing' && operation.phase === 'awaiting-risks' && riskChecks.length > 0"
@@ -473,6 +536,29 @@ onBeforeUnmount(() => {
   background: rgb(var(--v-theme-surface));
   color: rgb(var(--v-theme-on-surface));
   box-shadow: 0 -20px 60px rgba(20, 26, 34, 0.2);
+}
+.capture-purpose {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 8px;
+}
+.capture-purpose p,
+.capture-plan span {
+  margin: 0;
+  color: rgba(var(--v-theme-on-surface), 0.64);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+.capture-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.capture-plan strong {
+  font-size: 0.8rem;
 }
 .flow-header {
   display: flex;

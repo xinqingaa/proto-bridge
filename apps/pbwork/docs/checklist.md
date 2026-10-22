@@ -67,7 +67,7 @@
 - [ ] 返回与完成流符合 shell-and-nav（含嵌入 Runtime）
 - [ ] 产品离开拦截先认 `isForcedRuntimeNavigation()`；Workbench / Capture 换页由 Runtime 强制导航打开目标页
 - [ ] keepMounted 下各面板 ownsVariant，非当前面板由共享 TabViewport 标记采集边界；当前面板隐藏状态与 Overlay 仍有证据
-- [ ] 正式采集覆盖声明的全部主题／浅深模式，Case 身份包含命名主题，不能用取值表或页面完成计数代替主题覆盖
+- [ ] 正式采集固定全部声明主题／浅深模式的适用范围；默认实现交付完整保留业务状态与交互并按规则补采差异，全部外观检查实拍全矩阵；Case 身份包含命名主题，规则派生与实际截图覆盖分别展示
 - [ ] 选项 Sheet 选中行使用 `check` Icon 与 `typography.label`
 - [ ] Screen / Variant 已注册且可经 URL 打开
 - [ ] 叠加/校验等关键态有 Variant；theme ≠ variant
@@ -124,4 +124,4 @@
 
 - [ ] GlassSurface 已检查背景滤镜/高光、宿主形状继承和降低透明度降级；LaunchScreen 使用完整设备内容区；SVG/PNG 导出内容、倍率和实际像素一致
 
-- [ ] 若启用跨主题共享执行：Scenario 仅对主题无关动作显式声明 `appearancePolicy: "shared"`（缺省独立）；`captureState: true` 已有完整 business、每 Screen 和嵌套局部 UI 读取器，渲染主题不改业务偏好，主题相关偏好选中态页面的读取器声明 `appearancePolicy: "independent"`，缺覆盖/状态变化回退独立；每主题的截图、语义与失败检查仍执行。
+- [ ] 若启用跨主题共享执行：Scenario 仅对主题无关动作显式声明 `appearancePolicy: "shared"`（缺省独立）；`captureState: true` 已有完整 business、每 Screen 和嵌套局部 UI 读取器，渲染主题不改业务偏好，主题相关偏好选中态页面的读取器声明 `appearancePolicy: "independent"`，缺覆盖/状态变化回退独立；每个实际观察项的截图、语义与失败检查仍执行；未观察外观不得标记为实拍。

@@ -232,12 +232,13 @@ function consumeReviewApproval(
 }
 
 function matrixIdentity(preflight: CapturePreflight): string {
-  return JSON.stringify(
-    preflight.matrix.map((entry) => ({
+  return JSON.stringify({
+    capturePlan: preflight.selection.capturePlan,
+    cases: preflight.matrix.map((entry) => ({
       caseId: entry.selectedCase.caseId,
       captureScope: entry.selectedCase.captureScope,
     })),
-  );
+  });
 }
 
 function canonicalJson(value: unknown): string {
@@ -2069,6 +2070,21 @@ export class ProtoBridgeLocalService {
             'invalid-schema',
             `Warnings must be accepted individually: ${refreshed.unacceptedWarningIds.join(', ')}.`,
           );
+        }
+        if (operationKey) {
+          const lifecycle = await this.store.getPrototypeLifecycleDocument();
+          const bound = Object.values(lifecycle.records).find((item) =>
+            item.operation.kind === 'finalizing' && item.operation.operationKey === operationKey,
+          )?.operation;
+          if (
+            bound?.kind === 'finalizing' && bound.capturePurpose &&
+            bound.capturePurpose !== refreshed.selection.capturePlan?.purpose
+          ) {
+            throw new V2ContractError(
+              'preflight-expired',
+              'Capture purpose changed after Preflight; run Preflight again before creating a Job.',
+            );
+          }
         }
         const bundleId = existing?.bundleId ?? (body.bundleId
           ? BundleId.parse(body.bundleId)

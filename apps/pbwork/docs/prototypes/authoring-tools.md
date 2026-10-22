@@ -19,6 +19,8 @@ export default defineScreen({
 
 `scope.screenId`、`scope.id(slot)`、`scope.ref(slot, key?)` 与 `scope.node(slot, role, { style?, tokens?, key? })` 补齐 Screen 身份和 pbId 前缀。Action、Scenario、非默认 Variant 和跨 Screen 引用仍须作者显式声明；不从 DOM 或截图推导。
 
+Screen 可通过 `appearanceEvidence.rules` 声明业务用法与额外外观样本，供 Core 的“实现交付”计划减少重复观察；规则类型直接复用 Core Runtime Contract。它与共享业务执行的 `appearancePolicy` 各自负责不同边界。声明字段、条件绑定/资源分支要求、缺少所选代表态时的局部回退及未实拍来源见[外观用法声明](../../../../docs/reference/prototype-authoring.md#实现交付的外观用法声明)。Workbench 不自行计算主题复用政策。
+
 `fragment(..., { required: true })` 只声明 default Variant 的最小完整性边界。`pnpm pb:screens:generate` 生成 `src/prototypes/generated/default-boundaries.json`；该文件应纳入版本管理，审阅生成 diff。开发启动和构建前会生成；单测独立对比声明与已入库结果，防止漏生成。空边界、重复声明和重复 Screen 拒绝生成。变更声明后可直接运行此命令，不必等待构建。
 
 ## 一次声明样式和证据

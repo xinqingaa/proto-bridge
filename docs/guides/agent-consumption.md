@@ -33,7 +33,7 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 
 1. 读取资源 `proto-bridge://guides/handoff-consumer`。
 2. 调用 `inspect_evidence_workspace`，校验 Workspace、projection contract version 和 capabilities。能力缺失时停止，不回退旧链路。
-3. 调用 `read_handoff_index`，在编辑前原样报告 `mandatoryRisks` 的全部风险，并固定 Screen 顺序、Case/Scenario 范围与 Screenshot digest 分组。主题覆盖查看逐组合的 expected/captured/missing 状态数；所选范围完成与所有声明外观完成分开判断。
+3. 调用 `read_handoff_index`，在编辑前原样报告 `mandatoryRisks` 的全部风险，并固定 Screen 顺序、Case/Scenario 范围与 Screenshot digest 分组。`captureCoverage` 分别报告业务状态、计划实拍和规则派生范围；`themeCoverage` 仍表示全部声明外观逐组合的实际截图 expected/captured/missing 状态数。实现交付的计划完成，不等于所有主题与模式的全部页面均已实拍。历史缺少采集计划时，不推断规则覆盖。
 4. 每个实现范围内的 Screen 调用一次 `read_screen_packet`。用 `canonicalBrief`、baseline Structure 与 state 理解主滚动边界、主 section、状态矩阵和固定业务数据；主滚动看 `canonicalBrief.primaryScroll` 与 `baseline.structure.scrollContainers`（packet 的 compact regions **不含** per-region `scrollOwner`）。Evidence Region 用于定位与验收，不是目标侧组件边界、列表项边界或文件边界。Case 的 `execution` 说明业务执行来源：`shared-appearance` 是该外观真实截图与状态观测、共享来源 Case 的一次交互执行，不代表此主题独立重放。来源身份不等于 revision 引用；只把 `sourceExecutionStatus=matched` 附带的 `sourceRevisionId` 当作本固定范围可核对的来源，`mismatch` 或 `not-in-fixed-selection` 如实披露，不追 active/latest。没有执行来源的历史记录保持未知；主题特有行为须有独立证据。组件、Token 与资源定义读取固定 Catalog，页面使用事实不要求目标工程采用同一组件实现。
 5. 每份不同 Screenshot 内容使用 digest group 的 `representativeBlobId` 调用 `read_evidence_screenshot`，确认 MCP ImageContent，并记录覆盖的全部 Case。相同 digest 不重复注入；metadata、base64 文本和相似 Variant 不能替代 Screenshot。
 6. 每个 Screen 在编辑前调用 `inspect_target_readiness`，记录 resolver coverage、component/token candidate/conflict/unresolved 与 `pending`（Target 待实现，必须披露、不得替换实现；语义见 [Target 适配器](../architecture/proto-bridge.md)）、五维 machine authority 和 blockers。用 `implementationInventory` 的 `regionId`/`caseId` 批量解析组件和 Token。缺少 machine authority 的维度在最终结论中保持未验证或说明人工依据，不要求向目标工程加入实验性 Runtime Harness。`read_implementation_plan` / `read_implementation_tranche` 仅诊断或 Review 辅助，不是默认实施路径。
@@ -44,6 +44,10 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 11. continuation 只能续读同一规范化查询直到 `complete=true`。完成后不得重启；不得为“读全”轮询所有投影或在 selector 之间循环。一次针对性展开仍不能解决时，记录未知或风险。
 12. 完成实现并运行目标原生验证；随后按 Core `acceptance-discipline` 对固定 Handoff 选中范围执行验收。使用 `read_reconstruction_obligations` 按 Screen/维度分页，不读取完整 Acceptance Contract，也不把 obligation 顺序当作编码顺序。最后调用 `summarize_reconstruction_review` 汇总范围、Screenshot、Scenario、observation 完整度和五维 findings。
 
+实现交付的 Screen packet 通过 `appearanceEvidence` 记录未实拍外观的 authored rule、适用维度、基准状态及代表页面的固定 revision。先读取共用的 `rules`、`sources` 和 `referenceSets`，再按派生条目的 ID 引用理解其来源；这些字典 ID 只在当前 packet 内有效。`reference-reuse` 表示业务来源复用；`rule-derived` 表示依据已固定的使用规则、代表观察与主题定义派生；`unchecked` 表示本固定范围缺少可靠来源；`pixels=unobserved` 始终表示该外观没有实际截图。缩小 Handoff 范围会重新核对这些引用，来源不在所选范围或本次采集失败时不借用旧成功结果补全。派生条目没有伪造的 Case revision，也不能作为逐像素验收依据。字段语义见 [Evidence 模型](../architecture/evidence-model.md)。
+
+组件、Token、主题和资源定义从固定 Catalog 复用一次；页面证据记录实例、参数、业务状态、绑定及组合。目标 DS 已同步这一事实由 Target 查询独立核验，不能反写为 Source Evidence。Agent 结合这些定义和用法自行决定实现，不需要重新采集目标端已同步的组件定义。
+
 整包 Snapshot、原始 Case/revision/fragment、Catalog、Issue、Staleness、`read_agent_handoff` 与 `read_acceptance_contract` 已从 MCP 表面移除；不得回退到旧整包读取路径。
 
 也可以使用 MCP Prompt `consume_evidence_handoff` 创建同一读取任务；Prompt 不放宽上述规则。
@@ -53,9 +57,9 @@ MCP 客户端应把上述命令登记为一个 stdio server。Agent 不应通过
 | Tool | 用途 |
 | --- | --- |
 | `inspect_evidence_workspace` | 确认 Workspace、能力、契约版本、构建与进程身份、Store generation |
-| `read_handoff_index` | 默认入口：固定 refs、采集时钟、主题范围与已有截图组合、风险、Screen/Case/Scenario 摘要和 digest 分组；时钟读取规则见主题包解析模型 |
-| `read_screen_packet` | 单 Screen 的 baseline、canonicalBrief、inventory、Case/Scenario 和 Screenshot 分组；token 清单可附默认主题与模式的解析值 |
-| `read_theme_pack` | 只读 Handoff 固定的 theme-pack Catalog。按固定 Handoff 的 resolved Case 判断组合是否采集；取值表存在不等于页面已采集 |
+| `read_handoff_index` | 默认入口：固定 refs、采集时钟、业务／主题规则／实际截图覆盖、风险、Screen/Case/Scenario 摘要和 digest 分组；时钟读取规则见主题包解析模型 |
+| `read_screen_packet` | 单 Screen 的 baseline、canonicalBrief、inventory、Case/Scenario、Screenshot 分组与外观规则的固定来源；token 清单可附默认主题与模式的解析值 |
+| `read_theme_pack` | 只读 Handoff 固定的 theme-pack Catalog。`captured` 只表示至少一个 resolved Case，`pageCoverage` 给出该数量且明确 `allStates=not-evaluated`；全状态及截图覆盖查看 Handoff index，不能由取值表或一页证据推断 |
 | `read_implementation_plan` | 诊断：Region tranche 索引与 obligation 计数（非默认实施路径） |
 | `read_implementation_tranche` | 诊断：展开单个 tranche 的 obligations（非默认实施路径） |
 | `read_case_delta` | 指定 Case 相对 baseline 的语义 patch（regionId/caseId） |

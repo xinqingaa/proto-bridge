@@ -13,6 +13,7 @@ import {
   type PrototypeLifecycleStage as PrototypeLifecycle,
 } from "@proto-bridge/core/v2";
 import type { PrototypeRecord } from "@/design-system/types";
+import type { SelectionDraft } from "@proto-bridge/core/v2/capture";
 import type { RiskKind } from "@proto-bridge/core/v2";
 import {
   createPrototypeCaptureDraft,
@@ -512,12 +513,25 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         updatedAt: new Date().toISOString(),
       });
     },
-    async prepareFinalization(prototype: PrototypeRecord) {
+    async prepareFinalization(
+      prototype: PrototypeRecord,
+      requestedPurpose?: SelectionDraft["capturePurpose"],
+    ) {
       const current = this.requireRecord(prototype.id);
       if (current.stage !== "review") {
         throw new Error("只有待确定原型可以定稿。");
       }
       const existingOperation = current.operation.kind === "finalizing" ? current.operation : undefined;
+      if (existingOperation && !["preflighting", "awaiting-confirmation"].includes(existingOperation.phase)) {
+        throw new Error("采集开始后不能更改采集用途。");
+      }
+      const previousPurpose = existingOperation?.capturePurpose ??
+        this.preflights[prototype.id]?.result.selection.capturePlan?.purpose ??
+        "implementation-delivery";
+      const capturePurpose = requestedPurpose ?? previousPurpose;
+      const acceptedWarningIds: string[] = [];
+      const { [prototype.id]: _previousPreflight, ...remainingPreflights } = this.preflights;
+      this.preflights = remainingPreflights;
       const startedAt = existingOperation
         ? existingOperation.startedAt
         : new Date().toISOString();
@@ -534,7 +548,8 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
           operationKey,
           phase,
           startedAt,
-          acceptedWarningIds: existingOperation?.acceptedWarningIds ?? [],
+          capturePurpose,
+          acceptedWarningIds,
           acknowledgedRiskKinds: existingOperation?.acknowledgedRiskKinds ?? [],
         },
         updatedAt: startedAt,
@@ -542,7 +557,7 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
       this.clearConnectionIssue(prototype.id);
       this.acceptedWarnings = {
         ...this.acceptedWarnings,
-        [prototype.id]: [...(existingOperation?.acceptedWarningIds ?? [])],
+        [prototype.id]: [...acceptedWarningIds],
       };
       await this.persist();
 
@@ -556,7 +571,7 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         );
         return false;
       }
-      const draft = createPrototypeCaptureDraft(prototype.id);
+      const draft = createPrototypeCaptureDraft(prototype.id, capturePurpose);
       if (!draft) {
         this.failOperation(prototype.id, "finalize", "找不到原型或正式页面，无法创建整原型预检。");
         return false;
@@ -568,6 +583,13 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
         };
       } catch (error) {
         capture.setError(error);
+        if (error instanceof TypeError || (error instanceof Error && error.name === "AbortError")) {
+          this.setConnectionIssue(
+            prototype.id,
+            "预检连接中断，尚未创建采集任务。恢复连接后可以重新检查，已选择的采集用途仍然保留。",
+          );
+          return false;
+        }
         this.failOperation(
           prototype.id,
           "finalize",
@@ -602,7 +624,8 @@ export const usePrototypeLifecycleStore = defineStore("prototypeLifecycle", {
           operationKey,
           phase: "awaiting-confirmation",
           startedAt,
-          acceptedWarningIds: [...(existingOperation?.acceptedWarningIds ?? [])],
+          capturePurpose,
+          acceptedWarningIds: [...acceptedWarningIds],
           acknowledgedRiskKinds: [],
         },
         updatedAt: new Date().toISOString(),

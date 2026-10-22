@@ -62,7 +62,13 @@ export type ThemePackProjection = {
   defaultMode: string;
   theme: string;
   mode: string;
+  /** Legacy presence flag: at least one resolved selected Case, never exhaustive Screenshot coverage. */
   captured: boolean;
+  pageCoverage: {
+    resolvedCaseCount: number;
+    /** Full state/Screenshot coverage is reported by the fixed Handoff index. */
+    allStates: 'not-evaluated';
+  };
   catalogRevisionId: string;
   values: Record<string, ResolvedThemeValue>;
   provenance: Record<string, { chain: string[]; tier?: string }>;
@@ -104,6 +110,11 @@ export function projectThemePack(input: {
     const chain = table.provenance[tokenId]?.chain ?? [];
     provenance[tokenId] = { chain };
   }
+  const resolvedCases = input.handoff.selectedCases.filter((selected) => {
+    if (selected.resolution !== 'resolved') return false;
+    const key = selected.caseKey ?? readCaseIdParts(selected.caseId);
+    return Boolean(key && (key.theme ?? input.handoff.themePack.defaultTheme) === theme && key.themeId === mode);
+  });
   return {
     packId: input.handoff.themePack.packId,
     packDigest: input.handoff.themePack.packDigest,
@@ -111,11 +122,8 @@ export function projectThemePack(input: {
     defaultMode: input.handoff.themePack.defaultMode,
     theme,
     mode,
-    captured: input.handoff.selectedCases.some((selected) => {
-      if (selected.resolution !== 'resolved') return false;
-      const key = selected.caseKey ?? readCaseIdParts(selected.caseId);
-      return Boolean(key && (key.theme ?? input.handoff.themePack.defaultTheme) === theme && key.themeId === mode);
-    }),
+    captured: resolvedCases.length > 0,
+    pageCoverage: { resolvedCaseCount: resolvedCases.length, allStates: 'not-evaluated' },
     catalogRevisionId: input.catalog.catalogRevisionId,
     values,
     provenance,

@@ -1,6 +1,8 @@
+import { yikeAppearanceEvidence } from "../../appearance-evidence";
 import { defineScreen, fragment, screenScope } from "@/authoring/define-screen";
 export const scope = screenScope("yike", "habit-detail");
 export default defineScreen({
+  appearanceEvidence: yikeAppearanceEvidence["habit-detail"],
   prototypeId: "yike",
   slug: "habit-detail",
   label: "习惯详情",
@@ -81,7 +83,8 @@ export default defineScreen({
     {
       id: "archive-habit",
       label: "归档返回列表",
-      appearancePolicy: "shared" as const,
+      // Saving feedback is transient and belongs to the observed terminal state.
+      appearancePolicy: "independent" as const,
       initialVariantId: "default",
       actionIds: ["archive"],
       checkpoints: [
@@ -91,6 +94,7 @@ export default defineScreen({
           variantId: "default",
           requiredFragments: [
             { screenId: "yike.checkin", pbId: "yike.checkin.habit-list" },
+            { screenId: "yike.checkin", pbId: "yike.checkin.saved" },
           ],
         },
       ],
