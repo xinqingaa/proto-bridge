@@ -110,3 +110,10 @@ Icon 入口使用手机框外的图形目录：按图标/主题图形、归属�
 运行时 Icon 保持纯图形职责，不包含资源浏览或下载交互。图形几何只由原始 SVG 拥有，不从页面随意注入。
 
 `calendar-current` 用日历与中心定位靶心表达回到当前日期所在周期；不要用刷新图标表示日期导航。
+
+
+## 页面采集与资源复用
+
+正常 Capture 固定资源身份和页面使用，不再独立下载、归档 DS SVG。Icon 的 name 及最近语义节点所属装饰图标的信息保留在现有 props 通道；大型表盘的显式声明与实际 image view 也进入页面 props，详见 [主题包采集边界](../../../../../docs/architecture/theme-packs.md#原型绑定与-capture-边界)。装饰图标仍不增加独立 Fragment。缺失或失败的可见 HTML/SVG 图像使对应 Case 失败，不因取消归档而忽略。
+
+Target 继续复用 DS 生成清单与 PNG；通用资产 resolver、逐图标源摘要和 Target 实际使用的自动核验不属于当前能力。新引用交付不提供历史原稿离线恢复保证；历史 theme-asset Blob 保持固定读取兼容。

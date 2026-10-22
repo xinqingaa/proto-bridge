@@ -65,13 +65,31 @@ const assetModules = import.meta.glob(
   { eager: true, query: "?url&no-inline", import: "default" },
 ) as Record<string, string>;
 
+type ThemeArtworkEntry = {
+  id: string;
+  file: string;
+  sourceFile: string;
+  views: Array<{ id: string; label: string; viewBox: string }>;
+  sessionAsset?: string;
+  layerAsset?: string;
+};
+
 const artworkCatalogs = import.meta.glob(
   [
     "/src/design-system/theme-packs/*/artwork.json",
     "/src/prototypes/*/theme/artwork.json",
   ],
   { eager: true, import: "default" },
-) as Record<string, { assets: Array<{ file: string; sourceFile: string }> }>;
+) as Record<string, { packId: string; assets: ThemeArtworkEntry[] }>;
+
+export function themeArtworkEntry(
+  packId: string,
+  file: string,
+): ThemeArtworkEntry | undefined {
+  return Object.values(artworkCatalogs)
+    .find((catalog) => catalog.packId === packId)
+    ?.assets.find((entry) => entry.file === file);
+}
 
 const assetUrls = new Map<string, string>();
 

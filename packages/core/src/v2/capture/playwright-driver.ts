@@ -580,6 +580,56 @@ function scenarioFact(entry: CaseMatrixEntry): Fact[] {
   ];
 }
 
+async function assertRenderedImagesLoaded(page: Page): Promise<void> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      page.evaluate(async () => {
+        const images = Array.from(document.querySelectorAll('img, svg image'));
+        await Promise.all(
+          images.map(async (element) => {
+            const rect = element.getBoundingClientRect();
+            if (rect.width <= 0 || rect.height <= 0) return;
+            for (
+              let current: Element | null = element;
+              current;
+              current = current.parentElement
+            ) {
+              const style = getComputedStyle(current);
+              if (
+                style.display === 'none' ||
+                style.visibility === 'hidden' ||
+                Number(style.opacity) === 0
+              ) return;
+            }
+            const source = element instanceof HTMLImageElement
+              ? element.currentSrc || element.src
+              : (element as SVGImageElement).href.baseVal;
+            const identity = element.closest('[data-pb-id]')?.getAttribute('data-pb-id')
+              ?? element.tagName;
+            if (!source) throw new Error(`Page image has no source: ${identity}`);
+            const image = element instanceof HTMLImageElement ? element : new Image();
+            if (!(element instanceof HTMLImageElement)) {
+              image.src = new URL(source, document.baseURI).href;
+            }
+            try {
+              await image.decode();
+              if (!image.naturalWidth || !image.naturalHeight) throw new Error('empty image');
+            } catch {
+              throw new Error(`Page image failed to load: ${identity}`);
+            }
+          }),
+        );
+      }),
+      new Promise<never>((_resolve, reject) => {
+        timeout = setTimeout(() => reject(new Error('Page image loading timed out.')), 10_000);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function screenshotBinaries(
   page: Page,
   entry: CaseMatrixEntry,
@@ -976,6 +1026,7 @@ export class PlaywrightCaseCaptureDriver implements CaseCaptureDriver {
         evidenceLevel = 'screenshot-only';
       }
 
+      await assertRenderedImagesLoaded(page);
       const binaries = await screenshotBinaries(page, input.entry);
       await context.tracing.stop();
       traceStopped = true;

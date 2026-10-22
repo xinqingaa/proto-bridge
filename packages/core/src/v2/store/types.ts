@@ -270,6 +270,7 @@ export interface V2Store {
   getJob(jobId: JobId): Promise<CaptureJob | undefined>;
   /** Durably fixes the Catalog revisions an executing Job will commit, so restart recovery can commit them too. */
   stageJobCatalogs(jobId: JobId, catalogs: CatalogRevision[]): Promise<void>;
+  /** Legacy Catalog-Blob staging compatibility. Normal DS Capture stores references only. */
   stageJobCatalogAssets(
     jobId: JobId,
     catalogRevisionId: CatalogRevisionId,

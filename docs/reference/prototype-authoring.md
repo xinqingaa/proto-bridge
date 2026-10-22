@@ -269,3 +269,8 @@ Delivery Gate 前还应：
 测试边界（MUST）：新原型不得在 `packages/core/src/v2/fixtures` 下新增按原型命名的金标目录；Core/MCP/Consumer 复用唯一 `reference-case-slice`。允许 Registry 单测 + 至多一条 Runtime 冒烟 e2e；通用 Workbench/Capture e2e 改挂现有样板，不按 App 复制全套。详见 [PBWork 开发规范 · 新原型与测试边界](../pbwork/development.md#9-新原型与测试边界)。
 
 Workbench 浏览不以整页制作检查阻断页面，正式 Preflight 与完整性声明仍按本文执行，见[制作工具](../../apps/pbwork/docs/prototypes/authoring-tools.md#制作诊断与正式校验)。原型默认隐藏所有滚动条并保留滚动操作，只有用户明确要求时才显示。模拟设备安全区由共享 Runtime 外壳消费，自定义页头不复制草稿状态行，具体归属见同页安全区说明。
+
+
+## 已同步图形的页面证据
+
+DS 资源本体由同步链路维护，页面采集不重复归档 SVG。图标名称及语义节点所属装饰图标进入既有 props；原型自有大型表盘可用 `data-pb-artwork` 显式声明已登记 packId/file/assetId、views、sessionAsset/layerAsset 和当前状态。Runtime 核对真实子 image 与该声明，不从临时 URL 猜资源身份；具体当前输出和边界见 [主题包与 Capture](../architecture/theme-packs.md#原型绑定与-capture-边界)。原稿存在或 PNG 已同步都不能替代页面缺图检查、状态行为与视觉验证。

@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import {
   CaseAttempt,
   type CaseAttempt as CaseAttemptType,
@@ -150,7 +149,6 @@ async function executeStartedJob(
     ? await store.listCatalogRevisions(input.bundleId)
     : [];
   const catalogs: CatalogRevisionType[] = [];
-  const newCatalogIds = new Set<string>();
   for (const catalog of input.preflight.catalogInputs) {
     const existing = existingCatalogs.find(
       (candidate) =>
@@ -162,7 +160,6 @@ async function executeStartedJob(
       continue;
     }
     const catalogRevisionId = generateOperationalId('catalog', now());
-    newCatalogIds.add(catalogRevisionId);
     const entries = catalog.entries.map((entry) => ({
       ...entry,
       blobIds: [...entry.blobIds],
@@ -182,20 +179,8 @@ async function executeStartedJob(
     );
   }
   await store.stageJobCatalogs(jobId, catalogs);
-  for (const catalog of catalogs) {
-    if (
-      catalog.kind !== 'theme-pack' ||
-      !newCatalogIds.has(catalog.catalogRevisionId)
-    )
-      continue;
-    await storeThemePackAssets({
-      store,
-      jobId,
-      runtimeBaseUrl: input.runtimeBaseUrl,
-      catalogRevisionId: catalog.catalogRevisionId,
-      entries: catalog.entries,
-    });
-  }
+  // DS owns the asset bytes and Target exports. Capture fixes Catalog
+  // metadata only; a redundant download must not prevent any Case from running.
 
   const attempts: CaseAttemptType[] = [];
   const revisions: CaseEvidenceRevisionType[] = [];
@@ -462,77 +447,4 @@ async function executeStartedJob(
     jobId,
     storedBlobIds: committed.blobIds ?? [],
   };
-}
-
-async function storeThemePackAssets(input: {
-  store: V2Store;
-  jobId: JobId;
-  runtimeBaseUrl: string;
-  catalogRevisionId: string;
-  entries: Array<{ objectId: string; blobIds: string[]; value?: unknown }>;
-}): Promise<void> {
-  const manifest = input.entries.find((entry) =>
-    entry.objectId.endsWith('/manifest'),
-  );
-  const value = manifest?.value;
-  const assets =
-    value && typeof value === 'object' && 'assets' in value
-      ? (value as { assets?: unknown }).assets
-      : undefined;
-  if (!manifest || !Array.isArray(assets) || assets.length === 0) return;
-  let context: import('playwright').APIRequestContext | undefined;
-  try {
-    for (const asset of assets) {
-      if (!asset || typeof asset !== 'object') continue;
-      const record = asset as {
-        file?: string;
-        sha1?: string;
-        mediaType?: string;
-        url?: string;
-      };
-      if (!record.file || !record.sha1 || !record.url || !record.mediaType) {
-        throw new Error('Theme asset catalog entry is incomplete.');
-      }
-      const url = new URL(record.url, input.runtimeBaseUrl);
-      let bytes: Uint8Array;
-      if (url.protocol === 'data:') {
-        // Vite may inline assets; Node's data URL reader preserves both
-        // base64 and percent-encoded binary bytes without an HTTP request.
-        try {
-          const response = await fetch(url);
-          bytes = new Uint8Array(await response.arrayBuffer());
-        } catch (error) {
-          throw new Error(
-            `Theme asset ${record.file} data URL could not be read: ${resultReason(error)}`,
-          );
-        }
-      } else {
-        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-          throw new Error(
-            `Theme asset ${record.file} uses unsupported URL protocol ${url.protocol}.`,
-          );
-        }
-        context ??= await (await import('playwright')).request.newContext();
-        const response = await context.get(url.toString());
-        if (!response.ok()) {
-          throw new Error(
-            `Theme asset ${record.file} request failed (${response.status()}).`,
-          );
-        }
-        bytes = await response.body();
-      }
-      const sha1 = createHash('sha1').update(bytes).digest('hex');
-      if (sha1 !== record.sha1) {
-        throw new Error(`Theme asset ${record.file} sha1 mismatch.`);
-      }
-      const [blobId] = await input.store.stageJobCatalogAssets(
-        input.jobId,
-        input.catalogRevisionId,
-        [{ kind: 'theme-asset', mediaType: record.mediaType, bytes }],
-      );
-      if (blobId) manifest.blobIds.push(blobId);
-    }
-  } finally {
-    await context?.dispose();
-  }
 }

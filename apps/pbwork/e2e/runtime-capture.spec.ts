@@ -1,5 +1,4 @@
 import { expect, test } from "@playwright/test";
-import { createHash } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -13,7 +12,9 @@ import { fixtures } from "@proto-bridge/core/v2";
 import { LocalFileStore } from "@proto-bridge/core/v2/store";
 import type { RuntimeCaptureManifest } from "@proto-bridge/core/v2/runtime-contract";
 
-function selectionTheme(manifest: RuntimeCaptureManifest): SelectionDraft["themePack"] {
+function selectionTheme(
+  manifest: RuntimeCaptureManifest,
+): SelectionDraft["themePack"] {
   return {
     packId: manifest.theme.packId,
     packDigest: manifest.theme.packDigest,
@@ -31,9 +32,8 @@ function captureTheme(manifest: RuntimeCaptureManifest, mode = "light") {
   };
 }
 
-test("theme Catalog asset URLs preserve the exact authored bytes", async ({
+test("theme Catalog fixes DS identities without archive URLs or SVG bodies", async ({
   page,
-  request,
 }) => {
   await page.goto("/prototype/yike/__manifest__");
   await page.waitForFunction(() =>
@@ -42,7 +42,7 @@ test("theme Catalog asset URLs preserve the exact authored bytes", async ({
   const manifest: RuntimeCaptureManifest = await page.evaluate(async () => {
     const response = await (window as any).__PROTO_BRIDGE_CAPTURE_V2__.request({
       protocolVersion: 3,
-      requestId: "theme-asset-bytes-describe",
+      requestId: "theme-references-describe",
       payload: { kind: "describe" },
     });
     if (!response.ok) throw new Error(JSON.stringify(response.error));
@@ -54,24 +54,20 @@ test("theme Catalog asset URLs preserve the exact authored bytes", async ({
   const entry = catalog.entries.find((entry) =>
     entry.objectId.endsWith("/manifest"),
   )!;
-  const assets = (
-    entry.value as {
-      assets: Array<{ file: string; url: string; sha1: string }>;
-    }
-  ).assets;
+  const assets = (entry.value as { assets: Array<Record<string, unknown>> })
+    .assets;
   expect(assets.length).toBeGreaterThan(0);
   for (const asset of assets) {
-    const url = new URL(asset.url, page.url());
-    expect(url.protocol, asset.file).toMatch(/^https?:$/);
-    const response = await request.get(url.toString());
-    expect(response.ok(), asset.file).toBe(true);
-    expect(
-      createHash("sha1")
-        .update(await response.body())
-        .digest("hex"),
-      asset.file,
-    ).toBe(asset.sha1);
+    expect(asset).toMatchObject({
+      packId: "yike",
+      file: expect.any(String),
+      sha1: expect.stringMatching(/^[a-f0-9]{40}$/),
+      mediaType: "image/svg+xml",
+    });
+    expect(asset).not.toHaveProperty("url");
+    expect(asset).not.toHaveProperty("svg");
   }
+  expect(entry.blobIds).toEqual([]);
 });
 
 test("the fixed three-page regression baseline still resolves", async ({
@@ -148,9 +144,12 @@ test("Runtime describes a full Prototype before a Screen route resolves", async 
     });
   });
   expect(described.ok, JSON.stringify(described)).toBe(true);
-  expect(described.payload.manifest.screens.filter(
-    (screen: { prototypeId: string }) => screen.prototypeId === "cold-chain-ops",
-  )).toHaveLength(3);
+  expect(
+    described.payload.manifest.screens.filter(
+      (screen: { prototypeId: string }) =>
+        screen.prototypeId === "cold-chain-ops",
+    ),
+  ).toHaveLength(3);
 });
 
 test("Core Capture opens a cold-chain Variant with its authored Screen route and Fragment identity", async ({
@@ -288,7 +287,9 @@ test("cold-chain sequential Sheet actions resolve at their actual scenario step"
       preflight,
       runtimeBaseUrl: new URL(page.url()).origin,
     });
-    expect(captured.diagnostics.pageErrors, entry.selectedCase.caseId).toEqual([]);
+    expect(captured.diagnostics.pageErrors, entry.selectedCase.caseId).toEqual(
+      [],
+    );
     expect(captured.facts.length, entry.selectedCase.caseId).toBeGreaterThan(0);
   }
 });
@@ -330,7 +331,8 @@ test("Runtime occlusion blocks painted overlays but not scrolled or hit-test-exe
   };
   await page.evaluate(() => {
     const root = document.createElement("div");
-    root.style.cssText = "position:fixed;inset:0;z-index:10000;background:white";
+    root.style.cssText =
+      "position:fixed;inset:0;z-index:10000;background:white";
     root.innerHTML = `
       <div style="position:absolute;inset:0;overflow:auto">
         <div data-pb-id="probe.exempt" data-pb-role="button" data-pb-token-background="color.surface"
@@ -442,7 +444,9 @@ test("cold-chain-ops satisfies every authored Variant and required Scenario boun
   const described = await request("cold-chain-describe", { kind: "describe" });
   expect(described.ok, JSON.stringify(described)).toBe(true);
   expect(described.payload.manifest.authoringDiagnostics).toEqual([]);
-  const theme = captureTheme(described.payload.manifest as RuntimeCaptureManifest);
+  const theme = captureTheme(
+    described.payload.manifest as RuntimeCaptureManifest,
+  );
 
   const exceptionQueue = described.payload.manifest.screens.find(
     (screen: { screenId: string }) =>
@@ -540,8 +544,7 @@ test("cold-chain-ops satisfies every authored Variant and required Scenario boun
         }
         const listNode = snapshot.payload.nodes.find(
           (candidate: { fragment: { pbId: string } }) =>
-            candidate.fragment.pbId ===
-            "cold-chain-ops.exception-queue.list",
+            candidate.fragment.pbId === "cold-chain-ops.exception-queue.list",
         );
         expect(listNode, "cold-chain-ops.exception-queue.list").toBeTruthy();
         expect(listNode.scrollOwner).toEqual(scrollListOwner);
@@ -637,7 +640,6 @@ test("cold-chain-ops satisfies every authored Variant and required Scenario boun
     }
   }
 });
-
 
 test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenario Evidence to the V2 Store", async ({
   page,
@@ -822,8 +824,10 @@ test("Core Playwright orchestrator commits explicit Variant, Fragment and Scenar
       for (const snippet of snippets) expect(text).toContain(snippet);
     }
     expect(
-      fact(defaultRevision, "cold-chain-ops.exception-queue.list.row.all-ex-017.tag")
-        .effectiveValue,
+      fact(
+        defaultRevision,
+        "cold-chain-ops.exception-queue.list.row.all-ex-017.tag",
+      ).effectiveValue,
     ).toBe("button");
     expect(
       fact(

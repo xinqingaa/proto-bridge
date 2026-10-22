@@ -101,7 +101,11 @@ Case 执行总会形成 Attempt。只有通过 Schema、完整性和激活规则
 
 每个 Case 终结（captured、failed、reused、cancelled）后，Core 先把该 Attempt 写入 Store root 下的 Job staging（`job-staging/<jobId>/`：`catalogs.json`、`cases/<序号>-<attemptId>.json`、`blobs/<hex>.bin`），captured Case 同时暂存 Revision 与 Blob 字节，之后才写 journal `case-finished`。staging 是 Job 内部的待提交区，不属于公共 Contract，也不会被 Snapshot 或 MCP 到达；Job finalize 后删除，Store 初始化时清理已终结或缺失 Job 的遗留 staging。
 
-Case 执行前，Core 先暂存 Catalog 修订及新增主题包的资产；资产引用记录在 staging 的 `catalog-assets.json`，字节写入同一暂存 Blob 区。首个 Bundle 尚不存在时也只写 Job staging，提交时再统一写入 Bundle，并将资产绑定到固定 Catalog 修订。资源读取与摘要校验规则见[主题包解析模型](./theme-packs.md#原型绑定与-capture-边界)。
+Case 执行前，Core 只暂存固定 Catalog 修订，不独立下载或归档清单中的 DS 图形。图形本体及 Target 导出由 DS 同步拥有；页面采集固定身份、源摘要、实际使用信息和截图，详见[主题包解析模型](./theme-packs.md#原型绑定与-capture-边界)。首个 Bundle 尚不存在时同样先写 Job staging，再原子提交，不能提前要求 Bundle 已存在。
+
+截图前，Driver 在当前 Case 的浏览器环境中等待可见 HTML img 与 SVG image 解码；缺少来源、解码失败或超时使该 Case 失败。隐藏图层不作为可见图像失败；浏览器仍负责实际页面资源加载。该检查不归档原文件、不访问 Target，也不宣称覆盖 CSS 背景、任意 Canvas 或全部动态路径。
+
+历史 Catalog 的 theme-asset Blob 继续按固定引用读取；旧 Catalog 资产 staging 的恢复/提交兼容仍保留，正常 DS Capture 不调用该专用写入接口。通用 Case staging、截图必要性与原子提交规则不变。
 
 Blob 写入失败按必要性区分：
 

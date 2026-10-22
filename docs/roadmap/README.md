@@ -13,9 +13,9 @@
 
 上述升级已完成。现行规则查 Product、Architecture、Reference 和 PBWork 手册；新平台提案不以某个业务原型的制作进度作为平台完成状态。
 
-## 待实施计划
+## 当前收敛范围
 
-- [DS 资产引用与页面采集优化方案](./asset-reference-capture.md)：分离 DS 图形同步、页面资源使用证据与 Target 复用；移除正常采集的重复资产归档依赖。提案待实施。
-- [产品文档与动效证据交付优化计划](./evidence-delivery-upgrade.md)：语义身份兼容、产品文档快照、真实动效过程采集，以及固定 Handoff 到 MCP 的按需消费。目标设计与门禁尚未成为现行 Contract。
+- [DS 资产引用与页面采集优化](./asset-reference-capture.md)：当前只解除正常采集的重复归档依赖、补充代表资源使用信息并验证历史兼容；通用资源 resolver 等扩展延期。
+- [产品文档与动效交付范围](./evidence-delivery-upgrade.md)：产品文档改为 Target 本地职责文档，MCP 文档快照取消，真实动效平台延期，生成脚本复制后续实现。
 
 业务原型的计划与进度仅在各自 `prototypes/{prototypeId}/docs/` 维护，本目录不维护其入口或排期。

@@ -131,7 +131,7 @@ Runtime provider 的 session、App/build identity、operation 和失败尝试是
 
 ## Blob
 
-Blob 保存 Screenshot、调试数据、主题资产或目录附件。主题包清单列出的资产以 `theme-asset` 归属 theme-pack Catalog 修订。Blob 必须具有 owner ref，并能从请求的 Snapshot 或 Catalog 到达。Debug/Trace 需要显式许可；MCP 不按文件路径读取 Blob。
+Blob 保存 Screenshot、调试数据、主题资产或目录附件。历史归档的主题资产以 `theme-asset` 归属 theme-pack Catalog 修订；正常 DS 页面采集仅固定目录元数据与页面资源使用，不要求归档原文件。Blob 必须具有 owner ref，并能从请求的 Snapshot 或 Catalog 到达。Debug/Trace 需要显式许可；MCP 不按文件路径读取 Blob。
 
 Blob 字节按临时文件、fsync、rename、目录 fsync 的顺序持久写入，失败时清理临时文件，与 JSON 原子写入同等耐久。Case 级暂存、必需 Screenshot Blob 失败语义和提交顺序见[采集链路](./capture-pipeline.md)。
 

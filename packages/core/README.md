@@ -46,3 +46,8 @@ pnpm --filter @proto-bridge/core test
 Issue 持久化与 Fact 固定引用遵守 [Evidence 模型](../../docs/architecture/evidence-model.md#issue-与-coverage)。Store 的 `issueContentRef(issue)` 返回内容固定引用，`getIssue(bundleId, ref)` 只读取该引用，`listIssues` 保留同一逻辑 ID 的全部内容版本。
 
 主题包模块通过 `./v2/theme` 和 `./v2` 导出，负责包内多套主题、模式、继承、解析值、引用链、摘要与校验。输入、身份和 API 见 [主题包解析模型](../../docs/architecture/theme-packs.md)；该模块不执行文件 I/O，也不自动把取值写入 Capture Evidence。
+
+
+### DS 资源与 Capture
+
+正常 Capture 暂存固定 Catalog 元数据并执行页面 Case，不独立下载或归档 DS SVG。浏览器仍加载并检查当前 Case 的可见 HTML/SVG 图像；资源使用信息随现有节点 props 固定。历史 theme-asset Blob 与旧 Catalog staging 仍可读取/恢复。完整职责及未覆盖边界见 [采集链路](../../docs/architecture/capture-pipeline.md) 和 [主题包模型](../../docs/architecture/theme-packs.md#原型绑定与-capture-边界)。

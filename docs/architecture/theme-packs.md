@@ -117,7 +117,11 @@ DS 与冷链消费者已完成迁移，Runtime 仅生成新表的变量。原有
 
 组件键由 Contract.componentTokens 声明 id 后缀、valueType/default/modeVariant/bindable/enumValues；loadThemeKeyCatalog 汇总为完整的 Core ThemeKeyCatalog。当前 129 个语义键 + 25 个组件键，其中 148 可绑定，6 个 enum 不可绑定；另有 64 个字阶派生部件和 37 个实现常量。Registry 同时校验组件声明与基础包默认值。SurfaceMaterial 负责共享材质；primary-tabs.selection-treatment 在基础包为 glass，AppBar/Tabbar 跟随 surface.treatment。组件 CSS 与 Inspector 绑定使用新键，常量不进入 Evidence/Target；JS 用 computed 读取主题值，以纯常量读取器读取手势阈值等不变值。
 
-Capture 的 token Catalog 只含键定义（类型、是否可绑定、是否随模式变化、说明与来源），不含取值，常量不进入 Catalog。theme-pack Catalog 的 `inputDigest` 等于包摘要：一条包清单，外加每个「主题 × 模式」的解析值与 provenance。清单列出的资产支持相对或绝对 HTTP/HTTPS URL，以及构建器内联的 `data:` URL（base64 或百分号编码）；Core 读取原始字节，按 sha1 校验后存为 `theme-asset` Blob。其它 URL 协议、内联资源解码失败或摘要不匹配会阻断采集，并在 Job 失败原因中保留资产文件名。Workbench 展示记录只是主题表生成的展示数据，不是第二份 Token 语义源。Gallery 与 Playground 可以选择基础包或原型主题包、包内主题和模式，并对照解析值。
+Capture 的 token Catalog 只含键定义（类型、是否可绑定、是否随模式变化、说明与来源），不含取值，常量不进入 Catalog。theme-pack Catalog 的 `inputDigest` 等于包摘要：一条包清单，外加每个「主题 × 模式」的解析值与 provenance。新清单的 assets 只固定 packId、逻辑 file、sha1 与 mediaType，不提供独立归档 URL，不保存 SVG body。DS 同步负责原始图形与 Target PNG；正常 Capture 不遍历清单下载资产，也不调用 Catalog 资产专用暂存。已有 Catalog 和 theme-asset Blob 保持历史读取兼容。没有归档字节的新交付不承诺任意历史 SVG 原稿可离线恢复。
+
+PBWork 在既有 RuntimeSemanticNode.props 中保留 name 及语义节点所属装饰图标的 icons（名称、owner、sourceFile、颜色策略、尺寸档位和 tone）。大型表盘用显式 data-pb-artwork 声明 packId、assetId、逻辑 file、源文件标识、sessionAsset/layerAsset、views 与受控状态；Runtime 校验逻辑文件在源包 files 中存在、子 image 实际 URL 与声明资源一致且 fragment view 已登记，再输出 props.artwork 的 declared、sourceDigest 和实际 image view/可见性。声明与图像观测分别保留，不推导 Target 路径或动态绘图算法。这是现有 props 的增量数据，不是新的通用资产 Contract 或 resolver。
+
+本批 Runtime inputVersion 含 resourceUsageVersion、所选包图形元数据及公共/当前原型图标源输入摘要，避免复用缺少新使用信息或资源输入已变的旧 Case；不改写历史输入、Case identity 或 scope hash。新输出沿用协议 3 的可扩展 props 通道，旧固定 Handoff 不补造资源使用信息。图标逐项源摘要与 Target 真实使用校验仍是后续范围，不能将当前信息宣称为通用精确资源解析。Workbench 展示记录仍是主题表生成的展示数据，不是第二份 Token 语义源。
 
 PBWork 的主题资产加载器使用 `?url&no-inline` 提供资源 URL，在开发与构建环境中均保留源文件字节，避免 SVG 内联优化改写空白和引号后与清单摘要不一致。
 

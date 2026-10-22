@@ -9,7 +9,9 @@ import {
   type ThemeIdentity,
 } from "@proto-bridge/core/v2";
 import { runtimeThemeSources } from "@/design-system/theme/runtime-theme";
-import { themeAssetUrl } from "@/design-system/theme/sources";
+import { readArtworkEvidence, readOwnedIcons } from "./artwork-evidence";
+import { themeArtworkEntry } from "@/design-system/theme/sources";
+import { PB_ICON_ARTWORK } from "@/design-system/components/_shared/icons";
 import {
   RUNTIME_CAPTURE_GLOBAL,
   RUNTIME_CAPTURE_PROTOCOL_VERSION,
@@ -62,6 +64,7 @@ type CaptureProtocolOptions = {
 };
 
 const CAPTURE_PROP_KEYS = [
+  "name",
   "tone",
   "selectionStyle",
   "size",
@@ -402,7 +405,6 @@ export function buildRuntimeCaptureManifest(
       file,
       sha1,
       mediaType,
-      url: themeAssetUrl(prototype.themePackId, file),
     };
   });
   const theme = {
@@ -507,6 +509,13 @@ export function buildRuntimeCaptureManifest(
     clock: prototype.clock,
     inputVersion: digestText(
       JSON.stringify({
+        resourceUsageVersion: 1,
+        artwork: assets.map(({ packId, file }) =>
+          themeArtworkEntry(packId, file),
+        ),
+        icons: Object.entries(PB_ICON_ARTWORK.icons).filter(
+          ([, icon]) => icon.owner === "shared" || icon.owner === prototypeId,
+        ),
         screens: versionInput,
         packDigest: theme.packDigest,
         keyCatalogDigest,
@@ -1256,6 +1265,8 @@ export function installRuntimeCaptureProtocol(
           const rect = element.getBoundingClientRect();
           const style = window.getComputedStyle(element);
           const context = readComponentContext(element);
+          const artwork = readArtworkEvidence(element);
+          const icons = readOwnedIcons(element);
           const ancestors = semanticAncestors(element, current.screenId);
           return {
             fragment: markerIdentity(element, current.screenId),
@@ -1284,7 +1295,15 @@ export function installRuntimeCaptureProtocol(
             ...(context.componentId
               ? { componentId: context.componentId }
               : {}),
-            ...(context.props ? { props: context.props } : {}),
+            ...(context.props || artwork || icons.length
+              ? {
+                  props: {
+                    ...context.props,
+                    ...(artwork ? { artwork } : {}),
+                    ...(icons.length ? { icons } : {}),
+                  },
+                }
+              : {}),
             ...(context.tokenBindings
               ? { tokenBindings: context.tokenBindings }
               : {}),

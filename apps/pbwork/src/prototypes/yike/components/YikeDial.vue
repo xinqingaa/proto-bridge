@@ -56,19 +56,30 @@ watch(
 );
 const reservedSlots = computed(() => props.readoutSlots ?? props.digits.length);
 const mark = useToken("asset.brand-mark");
-const image = computed(() => {
+const selectedArtwork = computed(() => {
   const asset = mark.value as ResolvedThemeAsset;
   if (!asset || typeof asset !== "object") return undefined;
   const base = themeArtwork.assets.find((entry) => entry.file === asset.file);
   const sessionId =
     base && "sessionAsset" in base ? base.sessionAsset : undefined;
   const session = themeArtwork.assets.find((entry) => entry.id === sessionId);
-  const file =
-    props.face === "mechanical" && props.scale === "session"
-      ? session?.file
-      : asset.file;
-  if (!file) throw new Error("Missing registered session artwork");
-  return themeAssetUrl(asset.packId, file);
+  const selected =
+    props.face === "mechanical" && props.scale === "session" ? session : base;
+  if (!selected) throw new Error("Missing registered session artwork");
+  return { ...selected, packId: asset.packId };
+});
+const image = computed(() => {
+  const selected = selectedArtwork.value;
+  return selected ? themeAssetUrl(selected.packId, selected.file) : undefined;
+});
+const artworkDeclaration = computed(() => {
+  const selected = selectedArtwork.value;
+  if (!selected) return undefined;
+  return JSON.stringify({
+    packId: selected.packId,
+    file: selected.file,
+    state: { tone: props.tone, scale: props.scale, fraction: props.fraction },
+  });
 });
 const geometry = computed(() => artwork[props.face]);
 const ratio = computed(() =>
@@ -192,6 +203,7 @@ const shadowOpacity = computed(() => {
     role="img"
     :aria-label="`${captionText} ${digits}`"
     :data-pb-id="inspectId"
+    :data-pb-artwork="artworkDeclaration"
     data-pb-role="image"
     data-pb-token-artwork="asset.brand-mark"
     data-pb-token-width="size.plot"
