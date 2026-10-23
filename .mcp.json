@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "proto-bridge": {
+      "command": "node",
+      "args": ["${CLAUDE_PROJECT_DIR:-.}/scripts/pb-mcp.mjs"]
+    }
+  }
+}

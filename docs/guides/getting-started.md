@@ -73,14 +73,17 @@ warning / risk 使用可重复的 `--accept-warning` / `--ack-risk` 逐项确认
 
 ## 配置 MCP
 
-仓库默认提供 Cursor 项目级配置 `.cursor/mcp.json`。打开本仓库后在
-Cursor **Settings → MCP** 刷新即可；也可用：
+仓库默认提供三份项目级配置，都直接用 `node` 启动 `scripts/pb-mcp.mjs`：
 
-```bash
-pnpm pb:mcp -- --print-config
-```
+| 客户端 | 文件 |
+| --- | --- |
+| Cursor | `.cursor/mcp.json` |
+| Codex | `.codex/config.toml` |
+| Claude Code | `.mcp.json` |
 
-对照或配置 Codex。不要把带生命周期日志的包管理器命令登记为 stdio server。
+Claude Code 读取仓库根的 `.mcp.json`。打开仓库后首次使用时在会话里批准该 server。Codex 需要 trust 该目录后才会加载项目级 MCP。Cursor 在 **Settings → MCP** 刷新即可。
+
+也可用 `pnpm pb:mcp -- --print-config` 查看 Cursor / Codex 的 stdio 材料。不要把带生命周期日志的包管理器命令登记为 stdio server。
 MCP 必须绑定到 Handoff 所属 Workspace。助手、MCP 与文档如何分工，以及读取顺序，见 [Agent 消费指南](./agent-consumption.md)。
 
 把 `agent-prompt.md`（或定稿面板内复制的提示词）交给 Cursor / Codex 即可开始只读消费。提示词只携带固定身份、风险与渐进读取协议，不内嵌 Evidence Brief 或完整 Review Contract；Agent 通过 Handoff index 和按需投影建立理解，首轮只输出摘要与实施计划。`inspect_evidence_workspace` 返回的 `deliveryTargetRoot` 应与提示词中的目标路径一致。

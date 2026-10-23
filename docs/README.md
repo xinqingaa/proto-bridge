@@ -32,7 +32,7 @@ ProtoBridge（PB）把可交互原型转化为可追溯、可固定引用的 Evi
 | 修改主题包解析模块 | [主题包解析模型](./architecture/theme-packs.md) |
 | 修改 PBWork Token 或组件 | [PBWork 开发规范](./pbwork/development.md) → [组件总论](./pbwork/components/overview.md) |
 | 维护仓库 | [开发规范](./maintenance/development.md) → [文档维护](./maintenance/documentation.md) |
-| 查看已确定的平台升级 | [平台升级记录](./roadmap/README.md) |
+| 查看平台调研、待定方案与已完成升级 | [平台规划与升级记录](./roadmap/README.md) |
 | 追溯关键平台升级 | [PBWork 与 PB 平台关键升级](./history/pbwork-platform-upgrade.md) |
 | 理解 git 分发与 npm 计划 | [ADR 0011](./decisions/0011-producer-git-and-npm-tooling.md) |
 | 理解架构转型背景 | [从 V1 到 Evidence 架构](./history/v1-to-evidence-architecture.md) |
