@@ -117,7 +117,7 @@ node /abs/proto-bridge/scripts/pb-mcp.mjs --target /abs/../flutter_pb_example
 
 `tool/mcp.mjs` 读取 `.pb-scaffold.json`，把 proto-bridge 根、workspace 配置和 target 绑定在一起。proto-bridge 路径只存一份；移动仓库后改这一处或重新生成。
 
-Codex 不会展开 `${workspaceFolder}`，所以 `.codex/config.toml` 写入 launcher 的绝对路径；Codex 仍需 trust 该目录后才会加载项目级 MCP 配置。
+`.codex/config.toml` 的 args 是相对项目根的 `tool/mcp.mjs`。Claude Code 的 `.mcp.json` 使用 `${CLAUDE_PROJECT_DIR:-.}/tool/mcp.mjs`。Codex 仍需 trust 该目录后才会加载项目级 MCP 配置。
 
 ## 切换 Workspace target
 

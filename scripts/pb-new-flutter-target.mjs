@@ -512,9 +512,9 @@ async function writeMcpAndTools() {
   const cursor = `${JSON.stringify({ mcpServers: { "proto-bridge": { command: "node", args: ["\${workspaceFolder}/tool/mcp.mjs"] } } }, null, 2)}\n`;
   await mkdir(path.join(destination, ".cursor"), { recursive: true });
   await writeFile(path.join(destination, ".cursor/mcp.json"), cursor, "utf8");
-  const claude = `${JSON.stringify({ mcpServers: { "proto-bridge": { command: "node", args: [path.join(destination, "tool/mcp.mjs")] } } }, null, 2)}\n`;
+  const claude = `${JSON.stringify({ mcpServers: { "proto-bridge": { command: "node", args: ["\${CLAUDE_PROJECT_DIR:-.}/tool/mcp.mjs"] } } }, null, 2)}\n`;
   await writeFile(path.join(destination, ".mcp.json"), claude, "utf8");
-  const codex = `[mcp_servers.proto-bridge]\ncommand = "node"\nargs = ${JSON.stringify([path.join(destination, "tool/mcp.mjs")])}\nstartup_timeout_sec = 20\n`;
+  const codex = `[mcp_servers.proto-bridge]\ncommand = "node"\nargs = ["tool/mcp.mjs"]\nstartup_timeout_sec = 20\n`;
   await mkdir(path.join(destination, ".codex"), { recursive: true });
   await writeFile(path.join(destination, ".codex/config.toml"), codex, "utf8");
   await mkdir(path.join(destination, ".agents"), { recursive: true });
