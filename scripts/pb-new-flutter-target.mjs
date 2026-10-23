@@ -22,6 +22,8 @@ import {
   userArgv,
 } from "./lib/pb-script-utils.mjs";
 
+import { planFlutterDocumentation, writeFlutterDocumentation } from "./lib/flutter-target-docs.mjs";
+
 const argv = userArgv();
 if (argv.includes("--help") || argv.includes("-h")) {
   process.stdout.write([
@@ -30,7 +32,7 @@ if (argv.includes("--help") || argv.includes("-h")) {
     "Create an independent Flutter product target from apps/flutter_pb_app.",
     "",
     "Options:",
-    "  --prototype <id>        select a prototype theme pack and its base dependencies",
+    "  --prototype <id>        select prototype product docs, theme dependencies and icons",
     "  --parent <dir>          default: the directory above proto-bridge",
     "  --name <name>           project name (alternative to positional)",
     "  --display-name <name>   app display name",
@@ -101,6 +103,12 @@ if (destination === sourceRoot || isInside(destination, sourceRoot)) {
   throw new Error("Destination cannot be inside the reference app.");
 }
 await assertDestination(destination);
+resolvedDestination = await resolveFuturePath(destination);
+resolvedRepoRoot = await realpath(repoRoot);
+const documentationPlan = await planFlutterDocumentation({
+  repoRoot: resolvedRepoRoot, sourceRoot: path.join(resolvedRepoRoot, 'apps/flutter_pb_app'),
+  targetRoot: resolvedDestination, prototype: selectedPrototype, displayName, packageName,
+});
 
 process.stdout.write([
   `Source:  ${sourceRoot}`,
@@ -108,6 +116,8 @@ process.stdout.write([
   `Package: ${packageName}`,
   `Display: ${displayName}`,
   `Bundle:  ${bundleId}`,
+  `Prototype: ${selectedPrototype ?? "none (product documents remain draft placeholders)"}`,
+  ...[...documentationPlan.files.keys()].map((name) => `Document: ${name}`),
   `Base sync: ${manifest.syncStatus} (${manifest.pendingComponents} pending components, ${manifest.pendingTokens} pending tokens)`,
   "",
 ].join("\n"));
@@ -165,15 +175,11 @@ await rewriteTree(destination, {
   bundleId,
   repoRoot,
   destination,
-  protoBridgeRelative: path
-    .relative(resolvedDestination, resolvedRepoRoot)
-    .split(path.sep)
-    .join("/"),
 });
 await writeProjectFiles();
 await writeMcpAndTools();
 await writeSkills();
-await writeDocs();
+await writeFlutterDocumentation(resolvedDestination, documentationPlan);
 const { exportFlutterThemes } = await import('./export-flutter-themes.mjs');
 await exportFlutterThemes({targetRoot: resolvedDestination, prototype: selectedPrototype});
 const { exportFlutterIcons } = await import('./export-flutter-icons.mjs');
@@ -280,6 +286,7 @@ async function assertDestination(dir) {
 
 async function copyBase() {
   await copyTree(sourceRoot, destination, (relative) => {
+    if (relative === 'docs' || relative.startsWith('docs/') || ['AGENTS.md', 'README.md'].includes(relative)) return false;
     if (relative.split(path.sep).some((part) => ["ephemeral", ".swiftpm", "xcuserdata", ".git"].includes(part))) return false;
     if (relative === "lib/features" || relative.startsWith("lib/features/")) {
       return false;
@@ -322,7 +329,6 @@ async function rewriteTree(root, context) {
     ".dart",
     ".yaml",
     ".yml",
-    ".md",
     ".json",
     ".kts",
     ".gradle",
@@ -349,7 +355,6 @@ async function rewriteTree(root, context) {
   }
   await rewritePubspec(context);
   await rewritePlatformIdentity(context);
-  await rewriteDocsAndAgent(context);
   await rewriteSync(context);
 }
 
@@ -418,50 +423,6 @@ async function rewritePlatformIdentity({ packageName, displayName, bundleId }) {
   await writeFile(pbxproj, project, "utf8");
 }
 
-async function rewriteDocsAndAgent({ packageName, displayName, repoRoot, protoBridgeRelative }) {
-  const replacements = [
-    ["apps/pbwork", `${protoBridgeRelative}/apps/pbwork`],
-    ["../pbwork", `${protoBridgeRelative}/apps/pbwork`],
-    ["apps/flutter_pb_app", packageName],
-    ["flutter_pb_app", packageName],
-    ["../../../docs", `${protoBridgeRelative}/docs`],
-    ["../../packages", `${protoBridgeRelative}/packages`],
-    ["cd ../.. && pnpm ds:target-sync:verify", "node tool/ds-sync.mjs"],
-    ["cd ../.. && pnpm ds:theme:verify", "node tool/ds-theme.mjs"],
-    ["pnpm ds:target-sync:verify", "node tool/ds-sync.mjs"],
-    ["pnpm ds:theme:verify", "node tool/ds-theme.mjs"],
-  ];
-  for (const file of [
-    path.join(destination, "AGENTS.md"),
-    path.join(destination, "README.md"),
-    ...(await walk(path.join(destination, "docs"))),
-  ]) {
-    let text = await readFile(file, "utf8");
-    const relativeProducer = producerRelativeFrom(file);
-    for (const [from, to] of replacements) {
-      text = text.replaceAll(from, to.replaceAll(protoBridgeRelative, relativeProducer));
-    }
-    text = text.replaceAll("基线仅以 Demo 为入口", "生成工程以 Bootstrap 为入口")
-      .replaceAll("和 Demo 对照区", "")
-      .replaceAll("feature 与 Demo 必须", "feature 必须")
-      .replaceAll("组件使用示例以 `lib/features/` 和 `lib/features/demo/` 为准；Demo 底部 Tabbar 本身就是根目的地导航实例，不再在 Navigation 分类中放置无内容切换的重复样例。", "组件公开 API 以 lib/common 的源码为准；业务页面按固定 Handoff 在 lib/features 中实现。")
-      .replaceAll("基线的 `lib/features/demo/` 提供对照；Demo 底部 Tabbar 本身就是根目的地导航实例，不再在 Navigation 分类中放置无内容切换的重复样例。", "生成工程使用 Bootstrap 入口；公共组件示例参见 test/。")
-      .replaceAll("- `/` Demo 对照（基线入口）\n- `/launch` Flutter 欢迎页；不是原生启动屏", "- `/` Bootstrap 入口；业务路由由固定 Handoff 创建")
-      .replaceAll("test/widget_test.dart", "test/bootstrap_test.dart");
-    await writeFile(file, text, "utf8");
-  }
-  await writeFile(
-    path.join(destination, "AGENTS.md"),
-    agentInstructions({ packageName, displayName }),
-    "utf8",
-  );
-  await writeFile(
-    path.join(destination, "README.md"),
-    readme({ packageName, displayName }),
-    "utf8",
-  );
-}
-
 async function rewriteSync({ repoRoot, destination }) {
   const file = path.join(destination, "proto-bridge.sync.json");
   const sync = JSON.parse(await readFile(file, "utf8"));
@@ -520,6 +481,8 @@ async function writeMcpAndTools() {
     bundleId,
     baseSurfaceDigest: manifest.sync.surfaceDigest,
     baseSyncStatus: manifest.syncStatus,
+    prototype: selectedPrototype ?? null,
+    documentation: documentationPlan.provenance,
     createdAt: new Date().toISOString(),
   };
   await writeFile(
@@ -564,19 +527,6 @@ async function writeMcpAndTools() {
 
 async function writeSkills() {
   const skillRoot = path.join(destination, ".agents/skills");
-  const consumer = path.join(skillRoot, "proto-bridge-consumer/SKILL.md");
-  if (await exists(consumer)) {
-    let text = await readFile(consumer, "utf8");
-    text = text
-      .replaceAll("apps/flutter_pb_app", packageName)
-      .replaceAll(`apps/${packageName}`, packageName)
-      .replaceAll("flutter_pb_app", packageName);
-    text = text.replace(
-      "## 编辑前读取",
-      "MCP 已由 `tool/mcp.mjs` 绑定到本工程；不要修改 proto-bridge producer，也不要把 Target 查询结果当作 Source Evidence。\n\n## 编辑前读取",
-    );
-    await writeFile(consumer, text, "utf8");
-  }
   const dsSkill = path.join(skillRoot, "proto-bridge-ds-target-sync/SKILL.md");
   if (await exists(dsSkill)) {
     let text = await readFile(dsSkill, "utf8");
@@ -606,38 +556,8 @@ async function writeSkills() {
   );
 }
 
-async function writeDocs() {
-  await writeFile(
-    path.join(destination, "docs/routing.md"),
-    `# 路由\n\n工程使用 Navigator 1.0 命名路由。\n\n## 注册位置\n\n- 路由常量定义在 \`lib/router/routes.dart\`。\n- 页面注册在 \`lib/router/router.dart\` 的 \`appRoutes\`。\n- 页面跳转优先使用 \`Navigator.of(context).pushNamed(...)\`。\n- 返回行为使用 \`maybePop\` 或页面已有的 \`CommonAppBar\` 返回动作。\n\n## 当前路由\n\n- \`/\` Bootstrap 空壳，等待固定 PBWork Handoff。\n\n业务页面按 Screen 新增时同步补路由常量、注册、参数解析和 Widget test。\n`,
-    "utf8",
-  );
-  await writeFile(
-    path.join(destination, "docs/agent-workflow.md"),
-    agentWorkflow(),
-    "utf8",
-  );
-  await writeFile(
-    path.join(destination, "README.md"),
-    readme({ packageName, displayName }),
-    "utf8",
-  );
-}
-
 function bootstrapPage() {
   return `import 'package:flutter/material.dart';\n\nimport '../common/widgets.dart';\nimport '../theme/ts.dart';\n\nclass BootstrapPage extends StatelessWidget {\n  const BootstrapPage({super.key});\n\n  @override\n  Widget build(BuildContext context) {\n    final ts = TS.of(context);\n    return Scaffold(\n      backgroundColor: ts.colors.background,\n      appBar: ${"CommonAppBar"}(\n        title: '${dartText(displayName)}',\n        showAction: false,\n      ),\n      body: ListView(\n        padding: EdgeInsets.all(ts.spacing.md),\n        children: [\n          Text('等待 PBWork Handoff', style: ts.textStyle.title),\n          SizedBox(height: ts.spacing.sm),\n          Text(\n            'MCP 已绑定到本工程。把 PBWork 定稿提示词交给 agent 后，先只读理解 Evidence、按 Screen 输出实现计划并等待批准。',\n            style: ts.textStyle.caption,\n          ),\n          SizedBox(height: ts.spacing.lg),\n          CommonCard(\n            child: Column(\n              crossAxisAlignment: CrossAxisAlignment.start,\n              children: [\n                Text('验证命令', style: ts.textStyle.subtitle),\n                SizedBox(height: ts.spacing.sm),\n                Text('node tool/verify.mjs', style: ts.textStyle.content),\n                Text('node tool/ds-theme.mjs', style: ts.textStyle.content),\n              ],\n            ),\n          ),\n        ],\n      ),\n    );\n  }\n}\n`;
-}
-
-function agentInstructions({ packageName, displayName }) {
-  return `# ${displayName} Agent Rules\n\n本工程由 \`pnpm pb:new:flutter\` 从 flutter_pb_app 基线生成，是独立的 **${packageName}** 产品 target，不是 ProtoBridge 仓库。\`lib/features/\` 为空；业务页面由固定 PBWork Handoff 按 Screen 落在这里。\n\nMCP 已由 \`.cursor/mcp.json\`、\`.codex/config.toml\`、\`.mcp.json\` 指向 \`tool/mcp.mjs\`；不要修改 proto-bridge producer，也不要在目标工程复制 Evidence Store。\n\n收到固定 Evidence 时先读 \`.agents/skills/proto-bridge-consumer/SKILL.md\`；DS 同步任务读 \`.agents/skills/proto-bridge-ds-target-sync/SKILL.md\`；完成实现准备 Review 时读 \`.agents/skills/acceptance/SKILL.md\`。\n\n## 文档优先级\n\n1. 固定 ProtoBridge Evidence 决定源页面的结构、文案、状态、交互和构图。\n2. 本工程 \`AGENTS.md\`、\`docs/\` 和实际代码决定 Target 落点、组件、Theme、路由与验证方式。\n3. Target adapter 结果只提供目标上下文，不能覆盖 Screenshot、Fragment、Case 或 revision。\n\n## 修改边界\n\n- 业务页面和页面模型放在 \`lib/features/<feature>/\`。\n- 所有响应式界面状态使用 Riverpod；禁止 \`setState\` / \`StatefulBuilder\`，公共组件、Demo 和启动页均无例外，详见 \`docs/architecture.md\`。\n- 持久化只走 \`AppPrefs\`；feature 不得直接使用 \`MMKV\`。\n- 路由常量和注册表只放在 \`lib/router/\`。\n- 主题和语义 token 只放在 \`lib/theme/\`。\n- 可复用 UI 和共享弹层只放在 \`lib/common/\`。\n- 不在 feature 中复制公共组件、创建平行 Theme 或绕过既有路由/弹层边界。\n\n## 第一轮纪律\n\n拿到 PBWork 提示词后，先读 \`AGENTS.md\`、\`README.md\`、\`docs/\` 和 Consumer Skill；只读理解 Evidence 与目标工程，按 Screen 用简短散文输出结构/滚动边界、组件与 Token 落点、状态与交互覆盖、预计修改文件、验证方式和剩余风险；然后暂停等待明确批准。未批准前不得修改本工程。\n\n## 必要验证\n\n\`\`\`bash\nflutter analyze\nflutter test\nnode tool/verify.mjs\nnode tool/ds-theme.mjs\n# 完整组件与 Token 同步门禁\nnode tool/ds-sync.mjs\n\`\`\`\n\n主题门禁检查当前 Token 清单；完整 \`ds-sync.mjs\` 同时检查当前组件清单与当前 DS surface。共享组件扩展必须遵循当前 Contract 和目标工程规范；映射成功不等于视觉验收通过。\n\n视觉验证遵循 \`docs/testing.md\`；最终报告必须包含固定引用、原始风险、修改文件、验证结果、已知偏差和剩余风险。\n`;
-}
-
-function readme({ packageName, displayName }) {
-  return `# ${displayName}\n\n\`${packageName}\` 是从 flutter_pb_app 生成的产品 target 骨架。它继承 PBWork 主题/Token、公共组件、路由和测试底座，\`lib/features/\` 为空，等待固定 PBWork Handoff 落业务页面。\n\n## 快速开始\n\n\`\`\`bash\nflutter pub get\nflutter analyze\nflutter test\nnode tool/verify.mjs\nflutter run -d <device>\n\`\`\`\n\n## MCP\n\nMCP 已配置在 \`.cursor/mcp.json\`、\`.codex/config.toml\`、\`.mcp.json\`，统一指向 \`tool/mcp.mjs\`。Codex 需要 trust 本目录后才会加载项目级配置。\n\nPBWork 提示词里的目标路径必须与本目录一致；不一致时先运行：\n\n\`\`\`bash\nnode tool/target.mjs --bind\n\`\`\`\n\n## 文档\n\n- [工程架构](docs/architecture.md)\n- [组件](docs/components.md)\n- [Theme 与 Token](docs/theme.md)\n- [路由](docs/routing.md)\n- [测试](docs/testing.md)\n- [ProtoBridge 目标适配](docs/proto-bridge.md)\n- [Agent 工作流](docs/agent-workflow.md)\n\n## 验证\n\n\`node tool/ds-theme.mjs\` 验证当前 Token 清单；\`node tool/ds-sync.mjs\` 同时验证当前组件清单与当前 DS surface。\n`;
-}
-
-function agentWorkflow() {
-  return `# Agent 工作流\n\n本工程已经带好 MCP 配置和 target 文档，agent 不需要重新拼 proto-bridge 路径。\n\n## 第一轮\n\n1. 读 \`AGENTS.md\`、\`README.md\`、\`docs/\` 和 Consumer Skill。\n2. 调用 \`inspect_evidence_workspace\`，确认 \`deliveryTargetRoot\` 指向本目录；不一致就停止并报告。\n3. 按固定 Handoff 读取 index、Screen packet、不同 digest 的 Screenshot、Case delta。\n4. 调用 \`inspect_target_readiness\`；组件/Token 的 \`pending\` 必须披露，不得替换实现。\n5. 每个 Screen 用简短散文写 Evidence 理解摘要和实现计划，然后暂停等待批准。\n\n## 批准后\n\n- 只在 \`lib/features/<feature>/\` 落业务页面；路由写 \`lib/router/\`。\n- 复用 \`lib/common/\`、\`lib/theme/\` 和既有路由/弹层边界。\n- 运行 \`node tool/verify.mjs\`；视觉验收按 \`docs/testing.md\`。\n- 完成后按 \`.agents/skills/acceptance/SKILL.md\` 做五维 Review，不把 self-report 当成最终视觉验收。\n\n## 不要做\n\n- 不要修改 proto-bridge producer。\n- 不要在 feature 中复制公共组件或新建平行 Theme。\n- 不要把 \`pending\` 组件/Token 当成 resolved，也不要用通用 widget 静默替代。\n`;
 }
 
 function toolVerify(themeOnly, includeFlutter) {
@@ -748,4 +668,12 @@ if (process.argv.includes('--bind')) {
 function producerRelativeFrom(file) {
   const actualDirectory = path.join(resolvedDestination, path.relative(destination, path.dirname(file)));
   return path.relative(actualDirectory, resolvedRepoRoot).split(path.sep).join("/");
+}
+
+async function resolveFuturePath(input) {
+  try { return await realpath(input); }
+  catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    return path.join(await resolveFuturePath(path.dirname(input)), path.basename(input));
+  }
 }

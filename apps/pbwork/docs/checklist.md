@@ -115,6 +115,8 @@
 - [ ] 待确定阶段的候选方案已在定稿前收敛；已定稿修改前已清理绑定 Evidence 并回退
 - [ ] PBWork 未新增手工采集、提示词重生成或原型删除入口；CLI 能力边界未被生命周期接管
 - [ ] 正式 Prototype 使用 `docs/design.md`；未新增根目录 `requirements.md`、`implementation-notes.md` 或其它平铺产品文档
+- [ ] 按职责拆分的产品、逻辑、UI 文档由 design 明确链接纳入批准范围，未复制正文或把既有 approved 状态当成新增行为批准
+- [ ] 为新 Flutter Target 交付文档时，`docs/target-docs.json` 已声明产品、来源上下文和附件，链接依赖闭合；原型缺口未覆盖 Target 当前状态，导入与固定 Evidence 版本分别记录
 - [ ] 若沉淀了新的**通用**规则，已写入 `apps/pbwork/docs`（不要把未定稿视觉口味写成铁律）
 - [ ] 业务个案笔记（如有）与手册不冲突；冲突以手册 + contract 为准
 - [ ] 组件、Token、Theme、手势或 Registry 变化已按 `development.md` 同步文档

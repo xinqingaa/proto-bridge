@@ -21,7 +21,7 @@ pnpm pb:new:flutter cold_chain_app
 
 常用参数：
 
-- `--prototype <id>`：只选择该原型绑定的主题包与继承依赖，以及公共图标和该原型所属图标；默认全部。公共基础组件保持共享，业务 features 仍为空。
+- `--prototype <id>`：导入该原型声明的产品文档，并选择绑定主题包、继承依赖、公共图标和所属图标。未指定时资源默认全部、产品文档为空模板。公共基础组件保持共享，业务 features 仍为空。
 - `--parent <dir>`：自定义父目录，默认 proto-bridge 同级
 - `--display-name <name>` / `--bundle-id <id>`：覆盖显示名和 bundle id
 - `--yes`：非交互执行；`--dry-run` 只打印计划
@@ -36,7 +36,7 @@ pnpm pb:new:flutter cold_chain_app
 
 - `lib/common`、`lib/theme`、`lib/storage`、`lib/app`、`lib/router`、`lib/main.dart`
 - `android`、`ios`（排除 Pods、Generated、local.properties 等生成物）
-- `docs`、`.agents`、`AGENTS.md`、`README.md`、`analysis_options.yaml`
+- `docs/` 的通用工程规范与工作流、`.agents`、`analysis_options.yaml`
 - `proto-bridge.target.json`、`proto-bridge.sync.json`、`pubspec.lock`（保持与基线相同的依赖锁定）
 - `test` 中与 target 底座相关的测试
 
@@ -53,9 +53,46 @@ pnpm pb:new:flutter cold_chain_app
 - `test/bootstrap_test.dart`
 - `tool/mcp.mjs`、`tool/target.mjs`、`tool/verify.mjs`、`tool/ds-theme.mjs`、`tool/ds-sync.mjs`
 - `.pb-scaffold.json`
+- 精简的 `AGENTS.md`、产品 `README.md`、`docs/README.md`、产品空模板、Target `docs/known-gaps.md`、`docs/tooling.md` 与 `docs/prototype-source.md`
 - `proto-bridge.themes.json`、`proto-bridge.icons.json`：所选主题与图标范围
 - `lib/common/widgets/action/generated_icon_names.dart`：与导出图片一致的图标名称
 - `.cursor/mcp.json`、`.codex/config.toml`、`.mcp.json`、`.agents/mcp.json`
+
+## 文档职责与维护来源
+
+- `AGENTS.md` 只提供阅读入口，README 负责产品介绍和运行；不在其中复制架构、审批、Evidence 协议或验证清单。
+- 通用工程规则由 `apps/flutter_pb_app/docs/` 拥有，`workflow.md` 统一维护授权、任务路由和交付要求；Skills 维护专用协议与操作。生成时工程文档只重定位 Markdown 链接和明确的项目命令，不替换业务措辞。
+- 生成入口、索引、产品空模板、工具连接和来源说明由 `scripts/templates/flutter-target/*.tpl` 及其 `docs/` 子目录维护。具名 `{{variable}}` 只用于标题、项目名、来源与导入索引，不复制一套工程规范。
+- 产品要求、原型状态、Target 状态与历史评审分别维护。工程初始化不代表业务批准、功能完成或视觉验收。
+
+将来从产品需求正推或从 Target 实践反推规范时，先判断是否为通用规则；通用规则更新基线所属 docs、必要 API 和验证，入口结构更新模板，具体产品规则留在原型或 Target。基线工程自身的 AGENTS/README 同样保持入口职责。已有 Target 不自动回灌，模板变更也不自动覆盖已有工程。
+
+## 原型文档导入
+
+指定 `--prototype <id>` 时，原型必须存在，并提供 `src/prototypes/<id>/docs/target-docs.json`：
+
+```json
+{
+  "schemaVersion": 1,
+  "files": [
+    { "source": "product.md", "target": "product.md" },
+    { "source": "logic-and-interactions.md", "target": "logic-and-interactions.md" },
+    { "source": "ui-design.md", "target": "ui-design.md" },
+    { "source": "design.md", "target": "prototype/design.md" },
+    { "source": "known-gaps.md", "target": "prototype/known-gaps.md" }
+  ]
+}
+```
+
+`source` 相对原型 docs，`target` 相对 Target docs，均为不含 `..` 的 POSIX 相对路径。允许目标为三份根产品文档、`prototype/` 来源上下文或 `product-assets/` 附件；不允许覆盖工作流、工程规范、Target 缺口或 Agent 指令。清单显式列出附件；Markdown 与非 Markdown 的扩展类别不能互换。
+
+只复制清单中声明的文件，不递归复制原型 docs。原型批准基线与原型缺口保留在 `docs/prototype/`；如需交付实施文档，由作者显式声明到该目录，不能把它当成 Target 当前实施记录。缺少三份产品文档的旧原型可以只声明已有基线，未声明的产品文件保留空模板，需结合来源基线补全。
+
+Markdown 的行内相对文件链接必须指向清单内文件；写入前检查依赖，按目标映射重定位路径并保留片段，支持同组附件。不要在可交付产品正文中依赖 Producer 仓库相对路径。文件缺失、未声明的链接依赖、路径或大小写冲突、符号链接会阻止生成；不自动增加导出范围，也不改写业务语义。草稿保留其 draft 状态，复制不构成批准。
+
+`--dry-run` 运行相同的文档预检，列出选定原型与全部输出文档，不构建、不安装、不写入。`.pb-scaffold.json` 新增 `prototype` 和 `documentation`；未指定原型时两者为 null，指定时 documentation 保存源 docs 路径、Git revision、dirty 状态、清单摘要，以及每个源文件/目标文件和两端 SHA-256。Git 不可用时 revision/dirty 为 null，文件摘要仍记录实际读取内容。链接重定位可能使导入摘要与源摘要不同。
+
+Target 从本地文件读取产品要求；这份来源记录不进入 Evidence Store，不与 Handoff 自动绑定。生成后根产品文档由 Target 自己维护，原型缺口不能代表其现状。更新时先生成临时工程做 diff，按需合并，不覆盖已有非空工程。
 
 ## 项目内 MCP
 
@@ -123,7 +160,7 @@ node tool/ds-theme.mjs
 1. 在 PBWork 定稿并采集，确认提示词中的目标路径是生成目录。
 2. 在 Cursor/Codex 打开生成目录；MCP 已配置。
 3. 把提示词交给 agent。第一轮只读：读 Handoff、Screenshot、Target readiness，按 Screen 输出摘要和计划，然后暂停等待批准。
-4. 批准后只在 `lib/features/` 落页面；完成后跑 `node tool/verify.mjs` 和验收 Skill。
+4. 批准后按本工程规范在 `lib/features/` 落业务页面，配套路由、主题与共享能力修改遵守各自边界；完成后跑 `node tool/verify.mjs` 和验收 Skill。
 5. 如果 `inspect_evidence_workspace` 返回的 `deliveryTargetRoot` 与提示词不一致，停止并先修 `delivery.targetRoot`。
 
 ## 与基线同步
@@ -135,6 +172,8 @@ node tool/ds-theme.mjs
 - 不要把 proto-bridge 的 `.proto-bridge/store`、Workspace 配置或 `output/` 复制进 target。
 
 当前 Flutter Target adapter 只扫描 target 根下的 Dart，因此底座组件先保留在目标内，不抽成共享 package；抽包会让 resolver 看不到符号。
+
+维护脚手架文档时运行 `pnpm test:flutter-scaffold` 和 `pnpm docs:verify`。前者覆盖实际模板、现有原型清单、文档与附件图、来源摘要、冲突拒绝、已有文件保护和 CLI dry-run；已接入 `pnpm verify`。原生工程检查仍按 `--verify` 执行，文档检查不代替 Flutter 验证。
 
 依赖安装先于格式化执行。依赖安装或格式化失败时脚本返回非零状态，并保留已经生成的文件供修复；不能把该结果描述为工程就绪。未传 `--verify` 时成功输出只声明文件生成，不声明原生验证通过。生成前会检查实际 Token 映射，不能仅凭 pending 数量为零放行。
 

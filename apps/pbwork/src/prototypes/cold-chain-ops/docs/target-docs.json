@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "files": [
+    { "source": "design.md", "target": "prototype/design.md" }
+  ]
+}

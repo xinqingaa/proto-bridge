@@ -11,7 +11,7 @@ Text('标题', style: ts.textStyle.title);
 
 `lib/theme/theme_pack.dart` 定义唯一的类型化主题模型；`generated_theme_packs.dart` 是 Core 解析表到 Flutter 的生成结果，不手工维护。身份使用 `packId/themeId`，明暗模式独立；注册表来自 `generatedThemePacks`，没有样例包或旧主题兼容实现。
 
-展示工程通过「主题」入口或右上角「展示设置」切换主题和浅深色，作用于所有页面、组件及弹层，并由 AppPrefs / MMKV 恢复。`themePackProvider` 与 `themeModeProvider` 是唯一选择状态；组件通过最近的 TS ThemeExtension 读取。
+主题选择作用于所有页面、组件及弹层，并由 AppPrefs / MMKV 恢复。`themePackProvider` 与 `themeModeProvider` 是唯一选择状态；组件通过最近的 TS ThemeExtension 读取。用户入口由各产品的导航与设置设计决定。
 
 在 Producer 仓库运行 `node scripts/export-flutter-themes.mjs` 默认同步全部包。指定 `--prototype <id>` 只选择真实原型绑定包及继承依赖；可配合 `--target <directory>`。公共基础组件保留为共享能力，不复制原型业务页面。主题的组件键也参与解析；资源按模式选择，仅输出高分辨率图片，组件明确设置逻辑尺寸。
 

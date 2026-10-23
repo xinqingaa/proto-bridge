@@ -40,6 +40,12 @@ rewriting the baseline.
    `.agents/skills/frontend-design/SKILL.md` for the post-authoring Experience
    Gate as well as initial direction.
 
+For prototype documentation intended for a new Flutter Target, maintain the
+explicit `docs/target-docs.json` export list described in the Flutter scaffold
+guide. Product documents travel as local files; prototype baseline and gaps
+remain source context under Target `docs/prototype/`. Never replace Target
+engineering rules or its current implementation state with prototype records.
+
 ## Prototype business scope
 
 Apply [原型业务实现尺度](../../../../apps/pbwork/docs/principles.md#9-原型业务实现尺度).

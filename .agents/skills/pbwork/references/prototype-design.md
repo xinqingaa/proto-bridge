@@ -245,6 +245,12 @@ explicit user agreement or bounded delegated authority and no open decision that
 would change product definition, information architecture, core journeys, or
 the shared visual grammar.
 
+`design.md` remains the approval entry and owns approval scope, dates and page
+design status. It may link product, logic and UI requirements into the baseline
+from sibling docs rather than duplicating their prose. Those requirements keep
+the same approval discipline; an existing approved entry does not approve new
+behavior added to a linked document.
+
 Keep Promotion mapping, Registry entries, file lists, test commands, component
 mapping, and Evidence mechanics out of `design.md`; they belong to authoring
 contracts or `docs/implementation.md`. Hand formal implementation an approved

@@ -60,7 +60,7 @@ theme    -> storage（仅主题偏好）
 2. 在 `lib/router/routes.dart` 添加路由常量。
 3. 在 `lib/router/router.dart` 注册 `WidgetBuilder`。
 4. 有参数时通过 `RouteSettings.arguments` 传入，并在目标页面集中解析。
-5. 在产品导航流程中接入页面；基线仅以 Demo 为入口。
+5. 在产品导航流程中接入页面，初始路由以 `lib/app/app.dart` 与路由注册表为准。
 6. 新的持久化 key 先改本文白名单，再改 `AppPrefs`。
 7. 遵循 [components.md](components.md) 和 [theme.md](theme.md)。
 

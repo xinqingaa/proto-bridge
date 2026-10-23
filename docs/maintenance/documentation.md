@@ -37,6 +37,7 @@
 | Component props/behavior | Contract、实现、Registry、对应组件文档、Skill/检查单、Target sync 状态/基线 |
 | Role/绑定字面量闭集 | Core vocabulary、PBWork schema/Bind 池、Authoring 文档、Target sync 门禁 |
 | Target 映射/API | Target `docs/proto-bridge.md`、根目录 `proto-bridge.target.json`、公开 API、根目录 `proto-bridge.sync.json` |
+| Flutter Target 规范/生成文档 | `apps/flutter_pb_app/docs/`、`scripts/templates/flutter-target/`（仅入口/产品空模板/工具/来源）、Flutter Target 脚手架指南与 `test:flutter-scaffold`；业务文档导出由各原型 `docs/target-docs.json` 声明 |
 | 手势/导航/组合 | PBWork 共享规范、相关组件页、测试 |
 
 ## PBWork 组件变更

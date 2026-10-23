@@ -17,7 +17,7 @@
 
 本目录维护一刻原型的产品说明、逻辑与交互、UI 与动效说明及已知实现限制。`design.md` 保留已批准的产品基线；当前实现的偏差以 [known-gaps.md](known-gaps.md) 为准。
 
-独立 Target 读取自己的本地 docs。当前脚手架不自动复制这组原型文档；复制时保持同目录相对链接，并保留 Target 已有的架构、组件、主题、资源和测试文档。
+独立 Target 读取自己的本地 docs。`pnpm pb:new:flutter <name> --prototype yike` 按 `target-docs.json` 导入产品、逻辑与 UI 文档；批准基线与原型缺口分别保留在 Target 的 `docs/prototype/`，不覆盖 Target 自己的缺口与工程规范。文件清单、链接校验和来源记录见 [Flutter Target 脚手架](../../../../../../docs/guides/flutter-target-scaffold.md#原型文档导入)。
 
 页面、截图和交互证据通过固定 Handoff/MCP 读取；产品文档通过本地文件读取，不登记文档 Catalog 或文档 Snapshot。文档副本不自动绑定 Handoff 版本，文档要求与固定观测冲突时保留双方来源。动效说明表达设计意图，静态采集不证明正常运动过程。
 

@@ -105,7 +105,7 @@ approvedAt: 2026-08-13 # 仅 approved 时必需
 | `exploring` | 存在待选择的结构或视觉方向                                         |
 | `approved`  | 产品定义、IA、核心旅程和共享视觉语法已稳定，可以逐页批准 Authoring |
 
-`design.md` 是产品与体验唯一基线，至少覆盖：
+`design.md` 是产品与体验唯一批准入口，基线正文可以按职责放在同目录的 `product.md`、`logic-and-interactions.md` 与 `ui-design.md`，由 design 明确链接纳入批准范围；同一规则不维护两份正文。以下决策必须能从批准入口定位：
 
 - 产品定义、用户、承诺、范围与非目标，以及已确认的 brief（风格气质与参照、平台视口、品牌起点、Flutter 交付约束）；
 - 核心对象、关系和状态；
@@ -118,6 +118,8 @@ approvedAt: 2026-08-13 # 仅 approved 时必需
 - 否决项、未决项和可观察验收信号。
 
 不要求机械复制标题或填充无关章节，但以上决策必须可定位。Registry、文件清单、测试命令、Evidence 字段和代码细节不写入设计基线。
+
+职责拆分不改变批准纪律：`design.md` 继续维护状态、批准日期、范围与页面设计状态，所链接产品文档的结构性变化也须按同一流程确认；已有 approved 状态不自动批准新规则或新页面。文档与 Target 的本地交付方式见 [制作工具](authoring-tools.md#脚手架与验证)，不进入产品正文。
 
 个案实现说明放在 `docs/implementation.md`。它记录 Promotion Mapping、页面交付状态、代码组织、状态存储、迁移和实现决定，不复制 PBWork 通用规范。
 

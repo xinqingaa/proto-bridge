@@ -11,11 +11,7 @@
 
 ## 参数
 
-需要参数时通过 `RouteSettings.arguments` 传递，并在目标页面集中解析；不要在多个 widget 中重复解析同一参数。当前路由：
-
-- `/demo` 主题 / 组件目录。
-- `/settings` 展示设置，切换主题与深浅色。
-- `/launch` 手动启动页预览，关闭后回到原页面。
+需要参数时通过 `RouteSettings.arguments` 传递，并在目标页面集中解析；不要在多个 widget 中重复解析同一参数。当前可用路由以 `lib/router/routes.dart` 与 `appRoutes` 为准，应用初始路由由 `lib/app/app.dart` 指定。
 
 业务页面由固定 PBWork Handoff 按 Screen 新增；新增时同时补路由常量、注册、参数解析和 Widget test，不把页面私有解析散落到多个 widget。
 

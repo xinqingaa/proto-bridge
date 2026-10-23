@@ -2,28 +2,19 @@
 
 独立、可运行的 Flutter 目标工程，用于验证页面实现如何遵循既有工程规范并消费固定 ProtoBridge Evidence。本仓库不是 Evidence Store，也不参与 PBWork Runtime Capture。
 
-开始修改前先读 [AGENTS.md](AGENTS.md)，再按任务读取：
-
-- [工程架构](docs/architecture.md)
-- [公共组件](docs/components.md)
-- [Theme 与 Token](docs/theme.md)
-- [静态资源](docs/assets.md)
-- [路由](docs/routing.md)
-- [测试与视觉验证](docs/testing.md)
-- [ProtoBridge 目标适配](docs/proto-bridge.md)
-
-PBWork DS 同步任务还需读取 `.agents/skills/proto-bridge-ds-target-sync/SKILL.md`；固定 Handoff 页面实现继续使用 Consumer Skill，两条流程不要混用。
+工程包含组件、主题与启动展示页。业务 feature 不随独立 Target 脚手架复制；产品要求由所选原型的本地文档提供。
 
 ## 快速运行
 
 ```bash
 flutter pub get
-flutter analyze
-flutter test
 flutter run
-cd ../.. && pnpm ds:theme:verify && pnpm ds:target-sync:verify
 ```
 
-当前基线包含 当前组件与 Token 清单 的具体映射；主题检查和完整同步门禁均需通过。
+## 文档
 
-仓库不因实验 Flutter MCP 固定 Flutter SDK；目标工程使用当前开发环境中的 Flutter。仓库根 `pnpm verify` 会执行上述 Flutter 静态分析与完整测试，以及 Producer/Target 同步和产品端到端门禁。
+- [文档索引](docs/README.md)
+- [协作与工作流](docs/workflow.md)
+- [测试与视觉验证](docs/testing.md)
+
+SDK 与依赖要求以 `pubspec.yaml` 和锁文件为准。仓库根 `pnpm verify` 包含本工程原生检查、测试及 Producer/Target 同步验证。

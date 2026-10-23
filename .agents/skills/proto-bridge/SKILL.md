@@ -17,6 +17,7 @@ description: >-
    - Semantic authoring or gates: `docs/reference/semantic-authoring.md`.
    - CLI, MCP, or Service: `docs/architecture/proto-bridge.md`.
    - Documentation: `docs/maintenance/documentation.md`.
+   - Flutter Target scaffold or generated documentation: `docs/guides/flutter-target-scaffold.md`; engineering rules live in `apps/flutter_pb_app/docs/`, entry templates in `scripts/templates/flutter-target/`, and product exports in each prototype's `docs/target-docs.json`.
 
 Use the `pbwork` Skill for changes under `apps/pbwork` that concern its
 business prototypes, Design System, Workbench, or Capture UI.

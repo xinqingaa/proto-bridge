@@ -1,51 +1,7 @@
-# flutter_pb_app Agent Rules
+# Flutter 基线 Agent 入口
 
-这是一个独立的、可运行的 Flutter 产品工程。实现功能前必须先读本文件、`README.md` 和任务相关的 `docs/`，再检查实际代码和相似页面。
+本工程提供可运行的 Flutter 公共底座。介绍与运行方式见 [README](README.md)。
 
-收到固定 ProtoBridge Evidence 的实现任务时，先读取并遵守 `.agents/skills/proto-bridge-consumer/SKILL.md`；该 Skill 负责 Evidence 消费流程，本文件和 `docs/` 负责本工程的实现规范。
+开展工作前阅读并遵守 [协作与工作流](docs/workflow.md)，按 [文档索引](docs/README.md) 查阅相关规范。
 
-收到 PBWork Design System 同步任务（没有固定 Handoff）时，改用 `.agents/skills/proto-bridge-ds-target-sync/SKILL.md`；不要伪造 Evidence 消费流程。
-
-## 文档优先级
-
-1. 固定 ProtoBridge Evidence 决定源页面的结构、文案、状态、交互和构图。
-2. 本工程的 `AGENTS.md`、`docs/` 和实际代码决定目标侧的落点、组件职责、Theme、路由和验证方式。
-3. Target adapter 查询结果只提供目标工程上下文，不能覆盖 Screenshot、Fragment、Case 或 revision。
-4. 根目录 `proto-bridge.target.json` 是精确映射，`proto-bridge.sync.json` 是 DS surface 同步基线；两者不能替代 Producer Contract。
-
-文档缺失或与代码冲突时，编辑前必须报告，不得用熟悉的 Flutter 默认架构补齐未知项。
-
-## 修改边界
-
-- 业务页面和页面模型放在 `lib/features/<feature>/`。
-- 所有响应式界面状态使用 Riverpod；禁止 `setState` / `StatefulBuilder`，公共组件、Demo 和启动页均无例外。状态归属与控制器生命周期遵循 `docs/architecture.md`。
-- 持久化只走 `AppPrefs`；feature 不得直接使用 `MMKV`。
-- 路由常量和注册表只放在 `lib/router/`。
-- 主题和语义 token 只放在 `lib/theme/`，尺寸适配遵循 `docs/theme.md`，不得重复缩放。
-- 静态资源按 `docs/assets.md` 放在 `asset/base/` 或 `asset/<prototypeId>/`，不复制 PBWork SVG。
-- 可复用 UI 和共享弹层只放在 `lib/common/`。
-- 不在 feature 中复制公共组件、创建平行 Theme 或绕过既有路由/弹层边界。
-- 只修改 Handoff 实现范围相关文件；发现无关变更时保留并在报告中区分。
-
-## 实现流程
-
-1. 按 Consumer Skill 读取固定 Handoff index、Screen packet、不同 digest 的 Screenshot，以及必要的 Case delta/detail。
-2. 阅读目标文档、公共组件定义和相似页面。
-3. 批量解析 Evidence 组件/Token 到目标 symbol/import/accessor 的映射；只有 resolver 返回 `resolved` 才可视为已验证落点，`candidate/stale/conflict/unresolved/pending` 必须披露；`pending` 表示 Target 待实现（条目声明，带 `reason`），不得用其它组件或 Token 替换实现，也不得报告为已匹配。
-4. 无法确认的映射、布局敏感值或状态必须标记 unresolved 并记录风险。
-5. 使用现有 Theme、组件和路由实现；不得按外观用通用 widget 静默替换有语义的组件。
-6. 实现后运行目标工程检查、测试和可用的同尺寸视觉验证。
-
-## 必要验证
-
-```bash
-flutter analyze
-flutter test
-cd ../.. && pnpm ds:theme:verify && pnpm ds:target-sync:verify
-```
-
-当前基线包含 当前组件与 Token 清单 的具体映射；修改后同时运行主题和完整同步门禁。
-
-视觉验证遵循 [testing.md](docs/testing.md)。最终报告必须包含固定引用、原始风险、修改文件、验证结果、已知偏差和剩余风险。
-
-仓库根 `pnpm verify` 已包含本工程的 `flutter analyze` 与 `flutter test`，稳定 DS 批次不能只通过 resolver 而跳过 Dart/Widget 验证。
+代码修改遵守 [工程架构](docs/architecture.md)；固定 Evidence、DS 同步和还原 Review 按工作流选择对应入口。

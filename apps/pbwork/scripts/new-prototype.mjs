@@ -1,4 +1,10 @@
-import { mkdirSync, existsSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  existsSync,
+  writeFileSync,
+  readdirSync,
+  readFileSync,
+} from "node:fs";
 import { URL, fileURLToPath } from "node:url";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
@@ -41,10 +47,18 @@ export default {
 } satisfies PrototypeRecord;
 `,
   );
-  write(
-    "docs/design.md",
-    `---\nstatus: draft\n---\n\n# ${id}\n\n这是制作工具生成的空骨架，不代表已批准的业务或视觉设计。\n\n## 定位与受众\n\n待需求采访。\n\n## 页面与关键任务\n\n待批准。示例首页仅验证技术闭环。\n\n## 视觉方向与 Promotion Mapping\n\n待批准；当前骨架使用继承基础包的原型主题包。\n`,
+  const templates = fileURLToPath(
+    new URL("./templates/prototype-docs/", import.meta.url),
   );
+  for (const name of readdirSync(templates)) {
+    write(
+      `docs/${name.replace(/\.tpl$/, "")}`,
+      readFileSync(path.join(templates, name), "utf8").replaceAll(
+        "{{prototypeId}}",
+        id,
+      ),
+    );
+  }
   write(
     "docs/implementation.md",
     `# ${id} 实施\n\n技术骨架使用共享 PrototypeShell、导航、存储、主题偏好和 useClock。业务设计仍为 draft。\n\nExperience：deferred（空骨架仅验收制作工具；业务页面批准后按设计工作流验收）。\n`,

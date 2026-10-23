@@ -66,6 +66,10 @@ Runtime 的稳定等待会等字体、Vue 渲染及当前有限动画结束，�
 
 在仓库根执行 `pnpm pb:new-prototype <id>`，ID 使用小写连字符格式；已有目录拒绝覆盖。生成原型声明、独立且继承基础包的主题包、`status: draft` 的 `docs/design.md`、外壳、首页、模型存储、Date 时钟和一条登记测试，并生成 default 边界。无需手改登记表。模板不绑定仅供 Gallery/Playground 的 `yike`。
 
+文档模板位于 `scripts/templates/prototype-docs/`（相对 PBWork 应用），同时生成 docs 索引、产品、逻辑、UI、实施与原型缺口。`design.md` 负责批准入口，链接到各职责文档，不复制第二份产品正文；Promotion Mapping 留在 implementation。新增文档仍是待设计内容，不因生成文件自动批准。
+
+`docs/target-docs.json` 声明独立 Flutter 工程初始化要带走的产品文档、来源上下文和附件。设计基线与原型缺口进入 Target 的 `docs/prototype/`，不混入其当前缺口；清单、链接闭包和来源规则见 [Flutter Target 文档导入](../../../../docs/guides/flutter-target-scaffold.md#原型文档导入)。既有原型可只声明其已有基线，无需伪造完整产品文档。
+
 空骨架可以执行 Preflight 与定稿技术验收；它不代表业务设计批准。开始真实业务/视觉制作前，按[设计工作流](./design-workflow.md)完成需求采访与批准。
 
 `pnpm test:e2e:scaffold` 生成临时原型，构建后执行真实 Core Preflight、两次同 Case 采集（比较时间文本与截图字节）、Workbench 完整定稿。Store 与固定引用结果保存在命令输出的系统临时目录；结束时移除临时源码并重新生成边界，不改变日常 Workspace。

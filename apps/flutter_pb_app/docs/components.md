@@ -69,7 +69,7 @@
 
 `CommonGlassSurface` 组合使用 unified_popups 的 LiquidGlass；明确轮廓，提供清透和实色降级。`AppPop.actionSheet` 是 Sheet 内的动作列表组合。
 
-公共组件不保留旧构造参数或历史别名；feature 与 Demo 必须直接迁移到当前 API。
+公共组件不保留旧构造参数或历史别名；所有调用方必须直接迁移到当前 API。
 
 ## 重要语义边界
 

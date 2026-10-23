@@ -32,6 +32,24 @@ it("creates the full draft skeleton and refuses unsafe ids or overwrite", () => 
     expect(readFileSync(path.join(dir, "docs/design.md"), "utf8")).toContain(
       "status: draft",
     );
+    expect(readFileSync(path.join(dir, "docs/design.md"), "utf8")).toContain(
+      "prototypeId: test-app",
+    );
+    const docs = JSON.parse(
+      readFileSync(path.join(dir, "docs/target-docs.json"), "utf8"),
+    );
+    expect(docs.files).toContainEqual({
+      source: "known-gaps.md",
+      target: "prototype/known-gaps.md",
+    });
+    for (const file of docs.files) {
+      expect(
+        readFileSync(path.join(dir, "docs", file.source), "utf8"),
+      ).not.toContain("{{prototypeId}}");
+    }
+    expect(
+      readFileSync(path.join(dir, "docs/design.md"), "utf8"),
+    ).not.toContain("status: approved");
     expect(readFileSync(path.join(dir, "theme/pack.json"), "utf8")).toContain(
       '"scope": "prototype"',
     );

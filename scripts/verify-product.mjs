@@ -7,6 +7,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const steps = [
   ["pnpm", ["install", "--frozen-lockfile"]],
   ["pnpm", ["docs:verify"]],
+  ["pnpm", ["test:flutter-scaffold"]],
   ["pnpm", ["build"]],
   ["node", ["scripts/verify-ds-target-sync.mjs"]],
   ["pnpm", ["typecheck"]],

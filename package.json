@@ -24,6 +24,7 @@
     "pb:mcp": "node scripts/pb-mcp.mjs",
     "pb:target": "node scripts/pb-target.mjs",
     "pb:new:flutter": "node scripts/pb-new-flutter-target.mjs",
+    "test:flutter-scaffold": "node --test scripts/test-flutter-target-docs.mjs",
     "test": "pnpm --filter @proto-bridge/core test",
     "test:e2e:mcp": "pnpm --filter @proto-bridge/core build && pnpm --filter @proto-bridge/mcp-server build && node scripts/test-mcp-evidence.mjs",
     "test:e2e:runtime": "pnpm --filter @proto-bridge/pbwork test:e2e:capture",
